@@ -20,6 +20,12 @@
 namespace {
 
 renodx::mods::shader::CustomShaders custom_shaders = {
+  //  CustomShaderEntry(0xF95C788E), // map 1
+  //  CustomShaderEntry(0x93281DC0), // map 2
+  //  CustomShaderEntry(0xA8773EA9), // UI and main menu
+  //  CustomShaderEntry(0x55844EC1), // UI 2
+  //  CustomShaderEntry(0x1F59543C), 
+  //  CustomShaderEntry(0xA04D746C), 
     CustomShaderEntry(0x567C3CF7), // fixes brighness in main menu and adds clipping
     CustomShaderEntry(0x3A44273D), // ui brighness fix
     CustomShaderEntry(0x20133A8B), // final
