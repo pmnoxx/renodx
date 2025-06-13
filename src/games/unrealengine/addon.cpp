@@ -95,7 +95,7 @@ renodx::utils::settings::Settings settings = {
         .label = "Gamma Correction",
         .section = "Tone Mapping",
         .tooltip = "Emulates a display EOTF.",
-        .labels = {"Off", "2.2", "BT.1886"},
+        .labels = {"Off", "sRGB->2.2", "sRGB->2.4", "2.2->2.4", "2.2->2.6", "None(For debugging)"},
         .is_visible = []() { return current_settings_mode >= 1; },
     },
     new renodx::utils::settings::Setting{
