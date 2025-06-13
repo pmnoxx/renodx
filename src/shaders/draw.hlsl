@@ -250,7 +250,8 @@ Config BuildConfig() {
   config.intermediate_scaling = RENODX_INTERMEDIATE_SCALING;
 
 #if !defined(RENODX_INTERMEDIATE_ENCODING)
-#define RENODX_INTERMEDIATE_ENCODING (RENODX_GAMMA_CORRECTION + 1.f)
+// TODO 2.6 gamma not fully implemented
+#define RENODX_INTERMEDIATE_ENCODING (RENODX_GAMMA_CORRECTION >= 3.f ? 0.f : RENODX_GAMMA_CORRECTION + 1.f)
 #endif
   config.intermediate_encoding = RENODX_INTERMEDIATE_ENCODING;
 
@@ -378,13 +379,21 @@ float3 UpgradeToneMapByLuminance(float3 color_hdr, float3 color_sdr, float3 post
 
 float3 RenderIntermediatePass(float3 color, Config config) {
   [branch]
-  if (config.gamma_correction == GAMMA_CORRECTION_GAMMA_2_2) {
+  if (config.gamma_correction == GAMMA_CORRECTION_GAMMA_2_2) { 
     color = renodx::color::correct::GammaSafe(color, false, 2.2f);
   } else if (config.gamma_correction == GAMMA_CORRECTION_GAMMA_2_4) {
     color = renodx::color::correct::GammaSafe(color, false, 2.4f);
+  } else if (config.gamma_correction == 3.f) { // TODO: Add contant
+    color = sign(color) * pow(abs(color), 2.4f / 2.2f);
+  } else if (config.gamma_correction == 4.f) { // TODO: Add contant
+    color = sign(color) * pow(abs(color), 2.6f / 2.2f);
   }
 
   color *= config.intermediate_scaling;
+
+  if (config.swap_chain_gamma_correction > 0.f) {
+    color = (1.f, 0.f, 0.f);
+  }
 
   [branch]
   if (config.swap_chain_gamma_correction == GAMMA_CORRECTION_GAMMA_2_2) {
@@ -418,6 +427,7 @@ float3 InvertIntermediatePass(float3 color, Config config) {
     color = renodx::color::correct::GammaSafe(color, false, 2.4f);
   }
 
+
   color /= config.intermediate_scaling;
 
   [branch]
@@ -425,6 +435,10 @@ float3 InvertIntermediatePass(float3 color, Config config) {
     color = renodx::color::correct::GammaSafe(color, true, 2.2f);
   } else if (config.gamma_correction == GAMMA_CORRECTION_GAMMA_2_4) {
     color = renodx::color::correct::GammaSafe(color, true, 2.4f);
+  } else if (config.gamma_correction == 3.f) { // TODO: Add contant
+    color = sign(color) * pow(abs(color), 2.2f / 2.4f);
+  } else if (config.gamma_correction == 4.f) { // TODO: Add contant
+    color = sign(color) * pow(abs(color), 2.2f / 2.6f);
   }
 
   return color;

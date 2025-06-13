@@ -314,12 +314,18 @@ Config Create(
 float3 ApplyRenoDRT(float3 color, Config tm_config) {
   float reno_drt_max = (tm_config.peak_nits / tm_config.game_nits);
   [branch]
-  if (tm_config.gamma_correction != 0) {
+  
+  if (tm_config.gamma_correction == 1.f || tm_config.gamma_correction == 2.f) {
     reno_drt_max = renodx::color::correct::Gamma(
         reno_drt_max,
         tm_config.gamma_correction > 0.f,
         abs(tm_config.gamma_correction) == 1.f ? 2.2f : 2.4f);
+  } else if (tm_config.gamma_correction == 3.f) {
+    reno_drt_max = sign(reno_drt_max) * pow(abs(reno_drt_max), 2.4f / 2.2f);
+  } else if (tm_config.gamma_correction == 4.f) {
+    reno_drt_max = sign(reno_drt_max) * pow(abs(reno_drt_max), 2.6f / 2.2f);
   } else {
+    // TODO
     // noop
   }
 
@@ -364,7 +370,7 @@ float3 ApplyACES(float3 color, Config tm_config) {
   float aces_max = (tm_config.peak_nits / tm_config.game_nits);
 
   [branch]
-  if (tm_config.gamma_correction != 0.f) {
+  if (tm_config.gamma_correction == 1.f || tm_config.gamma_correction == 2.f) {
     aces_max = renodx::color::correct::Gamma(
         aces_max,
         tm_config.gamma_correction > 0.f,
@@ -373,7 +379,14 @@ float3 ApplyACES(float3 color, Config tm_config) {
         aces_min,
         tm_config.gamma_correction > 0.f,
         abs(tm_config.gamma_correction) == 1.f ? 2.2f : 2.4f);
+  } else if (tm_config.gamma_correction == 3.f) {
+    aces_max = sign(aces_max) * pow(abs(aces_max), 2.4f / 2.2f);
+    aces_min = sign(aces_min) * pow(abs(aces_min), 2.4f / 2.2f);
+  } else if (tm_config.gamma_correction == 4.f) {
+    aces_max = sign(aces_max) * pow(abs(aces_max), 2.6f / 2.2f);
+    aces_min = sign(aces_min) * pow(abs(aces_min), 2.6f / 2.2f);
   } else {
+    // TODO
     // noop
   }
   aces_max /= mid_gray_scale;
