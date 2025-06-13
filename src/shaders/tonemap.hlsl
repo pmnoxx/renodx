@@ -331,7 +331,12 @@ float3 ApplyRenoDRT(float3 color, Config tm_config) {
     reno_drt_max = sign(reno_drt_max) * pow(abs(reno_drt_max), 2.8f / 2.2f);
   } else if (tm_config.gamma_correction == 6.f) {
     reno_drt_max = sign(reno_drt_max) * pow(abs(reno_drt_max), tm_config.gamma_correction_custom / 2.2f);
-  }else {
+  } else if (tm_config.gamma_correction == 7.f) {
+    reno_drt_max = renodx::color::correct::Gamma(
+        reno_drt_max,
+        tm_config.gamma_correction > 0.f,
+        tm_config.gamma_correction_custom);
+  } else {
     // TODO
     // noop
   }
@@ -398,7 +403,16 @@ float3 ApplyACES(float3 color, Config tm_config) {
   } else if (tm_config.gamma_correction == 6.f) {
     aces_max = sign(aces_max) * pow(abs(aces_max), tm_config.gamma_correction_custom / 2.2f);
     aces_min = sign(aces_min) * pow(abs(aces_min), tm_config.gamma_correction_custom / 2.2f);
-  } else {
+  } else if (tm_config.gamma_correction == 7.f) {
+    aces_max = renodx::color::correct::Gamma(
+        aces_max,
+        tm_config.gamma_correction > 0.f,
+        tm_config.gamma_correction_custom);
+    aces_min = renodx::color::correct::Gamma(
+        aces_min,
+        tm_config.gamma_correction > 0.f,
+        tm_config.gamma_correction_custom);
+  }  else {
     // TODO
     // noop
   }
