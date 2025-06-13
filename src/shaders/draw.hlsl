@@ -41,6 +41,7 @@ struct Config {
   float reno_drt_tone_map_method;            // 0.f
   float reno_drt_white_clip;                 // 100.f
   float gamma_correction;                    // 0 = srgb/none, 1 = 2.2, 2 = 2.4
+  float gamma_correction_custom;              // 2.2f;
   float intermediate_scaling;                // generally game / ui nits
   float intermediate_encoding;               // 0 = linear, 1 = srgb, 2 = 2.2, 3 = 2.4, 4 = pq
   float intermediate_color_space;            // 0 = d65, 1 = bt2020, 2 = ap1
@@ -244,6 +245,12 @@ Config BuildConfig() {
 #endif
   config.gamma_correction = RENODX_GAMMA_CORRECTION;
 
+#if !defined(RENODX_GAMMA_CORRECTION_CUSTOM)
+#define RENODX_GAMMA_CORRECTION_CUSTOM renodx::draw::GAMMA_CORRECTION_GAMMA_2_4
+#endif
+  config.gamma_correction_custom = RENODX_GAMMA_CORRECTION_CUSTOM;
+
+
 #if !defined(RENODX_INTERMEDIATE_SCALING)
 #define RENODX_INTERMEDIATE_SCALING (RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS)
 #endif
@@ -387,6 +394,10 @@ float3 RenderIntermediatePass(float3 color, Config config) {
     color = sign(color) * pow(abs(color), 2.4f / 2.2f);
   } else if (config.gamma_correction == 4.f) { // TODO: Add contant
     color = sign(color) * pow(abs(color), 2.6f / 2.2f);
+  } else if (config.gamma_correction == 5.f) { // TODO: Add contant
+    color = sign(color) * pow(abs(color), 2.8f / 2.2f);
+  } else if (config.gamma_correction == 6.f) { // TODO: Add contant
+    color = sign(color) * pow(abs(color), config.gamma_correction_custom / 2.2f);
   }
 
   color *= config.intermediate_scaling;
@@ -439,6 +450,10 @@ float3 InvertIntermediatePass(float3 color, Config config) {
     color = sign(color) * pow(abs(color), 2.2f / 2.4f);
   } else if (config.gamma_correction == 4.f) { // TODO: Add contant
     color = sign(color) * pow(abs(color), 2.2f / 2.6f);
+  } else if (config.gamma_correction == 5.f) { // TODO: Add contant
+    color = sign(color) * pow(abs(color), 2.2f / 2.8f);
+  } else if (config.gamma_correction == 6.f) { // TODO: Add contant
+    color = sign(color) * pow(abs(color), 2.2f / config.gamma_correction_custom);
   }
 
   return color;

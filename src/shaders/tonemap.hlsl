@@ -176,6 +176,7 @@ struct Config {
   float peak_nits;
   float game_nits;
   float gamma_correction;
+  float gamma_correction_custom;
   float exposure;
   float highlights;
   float shadows;
@@ -254,6 +255,7 @@ Config Create(
     float peak_nits = 203.f,
     float game_nits = 203.f,
     float gamma_correction = 0,
+    float gamma_correction_custom = 2.2f,
     float exposure = 1.f,
     float highlights = 1.f,
     float shadows = 1.f,
@@ -283,6 +285,7 @@ Config Create(
     peak_nits,
     game_nits,
     gamma_correction,
+    gamma_correction_custom,
     exposure,
     highlights,
     shadows,
@@ -324,7 +327,11 @@ float3 ApplyRenoDRT(float3 color, Config tm_config) {
     reno_drt_max = sign(reno_drt_max) * pow(abs(reno_drt_max), 2.4f / 2.2f);
   } else if (tm_config.gamma_correction == 4.f) {
     reno_drt_max = sign(reno_drt_max) * pow(abs(reno_drt_max), 2.6f / 2.2f);
-  } else {
+  } else if (tm_config.gamma_correction == 5.f) {
+    reno_drt_max = sign(reno_drt_max) * pow(abs(reno_drt_max), 2.8f / 2.2f);
+  } else if (tm_config.gamma_correction == 6.f) {
+    reno_drt_max = sign(reno_drt_max) * pow(abs(reno_drt_max), tm_config.gamma_correction_custom / 2.2f);
+  }else {
     // TODO
     // noop
   }
@@ -385,6 +392,12 @@ float3 ApplyACES(float3 color, Config tm_config) {
   } else if (tm_config.gamma_correction == 4.f) {
     aces_max = sign(aces_max) * pow(abs(aces_max), 2.6f / 2.2f);
     aces_min = sign(aces_min) * pow(abs(aces_min), 2.6f / 2.2f);
+  } else if (tm_config.gamma_correction == 5.f) {
+    aces_max = sign(aces_max) * pow(abs(aces_max), 2.8f / 2.2f);
+    aces_min = sign(aces_min) * pow(abs(aces_min), 2.8f / 2.2f);
+  } else if (tm_config.gamma_correction == 6.f) {
+    aces_max = sign(aces_max) * pow(abs(aces_max), tm_config.gamma_correction_custom / 2.2f);
+    aces_min = sign(aces_min) * pow(abs(aces_min), tm_config.gamma_correction_custom / 2.2f);
   } else {
     // TODO
     // noop
