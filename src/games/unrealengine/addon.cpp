@@ -101,14 +101,13 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "GammaCorrectionCustom",
         .binding = &shader_injection.tone_map_gamma_correction_custom,
-        .default_value = 240.f,
+        .default_value = 2.4f,
         .label = "Gamma Correction Custom Gamma",
         .section = "Tone Mapping",
         .tooltip = "Emulates a display EOTF.",
-        .min = 100.f,
-        .max = 400.f,
+        .min = 1.f,
+        .max = 4.f,
         .format = "%.2f",
-        .parse = [](float value) { return value * 0.01f; },
         .is_visible = []() { return current_settings_mode >= 1; },
     },
     new renodx::utils::settings::Setting{
