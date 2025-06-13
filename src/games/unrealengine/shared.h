@@ -9,6 +9,7 @@ struct ShaderInjectData {
   float tone_map_game_nits;
   float tone_map_ui_nits;
   float tone_map_gamma_correction;
+  float tone_map_gamma_correction_custom;
   float tone_map_hue_processor;
 
   float color_grade_strength;
@@ -51,6 +52,7 @@ cbuffer injected_buffer : register(b13) {
 #define RENODX_GAME_NITS                         shader_injection.tone_map_game_nits
 #define RENODX_UI_NITS                           shader_injection.tone_map_ui_nits
 #define RENODX_GAMMA_CORRECTION                  shader_injection.tone_map_gamma_correction
+#define RENODX_GAMMA_CORRECTION_CUSTOM           shader_injection.tone_map_gamma_correction_custom
 #define RENODX_TONE_MAP_HUE_PROCESSOR            shader_injection.tone_map_hue_processor
 #define RENODX_COLOR_GRADE_STRENGTH              shader_injection.color_grade_strength
 #define RENODX_TONE_MAP_EXPOSURE                 shader_injection.color_grade_exposure

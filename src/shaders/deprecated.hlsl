@@ -148,6 +148,7 @@ namespace config {
 float3 ApplyRenoDRT(float3 color, Config tm_config, bool is_sdr) {
   if (is_sdr) {
     tm_config.gamma_correction = 0;
+    tm_config.gamma_correction_custom = 0;
     tm_config.peak_nits = 100.f;
     tm_config.game_nits = 100.f;
   }
@@ -157,6 +158,7 @@ float3 ApplyRenoDRT(float3 color, Config tm_config, bool is_sdr) {
 float3 ApplyACES(float3 color, Config tm_config, bool is_sdr) {
   if (is_sdr) {
     tm_config.gamma_correction = 0;
+    tm_config.gamma_correction_custom = 0;
     tm_config.peak_nits = 100.f;
     tm_config.game_nits = 100.f;
   }
