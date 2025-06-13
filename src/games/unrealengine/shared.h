@@ -44,7 +44,7 @@ cbuffer injected_buffer : register(b13) {
 #pragma dxc diagnostic ignored "-Wparentheses-equality"
 #endif
 
-#define RENODX_INTERMEDIATE_ENCODING (RENODX_GAMMA_CORRECTION >= 3.f ? 0.f :RENODX_GAMMA_CORRECTION + 1.f)
+#define RENODX_INTERMEDIATE_ENCODING (RENODX_GAMMA_CORRECTION >= 3.f ? 3.f :RENODX_GAMMA_CORRECTION + 1.f)
 
 #define RENODX_TONE_MAP_TYPE                     shader_injection.tone_map_type
 #define RENODX_PEAK_NITS                         shader_injection.tone_map_peak_nits
