@@ -106,7 +106,7 @@ renodx::utils::settings::Settings settings = {
         .label = "Gamma Correction Custom Gamma",
         .section = "Tone Mapping Custom Gamma",
         .tooltip = "Emulates a display EOTF.",
-        .is_visible = []() { return current_settings_mode >= 1; },
+       // .is_visible = []() { return current_settings_mode >= 1; },
         .min = 1.f,
         .max = 4.f,
     },
