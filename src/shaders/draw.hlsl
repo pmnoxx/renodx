@@ -378,10 +378,14 @@ float3 UpgradeToneMapByLuminance(float3 color_hdr, float3 color_sdr, float3 post
 
 float3 RenderIntermediatePass(float3 color, Config config) {
   [branch]
-  if (config.gamma_correction == GAMMA_CORRECTION_GAMMA_2_2) {
+  if (config.gamma_correction == GAMMA_CORRECTION_GAMMA_2_2) { 
     color = renodx::color::correct::GammaSafe(color, false, 2.2f);
   } else if (config.gamma_correction == GAMMA_CORRECTION_GAMMA_2_4) {
     color = renodx::color::correct::GammaSafe(color, false, 2.4f);
+  }else if (config.gamma_correction == 3.f) { // TODO: Add contant
+    color = sign(color) * pow(abs(color), 2.6 / 2.4f);
+  }else if (config.gamma_correction == 4.f) { // TODO: Add contant
+    color = sign(color) * pow(abs(color), 2.6 / 2.2f);
   }
 
   color *= config.intermediate_scaling;
