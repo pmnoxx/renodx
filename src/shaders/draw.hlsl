@@ -398,6 +398,8 @@ float3 RenderIntermediatePass(float3 color, Config config) {
     color = sign(color) * pow(abs(color), 2.8f / 2.2f);
   } else if (config.gamma_correction == 6.f) { // TODO: Add contant
     color = sign(color) * pow(abs(color), config.gamma_correction_custom / 2.2f);
+  } else if (config.gamma_correction == 7.f) { // TODO: Add contant
+    color = renodx::color::correct::GammaSafe(color, false, config.gamma_correction_custom);
   }
 
   color *= config.intermediate_scaling;
@@ -454,6 +456,8 @@ float3 InvertIntermediatePass(float3 color, Config config) {
     color = sign(color) * pow(abs(color), 2.2f / 2.8f);
   } else if (config.gamma_correction == 6.f) { // TODO: Add contant
     color = sign(color) * pow(abs(color), 2.2f / config.gamma_correction_custom);
+  } else if (config.gamma_correction == 7.f) { // TODO: Add contant
+    color = renodx::color::correct::GammaSafe(color, true, config.gamma_correction_custom);
   }
 
   return color;
