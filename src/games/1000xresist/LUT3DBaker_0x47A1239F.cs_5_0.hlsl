@@ -13,6 +13,7 @@ cbuffer cb0 : register(b0) {
   float4 cb0[10];
 }
 
+
 [numthreads(4, 4, 4)]
 void main(uint3 vThreadID: SV_DispatchThreadID) {
   float4 r0, r1, r2, r3;
