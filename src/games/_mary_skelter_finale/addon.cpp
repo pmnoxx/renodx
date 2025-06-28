@@ -20,7 +20,7 @@
 namespace {
 
 renodx::mods::shader::CustomShaders custom_shaders = {
- //  CustomShaderEntry(0x9861B876), // uber_cutscene
+   // CustomShaderEntry(0x9861B876), // uber_cutscene
 };
 
 ShaderInjectData shader_injection;
