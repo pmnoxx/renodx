@@ -65,7 +65,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Tone Mapping",
         .tooltip = "Sets the value of peak white in nits",
         .min = 48.f,
-        .max = 4000.f,
+        .max = 40000.f,
     },
     new renodx::utils::settings::Setting{
         .key = "ToneMapGameNits",

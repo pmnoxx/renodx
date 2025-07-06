@@ -20,7 +20,8 @@
 namespace {
 
 renodx::mods::shader::CustomShaders custom_shaders = {
- //   CustomShaderEntry(0xD8341E94),
+   // CustomShaderEntry(0xC2976820),
+//    CustomShaderEntry(0xD8341E94),
     // CustomSwapchainShader(0x00000000),
     // BypassShaderEntry(0x00000000)
 };
@@ -356,10 +357,35 @@ const std::unordered_map<std::string, reshade::api::format> UPGRADE_TARGETS = {
     {"R8G8B8A8_UNORM_SRGB", reshade::api::format::r8g8b8a8_unorm_srgb},
     {"B8G8R8A8_UNORM_SRGB", reshade::api::format::b8g8r8a8_unorm_srgb},
     {"R10G10B10A2_TYPELESS", reshade::api::format::r10g10b10a2_typeless},
-    {"R10G10B10A2_UNORM", reshade::api::format::r10g10b10a2_unorm},
-    {"B10G10R10A2_UNORM", reshade::api::format::b10g10r10a2_unorm},
     {"R11G11B10_FLOAT", reshade::api::format::r11g11b10_float},
     {"R16G16B16A16_TYPELESS", reshade::api::format::r16g16b16a16_typeless},
+    
+    {"R8G8B8X8_UNORM", reshade::api::format::r8g8b8x8_unorm},
+    {"R8G8B8X8_UNORM_SRGB", reshade::api::format::r8g8b8x8_unorm_srgb},
+    {"B8G8R8X8_TYPELESS", reshade::api::format::b8g8r8x8_typeless},
+    {"B8G8R8X8_UNORM", reshade::api::format::b8g8r8x8_unorm},
+    {"B8G8R8X8_UNORM_SRGB", reshade::api::format::b8g8r8x8_unorm_srgb},
+
+/*
+  //  {"R16G16B16A16_FLOAT", reshade::api::format::r16g16b16a16_float},
+    {"R16G16B16A16_UNORM", reshade::api::format::r16g16b16a16_unorm},
+    {"R16G16B16A16_SNORM", reshade::api::format::r16g16b16a16_snorm},
+    {"R32G32B32A32_FLOAT", reshade::api::format::r32g32b32a32_float},
+    {"R32G32B32A32_TYPELESS", reshade::api::format::r32g32b32a32_typeless},
+    {"R32G32B32A32_UINT", reshade::api::format::r32g32b32a32_uint},
+    {"R32G32B32A32_SINT", reshade::api::format::r32g32b32a32_sint},
+    {"R8G8B8A8_UINT", reshade::api::format::r8g8b8a8_uint},
+    {"R8G8B8A8_SINT", reshade::api::format::r8g8b8a8_sint},
+  //  {"R8G8B8X8_TYPELESS", reshade::api::format::r8g8b8x8_typeless},
+    {"R10G10B10A2_UINT", reshade::api::format::r10g10b10a2_uint},
+    {"B10G10R10A2_TYPELESS", reshade::api::format::b10g10r10a2_typeless},
+    {"R10G10B10A2_UNORM", reshade::api::format::r10g10b10a2_unorm},    
+    {"B10G10R10A2_UNORM", reshade::api::format::b10g10r10a2_unorm},
+    {"B10G10R10A2_UINT", reshade::api::format::b10g10r10a2_uint},
+    {"R16G16B16A16_UINT", reshade::api::format::r16g16b16a16_uint},
+    {"R16G16B16A16_SINT", reshade::api::format::r16g16b16a16_sint},
+    */
+
 };
 
 void OnPresetOff() {
@@ -389,26 +415,6 @@ bool initialized = false;
 extern "C" __declspec(dllexport) constexpr const char* NAME = "RenoDX";
 extern "C" __declspec(dllexport) constexpr const char* DESCRIPTION = "RenoDX (Generic)";
 
-void AddAdvancedSettings() {
-  auto* swapchain_setting = new renodx::utils::settings::Setting{
-      .key = "Upgrade_SwapChainCompatibility",
-      .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-      .default_value = 0.f,
-      .label = "Swap Chain Compatibility Mode",
-      .section = "About",
-      .tooltip = "Enhances support for third-party addons to read the swap chain.",
-      .labels = {
-          "Off",
-          "On",
-      },
-      .is_global = true,
-  };
-  reshade::get_config_value(nullptr, renodx::utils::settings::global_name.c_str(), "Upgrade_SwapChainCompatibility", swapchain_setting->value_as_int);
-  renodx::mods::swapchain::swapchain_proxy_compatibility_mode = swapchain_setting->GetValue() != 0;
-  settings.push_back(swapchain_setting);
-
-}
-
 BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   switch (fdw_reason) {
     case DLL_PROCESS_ATTACH:
@@ -423,6 +429,10 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         renodx::mods::swapchain::expected_constant_buffer_index = 13;
         renodx::mods::swapchain::expected_constant_buffer_space = 50;
         renodx::mods::swapchain::use_resource_cloning = true;
+        renodx::mods::shader::use_pipeline_layout_cloning = false;
+        renodx::mods::swapchain::swapchain_proxy_compatibility_mode = true;
+
+
 
         renodx::mods::swapchain::swap_chain_proxy_shaders = {
             {
@@ -546,7 +556,6 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
             reshade::log::message(reshade::log::level::info, s.str().c_str());
           }
         }
-        AddAdvancedSettings();
 
         initialized = true;
       }

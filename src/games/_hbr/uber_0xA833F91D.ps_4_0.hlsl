@@ -131,13 +131,35 @@ void main(
     r2.w = r1.w * r0.x + 1;
   }
 
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    float3 untonemapped = r2.xyz; // untonemapped here is still in SRGB
+    r0.xyz = saturate(untonemapped);
 
-  float3 untonemapped = r2.xyz; // Save for tonemapping later
+    float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped); // tonemap to SDR you can change this to any SDR tonemapper you want 
+  
+    if (RENODX_TONE_MAP_TYPE != 0) {
+      r0.rgb = sdrTonemapped;
+    }
+
+    r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
+    r0.xyz = renodx::lut::SampleTetrahedral(t4,r0.xyz);
+    r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
+
+    if (RENODX_TONE_MAP_TYPE != 0) {
+      float3 sdrGraded = r0.xyz;
+      o0.rgb = renodx::draw::ToneMapPass(untonemapped, sdrGraded, sdrTonemapped); // all 3 colors are in LINEAR here
+    }
+    o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
+    return;
+  }
 
   
-  r0.xyz = renodx::color::pq::EncodeSafe(r2.xyz, 100.f);
+  //r0.xyz = renodx::color::pq::EncodeSafe(r2.xyz, 100.f);
   
-  r0.xyz = renodx::lut::Sample(t4, s4_s, r0.xyz, cb0[36].xyz);
+//  r0.xyz = renodx::lut::Sample(t4, s4_s, r0.xyz, cb0[36].xyz);
+  r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
+  r0.xyz = renodx::lut::SampleTetrahedral(t4,r0.xyz);
+  r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
   
 
   r0.w = cmp(0.5 < cb0[42].x);
