@@ -119,3 +119,9 @@ cbuffer shader_injection : register(b13) {
 #endif
 
 #endif  // SRC_TEMPLATE_SHARED_H_
+
+
+
+
+#define GAME_BRIGHTNESS 203.f
+#define UI_BRIGHTNESS 160.f
