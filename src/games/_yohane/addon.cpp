@@ -347,6 +347,33 @@ renodx::utils::settings::Settings settings = {
     },
 };
 
+void AddAdvancedSettings() {
+  auto* swapchain_setting = new renodx::utils::settings::Setting{
+      .key = "Upgrade_SwapChainCompatibility",
+      .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+      .default_value = 0.f,
+      .label = "Swap Chain Compatibility Mode",
+      .section = "About",
+      .tooltip = "Enhances support for third-party addons to read the swap chain.",
+      .labels = {
+          "Off",
+          "On",
+      },
+      .is_global = true,
+      .is_visible = []() { return settings[0]->GetValue() >= 2; },
+  };
+  reshade::get_config_value(nullptr, renodx::utils::settings::global_name.c_str(), "Upgrade_SwapChainCompatibility", swapchain_setting->value_as_int);
+  renodx::mods::swapchain::swapchain_proxy_compatibility_mode = swapchain_setting->GetValue() != 0;
+  settings.push_back(swapchain_setting);
+  settings.push_back({new renodx::utils::settings::Setting{
+      .value_type = renodx::utils::settings::SettingValueType::TEXT,
+      .label = "The application must be restarted for Compatibility Mode to take effect.",
+      .section = "About",
+      .is_visible = []() { return settings[0]->GetValue() >= 2; },
+  }});
+}
+
+
 const std::unordered_map<std::string, reshade::api::format> UPGRADE_TARGETS = {
     {"R8G8B8A8_TYPELESS", reshade::api::format::r8g8b8a8_typeless},
     {"B8G8R8A8_TYPELESS", reshade::api::format::b8g8r8a8_typeless},
@@ -525,6 +552,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
             reshade::log::message(reshade::log::level::info, s.str().c_str());
           }
         }
+        AddAdvancedSettings();
 
         initialized = true;
       }

@@ -64,7 +64,7 @@ cbuffer injected_buffer : register(b13) {
 #define RENODX_TONE_MAP_PASS_AUTOCORRECTION      1.f
 #define RENODX_TONE_MAP_WORKING_COLOR_SPACE      color::convert::COLOR_SPACE_AP1
 #define RENODX_TONE_MAP_CLAMP_COLOR_SPACE        -1.f
-#define RENODX_RENO_DRT_TONE_MAP_METHOD          renodx::tonemap::renodrt::config::tone_map_method::REINHARD
+#define RENODX_RENO_DRT_TONE_MAP_METHOD          (shader_injection.tone_map_type  >= 2 ? renodx::tonemap::renodrt::config::tone_map_method::REINHARD: -1.f)
 #define RENODX_SWAP_CHAIN_CUSTOM_COLOR_SPACE     shader_injection.color_grade_color_space
 #define RENODX_SWAP_CHAIN_CLAMP_COLOR_SPACE      color::convert::COLOR_SPACE_BT2020
 #define RENODX_SWAP_CHAIN_ENCODING_COLOR_SPACE   (color::convert::COLOR_SPACE_BT2020 - shader_injection.processing_use_scrgb)  // BT709 = BT2020 - 1

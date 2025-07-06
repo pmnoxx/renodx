@@ -2,9 +2,6 @@
 
 
 // ---- Created with 3Dmigoto v1.4.1 on Thu Jun 26 22:45:03 2025
-// Based on Unity's LUT3DBaker compute shader for ACES tone mapping
-// https://github.com/Unity-Technologies/Graphics/blob/e42df452b62857a60944aed34f02efa1bda50018/com.unity.postprocessing/PostProcessing/Shaders/Builtins/Lut3DBaker.compute
-
 Texture2D<float4> t0 : register(t0);
 
 SamplerState s0_s : register(s0);
@@ -24,7 +21,6 @@ cbuffer cb0 : register(b0)
 // SECTION 0: COLOR SPACE CONVERSION UTILITIES
 // ============================================================================
 // ACES color space conversion matrices for Unity/ACEScg interoperability
-// These matrices convert between sRGB and ACES AP1 color spaces
 static const half3x3 sRGB_2_AP1 = {
     0.61319, 0.33951, 0.04737,
     0.07021, 0.91634, 0.01345,
@@ -37,14 +33,12 @@ static const half3x3 AP1_2_sRGB = {
     -0.02400, -0.12897, 1.15297,
 };
 
-// Convert from Unity's sRGB space to ACEScg (AP1) color space
 half3 unity_to_ACEScg(half3 x)
 {
     x = mul(sRGB_2_AP1, x);
     return x;
 }
 
-// Convert from ACEScg (AP1) color space to Unity's sRGB space
 half3 ACEScg_to_unity(half3 x)
 {
     x = mul(AP1_2_sRGB, x);
@@ -65,7 +59,7 @@ void main(
   // ============================================================================
   // SECTION 1: INPUT PROCESSING AND COORDINATE CALCULATION
   // ============================================================================
-  // Calculate UV coordinates with offset and scaling for LUT sampling
+  // Calculate UV coordinates with offset and scaling
   r0.yz = -cb0[30].yz + v1.xy;
   r1.x = cb0[30].x * r0.y;
   r0.x = frac(r1.x);
@@ -88,11 +82,11 @@ void main(
   // ============================================================================
   // Decode from PQ (Perceptual Quantizer) or apply alternative decoding
   if (RENODX_TONE_MAP_TYPE > 0.f && true) {
-    // Use PQ decoding for HDR content (Perceptual Quantizer)
+    // Use PQ decoding for HDR content
     r0.xyz = renodx::color::pq::Decode(r0.xzw, 100.f);
   } else {
     // Alternative decoding path for non-PQ content
-    // Apply offset and scaling for traditional HDR decoding
+    // Apply offset and scaling
     r0.xyz = r0.xzw * cb0[30].www + float3(-0.386036009,-0.386036009,-0.386036009);
     r0.xyz = float3(13.6054821,13.6054821,13.6054821) * r0.xyz;
     r0.xyz = exp2(r0.xyz);
@@ -104,7 +98,6 @@ void main(
   // SECTION 4: COLOR SPACE TRANSFORMATION (RGB TO XYZ)
   // ============================================================================
   // Convert from RGB to CIE XYZ color space using standard matrix
-  // This is the unity_to_ACES transformation matrix
   r1.x = dot(float3(0.439700991,0.382977992,0.177334994), r0.xyz);
   r1.y = dot(float3(0.0897922963,0.813422978,0.0967615992), r0.xyz);
   r1.z = dot(float3(0.0175439995,0.111543998,0.870703995), r0.xyz);
@@ -112,10 +105,9 @@ void main(
   r0.xyz = min(float3(65504,65504,65504), r0.xyz);
 
   // ============================================================================
-  // SECTION 5: ACEScc LOGARITHMIC TRANSFORMATION
+  // SECTION 5: LOGARITHMIC TRANSFORMATION
   // ============================================================================
-  // Convert from ACES to ACEScc (logarithmic) color space
-  // ACES_to_ACEScc transformation for tone mapping operations
+  // Apply logarithmic transformation for tone mapping
   r1.xyz = r0.xyz * float3(0.5,0.5,0.5) + float3(1.525878e-05,1.525878e-05,1.525878e-05);
   r1.xyz = log2(r1.xyz);
   r1.xyz = float3(9.72000027,9.72000027,9.72000027) + r1.xyz;
@@ -125,20 +117,13 @@ void main(
   r2.xyz = float3(9.72000027,9.72000027,9.72000027) + r2.xyz;
   r2.xyz = float3(0.0570776239,0.0570776239,0.0570776239) * r2.xyz;
   r0.xyz = r0.xyz ? r1.xyz : r2.xyz;
-  
-  // ============================================================================
-  // SECTION 6: LOG GRADE CONTRAST ADJUSTMENT
-  // ============================================================================
-  // Apply contrast adjustment in ACEScc space
-  // Contrast(r0.rgb, ACEScc_MIDGRAY, cb0[3].b)
   r0.xyz = float3(-0.413588405,-0.413588405,-0.413588405) + r0.xyz;
   r0.xyz = r0.xyz * cb0[34].zzz + float3(0.413588405,0.413588405,0.413588405);
 
   // ============================================================================
-  // SECTION 7: ACEScc TO ACES EXPONENTIAL TRANSFORMATION
+  // SECTION 6: EXPONENTIAL TRANSFORMATION AND CLAMPING
   // ============================================================================
-  // Convert back from ACEScc to ACES color space
-  // ACEScc_to_ACES transformation with clamping
+  // Apply exponential transformation and clamp values
   r1.xyzw = cmp(r0.xxyy < float4(-0.301369876,1.46799636,-0.301369876,1.46799636));
   r0.xyw = r0.xyz * float3(17.5200005,17.5200005,17.5200005) + float3(-9.72000027,-9.72000027,-9.72000027);
   r2.xy = cmp(r0.zz < float2(-0.301369876,1.46799636));
@@ -151,27 +136,22 @@ void main(
   r1.z = r2.x ? r0.w : r0.z;
 
   // ============================================================================
-  // SECTION 8: ACES TO ACEScg COLOR SPACE TRANSFORMATION
+  // SECTION 7: COLOR SPACE TRANSFORMATION (XYZ TO RGB)
   // ============================================================================
-  // Convert from ACES to ACEScg (AP1) color space for linear grading
+  // Convert back from XYZ to RGB color space
   r0.x = dot(float3(1.45143926,-0.236510754,-0.214928567), r1.xyz);
   r0.y = dot(float3(-0.0765537769,1.17622972,-0.0996759236), r1.xyz);
   r0.z = dot(float3(0.00831614807,-0.00603244966,0.997716308), r1.xyz);
 
-  // ============================================================================
-  // SECTION 9: LINEAR GRADE - WHITE BALANCE
-  // ============================================================================
-  // Apply white balance transformation in ACEScg space
-  // WhiteBalance(r0.rgb, cb0[1].rgb) - Convert to LMS color space
+  
   r1.x = dot(float3(0.390404999,0.549941003,0.00892631989), r0.xyz);
   r1.y = dot(float3(0.070841603,0.963172019,0.00135775004), r0.xyz);
   r1.z = dot(float3(0.0231081992,0.128021002,0.936245024), r0.xyz);
 
   // ============================================================================
-  // SECTION 10: LINEAR GRADE - COLOR FILTER AND CHANNEL MIXER
+  // SECTION 8: COLOR GRADING AND CORRECTION
   // ============================================================================
   // Apply color grading matrices and corrections
-  // ColorFilter and ChannelMixer operations
   r0.xyz = cb0[32].xyz * r1.xyz;
   r1.x = dot(float3(2.85846996,-1.62879002,-0.0248910002), r0.xyz);
   r1.y = dot(float3(-0.210181996,1.15820003,0.000324280991), r0.xyz);
@@ -183,23 +163,21 @@ void main(
   r0.xyz = r1.xyz * cb0[40].xyz + cb0[38].xyz;
 
   // ============================================================================
-  // SECTION 11: LIFT GAMMA GAIN HDR
+  // SECTION 9: TONE MAPPING AND COMPRESSION
   // ============================================================================
-  // Apply LiftGammaGainHDR for tone mapping compression and saturation adjustment
+  // Apply tone mapping compression and saturation adjustment
   r1.xyz = log2(abs(r0.xyz));
   r0.xyz = saturate(r0.xyz * float3(3.40282347e+38,3.40282347e+38,3.40282347e+38) + float3(0.5,0.5,0.5));
   r0.xyz = r0.xyz * float3(2,2,2) + float3(-1,-1,-1);
   r1.xyz = cb0[39].xyz * r1.xyz;
   r1.xyz = exp2(r1.xyz);
   r0.xyz = r1.xyz * r0.xyz;
-  // Do NOT feed negative values to RgbToHsv or they'll wrap around
   r0.xyz = max(float3(0,0,0), r0.xyz);
 
   // ============================================================================
-  // SECTION 12: RGB TO HSV COLOR SPACE CONVERSION
+  // SECTION 10: HSV COLOR SPACE CONVERSION
   // ============================================================================
   // Convert RGB to HSV for saturation adjustment
-  // RgbToHsv operation for color grading
   r0.w = cmp(r0.y >= r0.z);
   r0.w = r0.w ? 1.000000 : 0;
   r1.xy = r0.zy;
@@ -226,10 +204,9 @@ void main(
   r3.yw = float2(0.25,0.25);
 
   // ============================================================================
-  // SECTION 13: LUT SAMPLING FOR COLOR CORRECTION
+  // SECTION 11: LUT SAMPLING FOR COLOR CORRECTION
   // ============================================================================
   // Sample from 3D LUT texture for color correction
-  // Hue Vs Sat, Sat Vs Sat, Lum Vs Sat, and Hue Vs Hue LUT sampling
   r4.xyzw = t0.SampleLevel(s0_s, r3.zw, 0).xyzw;
   r5.xyzw = t0.SampleLevel(s0_s, r3.xy, 0).wxyz;
   r5.x = saturate(r5.x);
@@ -265,7 +242,7 @@ void main(
   r0.xyz = r0.xxx * r1.xyz + r0.zzz;
 
   // ============================================================================
-  // SECTION 14: ACES TONE MAPPING ALGORITHM
+  // SECTION 12: ACES TONE MAPPING ALGORITHM
   // ============================================================================
   // Apply ACES (Academy Color Encoding System) tone mapping
   // This is the core ACES implementation for HDR to SDR conversion
@@ -274,13 +251,15 @@ void main(
 
   if (RENODX_TONE_MAP_TYPE == 0.f) { // disabled unit it can be tested
     // ACES Input Transform Matrix (RGB to ACEScc)
-    // ACEScg_to_ACES transformation
+    // r1.y = dot(float3(0.695452213,0.140678704,0.163869068), r0.xyz);  // ACEScc R coefficient
+    // r1.z = dot(float3(0.0447945632,0.859671116,0.0955343172), r0.xyz); // ACEScc G coefficient  
+    // r1.w = dot(float3(-0.00552588282,0.00402521016,1.00150073), r0.xyz); // ACEScc B coefficient
     r1.y = dot(float3(0.695452213,0.140678704,0.163869068), r0.xyz);
     r1.z = dot(float3(0.0447945632,0.859671116,0.0955343172), r0.xyz);
     r1.w = dot(float3(-0.00552588282,0.00402521016,1.00150073), r0.xyz);
     
     // ACES Tone Mapping Curve Parameters
-    // Calculate chroma components for tone mapping
+    // r0.xyz = r1.wzy + -r1.zyw;  // Calculate chroma components for tone mapping
     r0.xyz = r1.wzy + -r1.zyw;
     r0.xy = r1.wz * r0.xy;        // Cross-multiply for chroma calculation
     r0.x = r0.x + r0.y;           // Sum chroma components
@@ -288,7 +267,7 @@ void main(
     r0.x = sqrt(r0.x);            // Calculate chroma magnitude
     
     // ACES Tone Mapping Curve Constants
-    // Sum of all color components
+    // r0.y = r1.w + r1.z + r1.y;  // Sum of all color components
     r0.y = r1.w + r1.z;
     r0.y = r0.y + r1.y;
     r0.x = r0.x * 1.75 + r0.y;    // ACES curve parameter: 1.75 (shoulder strength)
@@ -333,7 +312,7 @@ void main(
     r2.yzw = r1.yzw * r0.xxx;     // Scale colors by tone mapping result
     
     // ACES Output Transform Matrix (ACEScc to display RGB)
-    // Calculate intermediate values for output transform
+    // r0.y = -r1.y * r0.x + 0.0299999993;  // Output transform offset
     r0.y = -r1.y * r0.x + 0.0299999993;
     r0.w = r1.z * r0.x + -r2.w;   // Calculate intermediate values
     r0.w = 1.73205078 * r0.w;     // sqrt(3) for color space conversion
@@ -396,10 +375,9 @@ void main(
     r2.x = r0.x * 0.180000007 + r2.y; // ACES parameter: 0.18 (saturation scale)
 
     // ============================================================================
-    // SECTION 15: COLOR SPACE TRANSFORMATION BACK TO RGB
+    // SECTION 13: COLOR SPACE TRANSFORMATION BACK TO RGB
     // ============================================================================
     // Transform back from ACES color space to RGB
-    // ACES_to_SRGB transformation
     r0.x = dot(float3(1.45143926,-0.236510754,-0.214928567), r2.xzw);
     r0.y = dot(float3(-0.0765537769,1.17622972,-0.0996759236), r2.xzw);
     r0.z = dot(float3(0.00831614807,-0.00603244966,0.997716308), r2.xzw);
@@ -412,7 +390,7 @@ void main(
     // WARNING UNTESTED  pmnox
     // TODO adjust parameters if scene is encountered
     // ============================================================================
-    // SECTION 14B: RENODX ACES HDR CONFIGURATION
+    // SECTION 12B: RENODX ACES HDR CONFIGURATION
     // ============================================================================
     // Create ACES configuration for HDR upgrade using RenoDX's ApplyACES function
     
@@ -469,10 +447,9 @@ void main(
   }
   
   // ============================================================================
-  // SECTION 16: FINAL COLOR TRANSFORMATION AND GAMMA CORRECTION
+  // SECTION 14: FINAL COLOR TRANSFORMATION AND GAMMA CORRECTION
   // ============================================================================
   // Apply final color transformations and gamma correction
-  // Additional color space transformations for display output
   r1.xyz = r0.xyz * float3(278.508514,278.508514,278.508514) + float3(10.7771997,10.7771997,10.7771997);
   r1.xyz = r1.xyz * r0.xyz;
   r2.xyz = r0.xyz * float3(293.604492,293.604492,293.604492) + float3(88.7121964,88.7121964,88.7121964);
@@ -496,10 +473,9 @@ void main(
   r1.xz = r0.xz * r0.yy;
   
   // ============================================================================
-  // SECTION 17: FINAL COLOR SPACE CONVERSION TO DISPLAY RGB
+  // SECTION 15: FINAL COLOR SPACE CONVERSION TO DISPLAY RGB
   // ============================================================================
   // Convert to final display RGB color space
-  // Final color space transformations for output
   r0.x = dot(float3(1.6410234,-0.324803293,-0.236424699), r1.xyz);
   r0.y = dot(float3(-0.663662851,1.61533165,0.0167563483), r1.xyz);
   r0.z = dot(float3(0.0117218941,-0.00828444213,0.988394856), r1.xyz);
@@ -514,10 +490,9 @@ void main(
   r0.z = dot(float3(0.00307257008,-0.00509594986,1.08168006), r1.xyz);
   
   // ============================================================================
-  // SECTION 18: FINAL RGB TO sRGB CONVERSION
+  // SECTION 16: FINAL RGB TO sRGB CONVERSION
   // ============================================================================
   // Convert to sRGB color space with conditional saturation
-  // Final RGB to sRGB transformation matrix
   if (RENODX_TONE_MAP_TYPE == 0.f) {
     r1.x = saturate(dot(float3(3.2409699,-1.5373832,-0.498610765), r0.xyz));
     r1.y = saturate(dot(float3(-0.969243646,1.8759675,0.0415550582), r0.xyz));
@@ -529,10 +504,9 @@ void main(
   }
 
   // ============================================================================
-  // SECTION 19: FINAL LUT SAMPLING AND OUTPUT
+  // SECTION 17: FINAL LUT SAMPLING AND OUTPUT
   // ============================================================================
   // Apply final LUT sampling for color grading and output
-  // Final 3D LUT sampling for color correction
   if (RENODX_TONE_MAP_TYPE == 0.f) {
     r0.xyz = float3(0.00390625,0.00390625,0.00390625) + r1.xyz;
     r0.w = 0.75;
@@ -555,10 +529,9 @@ void main(
   }
   
   // ============================================================================
-  // SECTION 20: RENODX TONE MAPPING PASS
+  // SECTION 18: RENODX TONE MAPPING PASS
   // ============================================================================
   // Apply RenoDX tone mapping pass for HDR content
-  // Final tone mapping for HDR display output
   if (RENODX_TONE_MAP_TYPE > 0.f) {
     //o0.xyz = renodx::tonemap::UpgradeToneMap(untonemapped.rgb, neutral_sdr, o0.rgb, 1.f);
     // o0.xyz = renodx::draw::ToneMapPass(untonemapped.rgb, o0.xyz);
@@ -567,7 +540,7 @@ void main(
   
 
   // ============================================================================
-  // SECTION 21: FINAL OUTPUT
+  // SECTION 19: FINAL OUTPUT
   // ============================================================================
   // Set final alpha and return
   o0.w = 1;

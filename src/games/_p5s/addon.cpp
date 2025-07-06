@@ -20,8 +20,8 @@
 namespace {
 
 renodx::mods::shader::CustomShaders custom_shaders = {
-    CustomShaderEntry(0xC2976820),
-    CustomShaderEntry(0xD8341E94),
+  //  CustomShaderEntry(0xC2976820),
+   /// CustomShaderEntry(0xD8341E94),
     // CustomSwapchainShader(0x00000000),
     // BypassShaderEntry(0x00000000)
 };
@@ -558,7 +558,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   }
 
   renodx::utils::settings::Use(fdw_reason, &settings, &OnPresetOff);
-  renodx::mods::swapchain::Use(fdw_reason, &shader_injection);
+ // renodx::mods::swapchain::Use(fdw_reason, &shader_injection);
   renodx::mods::shader::Use(fdw_reason, custom_shaders, &shader_injection);
 
   return TRUE;
