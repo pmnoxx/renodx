@@ -147,7 +147,7 @@ void main(
 
     if (RENODX_TONE_MAP_TYPE != 0) {
       float3 sdrGraded = r0.xyz;
-      o0.rgb = renodx::draw::ToneMapPass(untonemapped, sdrGraded); // all 3 colors are in LINEAR here
+      r0.rgb = renodx::draw::ToneMapPass(untonemapped, sdrGraded); // all 3 colors are in LINEAR here
     }
     r0.w = cmp(0.5 < cb0[42].x);
     if (r0.w != 0) {
