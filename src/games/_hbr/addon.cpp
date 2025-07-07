@@ -20,8 +20,18 @@
 namespace {
 
 renodx::mods::shader::CustomShaders custom_shaders = {
-   // CustomShaderEntry(0xC2976820),
-//    CustomShaderEntry(0xD8341E94),
+   CustomShaderEntry(0x29B13A00), // uber2
+   CustomShaderEntry(0xA833F91D), // uber
+   CustomShaderEntry(0xC85DC52C), // uber_3d
+   CustomShaderEntry(0xFBCF41E6), // uber_park
+   CustomShaderEntry(0x97379D6B), // uber_walking_base
+   CustomShaderEntry(0x699FABE4), // uber_battle
+   CustomShaderEntry(0x0EC3291B), // 2d_popup_character
+   CustomShaderEntry(0x8E2521B8), // 2d_art2
+   CustomShaderEntry(0x35097DF4), // 2d_art_main_screen
+   CustomShaderEntry(0xA9F8ED91), // 2d_background
+   CustomShaderEntry(0x066C98CB), // 2d_battle_ready_screen
+   CustomShaderEntry(0xB4EB8715), // 2d_character
     // CustomSwapchainShader(0x00000000),
     // BypassShaderEntry(0x00000000)
 };
@@ -88,7 +98,7 @@ renodx::utils::settings::Settings settings = {
         .key = "GammaCorrection",
         .binding = &shader_injection.gamma_correction,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Gamma Correction",
         .section = "Tone Mapping",
         .tooltip = "Emulates a display EOTF.",
@@ -278,7 +288,7 @@ renodx::utils::settings::Settings settings = {
         .key = "SwapChainCustomColorSpace",
         .binding = &shader_injection.swap_chain_custom_color_space,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
+        .default_value = 1.f,
         .label = "Custom Color Space",
         .section = "Display Output",
         .tooltip = "Selects output color space"
@@ -299,7 +309,7 @@ renodx::utils::settings::Settings settings = {
         .key = "IntermediateDecoding",
         .binding = &shader_injection.intermediate_encoding,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
+        .default_value = 2.f,
         .label = "Intermediate Encoding",
         .section = "Display Output",
         .labels = {"Auto", "None", "SRGB", "2.2", "2.4"},
@@ -313,7 +323,7 @@ renodx::utils::settings::Settings settings = {
         .key = "SwapChainDecoding",
         .binding = &shader_injection.swap_chain_decoding,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
+        .default_value = 2.f,
         .label = "Swapchain Decoding",
         .section = "Display Output",
         .labels = {"Auto", "None", "SRGB", "2.2", "2.4"},
@@ -429,7 +439,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         renodx::mods::swapchain::expected_constant_buffer_index = 13;
         renodx::mods::swapchain::expected_constant_buffer_space = 50;
         renodx::mods::swapchain::use_resource_cloning = true;
-        renodx::mods::shader::use_pipeline_layout_cloning = false;
+        renodx::mods::shader::use_pipeline_layout_cloning = true;
         renodx::mods::swapchain::swapchain_proxy_compatibility_mode = true;
 
 
@@ -523,7 +533,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
           auto* setting = new renodx::utils::settings::Setting{
               .key = "Upgrade_" + key,
               .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-              .default_value = 0.f,
+              .default_value = 3.f,
               .label = key,
               .section = "Resource Upgrades",
               .labels = {
