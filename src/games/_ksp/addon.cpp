@@ -20,7 +20,7 @@
 namespace {
 
 renodx::mods::shader::CustomShaders custom_shaders = {
-    CustomShaderEntry(0x45A96F2D),
+  //  CustomShaderEntry(0x45A96F2D),
    /// CustomShaderEntry(0xD8341E94),
     // CustomSwapchainShader(0x00000000),
     // BypassShaderEntry(0x00000000)
@@ -183,6 +183,39 @@ renodx::utils::settings::Settings settings = {
         .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
         .parse = [](float value) { return value - 1.f; },
         .is_visible = []() { return current_settings_mode >= 2; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostParam",
+        .binding = &shader_injection.perceptual_boost_param,
+        .default_value = 1273.f,
+        .label = "Curve Adjustment",
+        .section = "Perceptual Boost",
+        .tooltip = "Adjusts the perceptual boost curve shape for better color reproduction",
+        .min = 1000.f,
+        .max = 1500.f,
+        .parse = [](float value) { return value * 0.001f; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostColor",
+        .binding = &shader_injection.perceptual_boost_color,
+        .default_value = 333.f,
+        .label = "Color Boost",
+        .section = "Perceptual Boost",
+        .tooltip = "Controls the intensity of color enhancement (0% to 100%)",
+        .min = 10.f,
+        .max = 1000.f,
+        .parse = [](float value) { return value * 0.001f; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostStrength",
+        .binding = &shader_injection.perceptual_boost_strength,
+        .default_value = 0.f,
+        .label = "Strength",
+        .section = "Perceptual Boost",
+        .tooltip = "Controls the overall strength of perceptual boost effect (0% to 100%)",
+        .min = 0.f,
+        .max = 1000.f,
+        .parse = [](float value) { return value * 0.001f; },
     },
     new renodx::utils::settings::Setting{
         .key = "ColorGradeExposure",
@@ -503,7 +536,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
               .key = "SwapChainEncoding",
               .binding = &shader_injection.swap_chain_encoding,
               .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-              .default_value = 4.f,
+              .default_value = 5.f,
               .label = "Encoding",
               .section = "Display Output",
               .labels = {"None", "SRGB", "2.2", "2.4", "HDR10", "scRGB"},

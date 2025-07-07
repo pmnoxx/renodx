@@ -145,30 +145,23 @@ void main(
   }
 	
 
-
   float3 hdrColor = r2.xyz;
-  float3 sdrColor =  renodx::tonemap::renodrt::NeutralSDR(hdrColor);
+  float color_y = renodx::color::y::from::BT709(hdrColor);
+  float3 neutral_sdr_color =  renodx::tonemap::renodrt::NeutralSDR(hdrColor);
 
-  r2.xyz = sdrColor;
-  //float y = renodx::color::y::from::BT709(r2.xyz) - 0.015f;
+  if (RENODX_TONE_MAP_TYPE != 0.f) {
+    r2.xyz = lerp(hdrColor, neutral_sdr_color, saturate(color_y));
+  }
 
- // r2.xyz =  r2.xyz * 0.8f + (0.01f);
 
   r0.xyz = r2.xyz * float3(5.55555582,5.55555582,5.55555582) + float3(0.0479959995,0.0479959995,0.0479959995);
   r0.xyz = log2(r0.xyz) ;
   r0.xyz = (r0.xyz * float3(0.0734997839,0.0734997839,0.0734997839) + float3(0.386036009,0.386036009,0.386036009));
 
-
-   
-
-
   r0.xyz = g_tHdrLut.SampleLevel(sampleLinear_s, r0.xyz, 0).xyz;
-  // linear result
-
 
   if (r1.y != 0) {
- //   r1.xyz = saturate(r0.xyz);
-    r1.xyz = (r0.xyz);
+    r1.xyz = saturate(r0.xyz);
     r1.xyz = log2(r1.xyz);
     r1.xyz = float3(0.454545468,0.454545468,0.454545468) * r1.xyz;
     r1.xyz = exp2(r1.xyz);
@@ -177,15 +170,9 @@ void main(
     r0.xyz = g_vCompositeInfo.yyy * r1.xyz + r0.xyz;
   }
 
-
-  // result is in linear;
-
-  //float y2 = dot(r0.xyz, float3(0.2126, 0.7152, 0.0722));
-
-	//r0.xyz *= y / max(0.0001f, y2);
-
-  r0.xyz = renodx::tonemap::UpgradeToneMap(hdrColor, sdrColor, r0.xyz, 1.f);
-// r0.xyz = renodx::tonemap::ToneMapPass(hdrColor, sdrColor, r0.xyz);
+  if (RENODX_TONE_MAP_TYPE != 0.f) {
+    r0.xyz = renodx::draw::ToneMapPass(hdrColor, r0.xyz, neutral_sdr_color);
+  }
 
   r0.w = cmp(g_vGammaCorrection.x != 1.000000);
   r1.xyz = log2(abs(r0.xyz));
@@ -193,11 +180,9 @@ void main(
   r1.xyz = exp2(r1.xyz);
   r0.xyz = r0.www ? r1.xyz : r0.xyz;
 
-  o0.xyz = g_vRadialBlurCenter.zzz * r0.xyz;
 
-  o0.xyz *= GAME_BRIGHTNESS / 80.f;
-  
- // o0.rgb = renodx::draw::RenderIntermediatePass(o0.rgb);
+  o0.xyz = g_vRadialBlurCenter.zzz * r0.xyz;
+  o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
 
   o0.w = 1;
   return;
