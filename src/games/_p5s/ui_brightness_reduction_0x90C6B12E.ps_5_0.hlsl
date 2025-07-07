@@ -204,6 +204,6 @@ void main(
   r1.yzw = SaturationScale * r2.xyz + r1.yyy;
   r0.xyz = r1.xxx ? r1.yzw : r0.xyz;
   o0.xyzw = r0.xyzw;
-  o0.xyz *= UI_BRIGHTNESS / 203.f;
+  //o0.xyz *= UI_BRIGHTNESS / 203.f;
   return;
 }
