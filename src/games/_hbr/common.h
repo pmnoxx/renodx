@@ -6,16 +6,6 @@
 
 #define INV_REINHARD 2.f
 
-float3 PumboAutoHDR(float3 SDRColor, float _PeakWhiteNits, float _PaperWhiteNits, float ShoulderPow = 2.75f) {  // ShoulderPow = 2.75f default
-  const float SDRRatio = max(renodx::color::y::from::BT709(SDRColor), 0.f);
-  // Limit AutoHDR brightness, it won't look good beyond a certain level.
-  // The paper white multiplier is applied later so we account for that.
-  const float AutoHDRMaxWhite = max(min(_PeakWhiteNits, 700) / _PaperWhiteNits, 1.f);
-  const float AutoHDRShoulderRatio = 1.f - max(1.f - SDRRatio, 0.f);
-  const float AutoHDRExtraRatio = pow(max(AutoHDRShoulderRatio, 0.f), ShoulderPow) * (AutoHDRMaxWhite - 1.f);
-  const float AutoHDRTotalRatio = SDRRatio + AutoHDRExtraRatio;
-  return SDRColor * renodx::math::SafeDivision(AutoHDRTotalRatio, SDRRatio, 1);  // Fallback on a value of 1 in case of division by 0
-}
 
 float ReinhardScalable(float color, float channel_max = 1.f, float channel_min = 0.f, float gray_in = 0.18f, float gray_out = 0.18f) {
   /*float exposure = (channel_max * (channel_min * gray_out + channel_min - gray_out));
@@ -33,23 +23,22 @@ float ReinhardScalable(float color, float channel_max = 1.f, float channel_min =
 
 // Function to apply reverse Reinhard tone mapping
 float3 ApplyReverseReinhard(float3 color, float channel_max = INV_REINHARD) {
-  color.xyz = renodx::color::srgb::DecodeSafe(color.xyz);
-  color.xyz = max(color.xyz, 0.f);
-    float y =  renodx::color::y::from::BT709(color);
-
-    if (true) {
-        float scale = ReinhardScalable(y, channel_max, 0.f, 0.18f, 0.18f);
-        color *= min(10.f, renodx::math::DivideSafe(scale, y, 10.f));
-    } else {
-
-        color = PumboAutoHDR(color, 1000.f, 203.f);
+    if (RENODX_TONE_MAP_TYPE != 0) {
+      // Use global toggle and channel_max from shader_injection
+      if (shader_injection.perceptual_boost_mode == 0.f) {
+          // OFF
+          return color;
+      } else if (shader_injection.perceptual_boost_mode == 1.f) {
+          // Reinhard
+          color.xyz = renodx::color::srgb::DecodeSafe(color.xyz);
+          float y = renodx::color::y::from::BT709(color);
+          float scale = ReinhardScalable(y, shader_injection.perceptual_boost_channel_max, 0.f, 0.18f, 0.18f);
+          color *= min(10.f, renodx::math::DivideSafe(scale, y, 10.f));
+          color.xyz = renodx::color::srgb::EncodeSafe(color.xyz);
+          return color;
+      } 
     }
-  color.xyz = min(color.xyz, 20.f);
-  color.xyz = max(color.xyz, -20.f);
-
- color.xyz = renodx::color::srgb::EncodeSafe(color.xyz);
-
-  return color;
+    return color;
 }
 
 #endif

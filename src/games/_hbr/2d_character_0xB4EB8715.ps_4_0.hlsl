@@ -33,6 +33,7 @@ void main(
 
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
     r0.xyz = ApplyReverseReinhard(r0.xyz, 2.f);
+    r0.xyz = renodx::draw::ToneMapPass(r0.xyz);
   }
 
 

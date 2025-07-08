@@ -28,6 +28,6 @@ void main(
  // o0.xyz = ApplyReverseReinhard(o0.xyz);
 
  // o0.xyz = renodx::color::srgb::EncodeSafe(o0.xyz);
-
+  
   return;
 }
