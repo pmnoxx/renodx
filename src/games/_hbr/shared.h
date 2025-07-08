@@ -70,6 +70,9 @@ struct ShaderInjectData {
   float swap_chain_clamp_color_space;
   float swap_chain_encoding;
   float swap_chain_encoding_color_space;
+  // Perceptual Boost
+  float perceptual_boost_mode; // 0 = OFF, 1 = Reinhard, 2 = PumboAutoHDR
+  float perceptual_boost_channel_max; // Used for Reinhard, user adjustable
 };
 
 #ifndef __cplusplus
