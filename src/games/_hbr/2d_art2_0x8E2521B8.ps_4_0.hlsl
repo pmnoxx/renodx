@@ -34,7 +34,10 @@ void main(
   r0.w = 0.00392156886 * r0.x;
   r1.xyzw = t0.Sample(s0_s, v2.xy).xyzw;
 
-  r1.xyz = ApplyReverseReinhard(r1.xyz, 2.f);
+  if (RENODX_TONE_MAP_TYPE >= 1.f) {
+    r1.xyz = ApplyReverseReinhard(r1.xyz, 2.f);
+    r1.xyz = renodx::draw::ToneMapPass(r1.xyz);
+  }
 
   r1.xyzw = cb0[3].xyzw + r1.xyzw;
   r2.x = r0.w * r1.w + -0.00100000005;
