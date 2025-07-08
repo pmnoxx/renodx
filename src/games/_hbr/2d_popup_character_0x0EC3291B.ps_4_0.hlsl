@@ -60,7 +60,10 @@ void main(
   r2.xyzw = t0.Sample(s0_s, r0.xy).xyzw;
 
 
-  r0.xyz = ApplyReverseReinhard(r0.xyz);
+  if (RENODX_TONE_MAP_TYPE >= 1.f) {
+    r0.xyz = ApplyReverseReinhard(r0.xyz);
+    r0.xyz = renodx::draw::ToneMapPass(r0.xyz);
+  }
 
   r0.xyzw = t0.Sample(s0_s, r0.zw).xyzw;
   r2.z = r0.z;

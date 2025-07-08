@@ -108,7 +108,7 @@ void main(
     } else {
       o0.w = r2.w;
     }
-    r0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
+    o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
     return;
   }
 

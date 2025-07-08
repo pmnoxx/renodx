@@ -31,7 +31,9 @@ void main(
   r0.xyzw = t0.Sample(s0_s, v2.xy).xyzw;
 
 
-  r0.xyz = ApplyReverseReinhard(r0.xyz, 2.f);
+  if (RENODX_TONE_MAP_TYPE >= 1.f) {
+    r0.xyz = ApplyReverseReinhard(r0.xyz, 2.f);
+  }
 
 
   r0.xyzw = cb0[3].xyzw + r0.xyzw;

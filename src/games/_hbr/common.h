@@ -18,31 +18,34 @@ float3 PumboAutoHDR(float3 SDRColor, float _PeakWhiteNits, float _PaperWhiteNits
 }
 
 float ReinhardScalable(float color, float channel_max = 1.f, float channel_min = 0.f, float gray_in = 0.18f, float gray_out = 0.18f) {
-  float exposure = (channel_max * (channel_min * gray_out + channel_min - gray_out))
-                   / (gray_in * (gray_out - channel_max));
+  /*float exposure = (channel_max * (channel_min * gray_out + channel_min - gray_out));
+                   / max(gray_in * (gray_out - channel_max));
 
   float numerator = -channel_max * (channel_min * color + channel_min - color);
   float denominator = (exposure * (channel_max - color));
-  return renodx::math::DivideSafe(numerator, denominator, renodx::math::FLT16_MAX);
+  return renodx::math::DivideSafe(numerator, denominator, renodx::math::FLT16_MAX); */
+
+  float numerator = color * (channel_max - 0.18f);
+  float denominator = max(.0001f, channel_max - color);
+  return renodx::math::DivideSafe(numerator, denominator, 10.f);
 }
 
 
 // Function to apply reverse Reinhard tone mapping
 float3 ApplyReverseReinhard(float3 color, float channel_max = INV_REINHARD) {
-
-
-
   color.xyz = renodx::color::srgb::DecodeSafe(color.xyz);
+  color.xyz = max(color.xyz, 0.f);
     float y =  renodx::color::y::from::BT709(color);
 
     if (true) {
         float scale = ReinhardScalable(y, channel_max, 0.f, 0.18f, 0.18f);
-        color *= renodx::math::DivideSafe(scale, y, renodx::math::FLT16_MAX);
+        color *= min(10.f, renodx::math::DivideSafe(scale, y, 10.f));
     } else {
 
         color = PumboAutoHDR(color, 1000.f, 203.f);
     }
-
+  color.xyz = min(color.xyz, 20.f);
+  color.xyz = max(color.xyz, -20.f);
 
  color.xyz = renodx::color::srgb::EncodeSafe(color.xyz);
 

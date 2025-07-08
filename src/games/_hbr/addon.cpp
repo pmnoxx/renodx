@@ -17,21 +17,54 @@
 #include "../../utils/settings.hpp"
 #include "./shared.h"
 
-namespace {
+bool UpgradeRTVShader(reshade::api::command_list* cmd_list) {
+  auto rtvs = renodx::utils::swapchain::GetRenderTargets(cmd_list);
+  bool changed = false;
+  for (auto rtv : rtvs) {
+    changed = renodx::mods::swapchain::ActivateCloneHotSwap(cmd_list->get_device(), rtv);
+  }
+  if (changed) {
+    renodx::mods::swapchain::FlushDescriptors(cmd_list);
+    renodx::mods::swapchain::RewriteRenderTargets(cmd_list, rtvs.size(), rtvs.data(), {0});
+  }
+  return true;
+}
 
-renodx::mods::shader::CustomShaders custom_shaders = {
-   CustomShaderEntry(0x29B13A00), // uber2
-   CustomShaderEntry(0xA833F91D), // uber
-   CustomShaderEntry(0xC85DC52C), // uber_3d
-   CustomShaderEntry(0xFBCF41E6), // uber_park
-   CustomShaderEntry(0x97379D6B), // uber_walking_base
-   CustomShaderEntry(0x699FABE4), // uber_battle
-   CustomShaderEntry(0x0EC3291B), // 2d_popup_character
-   CustomShaderEntry(0x8E2521B8), // 2d_art2
-   CustomShaderEntry(0x35097DF4), // 2d_art_main_screen
-   CustomShaderEntry(0xA9F8ED91), // 2d_background
-   CustomShaderEntry(0x066C98CB), // 2d_battle_ready_screen
-   CustomShaderEntry(0xB4EB8715), // 2d_character
+
+namespace {
+    renodx::mods::shader::CustomShaders custom_shaders = {
+        CustomShaderEntry(0x29B13A00), // uber2
+        CustomShaderEntry(0xA833F91D), // uber
+        CustomShaderEntry(0xC85DC52C), // uber_3d
+        CustomShaderEntry(0xFBCF41E6), // uber_park
+        CustomShaderEntry(0x97379D6B), // uber_walking_base
+        CustomShaderEntry(0x699FABE4), // uber_battle
+        CustomShaderEntry(0x0EC3291B), // 2d_popup_character
+        CustomShaderEntry(0x8E2521B8), // 2d_art2
+        //CustomShaderEntry(0x35097DF4), // 2d_art_main_screen
+        CustomShaderEntry(0xA9F8ED91), // 2d_background
+        CustomShaderEntry(0x066C98CB), // 2d_battle_ready_screen
+        CustomShaderEntry(0xB4EB8715), // 2d_character
+        CustomShaderEntry(0xB4EB8715), // 2d_character
+
+       /*
+        CustomShaderEntryCallback(0x35097DF4, &UpgradeRTVShader), 
+            0x35097DF4,
+            {
+                .crc32 = 0x35097DF4,
+                .on_draw = &UpgradeRTVShader,
+            },
+        },
+        CustomShaderEntryCallback(0xBC821AE4, &UpgradeRTVShader),
+        {
+            0xBC821AE4,
+            {
+                .crc32 = 0xBC821AE4,
+                .on_draw = &UpgradeRTVShader,
+            },
+        }*/
+    };
+
     // CustomSwapchainShader(0x00000000),
     // BypassShaderEntry(0x00000000)
 };
@@ -369,14 +402,14 @@ const std::unordered_map<std::string, reshade::api::format> UPGRADE_TARGETS = {
     {"R10G10B10A2_TYPELESS", reshade::api::format::r10g10b10a2_typeless},
     {"R11G11B10_FLOAT", reshade::api::format::r11g11b10_float},
     {"R16G16B16A16_TYPELESS", reshade::api::format::r16g16b16a16_typeless},
-    
+   /* 
     {"R8G8B8X8_UNORM", reshade::api::format::r8g8b8x8_unorm},
     {"R8G8B8X8_UNORM_SRGB", reshade::api::format::r8g8b8x8_unorm_srgb},
     {"B8G8R8X8_TYPELESS", reshade::api::format::b8g8r8x8_typeless},
     {"B8G8R8X8_UNORM", reshade::api::format::b8g8r8x8_unorm},
     {"B8G8R8X8_UNORM_SRGB", reshade::api::format::b8g8r8x8_unorm_srgb},
 
-/*
+
   //  {"R16G16B16A16_FLOAT", reshade::api::format::r16g16b16a16_float},
     {"R16G16B16A16_UNORM", reshade::api::format::r16g16b16a16_unorm},
     {"R16G16B16A16_SNORM", reshade::api::format::r16g16b16a16_snorm},
@@ -420,7 +453,6 @@ const auto UPGRADE_TYPE_ANY = 3.f;
 
 bool initialized = false;
 
-}  // namespace
 
 extern "C" __declspec(dllexport) constexpr const char* NAME = "RenoDX";
 extern "C" __declspec(dllexport) constexpr const char* DESCRIPTION = "RenoDX (Generic)";
@@ -442,7 +474,14 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         renodx::mods::shader::use_pipeline_layout_cloning = true;
         renodx::mods::swapchain::swapchain_proxy_compatibility_mode = true;
 
-
+        /*renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+            .old_format = reshade::api::format::r8g8b8a8_typeless,
+            .new_format = reshade::api::format::r16g16b16a16_float,
+            .ignore_size = true,
+            .use_resource_view_cloning = true,
+            .use_resource_view_hot_swap = true,
+        });
+*/
 
         renodx::mods::swapchain::swap_chain_proxy_shaders = {
             {
@@ -460,7 +499,6 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                 },
             },
         };
-
         {
           auto* setting = new renodx::utils::settings::Setting{
               .key = "SwapChainForceBorderless",
@@ -530,6 +568,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         }
 
         for (const auto& [key, format] : UPGRADE_TARGETS) {
+        
+
           auto* setting = new renodx::utils::settings::Setting{
               .key = "Upgrade_" + key,
               .value_type = renodx::utils::settings::SettingValueType::INTEGER,
@@ -555,6 +595,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                 .new_format = reshade::api::format::r16g16b16a16_unorm,
                 .ignore_size = (value == UPGRADE_TYPE_ANY),
                 .use_resource_view_cloning = true,
+           //     .use_resource_view_hot_swap = true,
                 .aspect_ratio = static_cast<float>((value == UPGRADE_TYPE_OUTPUT_RATIO)
                                                        ? renodx::mods::swapchain::SwapChainUpgradeTarget::BACK_BUFFER
                                                        : renodx::mods::swapchain::SwapChainUpgradeTarget::ANY),
