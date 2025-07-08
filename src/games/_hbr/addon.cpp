@@ -389,6 +389,31 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value - 1.f; },
         .is_visible = []() { return current_settings_mode >= 2; },
     },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostMode",
+        .binding = &shader_injection.perceptual_boost_mode,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 1.f,
+        .label = "Perceptual Boost",
+        .section = "Perceptual Boost",
+        .tooltip = "Selects the method for perceptual boost.",
+        .labels = {"OFF", "Reinhard"},
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostChannelMax",
+        .binding = &shader_injection.perceptual_boost_channel_max,
+        .default_value = 2.f,
+        .label = "Perceptual Boost Channel Max",
+        .section = "Perceptual Boost",
+        .tooltip = "Sets the channel_max parameter for Reinhard Perceptual Boost.",
+        .min = 1.f,
+        .max = 10.f,
+        .format = "%.2f",
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode == 1.f; },
+    //    .parse = [](float value) { return value * 0.01f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
 };
 
 const std::unordered_map<std::string, reshade::api::format> UPGRADE_TARGETS = {
@@ -471,10 +496,11 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         renodx::mods::swapchain::expected_constant_buffer_index = 13;
         renodx::mods::swapchain::expected_constant_buffer_space = 50;
         renodx::mods::swapchain::use_resource_cloning = true;
-        renodx::mods::shader::use_pipeline_layout_cloning = true;
         renodx::mods::swapchain::swapchain_proxy_compatibility_mode = true;
+    /*    
+        renodx::mods::shader::use_pipeline_layout_cloning = true;
 
-        /*renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+        renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
             .old_format = reshade::api::format::r8g8b8a8_typeless,
             .new_format = reshade::api::format::r16g16b16a16_float,
             .ignore_size = true,
@@ -482,7 +508,6 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
             .use_resource_view_hot_swap = true,
         });
 */
-
         renodx::mods::swapchain::swap_chain_proxy_shaders = {
             {
                 reshade::api::device_api::d3d11,
@@ -499,6 +524,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                 },
             },
         };
+
         {
           auto* setting = new renodx::utils::settings::Setting{
               .key = "SwapChainForceBorderless",
@@ -595,7 +621,6 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                 .new_format = reshade::api::format::r16g16b16a16_unorm,
                 .ignore_size = (value == UPGRADE_TYPE_ANY),
                 .use_resource_view_cloning = true,
-           //     .use_resource_view_hot_swap = true,
                 .aspect_ratio = static_cast<float>((value == UPGRADE_TYPE_OUTPUT_RATIO)
                                                        ? renodx::mods::swapchain::SwapChainUpgradeTarget::BACK_BUFFER
                                                        : renodx::mods::swapchain::SwapChainUpgradeTarget::ANY),
