@@ -73,7 +73,7 @@ void main(
 
     if (RENODX_TONE_MAP_TYPE != 0) {
       float3 sdrGraded = r0.xyz;
-      o0.rgb = renodx::draw::ToneMapPass(untonemapped, sdrGraded); // all 3 colors are in LINEAR here
+      r0.rgb = renodx::draw::ToneMapPass(untonemapped, sdrGraded); // all 3 colors are in LINEAR here
     }
     if (r0.w != 0) {
       r1.xyz = saturate(r0.xyz);
