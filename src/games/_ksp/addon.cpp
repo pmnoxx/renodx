@@ -195,7 +195,7 @@ renodx::utils::settings::Settings settings = {
         .labels = {"None", "XY->PQ", "ICTCP"},
     },
     new renodx::utils::settings::Setting{
-        .key = "PerceptualBoostParam",
+        .key = "PerceptualBoostParam2",
         .binding = &shader_injection.perceptual_boost_param,
         .default_value = 268.f,
         .label = "Curve Adjustment",
@@ -207,7 +207,7 @@ renodx::utils::settings::Settings settings = {
         .is_visible = []() { return shader_injection.perceptual_boost_method >= 1; },
     },
     new renodx::utils::settings::Setting{
-        .key = "PerceptualBoostColor",
+        .key = "PerceptualBoostColor2",
         .binding = &shader_injection.perceptual_boost_color,
         .default_value = 33.f,
         .label = "Color Boost",
@@ -219,9 +219,9 @@ renodx::utils::settings::Settings settings = {
         .is_visible = []() { return shader_injection.perceptual_boost_method >= 1; },
     },
     new renodx::utils::settings::Setting{
-        .key = "PerceptualBoostStrength",
+        .key = "PerceptualBoostStrength2",
         .binding = &shader_injection.perceptual_boost_strength,
-        .default_value = 20.f,
+        .default_value = 100.f,
         .label = "Strength",
         .section = "Perceptual Boost",
         .tooltip = "Controls the overall strength of perceptual boost effect (0% to 100%)",
@@ -253,7 +253,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ColorGradeShadows",
         .binding = &shader_injection.tone_map_shadows,
-        .default_value = 50.f,
+        .default_value = 77.f,
         .label = "Shadows",
         .section = "Color Grading",
         .max = 100.f,
@@ -359,11 +359,11 @@ renodx::utils::settings::Settings settings = {
         .key = "PixelShaderDecodeMode",
         .binding = &shader_injection.pixel_shader_decode_mode,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f, // Default: Gamma 2.2
+        .default_value = 1.f, // Default: Gamma 2.2
         .label = "Pixel Shader Decode",
         .section = "Display Output",
-        .tooltip = "Decodes input for the pixel shader. Gamma 2.2 is typical for sRGB content.",
-        .labels = {"Off", "Gamma 2.2"},
+        .tooltip = "Decodes input for the pixel shader.\nGamma 2.2 is typical for sRGB content.\n'sRGB' uses the standard sRGB transfer function.",
+        .labels = {"Off", "Gamma 2.2", "sRGB"},
         .is_visible = []() { return current_settings_mode >= 1; },
     },
     new renodx::utils::settings::Setting{

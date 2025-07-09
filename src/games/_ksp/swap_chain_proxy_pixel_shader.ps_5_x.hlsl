@@ -6,11 +6,13 @@ float4 main(float4 vpos: SV_POSITION, float2 uv: TEXCOORD0)
     : SV_TARGET {
 
   float4 linearColor = t0.Sample(s0, uv);
-#if defined(RENODX_PIXEL_SHADER_DECODE_MODE)
-  if (RENODX_PIXEL_SHADER_DECODE_MODE == 1.f) {
-    linearColor.xyz = pow(linearColor.xyz, 2.2f);
+  if (RENODX_TONE_MAP_TYPE > 0.f) {
+    if (RENODX_PIXEL_SHADER_DECODE_MODE == 1.f) {
+      linearColor.xyz = pow(linearColor.xyz, 2.2f);
+    } else if (RENODX_PIXEL_SHADER_DECODE_MODE == 2.f) {
+      linearColor.xyz = renodx::color::srgb::DecodeSafe(linearColor.xyz);
+    }
   }
-#endif
 
   linearColor.xyz = renodx_ksp_apply_tonemap_and_boost(linearColor.xyz);
   
