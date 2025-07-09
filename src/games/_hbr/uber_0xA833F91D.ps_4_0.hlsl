@@ -149,7 +149,7 @@ void main(
       float3 sdrGraded = r0.xyz;
       float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
       color = ApplyReverseReinhard(color, SCENE_TYPE_3D);
-      r0.rgb = renodx::draw::ToneMapPass(color); // all 3 colors are in LINEAR here
+      r0.rgb = ToneMapPassWrapper(color); // all 3 colors are in LINEAR here
     }
     r0.w = cmp(0.5 < cb0[42].x);
     if (r0.w != 0) {
