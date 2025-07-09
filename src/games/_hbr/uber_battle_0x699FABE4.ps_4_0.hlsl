@@ -140,7 +140,7 @@ void main(
   
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
    r1.yzw = ApplyReverseReinhard(r1.yzw, SCENE_TYPE_3D);
-   r1.yzw = renodx::draw::ToneMapPass(r1.yzw);
+         r1.yzw = ToneMapPassWrapper(r1.yzw);
   }
 
   o0.xyz = renodx::draw::RenderIntermediatePass(r1.yzw);

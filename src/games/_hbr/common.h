@@ -89,16 +89,24 @@ float3 ApplyReverseReinhard(float3 color, float scene_type = SCENE_TYPE_UNKNOWN)
         return color;
     } else if (shader_injection.perceptual_boost_mode == 3.f) {
         // ICTCP-based inverse tonemapping
-        float3 ictcp = renodx::color::ictcp::from::BT709(color.xyz * (10000.f / 10000.f));
-        ictcp.x *= (1.f + shader_injection.perceptual_boost_ictcp_param);
-        ictcp.yz *= (1.f + shader_injection.perceptual_boost_ictcp_color);
-        float3 new_color = renodx::color::bt709::from::ICtCp(ictcp);
+        float3 new_color;
+        {
+            float3 ictcp = renodx::color::ictcp::from::BT709(color.xyz * (10000.f / 10000.f));
+            ictcp.x *= 1.f + shader_injection.perceptual_boost_ictcp_param;
+            ictcp.yz *= lerp(1.f, 1.f + shader_injection.perceptual_boost_ictcp_param, shader_injection.perceptual_boost_ictcp_color);
+            new_color = renodx::color::bt709::from::ICtCp(ictcp);
 
-        float3 ictcp_grey = renodx::color::ictcp::from::BT709(0.18f * (10000.f / 10000.f));
-        ictcp_grey.x *= (1.f + shader_injection.perceptual_boost_ictcp_param);
-        ictcp_grey.yz *= (1.f + shader_injection.perceptual_boost_ictcp_color);
-        float3 new_grey = renodx::color::bt709::from::ICtCp(ictcp_grey);
-        color.xyz = lerp(color.xyz, new_color * (0.18f / new_grey), shader_injection.perceptual_boost_ictcp_strength * boost_strength);
+            float3 ictcp_grey = renodx::color::ictcp::from::BT709(0.18f * (10000.f / 10000.f));
+            ictcp_grey.x *= 1.f + shader_injection.perceptual_boost_ictcp_param;
+            ictcp_grey.yz *= lerp(1.f, 1.f + shader_injection.perceptual_boost_ictcp_param, shader_injection.perceptual_boost_ictcp_color);
+            float3 new_grey = renodx::color::bt709::from::ICtCp(ictcp_grey);
+            new_color *= (0.18f / new_grey);
+
+
+        }
+
+
+        color.xyz = lerp(color.xyz, new_color, shader_injection.perceptual_boost_ictcp_strength * boost_strength);
 
 
         return color;
@@ -115,5 +123,30 @@ float3 ApplyPerceptualBoostAndToneMap(float3 color, float scene_type = SCENE_TYP
     color = renodx::draw::ToneMapPass(color);
     color.xyz = renodx::color::srgb::EncodeSafe(color.xyz);
     return color;
+}
+
+// Wrapper for ToneMapPass calls - disabled by default
+float3 ToneMapPassWrapper(float3 color) {
+    #ifdef ENABLE_TONE_MAP_PASS
+        return renodx::draw::ToneMapPass(color);
+    #else
+        return color;
+    #endif
+}
+
+float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color) {
+    #ifdef ENABLE_TONE_MAP_PASS
+        return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color);
+    #else
+        return graded_sdr_color;
+    #endif
+}
+
+float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
+    #ifdef ENABLE_TONE_MAP_PASS
+        return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color, neutral_sdr_color);
+    #else
+        return graded_sdr_color;
+    #endif
 }
 #endif
