@@ -75,7 +75,7 @@ struct ShaderInjectData {
   float perceptual_boost_param;
   float perceptual_boost_color;
   float perceptual_boost_strength;
-  float pixel_shader_decode_mode; // 0 = Off, 1 = Gamma 2.2
+  float pixel_shader_decode_mode; // 0 = Off, 1 = Gamma 2.2, 2 = sRGB
 };
 
 #ifndef __cplusplus
