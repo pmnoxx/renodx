@@ -221,7 +221,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "PerceptualBoostStrength2",
         .binding = &shader_injection.perceptual_boost_strength,
-        .default_value = 100.f,
+        .default_value = 50.f,
         .label = "Strength",
         .section = "Perceptual Boost",
         .tooltip = "Controls the overall strength of perceptual boost effect (0% to 100%)",
@@ -253,7 +253,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ColorGradeShadows",
         .binding = &shader_injection.tone_map_shadows,
-        .default_value = 77.f,
+        .default_value = 10.f,
         .label = "Shadows",
         .section = "Color Grading",
         .max = 100.f,
@@ -272,7 +272,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ColorGradeSaturation",
         .binding = &shader_injection.tone_map_saturation,
-        .default_value = 50.f,
+        .default_value = 75.f,
         .label = "Saturation",
         .section = "Color Grading",
         .max = 100.f,
@@ -281,7 +281,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ColorGradeHighlightSaturation",
         .binding = &shader_injection.tone_map_highlight_saturation,
-        .default_value = 50.f,
+        .default_value = 75.f,
         .label = "Highlight Saturation",
         .section = "Color Grading",
         .tooltip = "Adds or removes highlight color.",
@@ -293,7 +293,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ColorGradeBlowout",
         .binding = &shader_injection.tone_map_blowout,
-        .default_value = 0.f,
+        .default_value = 50.f,
         .label = "Blowout",
         .section = "Color Grading",
         .tooltip = "Controls highlight desaturation due to overexposure.",
@@ -359,7 +359,7 @@ renodx::utils::settings::Settings settings = {
         .key = "PixelShaderDecodeMode",
         .binding = &shader_injection.pixel_shader_decode_mode,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f, // Default: Gamma 2.2
+        .default_value = 0.f, // Default: Gamma 2.2
         .label = "Pixel Shader Decode",
         .section = "Display Output",
         .tooltip = "Decodes input for the pixel shader.\nGamma 2.2 is typical for sRGB content.\n'sRGB' uses the standard sRGB transfer function.",
@@ -416,6 +416,29 @@ renodx::utils::settings::Settings settings = {
         .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
         .parse = [](float value) { return value - 1.f; },
         .is_visible = []() { return current_settings_mode >= 2; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "EffectSplitX",
+        .binding = &shader_injection.effect_split_x,
+        .default_value = 1.f, // Default to half of 1920 width, adjust as needed
+        .label = "Effect Split X",
+        .section = "Display Output",
+        .tooltip = "Only apply effects to the left of this screen X coordinate.",
+        .min = 0.f,
+        .max = 1.f, // Or your max screen width
+        .format = "%.3f",
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "EffectSplitMode",
+        .binding = &shader_injection.effect_split_mode,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Split Mode",
+        .section = "Display Output",
+        .tooltip = "Choose the split mode for effect application.",
+        .labels = {"Off", "Left/Right", "Top/Bottom", "Diagonal \\", "Diagonal /"},
+        .is_visible = []() { return current_settings_mode >= 1; },
     },
 };
 
