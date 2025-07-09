@@ -146,10 +146,10 @@ void main(
 	
 
   float3 hdrColor = r2.xyz;
-  float color_y = renodx::color::y::from::BT709(hdrColor);
   float3 neutral_sdr_color =  renodx::tonemap::renodrt::NeutralSDR(hdrColor);
 
   if (RENODX_TONE_MAP_TYPE != 0.f) {
+    float color_y = renodx::color::y::from::BT709(hdrColor);
     r2.xyz = lerp(hdrColor, neutral_sdr_color, saturate(color_y));
   }
 
