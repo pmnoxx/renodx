@@ -293,7 +293,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ColorGradeBlowout",
         .binding = &shader_injection.tone_map_blowout,
-        .default_value = 50.f,
+        .default_value = 75.f,
         .label = "Blowout",
         .section = "Color Grading",
         .tooltip = "Controls highlight desaturation due to overexposure.",
@@ -418,18 +418,6 @@ renodx::utils::settings::Settings settings = {
         .is_visible = []() { return current_settings_mode >= 2; },
     },
     new renodx::utils::settings::Setting{
-        .key = "EffectSplitX",
-        .binding = &shader_injection.effect_split_x,
-        .default_value = 1.f, // Default to half of 1920 width, adjust as needed
-        .label = "Effect Split X",
-        .section = "Display Output",
-        .tooltip = "Only apply effects to the left of this screen X coordinate.",
-        .min = 0.f,
-        .max = 1.f, // Or your max screen width
-        .format = "%.3f",
-        .is_visible = []() { return current_settings_mode >= 1; },
-    },
-    new renodx::utils::settings::Setting{
         .key = "EffectSplitMode",
         .binding = &shader_injection.effect_split_mode,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
@@ -437,8 +425,32 @@ renodx::utils::settings::Settings settings = {
         .label = "Split Mode",
         .section = "Display Output",
         .tooltip = "Choose the split mode for effect application.",
-        .labels = {"Off", "Left/Right", "Top/Bottom", "Diagonal \\", "Diagonal /"},
+        .labels = {"Off", "On"},
         .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "EffectSplitX",
+        .binding = &shader_injection.effect_split_x,
+        .default_value = 1.f, // Default to half of 1920 width, adjust as needed
+        .label = "Effect Split X",
+        .section = "Display Output",
+        .tooltip = "Only apply effects to the left of this screen X coordinate.",
+        .min = -1.f,
+        .max = 1.f, // Or your max screen width
+        .format = "%.3f",
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "EffectSplitAngle",
+        .binding = &shader_injection.effect_split_angle,
+        .default_value = 0.f,
+        .label = "Split Angle",
+        .section = "Display Output",
+        .tooltip = "Angle (in degrees) for the split line (0 = vertical, 90 = horizontal, etc.)",
+        .min = 0.f,
+        .max = 360.f,
+        .format = "%.1f",
+        .is_visible = []() { return shader_injection.effect_split_mode != 0; },
     },
 };
 

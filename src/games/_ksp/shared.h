@@ -79,6 +79,7 @@ struct ShaderInjectData {
 
   float effect_split_x ;
   float effect_split_mode ;
+  float effect_split_angle;
 };
 
 #ifndef __cplusplus
