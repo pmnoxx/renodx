@@ -1,4 +1,4 @@
-#include "./shared.h"
+#include "./common.h"
 
 // ---- Created with 3Dmigoto v1.4.1 on Tue Jul  1 15:03:31 2025
 // Decompiled Unity Uber Shader fragment (pixel) shader
@@ -135,8 +135,8 @@ void main(
     float3 untonemapped = r2.xyz; // untonemapped here is still in SRGB
     r0.xyz = saturate(untonemapped);
 
+    float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped); // tonemap to SDR you can change this to any SDR tonemapper you want 
     if (RENODX_TONE_MAP_TYPE != 0) {
-      float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped); // tonemap to SDR you can change this to any SDR tonemapper you want 
       float y = renodx::color::y::from::BT709(untonemapped);
       r0.xyz = lerp(untonemapped, sdrTonemapped, saturate(y));
     }
@@ -147,7 +147,9 @@ void main(
 
     if (RENODX_TONE_MAP_TYPE != 0) {
       float3 sdrGraded = r0.xyz;
-      r0.rgb = renodx::draw::ToneMapPass(untonemapped, sdrGraded); // all 3 colors are in LINEAR here
+      float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
+      color = ApplyReverseReinhard(color, SCENE_TYPE_3D);
+      r0.rgb = renodx::draw::ToneMapPass(color); // all 3 colors are in LINEAR here
     }
     r0.w = cmp(0.5 < cb0[42].x);
     if (r0.w != 0) {

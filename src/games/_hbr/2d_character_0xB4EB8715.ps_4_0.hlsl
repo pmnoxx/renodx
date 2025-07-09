@@ -11,7 +11,6 @@ cbuffer cb0 : register(b0)
 }
 
 
-#include "./common.h"
 
 // 3Dmigoto declarations
 #define cmp -
@@ -32,8 +31,7 @@ void main(
 
 
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
-    r0.xyz = ApplyReverseReinhard(r0.xyz, 2.f);
-    r0.xyz = renodx::draw::ToneMapPass(r0.xyz);
+    r0.xyz = ApplyPerceptualBoostAndToneMap(r0.xyz, SCENE_TYPE_2D_CHARACTER);
   }
 
 

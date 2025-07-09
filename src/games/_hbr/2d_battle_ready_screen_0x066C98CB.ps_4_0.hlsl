@@ -27,8 +27,7 @@ void main(
   r1.xyzw = t0.Sample(s0_s, v2.xy).xyzw;
 
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
-    r1.xyz = ApplyReverseReinhard(r1.xyz);
-    r1.xyz = renodx::draw::ToneMapPass(r1.xyz);
+    r1.xyz = ApplyPerceptualBoostAndToneMap(r1.xyz, SCENE_TYPE_2D_BACKGROND);
   }
 
   r1.xyzw = cb0[3].xyzw + r1.xyzw;

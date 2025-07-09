@@ -1,4 +1,4 @@
-#include "./shared.h"
+#include "./common.h"
 
 // ---- Created with 3Dmigoto v1.4.1 on Wed Jul  2 13:58:13 2025
 Texture2D<float4> t4 : register(t4);
@@ -139,6 +139,7 @@ void main(
   }
   
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
+   r1.yzw = ApplyReverseReinhard(r1.yzw, SCENE_TYPE_3D);
    r1.yzw = renodx::draw::ToneMapPass(r1.yzw);
   }
 
