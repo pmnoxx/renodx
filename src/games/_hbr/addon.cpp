@@ -41,10 +41,11 @@ namespace {
         CustomShaderEntry(0x699FABE4), // uber_battle
         CustomShaderEntry(0x0EC3291B), // 2d_popup_character
         CustomShaderEntry(0x8E2521B8), // 2d_art2
-        //CustomShaderEntry(0x35097DF4), // 2d_art_main_screen
+        CustomShaderEntry(0x35097DF4), // blit_copy
+        CustomShaderEntry(0xBC821AE4), // sprints_normal_last_msaa
+        CustomShaderEntry(0x20133A8B), // final
         CustomShaderEntry(0xA9F8ED91), // 2d_background
         CustomShaderEntry(0x066C98CB), // 2d_battle_ready_screen
-        CustomShaderEntry(0xB4EB8715), // 2d_character
         CustomShaderEntry(0xB4EB8715), // 2d_character
 
        /*

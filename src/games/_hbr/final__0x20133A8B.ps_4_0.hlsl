@@ -1,3 +1,5 @@
+#include "./common.h"
+
 // ---- Created with 3Dmigoto v1.4.1 on Mon Jul  7 17:53:31 2025
 
 SamplerState BlitSampler_s : register(s0);
@@ -15,5 +17,12 @@ void main(
 {
   o0.xyzw = BlitTexture.Sample(BlitSampler_s, v0.xy).xyzw;
   //o0.xyz = (3.f, 3.f, 3.f);
+
+  o0.xyz *= 1.0f / (RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS);
+
+  o0.xyz = renodx::draw::ToneMapPass(o0.xyz); // game applies post effects to UI, which exceed peak nits.
+  
+  o0.xyz *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
+
   return;
 }

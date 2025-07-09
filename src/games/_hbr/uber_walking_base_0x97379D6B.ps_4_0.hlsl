@@ -118,7 +118,7 @@ void main(
       float3 sdrGraded = r0.xyz;
       float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
       color = ApplyReverseReinhard(color, SCENE_TYPE_3D);
-      r0.rgb = renodx::draw::ToneMapPass(color); // all 3 colors are in LINEAR here
+      r0.rgb = ToneMapPassWrapper(color); // all 3 colors are in LINEAR here
     }
     o0.w = dot(r1.xyz, float3(0.212672904,0.715152204,0.0721750036));
     
