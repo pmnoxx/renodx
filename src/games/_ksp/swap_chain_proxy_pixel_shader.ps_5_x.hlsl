@@ -7,19 +7,19 @@ float4 main(float4 vpos: SV_POSITION, float2 uv: TEXCOORD0)
 
   float4 linearColor = t0.Sample(s0, uv);
 
+  // Convert angle to radians
+  float angle_rad = radians(shader_injection.effect_split_angle);
+
+  // Compute the split line normal
+  float2 normal = float2(cos(angle_rad), sin(angle_rad));
+
+  // Vector from center to current pixel
+  float2 from_center = float2(uv.x - 0.5, uv.y - 0.5);
+
+  // Side of the line: dot > 0 is one side, < 0 is the other
   bool applyEffect = true;
-  if (shader_injection.effect_split_mode == 1) {
-    // Left/Right
-    applyEffect = (uv.x < shader_injection.effect_split_x);
-  } else if (shader_injection.effect_split_mode == 2) {
-    // Top/Bottom
-    applyEffect = (uv.y < shader_injection.effect_split_x);
-  } else if (shader_injection.effect_split_mode == 3) {
-    // Diagonal \
-    applyEffect = (uv.y < uv.x - (shader_injection.effect_split_x - 0.5f) * 2.0f);
-  } else if (shader_injection.effect_split_mode == 4) {
-    // Diagonal /
-    applyEffect = (uv.y < (shader_injection.effect_split_x * 2.0f - uv.x));
+  if (shader_injection.effect_split_mode != 0) {
+      applyEffect = dot(from_center, normal) < shader_injection.effect_split_x;
   }
 
   if (applyEffect) {
