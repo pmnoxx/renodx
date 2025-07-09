@@ -71,8 +71,22 @@ struct ShaderInjectData {
   float swap_chain_encoding;
   float swap_chain_encoding_color_space;
   // Perceptual Boost
-  float perceptual_boost_mode; // 0 = OFF, 1 = Reinhard, 2 = PumboAutoHDR
+  float perceptual_boost_mode; // 0 = OFF, 1 = Reinhard, 2 = XY->PQ, 3 = ICTCP
   float perceptual_boost_channel_max; // Used for Reinhard, user adjustable
+  // Reinhard mode parameters
+  float perceptual_boost_reinhard_strength; // Used for Reinhard method
+  // XY->PQ mode parameters
+  float perceptual_boost_xypq_param; // Used for XY->PQ method
+  float perceptual_boost_xypq_color; // Used for XY->PQ method
+  float perceptual_boost_xypq_strength; // Used for XY->PQ method
+  // ICTCP mode parameters
+  float perceptual_boost_ictcp_param; // Used for ICTCP method
+  float perceptual_boost_ictcp_color; // Used for ICTCP method
+  float perceptual_boost_ictcp_strength; // Used for ICTCP method
+  // Scene Type Perceptual Boost Strength
+  float perceptual_boost_2d_character; // Perceptual boost strength for 2D character scenes (0.0-10.0)
+  float perceptual_boost_2d_background; // Perceptual boost strength for 2D background scenes (0.0-10.0)
+  float perceptual_boost_3d; // Perceptual boost strength for 3D scenes (0.0-10.0)
 };
 
 #ifndef __cplusplus
@@ -116,6 +130,19 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_SWAP_CHAIN_ENCODING             shader_injection.swap_chain_encoding
 #define RENODX_SWAP_CHAIN_ENCODING_COLOR_SPACE shader_injection.swap_chain_encoding_color_space
 #define RENODX_RENO_DRT_TONE_MAP_METHOD        renodx::tonemap::renodrt::config::tone_map_method::REINHARD
+// Reinhard mode parameters
+#define RENODX_PERCEPTUAL_BOOST_REINHARD_STRENGTH shader_injection.perceptual_boost_reinhard_strength
+// XY->PQ mode parameters
+#define RENODX_PERCEPTUAL_BOOST_XYPQ_PARAM     shader_injection.perceptual_boost_xypq_param
+#define RENODX_PERCEPTUAL_BOOST_XYPQ_COLOR     shader_injection.perceptual_boost_xypq_color
+#define RENODX_PERCEPTUAL_BOOST_XYPQ_STRENGTH  shader_injection.perceptual_boost_xypq_strength
+// ICTCP mode parameters
+#define RENODX_PERCEPTUAL_BOOST_ICTCP_PARAM    shader_injection.perceptual_boost_ictcp_param
+#define RENODX_PERCEPTUAL_BOOST_ICTCP_COLOR    shader_injection.perceptual_boost_ictcp_color
+#define RENODX_PERCEPTUAL_BOOST_ICTCP_STRENGTH shader_injection.perceptual_boost_ictcp_strength
+#define RENODX_PERCEPTUAL_BOOST_2D_CHARACTER   shader_injection.perceptual_boost_2d_character
+#define RENODX_PERCEPTUAL_BOOST_2D_BACKGROUND  shader_injection.perceptual_boost_2d_background
+#define RENODX_PERCEPTUAL_BOOST_3D             shader_injection.perceptual_boost_3d
 
 #include "../../shaders/renodx.hlsl"
 
