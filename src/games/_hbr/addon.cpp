@@ -26,6 +26,9 @@ renodx::mods::shader::CustomShaders custom_shaders = {
         CustomShaderEntry(0xFBCF41E6), // uber_park
         CustomShaderEntry(0x97379D6B), // uber_walking_base
         CustomShaderEntry(0x699FABE4), // uber_battle
+        CustomShaderEntry(0xC39AD9C3), // uber_battle2
+        CustomShaderEntry(0xE5E4F46C), // uber_beach
+        CustomShaderEntry(0x99F14892), // uber_beach3
         CustomShaderEntry(0x0EC3291B), // 2d_popup_character
         CustomShaderEntry(0x8E2521B8), // 2d_art2
         CustomShaderEntry(0x35097DF4), // blit_copy
