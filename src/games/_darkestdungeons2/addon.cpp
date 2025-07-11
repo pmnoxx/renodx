@@ -14,19 +14,35 @@
 
 #include "../../mods/shader.hpp"
 #include "../../mods/swapchain.hpp"
+#include "../../utils/random.hpp"
 #include "../../utils/settings.hpp"
 #include "./shared.h"
 
+
+bool UpgradeRTVShader(reshade::api::command_list* cmd_list) {
+  auto rtvs = renodx::utils::swapchain::GetRenderTargets(cmd_list);
+  bool changed = false;
+  for (auto rtv : rtvs) {
+    changed = renodx::mods::swapchain::ActivateCloneHotSwap(cmd_list->get_device(), rtv);
+  }
+  if (changed) {
+    renodx::mods::swapchain::FlushDescriptors(cmd_list);
+    renodx::mods::swapchain::RewriteRenderTargets(cmd_list, rtvs.size(), rtvs.data(), {0});
+  }
+  return true;
+}
+
+
 namespace {
-
-renodx::mods::shader::CustomShaders custom_shaders = {
-    CustomShaderEntry(0xC2976820),
-    CustomShaderEntry(0xD8341E94),
-    // CustomSwapchainShader(0x00000000),
-    // BypassShaderEntry(0x00000000)
+    renodx::mods::shader::CustomShaders custom_shaders = {
+        
+        // HLSL file-based shaders
+        CustomShaderEntry(0xC2976820), // uber_main_screen
+        CustomShaderEntry(0xD8341E94), // lut
+        CustomShaderEntry(0xD00B5B47), // final_post
+        CustomShaderEntry(0x20D6EA4D), // lut_builder
+    };
 };
-
-
 
 ShaderInjectData shader_injection;
 
@@ -90,7 +106,7 @@ renodx::utils::settings::Settings settings = {
         .key = "GammaCorrection",
         .binding = &shader_injection.gamma_correction,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Gamma Correction",
         .section = "Tone Mapping",
         .tooltip = "Emulates a display EOTF.",
@@ -301,7 +317,7 @@ renodx::utils::settings::Settings settings = {
         .key = "IntermediateDecoding",
         .binding = &shader_injection.intermediate_encoding,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
+        .default_value = 1.f,
         .label = "Intermediate Encoding",
         .section = "Display Output",
         .labels = {"Auto", "None", "SRGB", "2.2", "2.4"},
@@ -315,7 +331,7 @@ renodx::utils::settings::Settings settings = {
         .key = "SwapChainDecoding",
         .binding = &shader_injection.swap_chain_decoding,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
+        .default_value = 1.f,
         .label = "Swapchain Decoding",
         .section = "Display Output",
         .labels = {"Auto", "None", "SRGB", "2.2", "2.4"},
@@ -348,40 +364,207 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value - 1.f; },
         .is_visible = []() { return current_settings_mode >= 2; },
     },
+   
+    new renodx::utils::settings::Setting{
+        .key = "RemoveBanding",
+        .binding = &shader_injection.remove_banding,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 1.f,
+        .label = "Remove Banding",
+        .section = "Quality",
+        .tooltip = "Enables 8x sampling to eliminate banding artifacts in skybox and other textures",
+        .labels = {"Off", "On"},
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
 };
 
-void AddAdvancedSettings() {
-  auto* swapchain_setting = new renodx::utils::settings::Setting{
-      .key = "Upgrade_SwapChainCompatibility",
-      .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-      .default_value = 0.f,
-      .label = "Swap Chain Compatibility Mode",
-      .section = "About",
-      .tooltip = "Enhances support for third-party addons to read the swap chain.",
-      .labels = {
-          "Off",
-          "On",
-      },
-      .is_global = true,
-  };
-  reshade::get_config_value(nullptr, renodx::utils::settings::global_name.c_str(), "Upgrade_SwapChainCompatibility", swapchain_setting->value_as_int);
-  renodx::mods::swapchain::swapchain_proxy_compatibility_mode = swapchain_setting->GetValue() != 0;
-  settings.push_back(swapchain_setting);
+void AdvancedSettings() {
+    auto new_settings ={new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostMode",
+        .binding = &shader_injection.perceptual_boost_mode,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Perceptual Boost",
+        .section = "Perceptual Boost",
+        .tooltip = "Selects the method for perceptual boost.",
+        .labels = {"OFF", "Reinhard", "XY->PQ", "ICTCP"},
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostChannelMax",
+        .binding = &shader_injection.perceptual_boost_channel_max,
+        .default_value = 2.f,
+        .label = "Perceptual Boost Channel Max",
+        .section = "Perceptual Boost",
+        .tooltip = "Sets the channel_max parameter for Reinhard Perceptual Boost.",
+        .min = 1.f,
+        .max = 10.f,
+        .format = "%.2f",
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode == 1.f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    // Reinhard mode settings
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostReinhardStrength",
+        .binding = &shader_injection.perceptual_boost_reinhard_strength,
+        .default_value = 100.f,
+        .label = "Reinhard Strength",
+        .section = "Perceptual Boost",
+        .tooltip = "Controls the overall strength of Reinhard perceptual boost effect (0% to 100%)",
+        .min = 0.f,
+        .max = 100.f,
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode == 1.f; },
+        .parse = [](float value) { return value * 0.01f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    // XY->PQ mode settings
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostXYPQParam",
+        .binding = &shader_injection.perceptual_boost_xypq_param,
+        .default_value = 0.268f,
+        .label = "XY->PQ Curve Adjustment",
+        .section = "Perceptual Boost",
+        .tooltip = "Adjusts the XY->PQ perceptual boost curve shape for better color reproduction",
+        .min = 0.f,
+        .max = 1.f,
+        .format = "%.3f",
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode == 2.f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostXYPQColor",
+        .binding = &shader_injection.perceptual_boost_xypq_color,
+        .default_value = 20.f,
+        .label = "XY->PQ Color Boost",
+        .section = "Perceptual Boost",
+        .tooltip = "Controls the intensity of XY->PQ color enhancement (0% to 100%)",
+        .min = 0.f,
+        .max = 100.f,
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode == 2.f; },
+        .parse = [](float value) { return value * 0.01f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostXYPQStrength",
+        .binding = &shader_injection.perceptual_boost_xypq_strength,
+        .default_value = 33.f,
+        .label = "XY->PQ Strength",
+        .section = "Perceptual Boost",
+        .tooltip = "Controls the overall strength of XY->PQ perceptual boost effect (0% to 100%)",
+        .min = 0.f,
+        .max = 100.f,
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode == 2.f; },
+        .parse = [](float value) { return value * 0.01f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    // ICTCP mode settings
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostICTCPParam",
+        .binding = &shader_injection.perceptual_boost_ictcp_param,
+        .default_value = 268.f,
+        .label = "ICTCP Curve Adjustment",
+        .section = "Perceptual Boost",
+        .tooltip = "Adjusts the ICTCP perceptual boost curve shape for better color reproduction",
+        .min = 0.f,
+        .max = 1500.f,
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode == 3.f; },
+        .parse = [](float value) { return value * 0.001f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostICTCPColor",
+        .binding = &shader_injection.perceptual_boost_ictcp_color,
+        .default_value = 20.f,
+        .label = "ICTCP Color Boost",
+        .section = "Perceptual Boost",
+        .tooltip = "Controls the intensity of ICTCP color enhancement (0% to 100%)",
+        .min = 0.f,
+        .max = 100.f,
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode == 3.f; },
+        .parse = [](float value) { return value * 0.01f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoostICTCPStrength",
+        .binding = &shader_injection.perceptual_boost_ictcp_strength,
+        .default_value = 100.f,
+        .label = "ICTCP Strength",
+        .section = "Perceptual Boost",
+        .tooltip = "Controls the overall strength of ICTCP perceptual boost effect (0% to 100%)",
+        .min = 0.f,
+        .max = 100.f,
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode == 3.f; },
+        .parse = [](float value) { return value * 0.01f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoost2DCharacter",
+        .binding = &shader_injection.perceptual_boost_2d_character,
+        .default_value = 0.3f,
+        .label = "2D Character Scenes",
+        .section = "Perceptual Boost",
+        .tooltip = "Perceptual boost strength for 2D character scenes (0.0 = disabled, 1.0 = normal, 10.0 = maximum)",
+        .min = 0.f,
+        .max = 10.f,
+        .format = "%.3f",
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode > 0.f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoost2DBackground",
+        .binding = &shader_injection.perceptual_boost_2d_background,
+        .default_value = 1.f,
+        .label = "2D Background Scenes",
+        .section = "Perceptual Boost",
+        .tooltip = "Perceptual boost strength for 2D background scenes (0.0 = disabled, 1.0 = normal, 10.0 = maximum)",
+        .min = 0.f,
+        .max = 10.f,
+        .format = "%.3f",
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode > 0.f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "PerceptualBoost3D",
+        .binding = &shader_injection.perceptual_boost_3d,
+        .default_value = 0.f,
+        .label = "3D Scenes",
+        .section = "Perceptual Boost",
+        .tooltip = "Perceptual boost strength for 3D scenes (0.0 = disabled, 1.0 = normal, 10.0 = maximum)",
+        .min = 0.f,
+        .max = 10.f,
+        .format = "%.3f",
+        .is_enabled = []() { return shader_injection.perceptual_boost_mode > 0.f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "HorizontalSplitScreen",
+        .binding = &shader_injection.horizontal_split_screen,
+        .default_value = 0.f,
+        .label = "Horizontal Split Screen",
+        .section = "Display Output",
+        .tooltip = "Controls horizontal splitscreen effect (0.0 = full screen, 1.0 = split screen)",
+        .min = 0.f,
+        .max = 1.f,
+        .format = "%.2f",
+        .is_visible = []() { return current_settings_mode >= 1; },
+    }};
+
+    // TODO insert new_settings to settings
 }
 
-const std::unordered_map<std::string, reshade::api::format> UPGRADE_TARGETS = {
-    {"R8G8B8A8_TYPELESS", reshade::api::format::r8g8b8a8_typeless},
-    {"B8G8R8A8_TYPELESS", reshade::api::format::b8g8r8a8_typeless},
-    {"R8G8B8A8_UNORM", reshade::api::format::r8g8b8a8_unorm},
-    {"B8G8R8A8_UNORM", reshade::api::format::b8g8r8a8_unorm},
-    {"R8G8B8A8_SNORM", reshade::api::format::r8g8b8a8_snorm},
-    {"R8G8B8A8_UNORM_SRGB", reshade::api::format::r8g8b8a8_unorm_srgb},
-    {"B8G8R8A8_UNORM_SRGB", reshade::api::format::b8g8r8a8_unorm_srgb},
-    {"R10G10B10A2_TYPELESS", reshade::api::format::r10g10b10a2_typeless},
-    {"R10G10B10A2_UNORM", reshade::api::format::r10g10b10a2_unorm},
-    {"B10G10R10A2_UNORM", reshade::api::format::b10g10r10a2_unorm},
-    {"R11G11B10_FLOAT", reshade::api::format::r11g11b10_float},
-    {"R16G16B16A16_TYPELESS", reshade::api::format::r16g16b16a16_typeless},
+const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UPGRADE_TARGETS = {
+    {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 2.f}},
+    {"B8G8R8A8_TYPELESS", {reshade::api::format::b8g8r8a8_typeless, 0.f}},
+    {"R8G8B8A8_UNORM", {reshade::api::format::r8g8b8a8_unorm, 0.f}},
+    {"B8G8R8A8_UNORM", {reshade::api::format::b8g8r8a8_unorm, 0.f}},
+    {"R8G8B8A8_SNORM", {reshade::api::format::r8g8b8a8_snorm, 0.f}},
+    {"R8G8B8A8_UNORM_SRGB", {reshade::api::format::r8g8b8a8_unorm_srgb, 0.f}},
+    {"B8G8R8A8_UNORM_SRGB", {reshade::api::format::b8g8r8a8_unorm_srgb, 0.f}},
+    {"R10G10B10A2_TYPELESS", {reshade::api::format::r10g10b10a2_typeless, 0.f}},
+    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 3.f}},
+    {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
+    {"bc1_unorm_srgb", {reshade::api::format::bc1_unorm_srgb, 3.f}},
+
 };
 
 void OnPresetOff() {
@@ -406,7 +589,6 @@ const auto UPGRADE_TYPE_ANY = 3.f;
 
 bool initialized = false;
 
-}  // namespace
 
 extern "C" __declspec(dllexport) constexpr const char* NAME = "RenoDX";
 extern "C" __declspec(dllexport) constexpr const char* DESCRIPTION = "RenoDX (Generic)";
@@ -417,6 +599,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       if (!reshade::register_addon(h_module)) return FALSE;
 
       if (!initialized) {
+        /*
         renodx::mods::shader::force_pipeline_cloning = true;
         renodx::mods::shader::expected_constant_buffer_space = 50;
         renodx::mods::shader::expected_constant_buffer_index = 13;
@@ -425,6 +608,19 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         renodx::mods::swapchain::expected_constant_buffer_index = 13;
         renodx::mods::swapchain::expected_constant_buffer_space = 50;
         renodx::mods::swapchain::use_resource_cloning = true;
+        renodx::mods::swapchain::swapchain_proxy_compatibility_mode = true;
+ */
+ 
+        renodx::mods::shader::force_pipeline_cloning = true;
+        renodx::mods::shader::expected_constant_buffer_space = 50;
+        renodx::mods::shader::expected_constant_buffer_index = 13;
+        renodx::mods::shader::allow_multiple_push_constants = true;
+
+        renodx::mods::swapchain::expected_constant_buffer_index = 13;
+        renodx::mods::swapchain::expected_constant_buffer_space = 50;
+        renodx::mods::swapchain::use_resource_cloning = true;
+        renodx::utils::random::binds.push_back(&shader_injection.custom_random);
+
         renodx::mods::swapchain::swap_chain_proxy_shaders = {
             {
                 reshade::api::device_api::d3d11,
@@ -489,7 +685,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
               .key = "SwapChainEncoding",
               .binding = &shader_injection.swap_chain_encoding,
               .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-              .default_value = 4.f,
+              .default_value = 5.f,
               .label = "Encoding",
               .section = "Display Output",
               .labels = {"None", "SRGB", "2.2", "2.4", "HDR10", "scRGB"},
@@ -510,11 +706,14 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
           settings.push_back(setting);
         }
 
-        for (const auto& [key, format] : UPGRADE_TARGETS) {
+        for (const auto& [key, format_pair] : UPGRADE_TARGETS) {
+          const auto& format = format_pair.first;
+          const auto& default_value = format_pair.second;
+
           auto* setting = new renodx::utils::settings::Setting{
               .key = "Upgrade_" + key,
               .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-              .default_value = 0.f,
+              .default_value = default_value,
               .label = key,
               .section = "Resource Upgrades",
               .labels = {
@@ -547,7 +746,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
             reshade::log::message(reshade::log::level::info, s.str().c_str());
           }
         }
-        AddAdvancedSettings();
+        AdvancedSettings();
         initialized = true;
       }
 

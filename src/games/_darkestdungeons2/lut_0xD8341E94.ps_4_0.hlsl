@@ -1,7 +1,4 @@
-// ---- Created with 3Dmigoto v1.4.1 on Sun Jun 22 10:06:53 2025
-#include "./shared.h"
-
-
+// ---- Created with 3Dmigoto v1.4.1 on Wed Jul  9 12:54:51 2025
 Texture2D<float4> t1 : register(t1);
 
 Texture2D<float4> t0 : register(t0);
@@ -15,12 +12,20 @@ cbuffer cb0 : register(b0)
   float4 cb0[136];
 }
 
-
+#include "./common.h"
 
 
 // 3Dmigoto declarations
 #define cmp -
 
+
+float3 saturate_or_not(float3 color, float2 v1) {
+
+  if (RENODX_TONE_MAP_TYPE == 0 || v1.x <= shader_injection.horizontal_split_screen) {
+   color = saturate(color);
+  }
+  return color;
+}
 
 void main(
   float4 v0 : SV_POSITION0,
@@ -32,21 +37,18 @@ void main(
   float4 fDest;
 
   r0.xyzw = t0.SampleBias(s0_s, v1.xy, cb0[5].x).xyzw;
-
-  float3 untonemapped = r0.xyz;
-  float3 neutral_sdr = renodx::tonemap::renodrt::NeutralSDR(untonemapped);
-
-  float3 originalY = renodx::color::y::from::BT709(untonemapped);
-
-  if (RENODX_TONE_MAP_TYPE == 0) {
-    r0.xyz = saturate(r0.xyz);
-  } else {
-    //r0.xyz = neutral_sdr;
-    r0.xyz = lerp(r0.xyz, neutral_sdr, saturate(originalY));
-  }
-
   r1.x = cmp(0 < cb0[135].x);
   if (r1.x != 0) {
+    float3 untonemapped = r0.xyz; // untonemapped here is still in SRGB
+
+    r0.xyz = saturate(untonemapped);
+
+    float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped); // tonemap to SDR you can change this to any SDR tonemapper you want 
+    if (RENODX_TONE_MAP_TYPE != 0 && v1.x > shader_injection.horizontal_split_screen) {
+      float y = renodx::color::y::from::BT709(untonemapped);
+      r0.xyz = lerp(untonemapped, sdrTonemapped, saturate(y));
+    }
+
     r1.x = -1 + cb0[133].w;
     r0.xyz = saturate(r0.xyz);
     r1.yzw = cmp(float3(0.00313080009,0.00313080009,0.00313080009) >= r0.zxy);
@@ -79,22 +81,15 @@ void main(
     r1.xyz = r1.xyz ? r2.xyz : r3.xyz;
     r1.xyz = r1.xyz + -r0.xyz;
     r0.xyz = cb0[135].xxx * r1.xyz + r0.xyz;
+
+    if (RENODX_TONE_MAP_TYPE != 0 && v1.x > shader_injection.horizontal_split_screen) { 
+      float3 sdrGraded = r0.xyz;
+      float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
+
+      r0.xyz = color;
+    }
   }
   o0.xyzw = r0.xyzw;
-
- /* if (RENODX_TONE_MAP_TYPE != 0.f) {
-   // r0.xyz = sdr_color;
-    o0.xyz *= (1 + originalY);
-    o0.xyz = renodx::draw::ToneMapPass(o0.xyz);
-  } 
-  if (RENODX_TONE_MAP_TYPE != 0.f) {
-    o0.xyz = renodx::tonemap::UpgradeToneMap(untonemapped, sdr_color, o0.xyz, 1.f);
-  }*/
-  if (RENODX_TONE_MAP_TYPE > 0.f) {
-    o0.xyz = renodx::draw::ToneMapPass(untonemapped.rgb, o0.xyz);
-  }
-
-  o0.xyz *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
-
+  
   return;
 }

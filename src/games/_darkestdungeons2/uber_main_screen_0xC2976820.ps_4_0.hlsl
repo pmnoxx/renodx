@@ -1,6 +1,4 @@
-#include "./shared.h"
-
-// ---- Created with 3Dmigoto v1.4.1 on Sun Jun 22 10:10:27 2025
+// ---- Created with 3Dmigoto v1.4.1 on Wed Jul  9 10:41:59 2025
 Texture2D<float4> t3 : register(t3);
 
 Texture2D<float4> t2 : register(t2);
@@ -34,21 +32,7 @@ void main(
 
   r0.xyzw = t0.SampleBias(s0_s, v1.xy, cb0[5].x).xyzw;
 
-
-  float3 untonemapped = r0.xyz;
-  float3 neutral_sdr = renodx::tonemap::renodrt::NeutralSDR(untonemapped);
-
-  float3 originalY = renodx::color::y::from::BT709(untonemapped);
-
-  if (RENODX_TONE_MAP_TYPE == 0) {
-    r0.xyz = saturate(r0.xyz);
-  } else {
-    //r0.xyz = neutral_sdr;
-    r0.xyz = lerp(r0.xyz, neutral_sdr, saturate(originalY));
-  }
-
-
-
+  
   r1.xy = v1.xy * cb0[145].zw + float2(0.5,0.5);
   r1.zw = floor(r1.xy);
   r1.xy = frac(r1.xy);
@@ -85,6 +69,7 @@ void main(
   r1.xyzw = r2.zzzz * r3.xyzw + r1.xyzw;
   r1.xyzw = r2.yyyy * r1.xyzw;
   r1.xyzw = r2.wwww * r4.xyzw + r1.xyzw;
+
   r0.w = cmp(0 < cb0[135].x);
   if (r0.w != 0) {
     r2.xyz = r1.xyz * r1.www;
@@ -92,11 +77,6 @@ void main(
   }
   r1.xyz = cb0[134].xxx * r1.xyz;
   r0.xyz = r1.xyz * cb0[134].yzw + r0.xyz;
-
-
-
-
-
   r0.w = cmp(0 < cb0[142].z);
   if (r0.w != 0) {
     r1.xy = -cb0[142].xy + v1.xy;
@@ -113,6 +93,8 @@ void main(
     r0.xyz = r1.xyz * r0.xyz;
   }
   r0.xyz = cb0[132].www * r0.zxy;
+
+  // linear to log C
   r0.xyz = r0.xyz * float3(5.55555582,5.55555582,5.55555582) + float3(0.0479959995,0.0479959995,0.0479959995);
   r0.xyz = max(float3(0,0,0), r0.xyz);
   r0.xyz = log2(r0.xyz);
@@ -122,6 +104,8 @@ void main(
   r1.xy = float2(0.5,0.5) * cb0[132].xy;
   r1.yz = r0.zw * cb0[132].xy + r1.xy;
   r1.x = r0.y * cb0[132].y + r1.y;
+  
+  // lut query
   r2.xyzw = t2.SampleLevel(s0_s, r1.xz, 0).xyzw;
   r3.x = cb0[132].y;
   r3.y = 0;
@@ -130,7 +114,6 @@ void main(
   r0.x = r0.x * cb0[132].z + -r0.y;
   r0.yzw = r1.xyz + -r2.xyz;
   r0.xyz = r0.xxx * r0.yzw + r2.xyz;
-
 
   r0.w = cmp(0 < cb0[133].w);
   if (r0.w != 0) {
@@ -166,24 +149,8 @@ void main(
     r1.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
     r0.xyz = r1.xyz ? r2.xyz : r3.xyz;
   }
+
   o0.xyz = r0.xyz;
   o0.w = 1;
-
-  
- /* if (RENODX_TONE_MAP_TYPE != 0.f) {
-   // r0.xyz = sdr_color;
-    o0.xyz *= (1 + originalY);
-    o0.xyz = renodx::draw::ToneMapPass(o0.xyz);
-  } */
-  if (RENODX_TONE_MAP_TYPE > 0.f) {
-    //o0.xyz = renodx::tonemap::UpgradeToneMap(untonemapped.rgb, neutral_sdr, o0.rgb, 1.f);
-    o0.xyz = renodx::draw::ToneMapPass(untonemapped.rgb, o0.xyz);
-  }
-  /*
-  if (RENODX_TONE_MAP_TYPE != 0.f) {
-    o0.xyz = renodx::tonemap::UpgradeToneMap(untonemapped, sdr_color, o0.xyz, 1.f);
-  }*/
-
-  o0.xyz *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
   return;
 }
