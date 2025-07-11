@@ -820,6 +820,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                 .new_format = reshade::api::format::r16g16b16a16_float,
                 .ignore_size = (value == UPGRADE_TYPE_ANY),
                 .use_resource_view_cloning = false, // needed to prevent crash
+              //  .use_resource_view_cloning = true, // needed to prevent crash
                 .aspect_ratio = static_cast<float>((value == UPGRADE_TYPE_OUTPUT_RATIO)
                                                        ? renodx::mods::swapchain::SwapChainUpgradeTarget::BACK_BUFFER
                                                        : renodx::mods::swapchain::SwapChainUpgradeTarget::ANY),

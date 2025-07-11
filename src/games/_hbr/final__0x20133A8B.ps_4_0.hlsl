@@ -18,11 +18,15 @@ void main(
   o0.xyzw = BlitTexture.Sample(BlitSampler_s, v0.xy).xyzw;
   //o0.xyz = (3.f, 3.f, 3.f);
 
-  o0.xyz *= 1.0f / (RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS);
+  o0.xyz = renodx::draw::InvertIntermediatePass(o0.xyz);
+
+//  o0.rgb = max(o0.rgb, 0.f);
 
   o0.xyz = renodx::draw::ToneMapPass(o0.xyz); // game applies post effects to UI, which exceed peak nits.
   
-  o0.xyz *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
+  o0.xyz = renodx::draw::IntermediatePass(o0.xyz);
+
+  o0.rgb = renodx::color::srgb::EncodeSafe(o0.rgb);
 
   return;
 }

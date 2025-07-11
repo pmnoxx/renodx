@@ -145,6 +145,7 @@ cbuffer shader_injection : register(b13) {
 
 #define RENODX_RENO_DRT_TONE_MAP_METHOD        renodx::tonemap::renodrt::config::tone_map_method::REINHARD
 
+#define RENODX_RENO_DRT_WHITE_CLIP               shader_injection.reno_drt_white_clip
 
 #define RENODX_PERCEPTUAL_BOOST_PARAM          shader_injection.perceptual_boost_param
 #define RENODX_PERCEPTUAL_BOOST_COLOR         shader_injection.perceptual_boost_color
