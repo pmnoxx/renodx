@@ -1,6 +1,6 @@
 #include "./shared.h"
 
-// ---- Created with 3Dmigoto v1.4.1 on Sun Jun 22 18:08:09 2025
+// ---- Created with 3Dmigoto v1.4.1 on Wed Jul  9 12:54:51 2025
 Texture2D<float4> t0 : register(t0);
 
 SamplerState s0_s : register(s0);
@@ -16,10 +16,11 @@ cbuffer cb0 : register(b0)
 // 3Dmigoto declarations
 #define cmp -
 
-float3 togglable_saturate(float3 color) {
-  
-  if (RENODX_TONE_MAP_TYPE == 0.f) {
-    color = saturate(color);
+
+float3 saturate_or_not(float3 color, float2 v1) {
+
+  if (RENODX_TONE_MAP_TYPE == 0 || v1.x <= shader_injection.horizontal_split_screen) {
+   color = saturate(color);
   }
   return color;
 }
@@ -50,21 +51,21 @@ void main(
   r2.xy = r1.zw;
   r2.zw = float2(0,0);
   r2.xyz = t0.Load(r2.xyz).xyz;
-  r2.xyz = saturate(r2.xyz);
+  r2.xyz = saturate_or_not(r2.xyz, v1);
   r2.x = dot(r2.xyz, float3(0.212672904,0.715152204,0.0721750036));
   r3.xy = r0.zw;
   r3.zw = float2(0,0);
   r2.yzw = t0.Load(r3.xyz).xyz;
-  r2.yzw = saturate(r2.yzw);
+  r2.yzw = saturate_or_not(r2.yzw, v1);
   r2.y = dot(r2.yzw, float3(0.212672904,0.715152204,0.0721750036));
   r2.z = r2.x + r2.y;
   r1.zw = float2(0,0);
   r1.xyz = t0.Load(r1.xyz).xyz;
-  r1.xyz = saturate(r1.xyz);
+  r1.xyz = saturate_or_not(r1.xyz, v1);
   r1.x = dot(r1.xyz, float3(0.212672904,0.715152204,0.0721750036));
   r0.zw = float2(0,0);
   r0.xyz = t0.Load(r0.xyz).xyz;
-  r0.xyz = saturate(r0.xyz);
+  r0.xyz = saturate_or_not(r0.xyz, v1);
   r0.x = dot(r0.xyz, float3(0.212672904,0.715152204,0.0721750036));
   r0.y = r1.x + r0.x;
   r3.yw = r2.zz + -r0.yy;
@@ -87,13 +88,13 @@ void main(
   r3.xyzw = r3.xyzw * float4(0.166666672,0.166666672,0.5,0.5) + v1.xyxy;
   r0.yzw = t0.SampleBias(s0_s, r4.xy, cb0[5].x).xyz;
   r1.yzw = t0.SampleBias(s0_s, r4.zw, cb0[5].x).xyz;
-  r1.yzw = togglable_saturate(r1.yzw);
-  r0.yzw = togglable_saturate(r0.yzw);
+  r1.yzw = saturate_or_not(r1.yzw, v1);
+  r0.yzw = saturate_or_not(r0.yzw, v1);
   r4.xyz = t0.SampleBias(s0_s, r3.zw, cb0[5].x).xyz;
   r3.xyz = t0.SampleBias(s0_s, r3.xy, cb0[5].x).xyz;
-  r3.xyz = togglable_saturate(r3.xyz);
+  r3.xyz = saturate_or_not(r3.xyz, v1);
   r1.yzw = r3.xyz + r1.yzw;
-  r4.xyz = togglable_saturate(r4.xyz);
+  r4.xyz = saturate_or_not(r4.xyz, v1);
   r0.yzw = r4.xyz + r0.yzw;
   r0.yzw = float3(0.25,0.25,0.25) * r0.yzw;
   r0.yzw = r1.yzw * float3(0.25,0.25,0.25) + r0.yzw;
@@ -104,7 +105,7 @@ void main(
   r1.x = max(r1.x, r0.x);
   r0.x = min(r2.w, r0.x);
   r3.xyz = t0.SampleBias(s0_s, v1.xy, cb0[5].x).xyz;
-  r3.xyz = togglable_saturate(r3.xyz);
+  r3.xyz = saturate_or_not(r3.xyz, v1);
   r2.y = dot(r3.xyz, float3(0.212672904,0.715152204,0.0721750036));
   r2.w = min(r2.y, r2.x);
   r2.x = max(r2.y, r2.x);
@@ -114,7 +115,7 @@ void main(
   r0.x = cmp(r2.z < r0.x);
   r0.x = (int)r1.x | (int)r0.x;
   o0.xyz = r0.xxx ? r1.yzw : r0.yzw;
-  o0.w = 1;
 
+  o0.w = 1;
   return;
 }
