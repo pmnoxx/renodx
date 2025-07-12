@@ -39,7 +39,7 @@ void main(
     
     float4 sample_sum = float4(0, 0, 0, 0);
     const float num_samples = 16; // Number of samples for debanding
-    const float strength = 2.0; // Debanding strength
+    const float strength = 1.0; // Debanding strength
     
     for (int i = 0; i < num_samples; i++) {
       float2 sample_pos = r0.xy;
