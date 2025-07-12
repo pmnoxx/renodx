@@ -90,7 +90,7 @@ renodx::utils::settings::Settings settings = {
         .key = "GammaCorrection",
         .binding = &shader_injection.gamma_correction,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Gamma Correction",
         .section = "Tone Mapping",
         .tooltip = "Emulates a display EOTF.",
@@ -188,7 +188,7 @@ renodx::utils::settings::Settings settings = {
         .key = "PerceptualBoostMethod",
         .binding = &shader_injection.perceptual_boost_method,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Perceptual Boost Method",
         .section = "Perceptual Boost",
         .tooltip = "Selects the method for perceptual boost. XY->PQ is the current implementation. TODO for future methods.",
@@ -253,7 +253,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ColorGradeShadows",
         .binding = &shader_injection.tone_map_shadows,
-        .default_value = 10.f,
+        .default_value = 50.f,
         .label = "Shadows",
         .section = "Color Grading",
         .max = 100.f,
@@ -272,7 +272,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ColorGradeSaturation",
         .binding = &shader_injection.tone_map_saturation,
-        .default_value = 75.f,
+        .default_value = 50.f,
         .label = "Saturation",
         .section = "Color Grading",
         .max = 100.f,
@@ -281,7 +281,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ColorGradeHighlightSaturation",
         .binding = &shader_injection.tone_map_highlight_saturation,
-        .default_value = 75.f,
+        .default_value = 50.f,
         .label = "Highlight Saturation",
         .section = "Color Grading",
         .tooltip = "Adds or removes highlight color.",
@@ -293,7 +293,7 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ColorGradeBlowout",
         .binding = &shader_injection.tone_map_blowout,
-        .default_value = 75.f,
+        .default_value = 0.f,
         .label = "Blowout",
         .section = "Color Grading",
         .tooltip = "Controls highlight desaturation due to overexposure.",
@@ -356,21 +356,10 @@ renodx::utils::settings::Settings settings = {
         .is_visible = []() { return settings[0]->GetValue() >= 1; },
     },
     new renodx::utils::settings::Setting{
-        .key = "PixelShaderDecodeMode",
-        .binding = &shader_injection.pixel_shader_decode_mode,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f, // Default: Gamma 2.2
-        .label = "Pixel Shader Decode",
-        .section = "Display Output",
-        .tooltip = "Decodes input for the pixel shader.\nGamma 2.2 is typical for sRGB content.\n'sRGB' uses the standard sRGB transfer function.",
-        .labels = {"Off", "Gamma 2.2", "sRGB"},
-        .is_visible = []() { return current_settings_mode >= 1; },
-    },
-    new renodx::utils::settings::Setting{
         .key = "IntermediateDecoding",
         .binding = &shader_injection.intermediate_encoding,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f,
+        .default_value = 3.f,
         .label = "Intermediate Encoding",
         .section = "Display Output",
         .labels = {"Auto", "None", "SRGB", "2.2", "2.4"},
@@ -384,7 +373,7 @@ renodx::utils::settings::Settings settings = {
         .key = "SwapChainDecoding",
         .binding = &shader_injection.swap_chain_decoding,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f,
+        .default_value = 3.f,
         .label = "Swapchain Decoding",
         .section = "Display Output",
         .labels = {"Auto", "None", "SRGB", "2.2", "2.4"},
@@ -398,7 +387,7 @@ renodx::utils::settings::Settings settings = {
         .key = "SwapChainGammaCorrection",
         .binding = &shader_injection.swap_chain_gamma_correction,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Gamma Correction",
         .section = "Display Output",
         .labels = {"None", "2.2", "2.4"},
@@ -449,7 +438,6 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "Angle (in degrees) for the split line (0 = vertical, 90 = horizontal, etc.)",
         .min = 0.f,
         .max = 360.f,
-        .format = "%.1f",
         .is_visible = []() { return shader_injection.effect_split_mode != 0; },
     },
 };
@@ -473,19 +461,19 @@ void AddAdvancedSettings() {
   settings.push_back(swapchain_setting);
 }
 
-const std::unordered_map<std::string, reshade::api::format> UPGRADE_TARGETS = {
-    {"R8G8B8A8_TYPELESS", reshade::api::format::r8g8b8a8_typeless},
-    {"B8G8R8A8_TYPELESS", reshade::api::format::b8g8r8a8_typeless},
-    {"R8G8B8A8_UNORM", reshade::api::format::r8g8b8a8_unorm},
-    {"B8G8R8A8_UNORM", reshade::api::format::b8g8r8a8_unorm},
-    {"R8G8B8A8_SNORM", reshade::api::format::r8g8b8a8_snorm},
-    {"R8G8B8A8_UNORM_SRGB", reshade::api::format::r8g8b8a8_unorm_srgb},
-    {"B8G8R8A8_UNORM_SRGB", reshade::api::format::b8g8r8a8_unorm_srgb},
-    {"R10G10B10A2_TYPELESS", reshade::api::format::r10g10b10a2_typeless},
-    {"R10G10B10A2_UNORM", reshade::api::format::r10g10b10a2_unorm},
-    {"B10G10R10A2_UNORM", reshade::api::format::b10g10r10a2_unorm},
-    {"R11G11B10_FLOAT", reshade::api::format::r11g11b10_float},
-    {"R16G16B16A16_TYPELESS", reshade::api::format::r16g16b16a16_typeless},
+const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UPGRADE_TARGETS = {
+    {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 1.f}},
+    {"B8G8R8A8_TYPELESS", {reshade::api::format::b8g8r8a8_typeless, 0.f}},
+    {"R8G8B8A8_UNORM", {reshade::api::format::r8g8b8a8_unorm, 1.f}},
+    {"B8G8R8A8_UNORM", {reshade::api::format::b8g8r8a8_unorm, 0.f}},
+    {"R8G8B8A8_SNORM", {reshade::api::format::r8g8b8a8_snorm, 0.f}},
+    {"R8G8B8A8_UNORM_SRGB", {reshade::api::format::r8g8b8a8_unorm_srgb, 0.f}},
+    {"B8G8R8A8_UNORM_SRGB", {reshade::api::format::b8g8r8a8_unorm_srgb, 0.f}},
+    {"R10G10B10A2_TYPELESS", {reshade::api::format::r10g10b10a2_typeless, 0.f}},
+    {"R10G10B10A2_UNORM", {reshade::api::format::r10g10b10a2_unorm, 0.f}},
+    {"B10G10R10A2_UNORM", {reshade::api::format::b10g10r10a2_unorm, 0.f}},
+    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 0.f}},
+    {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
 };
 
 void OnPresetOff() {
@@ -616,11 +604,11 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
           settings.push_back(setting);
         }
 
-        for (const auto& [key, format] : UPGRADE_TARGETS) {
+        for (const auto& [key, format_pair] : UPGRADE_TARGETS) {
           auto* setting = new renodx::utils::settings::Setting{
               .key = "Upgrade_" + key,
               .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-              .default_value = 2.f,
+              .default_value = format_pair.second,
               .label = key,
               .section = "Resource Upgrades",
               .labels = {
@@ -638,7 +626,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
           auto value = setting->GetValue();
           if (value > 0) {
             renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
-                .old_format = format,
+                .old_format = format_pair.first,
                 .new_format = reshade::api::format::r16g16b16a16_float,
                 .ignore_size = (value == UPGRADE_TYPE_ANY),
                 .use_resource_view_cloning = false, // needed to prevent crash
@@ -649,7 +637,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
             });
             std::stringstream s;
             s << "Applying user resource upgrade for ";
-            s << format << ": " << value;
+            s << format_pair.first << ": " << value;
             reshade::log::message(reshade::log::level::info, s.str().c_str());
           }
         }
