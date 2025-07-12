@@ -37,6 +37,8 @@ renodx::mods::shader::CustomShaders custom_shaders = {
         CustomShaderEntry(0xA9F8ED91), // 2d_background
         CustomShaderEntry(0x066C98CB), // 2d_battle_ready_screen
         CustomShaderEntry(0xB4EB8715), // 2d_character
+        CustomShaderEntry(0xEADD927D), // advanced_overlay
+        CustomShaderEntry(0xEA8CA6F6), // lily_renderer
 
        
   //  CustomShaderEntry(0x45A96F2D),
