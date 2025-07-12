@@ -22,6 +22,7 @@ void main(
   float4 fDest;
 
   r0.xyzw = t0.Sample(s0_s, v2.xy).xyzw;
+  r0.w = saturate(r0.w);
 
 
  // r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
@@ -35,7 +36,6 @@ void main(
   
   o0.xyz = v1.xyz * r0.xyz;
   o0.w = v1.w;
-
 
   o0.w = saturate(o0.w);
   return;

@@ -33,6 +33,7 @@ void main(
   r0.x = round(r0.x);
   r0.w = 0.00392156886 * r0.x;
   r1.xyzw = t0.Sample(s0_s, v2.xy).xyzw;
+  r1.w = saturate(r1.w);
 
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
     r1.xyz = ApplyPerceptualBoostAndToneMap(r1.xyz, SCENE_TYPE_2D_BACKGROND);
@@ -46,5 +47,7 @@ void main(
   r0.xyzw = r1.xyzw * r0.xyzw;
   o0.xyz = r0.xyz * r0.www;
   o0.w = r0.w;
+  // saturate fix
+  o0.w = saturate(o0.w);
   return;
 }

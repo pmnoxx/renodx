@@ -25,6 +25,10 @@ void main(
   
   o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
 
+  if (abs(o0.w) > 1.f) {
+   //o0.xyz = 10.f;
+   // o0.w = saturate(o0.w);
+  }
 
   return;
 }

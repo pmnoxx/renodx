@@ -29,5 +29,7 @@ void main(
 
  // o0.xyz = renodx::color::srgb::EncodeSafe(o0.xyz);
   
+
+  o0.w = saturate(o0.w);
   return;
 }
