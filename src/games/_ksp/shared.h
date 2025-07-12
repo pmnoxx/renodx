@@ -63,6 +63,7 @@ struct ShaderInjectData {
   float intermediate_color_space;
   float swap_chain_decoding;
   float swap_chain_gamma_correction;
+  float reno_drt_white_clip;
   //  float swap_chain_decoding_color_space;
   float swap_chain_custom_color_space;
   // float swap_chain_scaling_nits;
@@ -70,7 +71,6 @@ struct ShaderInjectData {
   float swap_chain_clamp_color_space;
   float swap_chain_encoding;
   float swap_chain_encoding_color_space;
-  float reno_drt_white_clip;
   float perceptual_boost_method; // 0 = None, 1 = XY->PQ, TODO: add more methods
   float perceptual_boost_param;
   float perceptual_boost_color;
@@ -80,6 +80,8 @@ struct ShaderInjectData {
   float effect_split_x ;
   float effect_split_mode ;
   float effect_split_angle;
+
+  
 };
 
 #ifndef __cplusplus
@@ -123,9 +125,7 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_SWAP_CHAIN_ENCODING             shader_injection.swap_chain_encoding
 #define RENODX_SWAP_CHAIN_ENCODING_COLOR_SPACE shader_injection.swap_chain_encoding_color_space
 #define RENODX_RENO_DRT_TONE_MAP_METHOD        renodx::tonemap::renodrt::config::tone_map_method::REINHARD
-
-#define RENODX_RENO_DRT_TONE_MAP_METHOD        renodx::tonemap::renodrt::config::tone_map_method::REINHARD
-
+#define RENODX_RENO_DRT_WHITE_CLIP               shader_injection.reno_drt_white_clip
 
 #define RENODX_PERCEPTUAL_BOOST_PARAM          shader_injection.perceptual_boost_param
 #define RENODX_PERCEPTUAL_BOOST_COLOR         shader_injection.perceptual_boost_color
@@ -133,7 +133,7 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_PERCEPTUAL_BOOST_METHOD           shader_injection.perceptual_boost_method
 #define RENODX_PERCEPTUAL_BOOST_METHOD_XY_PQ 1
 #define RENODX_PERCEPTUAL_BOOST_METHOD_ICTCP 2
-#define RENODX_PIXEL_SHADER_DECODE_MODE shader_injection.pixel_shader_decode_mode
+
 
 #include "../../shaders/renodx.hlsl"
 

@@ -27,7 +27,6 @@ float4 main(float4 vpos: SV_POSITION, float2 uv: TEXCOORD0)
   if (applyEffect) {
     color.rgb = renodx_ksp_apply_tonemap_and_boost(color.rgb);
   }
-//  linearColor.xyz *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
 
   color.rgb = renodx::draw::RenderIntermediatePass(color.rgb);
 
