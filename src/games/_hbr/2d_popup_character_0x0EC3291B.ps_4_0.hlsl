@@ -58,6 +58,7 @@ void main(
   r1.xy = r1.xx * r0.zz + r0.xy;
   r0.zw = -r0.zz * float2(0.100000001,0.100000001) + r0.xy;
   r2.xyzw = t0.Sample(s0_s, r0.xy).xyzw;
+  r2.w = saturate(r2.w);
 
 
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
@@ -65,8 +66,12 @@ void main(
   }
 
   r0.xyzw = t0.Sample(s0_s, r0.zw).xyzw;
+  r0.w = saturate(r2.w);
+
   r2.z = r0.z;
   r0.xyzw = t0.Sample(s0_s, r1.xy).xyzw;
+  r0.w = saturate(r2.w);
+
   r2.x = r0.x;
   r0.x = dot(v1.xyz, float3(0.300000012,0.589999974,0.109999999));
   r0.x = 1 + -r0.x;
@@ -74,6 +79,7 @@ void main(
   r1.w = v1.w * r2.w;
   r1.xyz = abs(r0.xyz);
   r0.xyzw = t0.Sample(s0_s, v2.xy).xyzw;
+  r0.w = saturate(r2.w);
   r0.xyzw = cb0[3].xyzw + r0.xyzw;
   r0.xyzw = v1.xyzw * r0.xyzw;
   r2.x = asint(cb0[6].x);
@@ -82,5 +88,8 @@ void main(
   r2.xy = r2.xy ? float2(1,1) : 0;
   r0.xyzw = r2.yyyy * r0.xyzw;
   o0.xyzw = r1.xyzw * r2.xxxx + r0.xyzw;
+
+  // saturate fix
+  o0.w = saturate(o0.w);
   return;
 }

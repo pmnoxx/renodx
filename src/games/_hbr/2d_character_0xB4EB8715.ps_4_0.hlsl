@@ -28,6 +28,7 @@ void main(
   float4 fDest;
 
   r0.xyzw = t0.Sample(s0_s, v2.xy).xyzw;
+  r0.w = saturate(r0.w);
 
 
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
@@ -37,5 +38,7 @@ void main(
 
   r0.xyzw = cb0[3].xyzw + r0.xyzw;
   o0.xyzw = v1.xyzw * r0.xyzw;
+  // saturate fix
+  o0.w = saturate(o0.w);
   return;
 }
