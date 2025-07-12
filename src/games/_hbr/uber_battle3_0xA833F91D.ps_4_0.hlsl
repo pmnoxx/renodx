@@ -5,7 +5,7 @@ Texture2D<float4> t4 : register(t4);
 
 Texture2D<float4> t3 : register(t3);
 
-Texture2D<float4> t2 : register(t2);
+Texture2D<float4> t2 : register(t2); // bloom effect
 
 Texture2D<float4> t1 : register(t1);
 
@@ -48,6 +48,10 @@ void main(
 
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
+  r0.w = saturate(r0.w);
+  r1.w = saturate(r0.w);
+
+
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
   r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
@@ -133,7 +137,7 @@ void main(
   }
 
 
-  if (RENODX_TONE_MAP_TYPE != 0) {
+  if (RENODX_TONE_MAP_TYPE != 0 && false) {
     float3 untonemapped = r2.xyz; // untonemapped here is still in SRGB
     r0.xyz = saturate(untonemapped);
 
