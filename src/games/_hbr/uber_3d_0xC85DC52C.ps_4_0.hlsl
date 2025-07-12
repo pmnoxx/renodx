@@ -39,6 +39,8 @@ void main(
 
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw; // only r0.x is used
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
+  r0.w = saturate(r0.w); // fix for bloom
+  r1.w = saturate(r1.w);
 
   
   r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
