@@ -659,7 +659,7 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
     {"R10G10B10A2_TYPELESS", {reshade::api::format::r10g10b10a2_typeless, 0.f}},
     {"R10G10B10A2_UNORM", {reshade::api::format::r10g10b10a2_unorm, 0.f}},
     {"B10G10R10A2_UNORM", {reshade::api::format::b10g10r10a2_unorm, 0.f}},
-    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 0.f}},
+    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 3.f}},
     {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
 };
 
