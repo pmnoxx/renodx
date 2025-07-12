@@ -5,7 +5,7 @@ SamplerState s0 : register(s0);
 float4 main(float4 vpos: SV_POSITION, float2 uv: TEXCOORD0)
     : SV_TARGET {
 
-  float4 linearColor = t0.Sample(s0, uv);
+  float4 color = t0.Sample(s0, uv);
 
   // Convert angle to radians
   float angle_rad = radians(shader_injection.effect_split_angle);
@@ -22,18 +22,14 @@ float4 main(float4 vpos: SV_POSITION, float2 uv: TEXCOORD0)
       applyEffect = dot(from_center, normal) < shader_injection.effect_split_x;
   }
 
+  color.rgb = renodx::draw::InvertIntermediatePass(color.rgb);
+
   if (applyEffect) {
-    if (RENODX_TONE_MAP_TYPE > 0.f) {
-      if (RENODX_PIXEL_SHADER_DECODE_MODE == 1.f) {
-        linearColor.xyz = pow(linearColor.xyz, 2.2f);
-      } else if (RENODX_PIXEL_SHADER_DECODE_MODE == 2.f) {
-        linearColor.xyz = renodx::color::srgb::DecodeSafe(linearColor.xyz);
-      }
-    }
-
-    linearColor.xyz = renodx_ksp_apply_tonemap_and_boost(linearColor.xyz);
+    color.rgb = renodx_ksp_apply_tonemap_and_boost(color.rgb);
   }
-  linearColor.xyz *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
+//  linearColor.xyz *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
 
-  return renodx::draw::SwapChainPass(linearColor);
+  color.rgb = renodx::draw::RenderIntermediatePass(color.rgb);
+
+  return renodx::draw::SwapChainPass(color);
 }
