@@ -47,6 +47,8 @@ renodx::mods::shader::CustomShaders custom_shaders = {
         CustomShaderEntry(0xF52A2A61), // uber_battle6
         CustomShaderEntry(0x242BCAA5), // uber_battle5
         CustomShaderEntry(0x09BE2D97), // uber_battle7
+        CustomShaderEntry(0x97910609), // uber_battle8
+        CustomShaderEntry(0xB054E953), // uber_battle9
 
   //  CustomShaderEntry(0x45A96F2D),
    /// CustomShaderEntry(0xD8341E94),
