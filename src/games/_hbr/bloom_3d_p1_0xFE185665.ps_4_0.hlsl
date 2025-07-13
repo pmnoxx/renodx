@@ -92,7 +92,7 @@ cbuffer cb0 : register(b0)
 float4 saturate_bloom_sdr(float4 color) {
   color.xyzw = saturate(color.xyzw);
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
-    color.xyzw *= 0.f;
+    color.xyzw *= RENODX_3D_BLOOM;
   } else {
     color = saturate(color);
   }

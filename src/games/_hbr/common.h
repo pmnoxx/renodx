@@ -40,7 +40,7 @@ float GetPerceptualBoostStrength(float scene_type) {
 }
 
 float4 debug_mode(float4 color, float2 pos) {
-    if (pos.x < 0.01f && pos.y < 0.01f && RENODX_DEBUG_MODE)
+    if (pos.x < 0.01f * RENODX_DEBUG_MODE && pos.y < 0.01f * RENODX_DEBUG_MODE && RENODX_DEBUG_MODE)
         return float4(0.f, 1.f, 0.f, 1.f);
     return color;
 }
@@ -126,7 +126,9 @@ float3 ApplyPerceptualBoostAndToneMap(float3 color, float scene_type = SCENE_TYP
 
     color.xyz = renodx::color::srgb::DecodeSafe(color.xyz);
     color = ApplyReverseReinhard(color, scene_type);
-    color = renodx::draw::ToneMapPass(color);
+    if (shader_injection.perceptual_boost_mode > 0.f) {
+  //      color = renodx::draw::ToneMapPass(color);
+    }
     color.xyz = renodx::color::srgb::EncodeSafe(color.xyz);
     return color;
 }

@@ -18,17 +18,13 @@ void main(
   o0.xyzw = BlitTexture.Sample(BlitSampler_s, v0.xy).xyzw;
   //o0.xyz = (3.f, 3.f, 3.f);
 
+  #ifndef ENABLE_TONE_MAP_PASS
   o0.xyz = renodx::draw::InvertIntermediatePass(o0.xyz);
 
 
   o0.xyz = renodx::draw::ToneMapPass(o0.xyz); // game applies post effects to UI, which exceed peak nits.
   
   o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
-
-  if (abs(o0.w) > 2.f) {
-  // o0.xyz = 10.f;
-   // o0.w = saturate(o0.w);
-  }
-
+  #endif
   return;
 }
