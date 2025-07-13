@@ -38,6 +38,12 @@ float GetPerceptualBoostStrength(float scene_type) {
     // For unknown scene types, default to 1.0
     return 1.f;
 }
+
+float4 debug_mode(float4 color, float2 pos) {
+    if (pos.x < 0.01f && pos.y < 0.01f && RENODX_DEBUG_MODE)
+        return float4(0.f, 1.f, 0.f, 1.f);
+    return color;
+}
   
 
 

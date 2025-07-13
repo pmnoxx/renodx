@@ -31,6 +31,12 @@ cbuffer cb0 : register(b0)
 
 #include "./common.h"
 
+// Function to sample bloom texture
+float4 SampleBloomTexture(float2 uv) {
+  float4 result = t2.Sample(s2_s, uv).xyzw;
+
+  return result;
+}
 
 // 3Dmigoto declarations
 #define cmp -
@@ -51,10 +57,12 @@ void main(
 
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
-  r0.w = saturate(r0.w); // fix for bloom
+
+  r0.w = saturate(r0.w); 
   r1.w = saturate(r1.w);
 
 
+  
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
   r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
@@ -65,37 +73,42 @@ void main(
   r3.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
   r0.yzw = r3.xyz ? r0.yzw : r2.xyz;
   r1.xyz = r0.yzw * r0.xxx;
+
+
   r0.xyzw = float4(1,1,-1,0) * cb0[32].xyxy;
   r2.xyzw = saturate(-r0.xywy * cb0[34].xxxx + v1.xyxy);
   r2.xyzw = cb0[26].xxxx * r2.xyzw;
-  r3.xyzw = t2.Sample(s2_s, r2.xy).xyzw;
-  r2.xyzw = t2.Sample(s2_s, r2.zw).xyzw;
+  r3.xyzw = SampleBloomTexture(r2.xy);
+  r2.xyzw = SampleBloomTexture(r2.zw);
   r2.xyzw = r2.xyzw * float4(2,2,2,2) + r3.xyzw;
-  r3.xy = saturate(-r0.zy * cb0[34].xx + v1.xy);
+  r3.xy = (-r0.zy * cb0[34].xx + v1.xy);
   r3.xy = cb0[26].xx * r3.xy;
-  r3.xyzw = t2.Sample(s2_s, r3.xy).xyzw;
+  r3.xyzw = SampleBloomTexture(r3.xy);
   r2.xyzw = r3.xyzw + r2.xyzw;
   r3.xyzw = saturate(r0.zwxw * cb0[34].xxxx + v1.xyxy);
   r3.xyzw = cb0[26].xxxx * r3.xyzw;
-  r4.xyzw = t2.Sample(s2_s, r3.xy).xyzw;
+  r4.xyzw = SampleBloomTexture(r3.xy);
   r2.xyzw = r4.xyzw * float4(2,2,2,2) + r2.xyzw;
   r3.xy = saturate(v1.xy);
   r3.xy = cb0[26].xx * r3.xy;
-  r4.xyzw = t2.Sample(s2_s, r3.xy).xyzw;
+  r4.xyzw = SampleBloomTexture(r3.xy);
   r2.xyzw = r4.xyzw * float4(4,4,4,4) + r2.xyzw;
-  r3.xyzw = t2.Sample(s2_s, r3.zw).xyzw;
+  r3.xyzw = SampleBloomTexture(r3.zw);
   r2.xyzw = r3.xyzw * float4(2,2,2,2) + r2.xyzw;
   r3.xyzw = saturate(r0.zywy * cb0[34].xxxx + v1.xyxy);
   r3.xyzw = cb0[26].xxxx * r3.xyzw;
-  r4.xyzw = t2.Sample(s2_s, r3.xy).xyzw;
+  r4.xyzw = SampleBloomTexture(r3.xy);
   r2.xyzw = r4.xyzw + r2.xyzw;
-  r3.xyzw = t2.Sample(s2_s, r3.zw).xyzw;
+  r3.xyzw = SampleBloomTexture(r3.zw);
   r2.xyzw = r3.xyzw * float4(2,2,2,2) + r2.xyzw;
   r0.xy = saturate(r0.xy * cb0[34].xx + v1.xy);
   r0.xy = cb0[26].xx * r0.xy;
-  r0.xyzw = t2.Sample(s2_s, r0.xy).xyzw;
+  r0.xyzw = SampleBloomTexture(r0.xy);
   r0.xyzw = r2.xyzw + r0.xyzw;
   r0.xyzw = cb0[34].yyyy * r0.xyzw;
+
+
+  
   r2.xy = v1.xy * cb0[33].xy + cb0[33].zw;
   r2.xyzw = t3.Sample(s3_s, r2.xy).xyzw;
   r3.xyzw = float4(0.0625,0.0625,0.0625,0.0625) * r0.xyzw;
@@ -106,6 +119,10 @@ void main(
   r4.w = 0.0625 * r0.w;
   r0.xyzw = r4.xyzw + r1.xyzw;
   r0.xyzw = r2.xyzw * r3.xyzw + r0.xyzw;
+
+
+
+
   r1.x = cmp(cb0[40].y < 0.5);
   if (r1.x != 0) {
     r1.xy = -cb0[38].xy + v1.xy;
@@ -167,6 +184,7 @@ void main(
       o0.w = r2.w;
     }
     o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
+    o0 = debug_mode(o0, v1);
     return;
   }
 

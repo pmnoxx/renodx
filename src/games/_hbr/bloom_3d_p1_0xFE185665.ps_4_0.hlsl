@@ -87,6 +87,18 @@ cbuffer cb0 : register(b0)
 // 3Dmigoto declarations
 #define cmp -
 
+#include "./common.h"
+
+float4 saturate_bloom_sdr(float4 color) {
+  color.xyzw = saturate(color.xyzw);
+  if (RENODX_TONE_MAP_TYPE >= 1.f) {
+    color.xyzw *= 0.f;
+  } else {
+    color = saturate(color);
+  }
+  return color;
+}
+
 
 void main(
   float4 v0 : SV_POSITION0,
@@ -104,33 +116,33 @@ void main(
   r1.xyzw = saturate(r1.xyzw);  
 
   r0.xyzw = t0.Sample(s0_s, r0.zw).xyzw;
-  r0.xyzw = saturate(r0.xyzw);  
+  r0.xyzw = saturate_bloom_sdr(r0.xyzw);  
 
 
   r0.xyzw = r1.xyzw + r0.xyzw;
   r1.xyzw = saturate(cb0[28].xyxy * float4(-0.5,0.5,0.5,0.5) + v1.xyxy);
   r1.xyzw = cb0[26].xxxx * r1.xyzw;
   r2.xyzw = t0.Sample(s0_s, r1.xy).xyzw;
-  r2.xyzw = saturate(r2.xyzw);  
+  r2.xyzw = saturate_bloom_sdr(r2.xyzw);  
 
   r1.xyzw = t0.Sample(s0_s, r1.zw).xyzw;
-  r1.xyzw = saturate(r1.xyzw);  
+  r1.xyzw = saturate_bloom_sdr(r1.xyzw);  
 
   r0.xyzw = r2.xyzw + r0.xyzw;
   r0.xyzw = r0.xyzw + r1.xyzw;
   r1.xy = saturate(-cb0[28].xy + v1.xy);
   r1.xy = cb0[26].xx * r1.xy;
   r1.xyzw = t0.Sample(s0_s, r1.xy).xyzw;
-  r1.xyzw = saturate(r1.xyzw);  
+  r1.xyzw = saturate_bloom_sdr(r1.xyzw);  
 
 
   r2.xyzw = saturate(cb0[28].xyxy * float4(0,-1,1,-1) + v1.xyxy);
   r2.xyzw = cb0[26].xxxx * r2.xyzw;
   r3.xyzw = t0.Sample(s0_s, r2.xy).xyzw;
-  r3.xyzw = saturate(r3.xyzw);  
+  r3.xyzw = saturate_bloom_sdr(r3.xyzw);  
 
   r2.xyzw = t0.Sample(s0_s, r2.zw).xyzw;
-  r2.xyzw = saturate(r2.xyzw);  
+  r2.xyzw = saturate_bloom_sdr(r2.xyzw);  
 
 
 
@@ -139,17 +151,17 @@ void main(
   r3.xy = saturate(v1.xy);
   r3.xy = cb0[26].xx * r3.xy;
   r3.xyzw = t0.Sample(s0_s, r3.xy).xyzw;
-  r3.xyzw = saturate(r3.xyzw);  
+  r3.xyzw = saturate_bloom_sdr(r3.xyzw);  
 
   r1.xyzw = r3.xyzw + r1.xyzw;
   r4.xyzw = saturate(cb0[28].xyxy * float4(-1,0,1,0) + v1.xyxy);
   r4.xyzw = cb0[26].xxxx * r4.xyzw;
 
   r5.xyzw = t0.Sample(s0_s, r4.xy).xyzw;
-  r5.xyzw = saturate(r5.xyzw);  
+  r5.xyzw = saturate_bloom_sdr(r5.xyzw);  
 
   r4.xyzw = t0.Sample(s0_s, r4.zw).xyzw;
-  r4.xyzw = saturate(r4.xyzw);  
+  r4.xyzw = saturate_bloom_sdr(r4.xyzw);  
 
   r1.xyzw = r5.xyzw + r1.xyzw;
   r5.xyzw = r5.xyzw + r3.xyzw;
@@ -162,10 +174,10 @@ void main(
   r1.xyzw = saturate(cb0[28].xyxy * float4(-1,1,0,1) + v1.xyxy);
   r1.xyzw = cb0[26].xxxx * r1.xyzw;
   r3.xyzw = t0.Sample(s0_s, r1.zw).xyzw;
-  r3.xyzw = saturate(r3.xyzw);  
+  r3.xyzw = saturate_bloom_sdr(r3.xyzw);  
 
   r1.xyzw = t0.Sample(s0_s, r1.xy).xyzw;
-  r1.xyzw = saturate(r1.xyzw);  
+  r1.xyzw = saturate_bloom_sdr(r1.xyzw);  
 
   r4.xyzw = r5.xyzw + r3.xyzw;
   r1.xyzw = r4.xyzw + r1.xyzw;
@@ -174,7 +186,7 @@ void main(
   r1.xy = cb0[26].xx * r1.xy;
   r1.xyzw = t0.Sample(s0_s, r1.xy).xyzw;
 
-  r1.xyzw = saturate(r1.xyzw);  
+  r1.xyzw = saturate_bloom_sdr(r1.xyzw);  
 
 
 
@@ -183,6 +195,9 @@ void main(
   r0.xyzw = r1.xyzw * float4(0.03125,0.03125,0.03125,0.03125) + r0.xyzw;
   r0.xyzw = min(float4(65504,65504,65504,65504), r0.xyzw);
   r1.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
+
+
+
   r0.xyzw = r1.xxxx * r0.xyzw;
   r0.xyzw = min(cb0[32].xxxx, r0.xyzw);
   r1.x = max(r0.x, r0.y);

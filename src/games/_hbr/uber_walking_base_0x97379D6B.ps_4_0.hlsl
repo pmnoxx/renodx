@@ -45,6 +45,9 @@ void main(
 
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
+  r0.w = saturate(r0.w); // fix for bloom
+  r1.w = saturate(r1.w);
+
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
   r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
@@ -130,6 +133,7 @@ void main(
       o0.w = r2.w;
     }
     o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
+    o0 = debug_mode(o0, v1);
     return;
   }
   if (RENODX_TONE_MAP_TYPE == 0.f) {
