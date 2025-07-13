@@ -47,6 +47,8 @@ void main(
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
   r0.w = saturate(r0.w); // fix for bloom
   r1.w = saturate(r1.w);
+  //r0 = debug_mode(r0, v1);
+  r1 = debug_mode(r1, w1);
 
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
@@ -154,7 +156,7 @@ void main(
   r2.xyz = r1.xyz ? r0.xyz : r3.xyz;
   o0.xyzw = r2.xyzw;
 */
-  o0 = debug_mode(o0, v1);
+ // o0 = debug_mode(o0, v1);
 
 
   return;

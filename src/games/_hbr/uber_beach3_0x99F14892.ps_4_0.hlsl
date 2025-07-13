@@ -46,6 +46,8 @@ void main(
   r0.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
   r0.w = saturate(r0.w); // fix for bloom
   
+  r0 = debug_mode(r0, v1);
+ // r1 = debug_mode(r1, v1);
 
   r1.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r0.xyz;
   r1.xyz = float3(0.947867334,0.947867334,0.947867334) * r1.xyz;
@@ -84,6 +86,7 @@ void main(
  // r0.xyzw = saturate(r2.xyzw * r1.xyzw + r0.xyzw);
   r0.xyzw = (r2.xyzw * r1.xyzw + r0.xyzw);
 
+  r0.w = saturate(r0.w); // fix
 
   if (RENODX_TONE_MAP_TYPE != 0) {
     float3 untonemapped = r0.xyz; // untonemapped here is still in SRGB
@@ -117,7 +120,7 @@ void main(
     }*/
     o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
     o0.w = saturate(r0.w);
-    o0 = debug_mode(o0, v1);
+   // o0 = debug_mode(o0, v1);
     return;
   }
 

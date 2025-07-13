@@ -49,6 +49,9 @@ renodx::mods::shader::CustomShaders custom_shaders = {
         CustomShaderEntry(0x09BE2D97), // uber_battle7
         CustomShaderEntry(0x97910609), // uber_battle8
         CustomShaderEntry(0xB054E953), // uber_battle9
+        CustomShaderEntry(0x915C6643), // text_draw
+        CustomShaderEntry(0x55B0DCB7), // text_draw2
+        CustomShaderEntry(0x4F036BB9), // text_draw3
 
   //  CustomShaderEntry(0x45A96F2D),
    /// CustomShaderEntry(0xD8341E94),
@@ -381,13 +384,36 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "Bloom3D",
         .binding = &shader_injection.bloom_3d,
-        .default_value = 0.f,
+        .default_value = 100.f,
         .label = "3D Bloom",
         .section = "Custom Color Grading",
         .tooltip = "Controls the strength of bloom effect for 3D scenes (0% = disabled, 100% = full strength)",
         .min = 0.f,
         .max = 100.f,
         .parse = [](float value) { return value * 0.01f; },
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "TextBrightnessCoef",
+        .binding = &shader_injection.text_brightness_coef,
+        .default_value = 1.f,
+        .label = "Text Brightness Coefficient",
+        .section = "Custom Color Grading",
+        .tooltip = "Controls the brightness coefficient for text and UI elements (1.0 = normal brightness)",
+        .min = 0.1f,
+        .max = 3.f,
+        .format = "%.2f",
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "EnableUIToneMapPass",
+        .binding = &shader_injection.enable_tone_map_pass,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "UI Tone Mapping Pass",
+        .section = "Custom Color Grading",
+        .tooltip = "Enable or disable the tone mapping pass in the final shader. (This applies tonemapping to UI effects, which can exceed peak nits.)",
+        .labels = {"Off", "On"},
         .is_visible = []() { return current_settings_mode >= 1; },
     },
     new renodx::utils::settings::Setting{

@@ -70,6 +70,7 @@ void main(
     r2.zw = saturate(r1.yz);
     r2.zw = cb0[26].xx * r2.zw;
     r6.xyzw = t0.SampleLevel(s0_s, r2.zw, 0).xyzw;
+
     r7.xyzw = t2.SampleLevel(s2_s, r2.xy, 0).xyzw;
     r3.xyz = max(float3(0,0,0), r7.xyz);
     r4.xyzw = r6.xyzw * r3.xyzw + r4.xyzw;
@@ -78,6 +79,8 @@ void main(
     r1.w = (int)r1.w + 1;
   }
   r1.xyzw = r4.xyzw / r5.xyzw;
+  r1 = debug_mode(r1, w1);
+
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
   r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
@@ -88,6 +91,8 @@ void main(
   r1.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
   r0.yzw = r1.xyz ? r0.yzw : r2.xyz;
   r0.xyz = r0.yzw * r0.xxx;
+  r0.w = saturate(r0.w); // fix
+  
   r0.w = cmp(cb0[40].y < 0.5);
   if (r0.w != 0) {
     r1.xy = -cb0[38].xy + v1.xy;
@@ -137,7 +142,7 @@ void main(
 
   o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
 
-  o0 = debug_mode(o0, v1);
+ // o0 = debug_mode(o0, v1);
 
   /*
   r0.xyz = float3(12.9200001,12.9200001,12.9200001) * r1.xyz;

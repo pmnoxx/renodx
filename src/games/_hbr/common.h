@@ -40,8 +40,12 @@ float GetPerceptualBoostStrength(float scene_type) {
 }
 
 float4 debug_mode(float4 color, float2 pos) {
-    if (pos.x < 0.01f * RENODX_DEBUG_MODE && pos.y < 0.01f * RENODX_DEBUG_MODE && RENODX_DEBUG_MODE)
+    if (pos.x < 0.01f * RENODX_DEBUG_MODE / 3.f && pos.y < 0.01f * RENODX_DEBUG_MODE && RENODX_DEBUG_MODE)
+        return float4(1.f, 0.f, 0.f, 1.f);
+    if (pos.x < 0.01f * RENODX_DEBUG_MODE * 2.f / 3.f && pos.y < 0.01f * RENODX_DEBUG_MODE && RENODX_DEBUG_MODE)
         return float4(0.f, 1.f, 0.f, 1.f);
+    if (pos.x < 0.01f * RENODX_DEBUG_MODE * 3.f / 3.f && pos.y < 0.01f * RENODX_DEBUG_MODE && RENODX_DEBUG_MODE)
+        return float4(0.f, 0.f, 1.f, 1.f);
     return color;
 }
   
@@ -133,28 +137,24 @@ float3 ApplyPerceptualBoostAndToneMap(float3 color, float scene_type = SCENE_TYP
     return color;
 }
 
-// Wrapper for ToneMapPass calls - disabled by default
 float3 ToneMapPassWrapper(float3 color) {
-    #ifdef ENABLE_TONE_MAP_PASS
-        return renodx::draw::ToneMapPass(color);
-    #else
+    if (RENODX_ENABLE_UI_TONEMAPPASS) {
         return color;
-    #endif
+    }
+    return renodx::draw::ToneMapPass(color);
 }
 
 float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color) {
-    #ifdef ENABLE_TONE_MAP_PASS
-        return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color);
-    #else
+    if (RENODX_ENABLE_UI_TONEMAPPASS) {
         return graded_sdr_color;
-    #endif
+    }
+    return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color);
 }
 
 float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
-    #ifdef ENABLE_TONE_MAP_PASS
-        return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color, neutral_sdr_color);
-    #else
+    if (RENODX_ENABLE_UI_TONEMAPPASS) {
         return graded_sdr_color;
-    #endif
+    }
+    return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color, neutral_sdr_color);
 }
 #endif
