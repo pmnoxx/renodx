@@ -100,6 +100,10 @@ struct ShaderInjectData {
   float perceptual_boost_2d_background; // Perceptual boost strength for 2D background scenes (0.0-10.0)
   float perceptual_boost_3d; // Perceptual boost strength for 3D scenes (0.0-10.0)
   
+  // Bloom Settings
+  float bloom_2d; // 2D bloom strength (0.0-1.0)
+  float bloom_3d; // 3D bloom strength (0.0-1.0)
+  
   // Debug Mode
   float debug_mode; // Debug mode for development and testing (0.0-1.0)
 };
@@ -171,6 +175,13 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_PERCEPTUAL_BOOST_2D_CHARACTER   shader_injection.perceptual_boost_2d_character
 #define RENODX_PERCEPTUAL_BOOST_2D_BACKGROUND  shader_injection.perceptual_boost_2d_background
 #define RENODX_PERCEPTUAL_BOOST_3D             shader_injection.perceptual_boost_3d
+
+// Bloom Settings
+#define RENODX_2D_BLOOM                        shader_injection.bloom_2d
+#define RENODX_3D_BLOOM                        shader_injection.bloom_3d
+
+// turn off custom tonemappass behaviour
+#define ENABLE_TONE_MAP_PASS
 
 // Debug Mode
 #define RENODX_DEBUG_MODE                      shader_injection.debug_mode

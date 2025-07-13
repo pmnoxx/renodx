@@ -52,6 +52,8 @@ void main(
   float4 fDest;
 
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
+  r0.w = saturate(r0.w); 
+  
   r0.yz = v1.xy * float2(2,2) + float2(-1,-1);
   r0.w = dot(r0.yz, r0.yz);
   r0.yz = r0.yz * r0.ww;
@@ -176,7 +178,7 @@ void main(
 
 
   if (RENODX_TONE_MAP_TYPE != 0) {
-    float3 untonemapped = r3.xyz; // untonemapped here is still in SRGB
+    float3 untonemapped = r3.xyz; // untonemapped here is still in SRGB // good index
     r0.xyz = saturate(untonemapped);
 
     float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped); // tonemap to SDR you can change this to any SDR tonemapper you want 
