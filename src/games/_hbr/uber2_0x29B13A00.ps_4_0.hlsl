@@ -51,6 +51,8 @@ void main(
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
   r0.w = saturate(r0.w); // fix for bloom
   r1.w = saturate(r1.w);
+  //r0 = debug_mode(r0, v1);
+  r1 = debug_mode(r1, w1);
 
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
@@ -86,6 +88,9 @@ void main(
   r4.w = 0.25 * r0.w;
   r0.xyzw = r4.xyzw + r1.xyzw;
   r0.xyzw = r2.xyzw * r3.xyzw + r0.xyzw;
+
+  r0.w = saturate(r0.w); // fix
+
   r1.x = cmp(cb0[40].y < 0.5);
   if (r1.x != 0) {
     r1.xy = -cb0[38].xy + v1.xy;
@@ -150,7 +155,7 @@ void main(
       o0.w = r2.w;
     }
     o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
-    o0 = debug_mode(o0, v1);
+   // o0 = debug_mode(o0, v1);
     return;
   }
 

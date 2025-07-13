@@ -90,6 +90,7 @@ void main(
     r1.w = (int)r1.w + 1;
   }
   r1.xyzw = r4.xyzw / r5.xyzw;
+  r1 = debug_mode(r1, w1);
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r3.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
   r3.xyz = float3(0.947867334,0.947867334,0.947867334) * r3.xyz;
@@ -142,6 +143,8 @@ void main(
   r1.xyz = r3.xyz * r4.xyz;
   r1.w = 0;
   r0.xyzw = r1.xyzw + r0.xyzw;
+  r0.w = saturate(r0.w); // fix
+  
   r1.x = cmp(cb0[40].y < 0.5);
   if (r1.x != 0) {
     r1.xy = -cb0[38].xy + v1.xy;
@@ -205,7 +208,7 @@ void main(
       o0.w = r2.w;
     }
     o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
-    o0 = debug_mode(o0, v1);
+//    o0 = debug_mode(o0, v1);
     return;
   }
 

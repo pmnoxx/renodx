@@ -104,8 +104,14 @@ struct ShaderInjectData {
   float bloom_2d; // 2D bloom strength (0.0-1.0)
   float bloom_3d; // 3D bloom strength (0.0-1.0)
   
+  // Text Brightness Coefficient
+  float text_brightness_coef; // Text brightness coefficient for UI elements (default: 1.0)
+  
   // Debug Mode
   float debug_mode; // Debug mode for development and testing (0.0-1.0)
+  
+  // Tone Map Pass Control
+  float enable_tone_map_pass; // Enable/disable tone mapping pass (0.0 = off, 1.0 = on)
 };
 
 #ifndef __cplusplus
@@ -180,11 +186,14 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_2D_BLOOM                        shader_injection.bloom_2d
 #define RENODX_3D_BLOOM                        shader_injection.bloom_3d
 
-// turn off custom tonemappass behaviour
-#define ENABLE_TONE_MAP_PASS
+// Text Brightness Coefficient
+#define RENODX_TEXT_BRIGHTNESS_COEF            shader_injection.text_brightness_coef
 
 // Debug Mode
 #define RENODX_DEBUG_MODE                      shader_injection.debug_mode
+
+// Tone Map Pass Control
+#define RENODX_ENABLE_UI_TONEMAPPASS           shader_injection.enable_tone_map_pass
 
 #include "../../shaders/renodx.hlsl"
 

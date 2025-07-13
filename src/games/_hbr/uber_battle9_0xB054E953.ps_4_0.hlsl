@@ -81,6 +81,7 @@ void main(
     r1.w = (int)r1.w + 1;
   }
   r1.xyzw = r4.xyzw / r5.xyzw;
+  r1 = debug_mode(r1, w1);
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
   r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
@@ -159,6 +160,6 @@ void main(
 
   o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
 
-  o0 = debug_mode(o0, v1);
+  //o0 = debug_mode(o0, v1);
   return;
 }

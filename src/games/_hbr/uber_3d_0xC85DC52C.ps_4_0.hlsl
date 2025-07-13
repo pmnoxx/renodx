@@ -41,6 +41,7 @@ void main(
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
   r0.w = saturate(r0.w); // fix for bloom
   r1.w = saturate(r1.w);
+  r1 = debug_mode(r1, w1);
 
   
   r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
@@ -90,9 +91,6 @@ void main(
   }
   r0.xyz = saturate( r0.xyz);
 
-
-
-
   r1.xyz = float3(12.9200001,12.9200001,12.9200001) * r0.zxy;
   r2.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), r0.zxy);
   r2.xyz = log2(r2.xyz);
@@ -139,6 +137,6 @@ void main(
   r2.xyz = r2.xyz * float3(1.05499995,1.05499995,1.05499995) + float3(-0.0549999997,-0.0549999997,-0.0549999997);
   r0.xyz = cmp(float3(0.00313080009,0.00313080009,0.00313080009) >= r0.xyz);
   o0.xyz = r0.xyz ? r1.xyz : r2.xyz;
-  o0 = debug_mode(o0, v1);
+ // o0 = debug_mode(o0, v1);
   return;
 }
