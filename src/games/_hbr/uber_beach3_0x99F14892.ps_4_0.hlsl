@@ -44,6 +44,9 @@ void main(
   float4 fDest;
 
   r0.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
+  r0.w = saturate(r0.w); // fix for bloom
+  
+
   r1.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r0.xyz;
   r1.xyz = float3(0.947867334,0.947867334,0.947867334) * r1.xyz;
   r1.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r1.xyz));
@@ -114,6 +117,7 @@ void main(
     }*/
     o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
     o0.w = saturate(r0.w);
+    o0 = debug_mode(o0, v1);
     return;
   }
 
