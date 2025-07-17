@@ -50,12 +50,11 @@ void main(
   r0.xyz = (cb0[132].www * r0.xyz);
   r0 = debug_mode(r0, v1);
   float4 untonemapped = r0;
-/*
   if (RENODX_TONE_MAP_TYPE != 0) {
-    o0 = renodx_opening_tonemap_block(r0, v1, t1, t2, cmp(0 < cb0[133].w), false);
+    o0 = renodx_opening_tonemap_block(untonemapped, r0, v1, t1, t2, cb0[133].w, false);
     return;
   }
-*/
+
   r0.xyz = saturate(r0.xyz);
   r0.w = cmp(0 < cb0[133].w);
   if (r0.w != 0) {
@@ -89,10 +88,6 @@ void main(
     r3.xyz = exp2(r3.xyz);
     r1.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
     r0.xyz = r1.xyz ? r2.xyz : r3.xyz;
-  }
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    o0 = renodx_opening_tonemap_block(untonemapped, r0, v1, t1, t2, cmp(0 < 0), false);
-    return;
   }
   r0.xyw = cb0[132].zzz * r0.xyz;
   r0.w = floor(r0.w);

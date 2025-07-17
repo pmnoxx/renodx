@@ -66,14 +66,13 @@ float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 n
     return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color, neutral_sdr_color);
 }
 
-float4 renodx_opening_tonemap_block(float4 untonemapped, float4 aces_output, float2 v1, Texture2D<float4> t2, Texture2D<float4> t3, float use_t3, bool useToneMapPass) {
+float4 renodx_opening_tonemap_block(float4 untonemapped, float4 aces_output, float2 v1, Texture2D<float4> t2, Texture2D<float4> t3, float t3_intensity, bool useToneMapPass) {
 
     float4 r1 = 0;
-    r1.w = use_t3;
 
     float4 r0 = aces_output;
 
-    if (r1.w != 0) {
+    if (t3_intensity != 0) {
       untonemapped = debug_mode(untonemapped, v1, 0.02f);
    /*  float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);  // tonemap to SDR you can change this to any SDR tonemapper you want
       if (RENODX_TONE_MAP_TYPE != 0) {
@@ -84,7 +83,7 @@ float4 renodx_opening_tonemap_block(float4 untonemapped, float4 aces_output, flo
       
 
       r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
-      r0.xyz = renodx::lut::SampleTetrahedral(t3, r0.xyz); 
+      r0.xyz = lerp(r0.xyz, renodx::lut::SampleTetrahedral(t3, r0.xyz), t3_intensity);  
       r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
         
   //    float3 sdrGraded = r0.xyz;
@@ -105,11 +104,10 @@ float4 renodx_opening_tonemap_block(float4 untonemapped, float4 aces_output, flo
     return r0;
 }
 
-float4 renodx_opening_tonemap_block(float4 r0, float2 v1, Texture2D<float4> t2, Texture2D<float4> t3, float use_t3, bool useToneMapPass) {
+float4 renodx_opening_tonemap_block(float4 r0, float2 v1, Texture2D<float4> t2, Texture2D<float4> t3, float t3_intensity, bool useToneMapPass) {
 
     float4 r1 = 0;
-    r1.w = use_t3;
-    if (r1.w != 0) {
+    if (t3_intensity != 0) {
       r0 = debug_mode(r0, v1, 0.02f);
       float3 untonemapped = r0.xyz;
       float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);  // tonemap to SDR you can change this to any SDR tonemapper you want
@@ -119,7 +117,7 @@ float4 renodx_opening_tonemap_block(float4 r0, float2 v1, Texture2D<float4> t2, 
         sdrTonemapped = r0.xyz;
       }
       r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
-      r0.xyz = renodx::lut::SampleTetrahedral(t3, r0.xyz);  
+      r0.xyz = lerp(r0.xyz, renodx::lut::SampleTetrahedral(t3, r0.xyz), t3_intensity);  
       r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
         
       float3 sdrGraded = r0.xyz;

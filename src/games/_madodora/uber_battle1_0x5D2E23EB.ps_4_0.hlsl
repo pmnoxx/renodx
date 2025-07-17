@@ -59,11 +59,12 @@ void main(
   r0.xyz = (cb0[132].www * r0.xyz);
 
   r0 = debug_mode(r0, v1);
-
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    o0 = renodx_opening_tonemap_block(r0, v1, t2, t3, cmp(0 < cb0[133].w), true);
+  float4 untonemapped = r0;
+  if (RENODX_TONE_MAP_TYPE != 0.f) {
+    o0 = renodx_opening_tonemap_block(untonemapped, saturate(r1), v1, t1, t2, cb0[133].w, true);
     return;
   }
+
   r0.xyz = saturate(r0.xyz);
 
   r0.w = cmp(0 < cb0[133].w);
