@@ -72,6 +72,7 @@ void main(
   // RenoDX modification: Decode PQ-encoded HDR colors if tone mapping is enabled
   if (RENODX_TONE_MAP_TYPE > 0.f) {
     r0.xyz = renodx::color::pq::Decode(r0.xyz, 100.f);  // Decode from PQ to linear
+    r0.xyz = renodx::color::bt709::from::BT2020(r0.xyz);
   }
 
   // ============================================================================
