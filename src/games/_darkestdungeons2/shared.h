@@ -92,6 +92,8 @@ struct ShaderInjectData {
 
   float horizontal_split_screen;
   float custom_random;
+
+  float reno_drt_white_clip;
 };
 
 #ifndef __cplusplus
@@ -102,7 +104,6 @@ cbuffer shader_injection : register(b13) {
 #endif
   ShaderInjectData shader_injection : packoffset(c0);
 }
-//#define RENODX_RENO_DRT_WHITE_CLIP               shader_injection.reno_drt_white_clip
 
 #define RENODX_TONE_MAP_TYPE                 shader_injection.tone_map_type
 #define RENODX_PEAK_WHITE_NITS               shader_injection.peak_white_nits
@@ -150,6 +151,7 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_PERCEPTUAL_BOOST_2D_BACKGROUND  shader_injection.perceptual_boost_2d_background
 #define RENODX_PERCEPTUAL_BOOST_3D             shader_injection.perceptual_boost_3d
 #define RENODX_REMOVE_BANDING                   shader_injection.remove_banding
+#define RENODX_RENO_DRT_WHITE_CLIP               shader_injection.reno_drt_white_clip
 
 #include "../../shaders/renodx.hlsl"
 
