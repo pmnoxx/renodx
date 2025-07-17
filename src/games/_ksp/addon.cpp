@@ -19,11 +19,20 @@
 
 namespace {
 
+    // generated based on local *.hlsl files
 renodx::mods::shader::CustomShaders custom_shaders = {
-  //  CustomShaderEntry(0x45A96F2D),
-   /// CustomShaderEntry(0xD8341E94),
-    // CustomSwapchainShader(0x00000000),
-    // BypassShaderEntry(0x00000000)
+    CustomShaderEntry(0x20133A8B), // 0x20133A8B.ps_4_0.hlsl
+    CustomShaderEntry(0x2B868B21), // ui1_0x2B868B21.ps_4_0.hlsl
+    CustomShaderEntry(0x2F1143FE), // ui2_0x2F1143FE.ps_4_0.hlsl
+    CustomShaderEntry(0x55B0DCB7), // ui4_0x55B0DCB7.ps_4_0.hlsl
+    CustomShaderEntry(0x55CC633B), // ui5_0x55CC633B.ps_4_0.hlsl
+    CustomShaderEntry(0x5757C407), // ui7_0x5757C407.ps_4_0.hlsl
+    CustomShaderEntry(0x5A045DE6), // ui3_0x5A045DE6.ps_4_0.hlsl
+    CustomShaderEntry(0x657E16F9), // ui6_0x657E16F9.ps_4_0.hlsl
+    CustomShaderEntry(0x5E03FF3C), // ui8_0x5E03FF3C.ps_4_0.hlsl
+    CustomShaderEntry(0xC1457489), // ui9_0xC1457489.ps_4_0.hlsl
+    CustomShaderEntry(0x915C6643), // ui10_0x915C6643.ps_4_0.hlsl
+    CustomShaderEntry(0xF06C4BBC), // ui11_0xF06C4BBC.ps_4_0.hlsl
 };
 
 
@@ -327,12 +336,46 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.reno_drt_white_clip,
         .default_value = 65.f,
         .label = "White Clip",
-        .section = "Custom Color Grading",
+        .section = "Color Grading",
         .tooltip = "Clip point for white in nits",
         .min = 1.f,
         .max = 100.f,
         .is_enabled = []() { return shader_injection.tone_map_type == 3; },
         .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "EffectSplitMode",
+        .binding = &shader_injection.effect_split_mode,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Split Mode",
+        .section = "Debug",
+        .tooltip = "Choose the split mode for effect application.",
+        .labels = {"Off", "On"},
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "EffectSplitX",
+        .binding = &shader_injection.effect_split_x,
+        .default_value = 1.f, // Default to half of 1920 width, adjust as needed
+        .label = "Effect Split X",
+        .section = "Debug",
+        .tooltip = "Only apply effects to the left of this screen X coordinate.",
+        .min = -1.f,
+        .max = 1.f, // Or your max screen width
+        .format = "%.3f",
+        .is_visible = []() { return current_settings_mode >= 1 && shader_injection.effect_split_mode != 0; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "EffectSplitAngle",
+        .binding = &shader_injection.effect_split_angle,
+        .default_value = 0.f,
+        .label = "Split Angle",
+        .section = "Debug",
+        .tooltip = "Angle (in degrees) for the split line (0 = vertical, 90 = horizontal, etc.)",
+        .min = 0.f,
+        .max = 360.f,
+        .is_visible = []() { return current_settings_mode >= 1 && shader_injection.effect_split_mode != 0; },
     },
     new renodx::utils::settings::Setting{
         .key = "SwapChainCustomColorSpace",
@@ -405,40 +448,6 @@ renodx::utils::settings::Settings settings = {
         .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
         .parse = [](float value) { return value - 1.f; },
         .is_visible = []() { return current_settings_mode >= 2; },
-    },
-    new renodx::utils::settings::Setting{
-        .key = "EffectSplitMode",
-        .binding = &shader_injection.effect_split_mode,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
-        .label = "Split Mode",
-        .section = "Display Output",
-        .tooltip = "Choose the split mode for effect application.",
-        .labels = {"Off", "On"},
-        .is_visible = []() { return current_settings_mode >= 1; },
-    },
-    new renodx::utils::settings::Setting{
-        .key = "EffectSplitX",
-        .binding = &shader_injection.effect_split_x,
-        .default_value = 1.f, // Default to half of 1920 width, adjust as needed
-        .label = "Effect Split X",
-        .section = "Display Output",
-        .tooltip = "Only apply effects to the left of this screen X coordinate.",
-        .min = -1.f,
-        .max = 1.f, // Or your max screen width
-        .format = "%.3f",
-        .is_visible = []() { return current_settings_mode >= 1; },
-    },
-    new renodx::utils::settings::Setting{
-        .key = "EffectSplitAngle",
-        .binding = &shader_injection.effect_split_angle,
-        .default_value = 0.f,
-        .label = "Split Angle",
-        .section = "Display Output",
-        .tooltip = "Angle (in degrees) for the split line (0 = vertical, 90 = horizontal, etc.)",
-        .min = 0.f,
-        .max = 360.f,
-        .is_visible = []() { return shader_injection.effect_split_mode != 0; },
     },
 };
 
