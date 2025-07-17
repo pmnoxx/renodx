@@ -56,7 +56,7 @@ renodx::utils::settings::Settings settings = {
         .key = "ToneMapType",
         .binding = &shader_injection.tone_map_type,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 2.f,
+        .default_value = 3.f,
         .can_reset = true,
         .label = "Tone Mapper",
         .section = "Tone Mapping",
@@ -358,32 +358,6 @@ renodx::utils::settings::Settings settings = {
         .format = "%.2f",
     },
     new renodx::utils::settings::Setting{
-        .key = "LutT3Enable",
-        .binding = &shader_injection.lut_t3_enable,
-        .default_value = 0.2f,
-        .can_reset = true,
-        .label = "Enable Precomputed LUT (login screen)",
-        .section = "Custom Color Grading",
-        .tooltip = "Enable or disable LUT (login screen) color grading.",
-        .min = 0.0f,
-        .max = 1.0f,
-        .format = "%.2f",
-    },
-    // Apply Game ACES slider
-    new renodx::utils::settings::Setting{
-        .key = "ApplyGameACES",
-        .binding = &shader_injection.apply_game_aces,
-        .default_value = 0.0f,
-        .can_reset = true,
-        .label = "Apply Game ACES",
-        .section = "Custom Color Grading",
-        .tooltip = "Controls lerp to preCG (0 = off, 1 = on)",
-        .min = 0.0f,
-        .max = 1.0f,
-        .format = "%.2f",
-        .is_visible = []() { return current_settings_mode >= 1; },
-    },
-    new renodx::utils::settings::Setting{
         .key = "TextBrightnessCoef",
         .binding = &shader_injection.text_brightness_coef,
         .default_value = 1.f,
@@ -416,8 +390,7 @@ renodx::utils::settings::Settings settings = {
         .group = "button-line-1",
         .tint = 0x4A3472,
         .on_change = []() {
-          renodx::utils::settings::UpdateSetting("toneMapType", 2.f);
-          renodx::utils::settings::UpdateSetting("LutT3Enable", 0.2f);
+          renodx::utils::settings::UpdateSetting("toneMapType", 3.f);
           renodx::utils::settings::UpdateSetting("CharacterBrightness", 1.f);
           renodx::utils::settings::UpdateSetting("colorGradeHighlights", 50.f);
           renodx::utils::settings::UpdateSetting("colorGradeShadows", 50.f);

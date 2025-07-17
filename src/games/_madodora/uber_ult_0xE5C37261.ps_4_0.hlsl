@@ -67,13 +67,14 @@ void main(
   }
   r0.xyz = cb0[132].www * r0.xyz;
 
-  r0 = debug_mode(r0,v1);
-
+  r0 = debug_mode(r0, v1);
+  float4 untonemapped = r0;
+/*
   if (RENODX_TONE_MAP_TYPE != 0) {
     o0 = renodx_opening_tonemap_block(r0, v1, t2, t3, cmp(0 < cb0[133].w), true);
     return;
   }
-
+*/
   r1.y = dot(float3(0.439700991,0.382977992,0.177334994), r0.xyz);
   r1.z = dot(float3(0.0897922963,0.813422978,0.0967615992), r0.xyz);
   r1.w = dot(float3(0.0175439995,0.111543998,0.870703995), r0.xyz);
@@ -205,9 +206,9 @@ void main(
   r1.y = (dot(float3(-0.969243646,1.8759675,0.0415550582), r0.xyz));
   r1.z = (dot(float3(0.0556300804, -0.203976959, 1.05697155), r0.xyz));
 
-  if (RENODX_TONE_MAP_TYPE == 0.f) {
+ // if (RENODX_TONE_MAP_TYPE == 0.f) {
     r1.xyz = saturate(r1.xyz);
-  }
+//  }
 
   r0.x = cmp(0 < cb0[133].w);
   if (r0.x != 0) {
@@ -242,6 +243,11 @@ void main(
     r0.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r0.xyz);
     r1.xyz = r0.xyz ? r2.xyz : r3.xyz;
   }
+  if (RENODX_TONE_MAP_TYPE != 0.f) {
+    o0 = renodx_opening_tonemap_block(untonemapped, saturate(r1), v1, t2, t3, cmp(0 < 0), true);
+    return;
+  }
+
   r0.xyz = cb0[132].zzz * r1.zxy;
   r0.x = floor(r0.x);
   r1.xy = float2(0.5,0.5) * cb0[132].xy;
