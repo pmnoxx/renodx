@@ -84,6 +84,9 @@ struct ShaderInjectData {
   // Character Brightness
   float character_brightness; // Character brightness multiplier (default: 0.85)
 
+  // Enable LUT t3 (black/white effect)
+  float lut_t3_enable; // 1.0 = enabled, 0.0 = disabled
+
   // Apply Game ACES
   float apply_game_aces; // Controls lerp to preCG (0 = off, 1 = on)
   
@@ -148,6 +151,9 @@ cbuffer shader_injection : register(b13) {
 
 // Character Brightness
 #define RENODX_CHARACTER_BRIGHTNESS            shader_injection.character_brightness
+
+// Enable LUT t3 (black/white effect)
+#define RENODX_LUT_T3_ENABLE                  shader_injection.lut_t3_enable
 
 // Apply Game ACES
 #define RENODX_APPLY_GAME_ACES                 shader_injection.apply_game_aces
