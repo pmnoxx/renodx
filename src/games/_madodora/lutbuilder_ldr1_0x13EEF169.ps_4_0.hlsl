@@ -229,21 +229,11 @@ void main(
   r0.xyz = cb0[140].xyz * r0.xyz;
   r0.xyz = exp2(r0.xyz);
 
-  // ============================================================================
-  // SECTION 17: RENODX TONE MAPPING INTEGRATION (MODIFICATION)
-  // ============================================================================
-  // RenoDX modification: Apply tone mapping and create SDR version for LUT sampling
-  float3 untonemapped = r0.xyz;
-  float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);  // tonemap to SDR you can change this to any SDR tonemapper you want
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    float y = renodx::color::y::from::BT709(untonemapped);
-    r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
-    sdrTonemapped = r0.xyz;
-  }
-
+ 
   r1.xyz = (int3)-r1.xyz + (int3)r2.xyz;
   r1.xyz = (int3)r1.xyz;
   r2.xyz = r1.xyz * r0.xyz;
+
 
   // ============================================================================
   // SECTION 18: HSV COLOR SPACE CONVERSION
@@ -282,13 +272,13 @@ void main(
   r2.yw = float2(0,0);
   r4.xyzw = t4.SampleBias(s0_s, r2.zw, cb0[5].x).xyzw;  // Sample LUT texture 4
   r5.xyzw = t7.SampleBias(s0_s, r2.xy, cb0[5].x).xyzw;  // Sample LUT texture 7
-  r5.x = saturate(r5.x);
+  r5.x = (r5.x);
   r0.y = r5.x + r5.x;
-  r4.x = saturate(r4.x);
+  r4.x = (r4.x);
   r0.z = -0.5 + r4.x;
   r0.z = r2.z + r0.z;
   r0.w = cmp(1 < r0.z);
-  r1.yz = float2(1,-1) + r0.zz;
+  r1.yz = (1,-1) + r0.zz;
   r0.w = r0.w ? r1.z : r0.z;
   r0.z = cmp(r0.z < 0);
   r0.z = r0.z ? r1.y : r0.w;
@@ -317,15 +307,26 @@ void main(
   r3.yw = float2(0,0);
   r2.xyzw = t5.SampleBias(s0_s, r3.xy, cb0[5].x).xyzw;  // Sample LUT texture 5
   r3.xyzw = t6.SampleBias(s0_s, r3.zw, cb0[5].x).xyzw;  // Sample LUT texture 6
-  r3.x = saturate(r3.x);
+  r3.x = (r3.x);
   r0.x = r3.x + r3.x;
-  r2.x = saturate(r2.x);
+  r2.x = (r2.x);
   r0.w = r2.x + r2.x;
   r0.x = r0.w * r0.x;
   r0.x = r0.x * r0.y;
   r0.x = cb0[138].y * r0.x;
   r0.xyz = r0.xxx * r1.xyz + r0.zzz;
 
+  // ============================================================================
+  // SECTION XX: RENODX TONE MAPPING INTEGRATION (MODIFICATION)
+  // ============================================================================
+  // RenoDX modification: Apply tone mapping and create SDR version for LUT sampling
+  float3 untonemapped = r0.xyz;
+  float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);  // tonemap to SDR you can change this to any SDR tonemapper you want
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    float y = renodx::color::y::from::BT709(untonemapped);
+    r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
+    sdrTonemapped = r0.xyz;
+  }
   // ============================================================================
   // SECTION 22: FINAL LUT SAMPLING AND OUTPUT
   // ============================================================================
@@ -336,11 +337,11 @@ void main(
   
   // Sample from main LUT textures for final color components
   r1.xyzw = t0.SampleBias(s0_s, r0.xw, cb0[5].x).xyzw;  // Red channel LUT
-  r1.x = saturate(r1.x);
+  r1.x = (r1.x);
   r2.xyzw = t0.SampleBias(s0_s, r0.yw, cb0[5].x).xyzw;  // Green channel LUT
   r0.xyzw = t0.SampleBias(s0_s, r0.zw, cb0[5].x).xyzw;  // Blue channel LUT
-  r1.z = saturate(r0.x);
-  r1.y = saturate(r2.x);
+  r1.z = (r0.x);
+  r1.y = (r2.x);
   
   // Combine color components
   r0.xyz = float3(0.00390625,0.00390625,0.00390625) + r1.xyz;
@@ -348,11 +349,11 @@ void main(
   
   // Final sampling from remaining LUT textures
   r1.xyzw = t1.SampleBias(s0_s, r0.xw, cb0[5].x).xyzw;
-  o0.x = saturate(r1.x);  // Final red output
+  o0.x = (r1.x);  // Final red output
   r1.xyzw = t2.SampleBias(s0_s, r0.yw, cb0[5].x).xyzw;
   r0.xyzw = t3.SampleBias(s0_s, r0.zw, cb0[5].x).xyzw;
-  o0.z = saturate(r0.x);  // Final blue output
-  o0.y = saturate(r1.x);  // Final green output
+  o0.z = (r0.x);  // Final blue output
+  o0.y = (r1.x);  // Final green output
   o0.w = 1;               // Alpha = 1 (fully opaque)
 
   // ============================================================================

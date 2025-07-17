@@ -54,7 +54,7 @@ void main(
   float3 preCG = r0.xyz;
 
   if (RENODX_TONE_MAP_TYPE != 0) {
-    o0 = renodx_opening_tonemap_block(r0, v1, t1, t2, cmp(0 < cb0[133].w));
+    o0 = renodx_opening_tonemap_block(r0, v1, t1, t2, cmp(0 < cb0[133].w), true);
     return;
   }
 
