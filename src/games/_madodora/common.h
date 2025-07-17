@@ -61,6 +61,9 @@ float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 n
 
 float4 renodx_opening_tonemap_block(float4 r0, float2 v1, Texture2D<float4> t2, Texture2D<float4> t3, float use_t3, bool useToneMapPass) {
 
+    if (useToneMapPass) {
+        r0.rgb = renodx::draw::ToneMapPass(r0.rgb);
+    }
     float4 r1 = 0;
     r1.w = use_t3;
     if (r1.w != 0) {
@@ -77,16 +80,13 @@ float4 renodx_opening_tonemap_block(float4 r0, float2 v1, Texture2D<float4> t2, 
         
       float3 sdrGraded = r0.xyz;
       float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
-      r0.xyz = color;
+      r0.xyz = lerp(untonemapped, color, RENODX_LUT_T3_ENABLE);      
     }
     r0.xyz = max(0.f, renodx::color::bt2020::from::BT709(r0.xyz));
     r0.xyz = renodx::color::pq::Encode(r0.xyz, 100.f);
     r0.xyz = renodx::lut::SampleTetrahedral(t2, r0.xyz);
 
     r0.w = 1;
-    if (useToneMapPass) {
-        r0.rgb = renodx::draw::ToneMapPass(r0.rgb);
-    }
     r0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
     return r0;
 }

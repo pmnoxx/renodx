@@ -32,6 +32,7 @@ renodx::mods::shader::CustomShaders custom_shaders = {
     CustomShaderEntry(0x13EEF169), // lutbuilder_ldr1_0x13EEF169.ps_4_0.hlsl
     CustomShaderEntry(0x1EF2268F), // final_post_0x1EF2268F.ps_5_0.hlsl
     CustomShaderEntry(0x02DD6FFF), // 2d_background_0x02DD6FFF.ps_4_0.hlsl
+    CustomShaderEntry(0x5D2E23EB), // uber_battle1_0x5D2E23EB.ps_4_0.hlsl
 };
 
 
@@ -315,7 +316,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.tone_map_flare,
         .default_value = 0.f,
         .label = "Flare",
-        .section = "Color Grading",
+        .section = "Custom Color Grading",
         .tooltip = "Flare/Glare Compensation",
         .max = 100.f,
         .is_enabled = []() { return shader_injection.tone_map_type == 3; },
@@ -326,7 +327,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.color_grade_strength,
         .default_value = 100.f,
         .label = "Scene Grading",
-        .section = "Color Grading",
+        .section = "Custom Color Grading",
         .tooltip = "Scene grading as applied by the game",
         .max = 100.f,
         .is_enabled = []() { return shader_injection.tone_map_type > 0; },
@@ -347,20 +348,33 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "CharacterBrightness",
         .binding = &shader_injection.character_brightness,
-        .default_value = 0.85f,
-        .label = "Character Brightness",
+        .default_value = 1.f,
+        .can_reset = true,
+        .label = "2d Character Brightness",
         .section = "Custom Color Grading",
-        .tooltip = "Controls the brightness multiplier for character rendering (0 = black, 1 = normal, >1 = brighter)",
+        .tooltip = "2d Character brightness multiplier (default: 1.0)",
         .min = 0.0f,
         .max = 2.0f,
         .format = "%.2f",
-        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "LutT3Enable",
+        .binding = &shader_injection.lut_t3_enable,
+        .default_value = 0.2f,
+        .can_reset = true,
+        .label = "Enable Precomputed LUT (login screen)",
+        .section = "Custom Color Grading",
+        .tooltip = "Enable or disable LUT (login screen) color grading.",
+        .min = 0.0f,
+        .max = 1.0f,
+        .format = "%.2f",
     },
     // Apply Game ACES slider
     new renodx::utils::settings::Setting{
         .key = "ApplyGameACES",
         .binding = &shader_injection.apply_game_aces,
         .default_value = 0.0f,
+        .can_reset = true,
         .label = "Apply Game ACES",
         .section = "Custom Color Grading",
         .tooltip = "Controls lerp to preCG (0 = off, 1 = on)",
@@ -373,6 +387,7 @@ renodx::utils::settings::Settings settings = {
         .key = "TextBrightnessCoef",
         .binding = &shader_injection.text_brightness_coef,
         .default_value = 1.f,
+        .can_reset = true,
         .label = "Text Brightness Coefficient",
         .section = "Custom Color Grading",
         .tooltip = "Controls the brightness coefficient for text and UI elements (1.0 = normal brightness)",
@@ -386,11 +401,64 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.enable_tone_map_pass,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 0.f,
+        .can_reset = true,
         .label = "UI Tone Mapping Pass",
         .section = "Custom Color Grading",
         .tooltip = "Enable or disable the tone mapping pass in the final shader. (This applies tonemapping to UI effects, which can exceed peak nits.)",
         .labels = {"Off", "On"},
         .is_visible = []() { return current_settings_mode >= 1; },
+    },
+
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Reset",
+        .section = "Color Grading Templates",
+        .group = "button-line-1",
+        .tint = 0x4A3472,
+        .on_change = []() {
+          renodx::utils::settings::UpdateSetting("toneMapType", 2.f);
+          renodx::utils::settings::UpdateSetting("LutT3Enable", 0.2f);
+          renodx::utils::settings::UpdateSetting("CharacterBrightness", 1.f);
+          renodx::utils::settings::UpdateSetting("colorGradeHighlights", 50.f);
+          renodx::utils::settings::UpdateSetting("colorGradeShadows", 50.f);
+          renodx::utils::settings::UpdateSetting("colorGradeContrast", 50.f);
+          renodx::utils::settings::UpdateSetting("colorGradeSaturation", 50.f);
+          renodx::utils::settings::UpdateSetting("colorGradeBlowout", 50.f);
+          
+
+
+          /*
+          renodx::utils::settings::UpdateSetting("toneMapPerChannel", 1.f);
+          renodx::utils::settings::UpdateSetting("toneMapHueProcessor", 1.f);
+          renodx::utils::settings::UpdateSetting("toneMapHueShift", 50.f);
+          renodx::utils::settings::UpdateSetting("toneMapHueCorrection", 0.f);
+          renodx::utils::settings::UpdateSetting("colorGradeExposure", 1.f);
+          renodx::utils::settings::UpdateSetting("colorGradeHighlights", 50.f);
+          renodx::utils::settings::UpdateSetting("colorGradeShadows", 50.f);
+          renodx::utils::settings::UpdateSetting("colorGradeContrast", 50.f);
+          renodx::utils::settings::UpdateSetting("colorGradeSaturation", 50.f);
+          renodx::utils::settings::UpdateSetting("colorGradeBlowout", 50.f);
+          renodx::utils::settings::UpdateSetting("colorGradeDechroma", 0.f);
+          renodx::utils::settings::UpdateSetting("colorGradeFlare", 0.f);
+          renodx::utils::settings::UpdateSetting("colorGradeClip", 8.f);
+          renodx::utils::settings::UpdateSetting("colorGradeLUTStrength", 100.f);
+          renodx::utils::settings::UpdateSetting("colorGradeLUTScaling", 0.f);
+          renodx::utils::settings::UpdateSetting("colorGradeLUTSampling", 1.f);*/
+        },
+    },
+
+    
+    new renodx::utils::settings::Setting{
+        .key = "DebugMode",
+        .binding = &shader_injection.debug_mode,
+        .default_value = 0.f,
+        .label = "Debug Mode",
+        .section = "Development",
+        .tooltip = "Debug mode for development and testing (0.0 = disabled, 1.0 = enabled)",
+        .min = 0.f,
+        .max = 1.f,
+        .format = "%.2f",
+        .is_visible = []() { return current_settings_mode >= 2; },
     },
     new renodx::utils::settings::Setting{
         .key = "SwapChainCustomColorSpace",
@@ -499,21 +567,6 @@ renodx::utils::settings::Settings settings = {
         .is_visible = []() { return shader_injection.effect_split_mode != 0; },
     },
 
-
-
-    
-    new renodx::utils::settings::Setting{
-        .key = "DebugMode",
-        .binding = &shader_injection.debug_mode,
-        .default_value = 0.f,
-        .label = "Debug Mode",
-        .section = "Development",
-        .tooltip = "Debug mode for development and testing (0.0 = disabled, 1.0 = enabled)",
-        .min = 0.f,
-        .max = 1.f,
-        .format = "%.2f",
-        .is_visible = []() { return current_settings_mode >= 2; },
-    },
     
    /* new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
