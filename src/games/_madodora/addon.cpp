@@ -193,54 +193,6 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value - 1.f; },
         .is_visible = []() { return current_settings_mode >= 2; },
     },
-    /*
-    new renodx::utils::settings::Setting{
-        .key = "PerceptualBoostMethod",
-        .binding = &shader_injection.perceptual_boost_method,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
-        .label = "Perceptual Boost Method",
-        .section = "Perceptual Boost",
-        .tooltip = "Selects the method for perceptual boost. XY->PQ is the current implementation. TODO for future methods.",
-        .labels = {"None", "XY->PQ", "ICTCP"},
-    },
-    new renodx::utils::settings::Setting{
-        .key = "PerceptualBoostParam2",
-        .binding = &shader_injection.perceptual_boost_param,
-        .default_value = 268.f,
-        .label = "Curve Adjustment",
-        .section = "Perceptual Boost",
-        .tooltip = "Adjusts the perceptual boost curve shape for better color reproduction",
-        .min = 000.f,
-        .max = 1500.f,
-        .parse = [](float value) { return value * 0.001f; },
-        .is_visible = []() { return shader_injection.perceptual_boost_method >= 1; },
-    },
-    new renodx::utils::settings::Setting{
-        .key = "PerceptualBoostColor2",
-        .binding = &shader_injection.perceptual_boost_color,
-        .default_value = 33.f,
-        .label = "Color Boost",
-        .section = "Perceptual Boost",
-        .tooltip = "Controls the intensity of color enhancement (0% to 100%)",
-        .min = 0.f,
-        .max = 100.f,
-        .parse = [](float value) { return value * 0.01f; },
-        .is_visible = []() { return shader_injection.perceptual_boost_method >= 1; },
-    },
-    new renodx::utils::settings::Setting{
-        .key = "PerceptualBoostStrength2",
-        .binding = &shader_injection.perceptual_boost_strength,
-        .default_value = 50.f,
-        .label = "Strength",
-        .section = "Perceptual Boost",
-        .tooltip = "Controls the overall strength of perceptual boost effect (0% to 100%)",
-        .min = 0.f,
-        .max = 100.f,
-        .parse = [](float value) { return value * 0.01f; },
-        .is_visible = []() { return shader_injection.perceptual_boost_method >= 1; },
-    },
-    */
     new renodx::utils::settings::Setting{
         .key = "ColorGradeExposure",
         .binding = &shader_injection.tone_map_exposure,
@@ -316,7 +268,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.tone_map_flare,
         .default_value = 0.f,
         .label = "Flare",
-        .section = "Custom Color Grading",
+        .section = "Color Grading",
         .tooltip = "Flare/Glare Compensation",
         .max = 100.f,
         .is_enabled = []() { return shader_injection.tone_map_type == 3; },
@@ -327,7 +279,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.color_grade_strength,
         .default_value = 100.f,
         .label = "Scene Grading",
-        .section = "Custom Color Grading",
+        .section = "Color Grading",
         .tooltip = "Scene grading as applied by the game",
         .max = 100.f,
         .is_enabled = []() { return shader_injection.tone_map_type > 0; },
@@ -338,7 +290,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.reno_drt_white_clip,
         .default_value = 65.f,
         .label = "White Clip",
-        .section = "Custom Color Grading",
+        .section = "Color Grading",
         .tooltip = "Clip point for white in nits",
         .min = 1.f,
         .max = 100.f,
@@ -350,7 +302,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.character_brightness,
         .default_value = 1.f,
         .can_reset = true,
-        .label = "2d Character Brightness",
+        .label = "2d Character Brightness (live2d events only)",
         .section = "Custom Color Grading",
         .tooltip = "2d Character brightness multiplier (default: 1.0)",
         .min = 0.0f,
@@ -362,7 +314,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.text_brightness_coef,
         .default_value = 1.f,
         .can_reset = true,
-        .label = "Text Brightness Coefficient",
+        .label = "Text Brightness Coefficient (live2d story events only)",
         .section = "Custom Color Grading",
         .tooltip = "Controls the brightness coefficient for text and UI elements (1.0 = normal brightness)",
         .min = 0.1f,
@@ -378,7 +330,7 @@ renodx::utils::settings::Settings settings = {
         .can_reset = true,
         .label = "UI Tone Mapping Pass",
         .section = "Custom Color Grading",
-        .tooltip = "Enable or disable the tone mapping pass in the final shader. (This applies tonemapping to UI effects, which can exceed peak nits.)",
+        .tooltip = "Enable or disable the tone mapping pass in the final shader. (This applies tonemapping to both game and UI effects, which can exceed peak nits.)",
         .labels = {"Off", "On"},
         .is_visible = []() { return current_settings_mode >= 1; },
     },
@@ -397,26 +349,6 @@ renodx::utils::settings::Settings settings = {
           renodx::utils::settings::UpdateSetting("colorGradeContrast", 50.f);
           renodx::utils::settings::UpdateSetting("colorGradeSaturation", 50.f);
           renodx::utils::settings::UpdateSetting("colorGradeBlowout", 50.f);
-          
-
-
-          /*
-          renodx::utils::settings::UpdateSetting("toneMapPerChannel", 1.f);
-          renodx::utils::settings::UpdateSetting("toneMapHueProcessor", 1.f);
-          renodx::utils::settings::UpdateSetting("toneMapHueShift", 50.f);
-          renodx::utils::settings::UpdateSetting("toneMapHueCorrection", 0.f);
-          renodx::utils::settings::UpdateSetting("colorGradeExposure", 1.f);
-          renodx::utils::settings::UpdateSetting("colorGradeHighlights", 50.f);
-          renodx::utils::settings::UpdateSetting("colorGradeShadows", 50.f);
-          renodx::utils::settings::UpdateSetting("colorGradeContrast", 50.f);
-          renodx::utils::settings::UpdateSetting("colorGradeSaturation", 50.f);
-          renodx::utils::settings::UpdateSetting("colorGradeBlowout", 50.f);
-          renodx::utils::settings::UpdateSetting("colorGradeDechroma", 0.f);
-          renodx::utils::settings::UpdateSetting("colorGradeFlare", 0.f);
-          renodx::utils::settings::UpdateSetting("colorGradeClip", 8.f);
-          renodx::utils::settings::UpdateSetting("colorGradeLUTStrength", 100.f);
-          renodx::utils::settings::UpdateSetting("colorGradeLUTScaling", 0.f);
-          renodx::utils::settings::UpdateSetting("colorGradeLUTSampling", 1.f);*/
         },
     },
 

@@ -74,20 +74,10 @@ float4 renodx_opening_tonemap_block(float4 untonemapped, float4 aces_output, flo
 
     if (t3_intensity != 0) {
       untonemapped = debug_mode(untonemapped, v1, 0.02f);
-   /*  float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);  // tonemap to SDR you can change this to any SDR tonemapper you want
-      if (RENODX_TONE_MAP_TYPE != 0) {
-        float y = renodx::color::y::from::BT709(untonemapped);
-        r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
-        sdrTonemapped = r0.xyz;
-      }*/
-      
 
       r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
       r0.xyz = lerp(r0.xyz, renodx::lut::SampleTetrahedral(t3, r0.xyz), t3_intensity);  
-      r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
-        
-  //    float3 sdrGraded = r0.xyz;
- //     r0.xyz = lerp(untonemapped, color, RENODX_LUT_T3_ENABLE);      
+      r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz); 
     }
     float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, renodx::tonemap::renodrt::NeutralSDR(untonemapped), r0, 1.f);
     r0.xyz = color;
@@ -96,8 +86,10 @@ float4 renodx_opening_tonemap_block(float4 untonemapped, float4 aces_output, flo
     r0.xyz = renodx::color::pq::Encode(r0.xyz, 100.f);
     r0.xyz = renodx::lut::SampleTetrahedral(t2, r0.xyz);
 
-    if (useToneMapPass) {
-        r0.rgb = renodx::draw::ToneMapPass(r0.rgb);
+    if (RENODX_ENABLE_UI_TONEMAPPASS == 0.f) { 
+        if (useToneMapPass) {
+            r0.rgb = renodx::draw::ToneMapPass(r0.rgb);
+        }
     }
     r0.w = 1;
     r0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
@@ -128,8 +120,10 @@ float4 renodx_opening_tonemap_block(float4 r0, float2 v1, Texture2D<float4> t2, 
     r0.xyz = renodx::color::pq::Encode(r0.xyz, 100.f);
     r0.xyz = renodx::lut::SampleTetrahedral(t2, r0.xyz);
 
-    if (useToneMapPass) {
-        r0.rgb = renodx::draw::ToneMapPass(r0.rgb);
+    if (RENODX_ENABLE_UI_TONEMAPPASS == 0.f) { 
+        if (useToneMapPass) {
+            r0.rgb = renodx::draw::ToneMapPass(r0.rgb);
+        }
     }
     r0.w = 1;
     r0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
