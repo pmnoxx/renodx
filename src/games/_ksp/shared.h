@@ -185,13 +185,17 @@ float3 renodx_ksp_apply_tonemap_and_boost(float3 linearColor)
 
 // Utility function to adjust UI color gamma and scale
 float3 renodx_adjust_ui_color(float3 color) {
-
-    color = renodfx::color::srgb::DecodeSafe(color);
-//    color = renodx::math::PowSafe(color, 1. / 2.2f);
+    if (RENODX_INTERMEDIATE_ENCODING == 1.f) {
+        color = renodx::color::srgb::DecodeSafe(color);
+    } else if (RENODX_INTERMEDIATE_ENCODING == 2.f) {
+        color = renodx::color::gamma::DecodeSafe(color, 2.2f);
+    }
     color *= RENODX_GRAPHICS_WHITE_NITS / RENODX_DIFFUSE_WHITE_NITS;
-    color = renodfx::color::srgb::EncodeSafe(color);
-
-    //    color = renodx::math::PowSafe(color, 2.2f);
+    if (RENODX_INTERMEDIATE_ENCODING == 1.f) {
+        color = renodx::color::srgb::EncodeSafe(color);
+    } else if (RENODX_INTERMEDIATE_ENCODING == 2.f) {
+        color = renodx::color::gamma::EncodeSafe(color, 2.2f);
+    }
     return color;
 }
 
