@@ -62,23 +62,7 @@ void main(
 
   r0 = debug_mode(r0, v1);
   if (RENODX_TONE_MAP_TYPE != 0.f) {
-
-    r0.w = cmp(0 < cb0[133].w);
-    r0.xyz = r1.xyz;
-    if (r0.w != 0) {
-      r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
-      r0.xyz = renodx::lut::SampleTetrahedral(t3, r0.xyz);  // 16x16 grey texture, is this used for black-white effect?
-      r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
-    }
-    r0.xyz = max(0.f, renodx::color::bt2020::from::BT709(r0.xyz));
-    r0.xyz = renodx::color::pq::Encode(r0.xyz, 100.f);
-    r0.xyz = renodx::lut::SampleTetrahedral(t2, r0.xyz);
-
-    o0.xyz = r0.xyz;
-    o0.w = 1;
-
-    o0.rgb = renodx::draw::ToneMapPass(o0.rgb);
-    o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
+    o0 = renodx_opening_tonemap_block(r0, v1, t2, t3, cmp(0 < cb0[133].w));
     return;
   }
 
