@@ -30,6 +30,8 @@ renodx::mods::shader::CustomShaders custom_shaders = {
     CustomShaderEntry(0xFF44239B), // uber_bloom_1_0xFF44239B.ps_4_0.hlsl
     CustomShaderEntry(0xD00B5B47), // final_post1_0xD00B5B47.ps_5_0.hlsl
     CustomShaderEntry(0x13EEF169), // lutbuilder_ldr1_0x13EEF169.ps_4_0.hlsl
+    CustomShaderEntry(0x1EF2268F), // final_post_0x1EF2268F.ps_5_0.hlsl
+    CustomShaderEntry(0x02DD6FFF), // 2d_background_0x02DD6FFF.ps_4_0.hlsl
 };
 
 
