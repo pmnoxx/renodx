@@ -48,6 +48,7 @@ void main(
   }
 
   r0.xyz = (cb0[132].www * r0.xyz);
+  r0 = debug_mode(r0, v1);
 
   if (RENODX_TONE_MAP_TYPE != 0) {
     r0.w = cmp(0 < cb0[133].w);
@@ -61,13 +62,6 @@ void main(
     r0.xyz = renodx::lut::SampleTetrahedral(t1, r0.xyz);
     o0.xyz = r0.xyz;
     o0.w = 1;
-    /*
-        if (RENODX_TONE_MAP_TYPE != 0) {
-          float3 sdrGraded = o0.xyz;
-          float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
-          o0.rgb = ToneMapPassWrapper(color);  // all 3 colors are in LINEAR here
-        }*/
-    //o0.rgb = renodx::draw::ToneMapPass(o0.rgb);
     o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
     return;
   }

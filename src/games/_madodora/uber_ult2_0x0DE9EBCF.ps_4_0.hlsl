@@ -51,15 +51,25 @@ void main(
 
   r0 = debug_mode(r0,v1);
 
-  float3 untonemapped = r0.xyz;
-  float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);  // tonemap to SDR you can change this to any SDR tonemapper you want
   float3 preCG = r0.xyz;
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    float y = renodx::color::y::from::BT709(untonemapped);
-    r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
-    sdrTonemapped = r0.xyz;
-  }
 
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    r0.w = cmp(0 < cb0[133].w);
+    r0.xyz = r1.xyz;
+    if (r0.w != 0) {
+      r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
+      r0.xyz = renodx::lut::SampleTetrahedral(t2, r0.xyz);  // 16x16 grey texture, is this used for black-white effect?
+      r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
+    }
+    r0.xyz = max(0.f, renodx::color::bt2020::from::BT709(r0.xyz));
+    r0.xyz = renodx::color::pq::Encode(r0.xyz, 100.f);
+    r0.xyz = renodx::lut::SampleTetrahedral(t1, r0.xyz);
+    o0.xyz = r0.xyz;
+    o0.w = 1;
+    o0.rgb = renodx::draw::ToneMapPass(o0.rgb);
+    o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
+    return;
+  }
 
   r1.y = dot(float3(0.439700991,0.382977992,0.177334994), r0.xyz);
   r1.z = dot(float3(0.0897922963,0.813422978,0.0967615992), r0.xyz);
@@ -194,32 +204,6 @@ void main(
 
   if (RENODX_TONE_MAP_TYPE == 0.f) {
     r1.xyz = saturate(r1.xyz);
-  } else {
-    r1.xyz = lerp(preCG, r1.xyz, RENODX_APPLY_GAME_ACES);
-  }
-
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    r0.w = cmp(0 < cb0[133].w);
-    r0.xyz = r1.xyz;
-    if (r0.w != 0) {
-      r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
-      r0.xyz = renodx::lut::SampleTetrahedral(t2, r0.xyz);  // 16x16 grey texture, is this used for black-white effect?
-      r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
-    }
-    r0.xyz = max(0.f, renodx::color::bt2020::from::BT709(r0.xyz));
-    r0.xyz = renodx::color::pq::Encode(r0.xyz, 100.f);
-    r0.xyz = renodx::lut::SampleTetrahedral(t1, r0.xyz);
-    o0.xyz = r0.xyz;
-    o0.w = 1;
-    /*
-        if (RENODX_TONE_MAP_TYPE != 0) {
-          float3 sdrGraded = o0.xyz;
-          float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
-          o0.rgb = ToneMapPassWrapper(color);  // all 3 colors are in LINEAR here
-        }*/
-    o0.rgb = renodx::draw::ToneMapPass(o0.rgb);
-    o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
-    return;
   }
 
   r0.x = cmp(0 < cb0[133].w);
@@ -269,12 +253,5 @@ void main(
   r0.yzw = r2.xyz + -r3.xyz;
   o0.xyz = r0.xxx * r0.yzw + r3.xyz;
   o0.w = 1;
-
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    float3 sdrGraded = o0.xyz;
-    float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
-    o0.rgb = ToneMapPassWrapper(color); // all 3 colors are in LINEAR here
-  }
-  o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
   return;
 }
