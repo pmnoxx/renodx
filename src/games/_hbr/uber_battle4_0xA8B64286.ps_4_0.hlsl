@@ -150,7 +150,7 @@ void main(
     float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped); // tonemap to SDR you can change this to any SDR tonemapper you want 
     if (RENODX_TONE_MAP_TYPE != 0) {
       float y = renodx::color::y::from::BT709(untonemapped);
-      r0.xyz = lerp(untonemapped, sdrTonemapped, saturate(y));
+      r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
     }
 
     r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
