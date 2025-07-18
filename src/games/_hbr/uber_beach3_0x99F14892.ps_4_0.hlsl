@@ -124,9 +124,7 @@ void main(
     return;
   }
 
-  if (RENODX_TONE_MAP_TYPE == 0.f) {
-    r0.xyzw = saturate(r0.xyzw);
-  }
+  r0.xyzw = saturate(r0.xyzw);
 
   
   r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
