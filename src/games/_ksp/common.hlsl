@@ -4,9 +4,26 @@
 #include "./DICE.hlsl"
 #include "./shared.h"
 
-float3 applyUserTonemap(float3 untonemapped, float2 v1, float userToneMapType) {
+float4 debug_mode(float4 color, float2 pos, float shift_y = 0.f) {
+  float2 box = float2(0.99f, 0.99f - shift_y);
+  float2 dim = float2(0.01f, 0.01f);
+
+  if (length(pos >= box && pos <= box + dim) > 1.f) {
+    float part = (pos.x - box.x) / dim.x;
+    if (part < 1. / 3.f) {
+      return float4(1.f, 0.f, 0.f, 1.f);
+    }
+    if (part < 2. / 3.f) {
+      return float4(0.f, 1.f, 0.f, 1.f);
+    }
+    return float4(0.f, 0.f, 1.f, 1.f);
+  }
+
+  return color;
+}
+
+float3 applyUserTonemap(float3 untonemapped, float userToneMapType) {
   float3 outputColor;
-// .. untonemapped = debug_mode(float4(untonemapped, 1.f), v1).xyz;
   if (userToneMapType == 0.f) {  // If vanilla is selected
     outputColor = saturate(untonemapped);
   } else {
@@ -66,7 +83,19 @@ float3 applyUserTonemap(float3 untonemapped, float2 v1, float userToneMapType) {
   return outputColor;
 }
 
-float3 renodx_ksp_apply_tonemap_and_boost(float3 linearColor)
+float3 extendedTonemapPass(float3 color, float2 uv) {
+  //  color = debug_mode(float4(color, 1.f), uv).xyz;
+  if (shader_injection.tone_map_type == 4.f) {  // DICE
+    color = applyUserTonemap(color, 2.f);
+  } else if (shader_injection.tone_map_type == 5.f) {  // Frostbite
+    color = applyUserTonemap(color, 4.f);
+  } else {
+    color.xyz = renodx::draw::ToneMapPass(color.xyz);
+  }
+  return color;
+}
+
+float3 renodx_ksp_apply_tonemap_and_boost(float3 linearColor, float2 uv)
 {
     if (RENODX_TONE_MAP_TYPE > 0.f)
     {
@@ -101,13 +130,7 @@ float3 renodx_ksp_apply_tonemap_and_boost(float3 linearColor)
             float3 new_grey = renodx::color::bt709::from::ICtCp(ictcp_grey);
             linearColor = lerp(linearColor, new_color * (0.18f / new_grey), RENODX_PERCEPTUAL_BOOST_STRENGTH);
         }
-        if (shader_injection.tone_map_type == 4.f) {  // DICE
-          linearColor = applyUserTonemap(linearColor, float2(0.f, 0.f), 2.f);
-        } else if (shader_injection.tone_map_type == 5.f) {  // Frostbite
-          linearColor = applyUserTonemap(linearColor, float2(0.f, 0.f), 4.f);
-        } else {
-          linearColor.xyz = renodx::draw::ToneMapPass(linearColor.xyz);
-        }
+        linearColor = extendedTonemapPass(linearColor, uv);
     }
     else
     {
