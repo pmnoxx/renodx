@@ -463,67 +463,6 @@ renodx::utils::settings::Settings settings = {
         .parse = [](float value) { return value - 1.f; },
         .is_visible = []() { return current_settings_mode >= 2; },
     }, 
-    new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "Vanilla Mode",
-        .section = "Color Grading Templates",
-        .group = "button-line-1",
-        .tint = 0xAD5729,
-        .on_change = []() {
-            renodx::utils::settings::UpdateSetting("IntermediateDecoding", 3.f);      
-            renodx::utils::settings::UpdateSetting("SwapChainDecoding", 3.f); 
-            renodx::utils::settings::UpdateSetting("ColorGradeShadows", 50.f);
-
-      /*   
-          renodx::utils::settings::UpdateSetting("toneMapPerChannel", 1.f);
-          renodx::utils::settings::UpdateSetting("toneMapColorSpace", 2.f);
-          renodx::utils::settings::UpdateSetting("toneMapHueProcessor", 2.f);
-          renodx::utils::settings::UpdateSetting("toneMapHueShift", 50.f);
-          renodx::utils::settings::UpdateSetting("toneMapHueCorrection", 0.f);
-          renodx::utils::settings::UpdateSetting("colorGradeExposure", 1.f);
-          renodx::utils::settings::UpdateSetting("colorGradeHighlights", 50.f);
-          renodx::utils::settings::UpdateSetting("colorGradeShadows", 50.f);
-          renodx::utils::settings::UpdateSetting("colorGradeContrast", 50.f);
-          renodx::utils::settings::UpdateSetting("colorGradeSaturation", 50.f);
-          renodx::utils::settings::UpdateSetting("colorGradeBlowout", 50.f);
-          renodx::utils::settings::UpdateSetting("colorGradeDechroma", 0.f);
-          renodx::utils::settings::UpdateSetting("colorGradeFlare", 0.f);
-          renodx::utils::settings::UpdateSetting("colorGradeClip", 100.f);
-          renodx::utils::settings::UpdateSetting("colorGradeLUTStrength", 100.f);
-          renodx::utils::settings::UpdateSetting("colorGradeLUTSampling", 1.f);
-          renodx::utils::settings::UpdateSetting("colorGradeLUTShaper", 1.f);*/
-        },
-    },
-    new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "HDR Look",
-        .section = "Color Grading Templates",
-        .group = "button-line-1",
-        .tint = 0xB88151,
-        .on_change = []() {
-            renodx::utils::settings::UpdateSetting("IntermediateDecoding", 2.f);      
-            renodx::utils::settings::UpdateSetting("SwapChainDecoding", 2.f); 
-            renodx::utils::settings::UpdateSetting("ColorGradeShadows", 40.f);
-      /*      renodx::utils::settings::UpdateSetting("toneMapType", 3.f);
-            renodx::utils::settings::UpdateSetting("toneMapPerChannel", 1.f);
-            renodx::utils::settings::UpdateSetting("toneMapColorSpace", 2.f);
-            renodx::utils::settings::UpdateSetting("toneMapHueProcessor", 1.f);
-            renodx::utils::settings::UpdateSetting("toneMapHueCorrection", 0.f);
-            renodx::utils::settings::UpdateSetting("colorGradeExposure", 1.f);
-            renodx::utils::settings::UpdateSetting("colorGradeHighlights", 50.f);
-            renodx::utils::settings::UpdateSetting("colorGradeShadows", 47.f);
-            renodx::utils::settings::UpdateSetting("colorGradeContrast", 50.f);
-            renodx::utils::settings::UpdateSetting("colorGradeSaturation", 55.f);
-            renodx::utils::settings::UpdateSetting("colorGradeBlowout", 35.f);
-            renodx::utils::settings::UpdateSetting("colorGradeDechroma", 0.f);
-            renodx::utils::settings::UpdateSetting("colorGradeFlare", 50.f);
-            renodx::utils::settings::UpdateSetting("colorGradeClip", 100.f);
-          renodx::utils::settings::UpdateSetting("colorGradeLUTStrength", 100.f);
-          renodx::utils::settings::UpdateSetting("colorGradeLUTSampling", 1.f);
-          renodx::utils::settings::UpdateSetting("colorGradeLUTShaper", 1.f); }, */
-        //.is_visible = []() { return shader_injection.toneMapType == 3.f; },
-        },
-    },
 };
 
 void AddAdvancedSettings() {
