@@ -34,7 +34,7 @@ void main(
   color.rgb *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
 
   if (applyEffect) {
-    color.rgb = renodx_ksp_apply_tonemap_and_boost(color.rgb);
+    color.rgb = renodx_ksp_apply_tonemap_and_boost(color.rgb, v1.zw);
   }
 
   color.rgb = renodx::draw::RenderIntermediatePass(color.rgb);
