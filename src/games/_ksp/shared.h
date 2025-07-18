@@ -81,6 +81,7 @@ struct ShaderInjectData {
   float effect_split_mode ;
   float effect_split_angle;
 
+  float dice_shoulder; // DICE shoulder parameter for DICE tonemapper
   
 };
 
@@ -93,7 +94,8 @@ cbuffer shader_injection : register(b13) {
   ShaderInjectData shader_injection : packoffset(c0);
 }
 
-#define RENODX_TONE_MAP_TYPE                 shader_injection.tone_map_type
+// handle dice with 4.f
+#define RENODX_TONE_MAP_TYPE                 (shader_injection.tone_map_type <= 3.f? shader_injection.tone_map_type: 1.f)
 #define RENODX_PEAK_WHITE_NITS               shader_injection.peak_white_nits
 #define RENODX_DIFFUSE_WHITE_NITS            shader_injection.diffuse_white_nits
 #define RENODX_GRAPHICS_WHITE_NITS           shader_injection.graphics_white_nits
@@ -126,6 +128,7 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_SWAP_CHAIN_ENCODING_COLOR_SPACE shader_injection.swap_chain_encoding_color_space
 #define RENODX_RENO_DRT_TONE_MAP_METHOD        renodx::tonemap::renodrt::config::tone_map_method::REINHARD
 #define RENODX_RENO_DRT_WHITE_CLIP               shader_injection.reno_drt_white_clip
+#define RENODX_DICE_SHOULDER                   shader_injection.dice_shoulder
 
 #define RENODX_PERCEPTUAL_BOOST_PARAM          shader_injection.perceptual_boost_param
 #define RENODX_PERCEPTUAL_BOOST_COLOR         shader_injection.perceptual_boost_color
@@ -137,67 +140,6 @@ cbuffer shader_injection : register(b13) {
 
 #include "../../shaders/renodx.hlsl"
 
-float3 renodx_ksp_apply_tonemap_and_boost(float3 linearColor)
-{
-    if (RENODX_TONE_MAP_TYPE > 0.f)
-    {
-        if (RENODX_PERCEPTUAL_BOOST_METHOD == RENODX_PERCEPTUAL_BOOST_METHOD_XY_PQ && RENODX_PERCEPTUAL_BOOST_STRENGTH > 0.f) {
-          // XY->PQ method
-          float3 xyz = renodx::color::XYZ::from::BT709(linearColor.xyz);
-          float new_grey = 0.18f;
-          if (xyz.y > 0.0000001f)
-          {
-              float3 newXYZ = sign(xyz) * renodx::color::pq::Decode(
-                  renodx::color::pq::Encode(abs(xyz), 10000.f) * (1.f + RENODX_PERCEPTUAL_BOOST_PARAM),
-                  10000.f);
-              new_grey = renodx::color::pq::Decode(
-                  renodx::color::pq::Encode(new_grey, 10000.f) * (1.f + RENODX_PERCEPTUAL_BOOST_PARAM),
-                  10000.f).r;
-              xyz = lerp(
-                  xyz * (newXYZ.y / xyz.y),
-                  newXYZ.xyz,
-                  RENODX_PERCEPTUAL_BOOST_COLOR);
-          }
-          linearColor.xyz = lerp(linearColor.xyz, renodx::color::bt709::from::XYZ(xyz) * (0.18f / new_grey), RENODX_PERCEPTUAL_BOOST_STRENGTH);
-        } else if (RENODX_PERCEPTUAL_BOOST_METHOD == RENODX_PERCEPTUAL_BOOST_METHOD_ICTCP) {
-            // ICTCP-based perceptual boost
-            float3 ictcp = renodx::color::ictcp::from::BT709(linearColor * (10000.f / 10000.f));
-            ictcp.x *= (1.f + RENODX_PERCEPTUAL_BOOST_PARAM);
-            ictcp.yz *= (1.f + RENODX_PERCEPTUAL_BOOST_COLOR);
-            float3 new_color = renodx::color::bt709::from::ICtCp(ictcp);
-
-            float3 ictcp_grey = renodx::color::ictcp::from::BT709(0.18f * (10000.f / 10000.f));
-            ictcp_grey.x *= (1.f +RENODX_PERCEPTUAL_BOOST_PARAM);
-            ictcp_grey.yz *= (1. + RENODX_PERCEPTUAL_BOOST_COLOR);
-            float3 new_grey = renodx::color::bt709::from::ICtCp(ictcp_grey);
-            linearColor = lerp(linearColor, new_color * (0.18f / new_grey), RENODX_PERCEPTUAL_BOOST_STRENGTH);
-        }
-        linearColor.xyz = renodx::draw::ToneMapPass(linearColor.xyz);
-    }
-    else
-    {
-        linearColor = saturate(linearColor);
-    }
-    return linearColor;
-}
-
-
-
-// Utility function to adjust UI color gamma and scale
-float3 renodx_adjust_ui_color(float3 color) {
-    if (RENODX_INTERMEDIATE_ENCODING == 1.f) {
-        color = renodx::color::srgb::DecodeSafe(color);
-    } else if (RENODX_INTERMEDIATE_ENCODING == 2.f) {
-        color = renodx::color::gamma::DecodeSafe(color, 2.2f);
-    }
-    color *= RENODX_GRAPHICS_WHITE_NITS / RENODX_DIFFUSE_WHITE_NITS;
-    if (RENODX_INTERMEDIATE_ENCODING == 1.f) {
-        color = renodx::color::srgb::EncodeSafe(color);
-    } else if (RENODX_INTERMEDIATE_ENCODING == 2.f) {
-        color = renodx::color::gamma::EncodeSafe(color, 2.2f);
-    }
-    return color;
-}
 
 #endif
 

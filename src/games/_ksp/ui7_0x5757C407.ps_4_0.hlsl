@@ -7,8 +7,7 @@ cbuffer cb0 : register(b0)
 {
   float4 cb0[7];
 }
-
-#include "./shared.h"
+#include "./common.hlsl"
 
 // 3Dmigoto declarations
 #define cmp -
@@ -41,7 +40,7 @@ void main(
   r0.y = cmp(asint(cb0[6].x) != 0);
   r0.x = r0.y ? r0.x : 0;
   // o0.xyz *= RENODX_GRAPHICS_WHITE_NITS / RENODX_DIFFUSE_WHITE_NITS;
-  o0.rgb = renodx_adjust_ui_color(o0.rgb);
+  o0.rgba = renodx_adjust_ui_color(o0.rgba);
   if (r0.x != 0) discard;
   return;
 }

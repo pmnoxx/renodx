@@ -13,7 +13,7 @@ cbuffer cb0 : register(b0)
   float4 cb0[5];
 }
 
-#include "./shared.h"
+#include "./common.hlsl"
 
 // 3Dmigoto declarations
 #define cmp -
@@ -54,6 +54,6 @@ void main(
   r0.x = r1.w * r0.x;
   o0.xyz = cb0[2].xyz * r1.xyz;
   o0.w = cb0[4].w * r0.x;
-  o0.rgb = renodx_adjust_ui_color(o0.rgb);
+  o0.rgba = renodx_adjust_ui_color(o0.rgba);
   return;
 }
