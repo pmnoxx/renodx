@@ -86,6 +86,7 @@ void main(
     r1.w = (int)r1.w + 1;
   }
   r1.xyzw = r4.xyzw / r5.xyzw;
+  r0.w = saturate(r0.w);  // fix
   r1 = debug_mode(r1, w1);
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;

@@ -114,7 +114,7 @@ void main(
   r0.xyzw = saturate(cb0[28].xyxy * float4(-0.5,-0.5,0.5,-0.5) + v1.xyxy);
   r0.xyzw = cb0[26].xxxx * r0.xyzw;
   r1.xyzw = t0.Sample(s0_s, r0.xy).xyzw;
-  r1.xyzw = saturate(r1.xyzw);  
+  r1.xyzw = saturate_bloom_sdr(r1.xyzw);  
 
   r0.xyzw = t0.Sample(s0_s, r0.zw).xyzw;
   r0.xyzw = saturate_bloom_sdr(r0.xyzw);  
@@ -194,10 +194,9 @@ void main(
   r1.xyzw = r2.xyzw + r1.xyzw;
   r1.xyzw = r1.xyzw + r3.xyzw;
   r0.xyzw = r1.xyzw * float4(0.03125,0.03125,0.03125,0.03125) + r0.xyzw;
-  r0.xyzw = min(float4(65504,65504,65504,65504), r0.xyzw);
+  r0.xyzw = min(float4(65504, 65504, 65504, 65504), r0.xyzw);
   r1.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
-
-
+  r1.xyzw = saturate_bloom_sdr(r1.xyzw);
 
   r0.xyzw = r1.xxxx * r0.xyzw;
   r0.xyzw = min(cb0[32].xxxx, r0.xyzw);
@@ -211,5 +210,7 @@ void main(
   r1.y = max(r1.y, r1.z);
   r1.x = r1.y / r1.x;
   o0.xyzw = r1.xxxx * r0.xyzw;
+
+  o0 = saturate(o0);
   return;
 }
