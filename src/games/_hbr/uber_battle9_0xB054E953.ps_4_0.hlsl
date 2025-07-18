@@ -43,8 +43,8 @@ void main(
   float4 fDest;
 
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
-  r0.w = saturate(r0.w);  // remove nagive colors durring summon
-  r0 = max(0.f, r0);  // remove nagive colors durring summon
+  r0.w = saturate(r0.w);
+  r0 = max(0.f, r0);
   
   r0.yz = v1.xy * float2(2,2) + float2(-1,-1);
   r0.w = dot(r0.yz, r0.yz);
@@ -74,9 +74,7 @@ void main(
     r2.zw = saturate(r1.yz);
     r2.zw = cb0[26].xx * r2.zw;
     r6.xyzw = t0.SampleLevel(s0_s, r2.zw, 0).xyzw;
-    r6.w = saturate(r6.w);  // remove nagive colors durring summon
     r7.xyzw = t4.SampleLevel(s4_s, r2.xy, 0).xyzw;
-    r7.w = saturate(r7.w);  // remove nagive colors durring summon
     r3.xyz = max(float3(0,0,0), r7.xyz);
     r4.xyzw = r6.xyzw * r3.xyzw + r4.xyzw;
     r5.xyzw = r5.xyzw + r3.xyzw;
@@ -84,8 +82,8 @@ void main(
     r1.w = (int)r1.w + 1;
   }
   r1.xyzw = r4.xyzw / r5.xyzw;
-  r1.w = saturate(r1.w);  // remove nagive colors durring summon
-  r1 = max(0.f, r1); // remove nagive colors durring summon
+  r1.w = saturate(r1.w);
+  r1 = max(0.f, r1); // fixed OTG in pull screen
 
   r1 = debug_mode(r1, w1);
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
@@ -165,7 +163,12 @@ void main(
   }
 
   o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
-
+/*
+  if (true) { // fix OTG in globe during pulling
+    o0.xyz = renodx::color::bt2020::from::BT709(o0.xyz);
+    o0 = max(0.f, o0);
+    o0.xyz = renodx::color::bt709::from::BT2020(o0.xyz);
+  }*/
   //o0 = debug_mode(o0, v1);
   return;
 }
