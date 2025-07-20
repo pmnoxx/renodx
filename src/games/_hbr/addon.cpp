@@ -372,7 +372,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.enable_tone_map_pass,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 0.f,
-        .label = "UI Tone Mapping Pass",
+        .label = "UI Tone Mapping Pass (may not work if game nits != UI nits)",
         .section = "Custom Color Grading",
         .tooltip = "Enable or disable the tone mapping pass in the final shader. (This applies tonemapping to UI effects, which can exceed peak nits.)",
         .labels = {"Off", "On"},
