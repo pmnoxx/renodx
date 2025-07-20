@@ -11,7 +11,7 @@ cbuffer cb0 : register(b0)
 // 3Dmigoto declarations
 #define cmp -
 
-#include "../../common.hlsl"
+#include "../../../common.hlsl"
 
 /*
 // Original decompiled implementation for reference:

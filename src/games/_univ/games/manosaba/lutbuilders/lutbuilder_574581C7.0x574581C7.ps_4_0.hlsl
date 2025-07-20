@@ -22,7 +22,7 @@ cbuffer cb0 : register(b0)
   float4 cb0[151];
 }
 
-#include "../../common.hlsl"
+#include "../../../common.hlsl"
 
 
 // 3Dmigoto declarations
@@ -272,8 +272,9 @@ void main(
   
   if (RENODX_TONE_MAP_TYPE != 0) {
     float3 sdrGraded = o0.xyz;
-    float3 color = UpgradeToneMapCustom(untonemapped, sdrTonemapped, sdrGraded, 1.f);
-    o0.rgb = color;
+    o0.r = UpgradeToneMapCustom(untonemapped.r, sdrTonemapped.r, sdrGraded.r, 1.f).r;
+    o0.g = UpgradeToneMapCustom(untonemapped.g, sdrTonemapped.g, sdrGraded.g, 1.f).g;
+    o0.b = UpgradeToneMapCustom(untonemapped.b, sdrTonemapped.b, sdrGraded.b, 1.f).b;
     // o0.rgb = ToneMapPassWrapper(color);  // all 3 colors are in LINEAR here
   }
   return;

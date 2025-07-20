@@ -11,8 +11,8 @@ DEST_DIR = os.path.dirname(os.path.abspath(__file__))
 # Define what makes a file 'uber' or other types by substring patterns
 SUBSTRING_TYPES = {
     'uber': [
-        ["cb0[136].xy", "SampleLevel"],
-      #  ["SampleLevel"],
+      # ["cb0[136].xy", "SampleLevel"],
+       ["floor", "SampleLevel"],
         # Add more patterns for 'uber' as needed
     ],
     'lutbuilder': [
