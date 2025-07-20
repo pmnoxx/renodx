@@ -37,19 +37,24 @@ void main(
 
   r0.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
   r0 = debug_mode(r0, v1);
-  r0.w = saturate(r0.w); // fix for bloom
 
-  r1.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r0.xyz;
-  r1.xyz = float3(0.947867334,0.947867334,0.947867334) * r1.xyz;
-  r1.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r1.xyz));
-  r1.xyz = log2(r1.xyz);
-  r1.xyz = float3(2.4000001,2.4000001,2.4000001) * r1.xyz;
-  r1.xyz = exp2(r1.xyz);
-  r2.xyz = float3(0.0773993805,0.0773993805,0.0773993805) * r0.xyz;
-  r0.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r0.xyz);
+  r0.xyz = clamp_bt2020(r0.xyz);
+  r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
+
+  /*
+    r1.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r0.xyz;
+    r1.xyz = float3(0.947867334,0.947867334,0.947867334) * r1.xyz;
+    r1.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r1.xyz));
+    r1.xyz = log2(r1.xyz);
+    r1.xyz = float3(2.4000001,2.4000001,2.4000001) * r1.xyz;
+    r1.xyz = exp2(r1.xyz);
+    r2.xyz = float3(0.0773993805,0.0773993805,0.0773993805) * r0.xyz;
+    r0.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r0.xyz);
+   r0.xyz = r0.xyz ? r2.xyz : r1.xyz;
+
+*/
   r0.w = saturate(r0.w);
   o0.w = r0.w;
-  r0.xyz = r0.xyz ? r2.xyz : r1.xyz;
   r1.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
 
 
