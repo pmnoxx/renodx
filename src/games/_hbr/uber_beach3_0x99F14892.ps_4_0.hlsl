@@ -94,6 +94,13 @@ void main(
   r0.w = saturate(r0.w); // fix
 
   if (RENODX_TONE_MAP_TYPE != 0) {
+    float4 toneMapResult = ToneMapBlock(r0.xyz, r0.w, 0.f, t4, SCENE_TYPE_3D);
+    o0 = toneMapResult;
+    // o0 = debug_mode(o0, v1);
+    return;
+  }
+  /*
+  if (RENODX_TONE_MAP_TYPE != 0) {
     float3 untonemapped = r0.xyz; // untonemapped here is still in SRGB
     r0.xyz = saturate(untonemapped);
 
@@ -102,6 +109,7 @@ void main(
     if (RENODX_TONE_MAP_TYPE != 0) {
       float y = renodx::color::y::from::BT709(untonemapped);
       r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
+      sdrTonemapped = r0.xyz;
     }
 
     r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
@@ -115,19 +123,12 @@ void main(
       r0.rgb = ToneMapPassWrapper(color); // all 3 colors are in LINEAR here
     }
 
-    /*
-    r0.w = cmp(0.5 < cb0[42].x);
-    if (r0.w != 0) {
-      r1.xyz = saturate(r0.xyz);
-      o0.w = dot(r1.xyz, float3(0.212672904,0.715152204,0.0721750036));
-    } else {
-      o0.w = r2.w;
-    }*/
     o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
     o0.w = saturate(r0.w);
    // o0 = debug_mode(o0, v1);
     return;
   }
+    */
 
   r0.xyzw = saturate(r0.xyzw);
 

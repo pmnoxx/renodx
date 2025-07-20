@@ -27,10 +27,8 @@ cbuffer cb0 : register(b0)
 }
 
 
-
-
 // 3Dmigoto declarations
-#define cmp -
+// #define cmp -
 
 
 void main(
@@ -110,39 +108,12 @@ void main(
 
 
   if (RENODX_TONE_MAP_TYPE != 0) {
-    float3 untonemapped = r0.xyz; // untonemapped here is still in SRGB
-    r0.xyz = saturate(untonemapped);
-
-      float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped); // tonemap to SDR you can change this to any SDR tonemapper you want 
-    if (RENODX_TONE_MAP_TYPE != 0) {
-      float y = renodx::color::y::from::BT709(untonemapped);
-      r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
-    }
-
-
-    r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
-    r0.xyz = renodx::lut::SampleTetrahedral(t4,r0.xyz);
-    r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
-
-    if (RENODX_TONE_MAP_TYPE != 0) {
-      float3 sdrGraded = r0.xyz;
-      float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
-      color = ApplyReverseReinhard(color, SCENE_TYPE_3D);
-      r0.rgb = ToneMapPassWrapper(color); // all 3 colors are in LINEAR here
-    }
-    o0.w = dot(r1.xyz, float3(0.212672904,0.715152204,0.0721750036));
-    
-    r0.w = cmp(0.5 < cb0[42].x);
-    if (r0.w != 0) {
-      r1.xyz = saturate(r0.xyz);
-      o0.w = dot(r1.xyz, float3(0.212672904,0.715152204,0.0721750036));
-    } else {
-      o0.w = r2.w;
-    }
-    o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
-   // o0 = debug_mode(o0, v1);
+    float4 toneMapResult = ToneMapBlock(r0.xyz, r2.w, cb0[42].x, t4, SCENE_TYPE_3D);
+    o0 = toneMapResult;
+    // o0 = debug_mode(o0, v1);
     return;
   }
+  
   if (RENODX_TONE_MAP_TYPE == 0.f) {
     r0.xyzw = saturate(r0.xyzw);
   }
