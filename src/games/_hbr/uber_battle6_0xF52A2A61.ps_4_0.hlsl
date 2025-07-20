@@ -86,7 +86,7 @@ void main(
     r1.w = (int)r1.w + 1;
   }
   r1.xyzw = r4.xyzw / r5.xyzw;
-  r1.xyz = clamp_bt2020(r1.xyz);
+  r1.xyz = renodx::color::bt709::clamp::BT2020(r1.xyz);
 
   r0.w = saturate(r0.w);  // fix
   r1 = debug_mode(r1, w1);

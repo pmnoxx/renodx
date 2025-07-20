@@ -79,8 +79,9 @@ void main(
     r1.w = (int)r1.w + 1;
   }
   r1.xyzw = r4.xyzw / r5.xyzw;
-  r1.xyz = clamp_bt2020(r1.xyz);
+  r1.xyz = renodx::color::bt709::clamp::BT2020(r1.xyz);
   r1 = debug_mode(r1, w1);
+  r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
 /*
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
@@ -92,7 +93,6 @@ void main(
   r1.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
   r0.yzw = r1.xyz ? r0.yzw : r2.xyz;
 */
-  r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
   r0.xyz = r0.yzw * r0.xxx;
   r0.w = saturate(r0.w); // fix
   

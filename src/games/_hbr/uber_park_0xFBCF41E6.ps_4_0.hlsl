@@ -57,7 +57,7 @@ void main(
   r0.yzw = r3.xyz ? r0.yzw : r2.xyz;
 */
 
-  r1.xyz = clamp_bt2020(r1.xyz);
+  r1.xyz = renodx::color::bt709::clamp::BT2020(r1.xyz);
   r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
   r1.xyz = r0.yzw * r0.xxx; 
 
