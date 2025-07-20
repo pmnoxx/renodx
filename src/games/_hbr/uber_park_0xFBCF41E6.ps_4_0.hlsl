@@ -89,9 +89,16 @@ void main(
   r0.xyzw = r4.xyzw + r1.xyzw;
   // apply bloomdirt
   r0.xyzw = (r2.xyzw * r3.xyzw + r0.xyzw);
-  
+
   r0.w = saturate(r0.w);
 
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    float4 toneMapResult = ToneMapBlock(r0.xyz, r2.w, cb0[42].x, t4, SCENE_TYPE_3D);
+    o0 = toneMapResult;
+    // o0 = debug_mode(o0, v1);
+    return;
+  }
+  /*
   if (RENODX_TONE_MAP_TYPE != 0.f) {
     float3 untonemapped = r0.xyz; // untonemapped here is still in SRGB
     r0.xyz = saturate(untonemapped);
@@ -101,6 +108,7 @@ void main(
     if (RENODX_TONE_MAP_TYPE != 0) {
       float y = renodx::color::y::from::BT709(untonemapped);
       r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
+      sdrTonemapped = r0.xyz;
     }
 
     r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
@@ -126,7 +134,7 @@ void main(
  //   o0 = debug_mode(o0, v1);
     return;
   }
-
+*/
   if (RENODX_TONE_MAP_TYPE == 0.f) {
     r0.xyzw = saturate(r0.xyzw);
   }

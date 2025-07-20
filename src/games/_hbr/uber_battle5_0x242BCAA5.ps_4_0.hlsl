@@ -186,7 +186,13 @@ void main(
     r3.w = r1.w * r0.x + 1;
   }
 
-
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    float4 toneMapResult = ToneMapBlock(r3.xyz, r3.w, cb0[42].x, t5, SCENE_TYPE_3D);
+    o0 = toneMapResult;
+    // o0 = debug_mode(o0, v1);
+    return;
+  }
+  /*
 
   if (RENODX_TONE_MAP_TYPE != 0) {
     float3 untonemapped = r3.xyz; // untonemapped here is still in SRGB // good index
@@ -220,7 +226,7 @@ void main(
     return;
   }
 
-
+*/
 
   r3.xyzw = saturate(r3.xyzw);
   r0.xyz = float3(12.9200001,12.9200001,12.9200001) * r3.zxy;

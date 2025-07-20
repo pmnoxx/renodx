@@ -62,7 +62,13 @@ void main(
 //  r0.xyz = saturate(r1.xxx * r0.xyz);
   r0.xyz = (r1.xxx * r0.xyz);
 
-
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    float4 toneMapResult = ToneMapBlock(r0.xyz, r0.w, 0.f, t2, SCENE_TYPE_3D);
+    o0 = toneMapResult;
+    // o0 = debug_mode(o0, v1);
+    return;
+  }
+  /*
   if (RENODX_TONE_MAP_TYPE != 0) {
     float3 untonemapped = r0.xyz; // untonemapped here is still in SRGB
     r0.xyz = saturate(untonemapped);
@@ -72,6 +78,7 @@ void main(
     if (RENODX_TONE_MAP_TYPE != 0) {// tonemap to SDR you can change this to any SDR tonemapper you want
       float y = renodx::color::y::from::BT709(untonemapped);
       r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
+      sdrTonemapped = r0.xyz;
     }
 
     r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
@@ -88,10 +95,8 @@ void main(
     o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
     return;
   }
-
-  if (RENODX_TONE_MAP_TYPE == 0.f) {
-    r0.xyzw = saturate(r0.xyzw);
-  }
+*/
+  r0.xyzw = saturate(r0.xyzw);
 
   
   r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);

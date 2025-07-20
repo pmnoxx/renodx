@@ -129,7 +129,13 @@ void main(
     r2.w = r1.w * r0.x + 1;
   }
 
-
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    float4 toneMapResult = ToneMapBlock(r2.xyz, r2.w, cb0[42].x, t4, SCENE_TYPE_3D);
+    o0 = toneMapResult;
+    // o0 = debug_mode(o0, v1);
+    return;
+  }
+  /*
   if (RENODX_TONE_MAP_TYPE != 0) {
     float3 untonemapped = r2.xyz; // untonemapped here is still in SRGB
     untonemapped = ApplyReverseReinhard(untonemapped, SCENE_TYPE_3D);
@@ -139,6 +145,7 @@ void main(
     if (RENODX_TONE_MAP_TYPE != 0) {
       float y = renodx::color::y::from::BT709(untonemapped);
       r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
+      sdrTonemapped = r0.xyz;
     }
 
     r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
@@ -163,6 +170,7 @@ void main(
    // o0 = debug_mode(o0, v1);
     return;
   }
+*/
 
   r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
   r0.xyz = renodx::lut::SampleTetrahedral(t4,r0.xyz);
