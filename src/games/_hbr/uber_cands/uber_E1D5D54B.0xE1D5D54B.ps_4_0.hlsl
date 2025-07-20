@@ -1,4 +1,4 @@
-// ---- Created with 3Dmigoto v1.4.1 on Sat Jul 12 18:51:02 2025
+// ---- Created with 3Dmigoto v1.4.1 on Sun Jul 20 04:19:09 2025
 Texture2D<float4> t6 : register(t6);
 
 Texture2D<float4> t5 : register(t5);
@@ -38,8 +38,6 @@ cbuffer cb0 : register(b0)
 // 3Dmigoto declarations
 #define cmp -
 
-#include "./common.h"
-
 
 void main(
   float4 v0 : SV_POSITION0,
@@ -52,8 +50,6 @@ void main(
   float4 fDest;
 
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
-  r0.w = saturate(r0.w); 
-  
   r0.yz = v1.xy * float2(2,2) + float2(-1,-1);
   r0.w = dot(r0.yz, r0.yz);
   r0.yz = r0.yz * r0.ww;
@@ -90,69 +86,41 @@ void main(
     r1.w = (int)r1.w + 1;
   }
   r1.xyzw = r4.xyzw / r5.xyzw;
-  r1.w = saturate(r1.w);
-  r1.xyz = clamp_bt2020(r1.xyz);
-  r1 = debug_mode(r1, w1);
-  r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
-  /*
-  // srg to linear
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
-  r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
-  r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
-  r2.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r2.xyz));
-  r2.xyz = log2(r2.xyz);
-  r2.xyz = float3(2.4000001,2.4000001,2.4000001) * r2.xyz;
-  r2.xyz = exp2(r2.xyz);
-  r3.xyz = cmp(float3(0.0404499993, 0.0404499993, 0.0404499993) >= r1.xyz);
-  r0.yzw = r3.xyz ? r0.yzw : r2.xyz;
-*/
-
-
+  r3.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
+  r3.xyz = float3(0.947867334,0.947867334,0.947867334) * r3.xyz;
+  r3.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r3.xyz));
+  r3.xyz = log2(r3.xyz);
+  r3.xyz = float3(2.4000001,2.4000001,2.4000001) * r3.xyz;
+  r3.xyz = exp2(r3.xyz);
+  r4.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
+  r0.yzw = r4.xyz ? r0.yzw : r3.xyz;
   r1.xyz = r0.yzw * r0.xxx;
-  r0.xyzw = float4(1,1,-1,0) * cb0[32].xyxy;
-  r3.xyzw = saturate(-r0.xywy * cb0[34].xxxx + v1.xyxy);
+  r0.xyzw = float4(-1,-1,1,1) * cb0[32].xyxy;
+  r2.x = 0.5 * cb0[34].x;
+  r3.xyzw = saturate(r0.xyzy * r2.xxxx + v1.xyxy);
   r3.xyzw = cb0[26].xxxx * r3.xyzw;
   r4.xyzw = t2.Sample(s2_s, r3.xy).xyzw;
   r3.xyzw = t2.Sample(s2_s, r3.zw).xyzw;
-  r3.xyzw = r3.xyzw * float4(2,2,2,2) + r4.xyzw;
-  r2.xy = saturate(-r0.zy * cb0[34].xx + v1.xy);
-  r2.xy = cb0[26].xx * r2.xy;
-  r4.xyzw = t2.Sample(s2_s, r2.xy).xyzw;
   r3.xyzw = r4.xyzw + r3.xyzw;
-  r4.xyzw = saturate(r0.zwxw * cb0[34].xxxx + v1.xyxy);
-  r4.xyzw = cb0[26].xxxx * r4.xyzw;
-  r5.xyzw = t2.Sample(s2_s, r4.xy).xyzw;
-  r3.xyzw = r5.xyzw * float4(2,2,2,2) + r3.xyzw;
-  r2.xy = saturate(v1.xy);
-  r2.xy = cb0[26].xx * r2.xy;
-  r5.xyzw = t2.Sample(s2_s, r2.xy).xyzw;
-  r3.xyzw = r5.xyzw * float4(4,4,4,4) + r3.xyzw;
-  r4.xyzw = t2.Sample(s2_s, r4.zw).xyzw;
-  r3.xyzw = r4.xyzw * float4(2,2,2,2) + r3.xyzw;
-  r4.xyzw = saturate(r0.zywy * cb0[34].xxxx + v1.xyxy);
-  r4.xyzw = cb0[26].xxxx * r4.xyzw;
-  r5.xyzw = t2.Sample(s2_s, r4.xy).xyzw;
-  r3.xyzw = r5.xyzw + r3.xyzw;
-  r4.xyzw = t2.Sample(s2_s, r4.zw).xyzw;
-  r3.xyzw = r4.xyzw * float4(2,2,2,2) + r3.xyzw;
-  r0.xy = saturate(r0.xy * cb0[34].xx + v1.xy);
-  r0.xy = cb0[26].xx * r0.xy;
-  r0.xyzw = t2.Sample(s2_s, r0.xy).xyzw;
+  r0.xyzw = saturate(r0.xwzw * r2.xxxx + v1.xyxy);
+  r0.xyzw = cb0[26].xxxx * r0.xyzw;
+  r4.xyzw = t2.Sample(s2_s, r0.xy).xyzw;
+  r3.xyzw = r4.xyzw + r3.xyzw;
+  r0.xyzw = t2.Sample(s2_s, r0.zw).xyzw;
   r0.xyzw = r3.xyzw + r0.xyzw;
   r0.xyzw = cb0[34].yyyy * r0.xyzw;
   r2.xy = v1.xy * cb0[33].xy + cb0[33].zw;
   r3.xyzw = t3.Sample(s3_s, r2.xy).xyzw;
-  r4.xyz = float3(0.0625,0.0625,0.0625) * r0.xyz;
+  r4.xyz = float3(0.25,0.25,0.25) * r0.xyz;
   r3.xyz = cb0[34].zzz * r3.xyz;
-  r0.xyzw = float4(0.0625,0.0625,0.0625,1) * r0.xyzw;
+  r0.xyzw = float4(0.25,0.25,0.25,1) * r0.xyzw;
   r5.xyz = cb0[35].xyz * r0.xyz;
-  r5.w = 0.0625 * r0.w;
+  r5.w = 0.25 * r0.w;
   r0.xyzw = r5.xyzw + r1.xyzw;
   r1.xyz = r3.xyz * r4.xyz;
   r1.w = 0;
   r0.xyzw = r1.xyzw + r0.xyzw;
-  r0.w = saturate(r0.w); // fix
-  
   r1.x = cmp(cb0[40].y < 0.5);
   if (r1.x != 0) {
     r1.xy = -cb0[38].xy + v1.xy;
@@ -185,43 +153,6 @@ void main(
     r0.x = -1 + r0.w;
     r3.w = r1.w * r0.x + 1;
   }
-
-
-
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    float3 untonemapped = r3.xyz; // untonemapped here is still in SRGB // good index
-    r0.xyz = saturate(untonemapped);
-
-    float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped); // tonemap to SDR you can change this to any SDR tonemapper you want 
-    if (RENODX_TONE_MAP_TYPE != 0) {
-      float y = renodx::color::y::from::BT709(untonemapped);
-      r0.xyz = saturate(lerp(untonemapped, sdrTonemapped, saturate(y)));
-    }
-
-    r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
-    r0.xyz = renodx::lut::SampleTetrahedral(t5,r0.xyz);
-    r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
-
-    if (RENODX_TONE_MAP_TYPE != 0) {
-      float3 sdrGraded = r0.xyz;
-      float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
-      color = ApplyReverseReinhard(color, SCENE_TYPE_3D);
-      r0.rgb = ToneMapPassWrapper(color); // all 3 colors are in LINEAR here
-    }
-    r0.w = cmp(0.5 < cb0[42].x);
-    if (r0.w != 0) {
-      r1.xyz = saturate(r0.xyz);
-      o0.w = dot(r1.xyz, float3(0.212672904,0.715152204,0.0721750036));
-    } else {
-      o0.w = r2.w;
-    }
-    o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
-//    o0 = debug_mode(o0, v1);
-    return;
-  }
-
-
-
   r3.xyzw = saturate(r3.xyzw);
   r0.xyz = float3(12.9200001,12.9200001,12.9200001) * r3.zxy;
   r1.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), r3.zxy);
@@ -265,7 +196,10 @@ void main(
   r2.xyz = float3(0.416666657,0.416666657,0.416666657) * r2.xyz;
   r2.xyz = exp2(r2.xyz);
   r2.xyz = r2.xyz * float3(1.05499995,1.05499995,1.05499995) + float3(-0.0549999997,-0.0549999997,-0.0549999997);
-  r0.xyz = cmp(float3(0.00313080009,0.00313080009,0.00313080009) >= r0.xyz);
+  r0.xyz = cmp(float3(0.00313080009, 0.00313080009, 0.00313080009) >= r0.xyz);
   o0.xyz = r0.xyz ? r1.xyz : r2.xyz;
+  if (v1.x > 0.97f && v1.y > 0.97f) {
+    o0.xyz = 10.f;
+  }
   return;
 }

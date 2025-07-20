@@ -19,47 +19,9 @@
 
 namespace {
 
-renodx::mods::shader::CustomShaders custom_shaders = {
-        CustomShaderEntry(0x29B13A00), // uber2
-        CustomShaderEntry(0xA833F91D), // uber
-        CustomShaderEntry(0xC85DC52C), // uber_3d
-        CustomShaderEntry(0xFBCF41E6), // uber_park
-        CustomShaderEntry(0x97379D6B), // uber_walking_base
-        CustomShaderEntry(0x699FABE4), // uber_battle
-        CustomShaderEntry(0xC39AD9C3), // uber_battle2
-        CustomShaderEntry(0xE5E4F46C), // uber_beach
-        CustomShaderEntry(0x99F14892), // uber_beach3
-        CustomShaderEntry(0x0EC3291B), // 2d_popup_character
-        CustomShaderEntry(0x8E2521B8), // 2d_art2
-        CustomShaderEntry(0x35097DF4), // blit_copy
-        CustomShaderEntry(0xBC821AE4), // sprints_normal_last_msaa
-        CustomShaderEntry(0x20133A8B), // final
-        CustomShaderEntry(0xA9F8ED91), // 2d_background
-        CustomShaderEntry(0x066C98CB), // 2d_battle_ready_screen
-        CustomShaderEntry(0xB4EB8715), // 2d_character
-        CustomShaderEntry(0xEADD927D), // advanced_overlay
-        CustomShaderEntry(0xEA8CA6F6), // lily_renderer
-        CustomShaderEntry(0xFE185665), // bloom_3d_p1
-        CustomShaderEntry(0xA1FBDC24), // bloom_3d_p2
-        CustomShaderEntry(0x43207502), // bloom_3d_p3
-        CustomShaderEntry(0xA8B64286), // uber_battle4
-        CustomShaderEntry(0xF2218191), // sky_renderer
-        CustomShaderEntry(0xF52A2A61), // uber_battle6
-        CustomShaderEntry(0x242BCAA5), // uber_battle5
-        CustomShaderEntry(0x09BE2D97), // uber_battle7
-        CustomShaderEntry(0x97910609), // uber_battle8
-        CustomShaderEntry(0xB054E953), // uber_battle9
-        CustomShaderEntry(0x915C6643), // text_draw
-        CustomShaderEntry(0x55B0DCB7), // text_draw2
-        CustomShaderEntry(0x4F036BB9), // text_draw3
-
-  //  CustomShaderEntry(0x45A96F2D),
-   /// CustomShaderEntry(0xD8341E94),
-    // CustomSwapchainShader(0x00000000),
-    // BypassShaderEntry(0x00000000)
-};
-
-
+    
+    
+renodx::mods::shader::CustomShaders custom_shaders = {__ALL_CUSTOM_SHADERS};
 
 ShaderInjectData shader_injection;
 

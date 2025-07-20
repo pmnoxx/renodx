@@ -86,17 +86,12 @@ void main(
     r1.w = (int)r1.w + 1;
   }
   r1.xyzw = r4.xyzw / r5.xyzw;
+  r1.xyz = clamp_bt2020(r1.xyz);
+
   r0.w = saturate(r0.w);  // fix
   r1 = debug_mode(r1, w1);
-  r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
-  r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
-  r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
-  r2.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r2.xyz));
-  r2.xyz = log2(r2.xyz);
-  r2.xyz = float3(2.4000001,2.4000001,2.4000001) * r2.xyz;
-  r2.xyz = exp2(r2.xyz);
-  r3.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
-  r0.yzw = r3.xyz ? r0.yzw : r2.xyz;
+
+  r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
   r1.xyz = r0.yzw * r0.xxx;
   r0.xyzw = float4(1,1,-1,0) * cb0[32].xyxy;
   r2.xyzw = saturate(-r0.xywy * cb0[34].xxxx + v1.xyxy);
@@ -141,6 +136,8 @@ void main(
   r0.xyzw = r2.xyzw * r3.xyzw + r0.xyzw;
   r0.w = saturate(r0.w); // fix
   
+
+
   r1.x = cmp(cb0[40].y < 0.5);
   if (r1.x != 0) {
     r1.xy = -cb0[38].xy + v1.xy;
@@ -181,27 +178,25 @@ void main(
     o0.w = r1.x;
   }
 
-
-/*
-  r0.xyz = float3(12.9200001,12.9200001,12.9200001) * r1.yzw;
-  r2.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r1.yzw));
-  r2.xyz = log2(r2.xyz);
-  r2.xyz = float3(0.416666657,0.416666657,0.416666657) * r2.xyz;
-  r2.xyz = exp2(r2.xyz);
-  r2.xyz = r2.xyz * float3(1.05499995,1.05499995,1.05499995) + float3(-0.0549999997,-0.0549999997,-0.0549999997);
-  r1.xyz = cmp(float3(0.00313080009,0.00313080009,0.00313080009) >= r1.yzw);
-  o0.xyz = r1.xyz ? r0.xyz : r2.xyz;
-*/
-
-  
   o0.xyz = r1.yzw;
+
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
-   o0.xyz = ApplyReverseReinhard(o0.xyz, SCENE_TYPE_3D);
+   //o0.xyz = ApplyReverseReinhard(o0.xyz, SCENE_TYPE_3D);
    o0.xyz = ToneMapPassWrapper(o0.xyz);
   }
 
   o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
 
+  /*
+    r0.xyz = float3(12.9200001,12.9200001,12.9200001) * r1.yzw;
+    r2.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r1.yzw));
+    r2.xyz = log2(r2.xyz);
+    r2.xyz = float3(0.416666657,0.416666657,0.416666657) * r2.xyz;
+    r2.xyz = exp2(r2.xyz);
+    r2.xyz = r2.xyz * float3(1.05499995,1.05499995,1.05499995) + float3(-0.0549999997,-0.0549999997,-0.0549999997);
+    r1.xyz = cmp(float3(0.00313080009,0.00313080009,0.00313080009) >= r1.yzw);
+    o0.xyz = r1.xyz ? r0.xyz : r2.xyz;
+  */
 //  o0 = debug_mode(o0, v1);
 
 
