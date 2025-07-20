@@ -138,6 +138,7 @@ float3 ApplyPerceptualBoostAndToneMap(float3 color, float scene_type = SCENE_TYP
 }
 
 float3 ToneMapPassWrapper(float3 color) {
+ //   color = (color > 0 | color < 0) ? color : 0.f;
     if (RENODX_ENABLE_UI_TONEMAPPASS) {
         return color;
     }
@@ -156,5 +157,12 @@ float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 n
         return graded_sdr_color;
     }
     return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color, neutral_sdr_color);
+}
+
+float3 clamp_bt2020(float3 color) {
+    color.xyz = renodx::color::bt2020::from::BT709(color.xyz);
+    color = max(0.f, color);
+    color.xyz = renodx::color::bt709::from::BT2020(color.xyz);
+    return color;
 }
 #endif

@@ -49,16 +49,21 @@ void main(
   r1.w = saturate(r1.w);
  // r0 = debug_mode(r0, v1);
   r1 = debug_mode(r1, w1);
+  /*
+    r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
+    r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
+    r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
+    r2.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r2.xyz));
+    r2.xyz = log2(r2.xyz);
+    r2.xyz = float3(2.4000001,2.4000001,2.4000001) * r2.xyz;
+    r2.xyz = exp2(r2.xyz);
+    r3.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
+    r0.yzw = r3.xyz ? r0.yzw : r2.xyz;
+  */
+  r1.xyz = clamp_bt2020(r1.xyz);
+  r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
 
-  r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
-  r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
-  r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
-  r2.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r2.xyz));
-  r2.xyz = log2(r2.xyz);
-  r2.xyz = float3(2.4000001,2.4000001,2.4000001) * r2.xyz;
-  r2.xyz = exp2(r2.xyz);
-  r3.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
-  r0.yzw = r3.xyz ? r0.yzw : r2.xyz;
+
   r1.xyz = r0.yzw * r0.xxx;
   r0.xyzw = float4(1,1,-1,0) * cb0[32].xyxy;
   r2.xyzw = saturate(-r0.xywy * cb0[34].xxxx + v1.xyxy);

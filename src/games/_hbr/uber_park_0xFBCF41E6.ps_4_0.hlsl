@@ -38,13 +38,14 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+  // brightness ?
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
+  // input color
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
-  r0.w = saturate(r0.w); // fix for bloom
-  r1.w = saturate(r1.w);
-//  r0 = debug_mode(r0, v1);
+
   r1 = debug_mode(r1, w1);
   
+/*
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
   r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
@@ -54,10 +55,14 @@ void main(
   r2.xyz = exp2(r2.xyz);
   r3.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
   r0.yzw = r3.xyz ? r0.yzw : r2.xyz;
-  r1.xyz = r0.yzw * r0.xxx;
+*/
+
+  r1.xyz = clamp_bt2020(r1.xyz);
+  r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
+  r1.xyz = r0.yzw * r0.xxx; 
 
 
-  
+  // ** BLOOM ** 
   r0.xyzw = float4(-1,-1,1,1) * cb0[32].xyxy;
   r2.x = 0.5 * cb0[34].x;
   r3.xyzw = saturate(r0.xyzy * r2.xxxx + v1.xyxy);
@@ -80,7 +85,9 @@ void main(
   r0.xyzw = float4(0.25,0.25,0.25,1) * r0.xyzw;
   r4.xyz = cb0[35].xyz * r0.xyz;
   r4.w = 0.25 * r0.w;
+  // apply bloom
   r0.xyzw = r4.xyzw + r1.xyzw;
+  // apply bloomdirt
   r0.xyzw = (r2.xyzw * r3.xyzw + r0.xyzw);
   
   r0.w = saturate(r0.w);

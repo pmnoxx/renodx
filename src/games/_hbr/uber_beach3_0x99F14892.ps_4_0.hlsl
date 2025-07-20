@@ -47,8 +47,11 @@ void main(
   r0.w = saturate(r0.w); // fix for bloom
   
   r0 = debug_mode(r0, v1);
- // r1 = debug_mode(r1, v1);
+  // r1 = debug_mode(r1, v1);
 
+  r0.xyz = clamp_bt2020(r0.xyz);
+  r1.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
+/*
   r1.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r0.xyz;
   r1.xyz = float3(0.947867334,0.947867334,0.947867334) * r1.xyz;
   r1.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r1.xyz));
@@ -58,6 +61,8 @@ void main(
   r2.xyz = float3(0.0773993805,0.0773993805,0.0773993805) * r0.xyz;
   r3.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r0.xyz);
   r1.xyz = r3.xyz ? r2.xyz : r1.xyz;
+*/
+  
   r2.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
   r0.xyz = r2.xxx * r1.xyz;
   r1.xyzw = float4(-1,-1,1,1) * cb0[32].xyxy;

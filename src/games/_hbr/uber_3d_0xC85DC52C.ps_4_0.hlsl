@@ -40,22 +40,24 @@ void main(
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw; // only r0.x is used
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
   r0.w = saturate(r0.w); // fix for bloom
-  r1.w = saturate(r1.w);
   r1 = debug_mode(r1, w1);
 
-  
+  r1.w = saturate(r1.w);
+  r1.xyz = clamp_bt2020(r1.xyz);
+  r1 = debug_mode(r1, w1);
   r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
-/*
+  /*
+  // srg to linear
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
   r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
-
   r2.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r2.xyz));
   r2.xyz = log2(r2.xyz);
   r2.xyz = float3(2.4000001,2.4000001,2.4000001) * r2.xyz;
   r2.xyz = exp2(r2.xyz);
-  r1.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
-  r0.yzw = r1.xyz ? r0.yzw : r2.xyz;*/
+  r3.xyz = cmp(float3(0.0404499993, 0.0404499993, 0.0404499993) >= r1.xyz);
+  r0.yzw = r3.xyz ? r0.yzw : r2.xyz;
+*/
   r0.xyz = (r0.yzw * r0.xxx);
   r1.w = saturate(r1.w);
 

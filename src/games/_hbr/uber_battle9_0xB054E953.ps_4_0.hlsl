@@ -44,7 +44,6 @@ void main(
 
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
   r0.w = saturate(r0.w);
-  r0 = max(0.f, r0);
   
   r0.yz = v1.xy * float2(2,2) + float2(-1,-1);
   r0.w = dot(r0.yz, r0.yz);
@@ -83,9 +82,12 @@ void main(
   }
   r1.xyzw = r4.xyzw / r5.xyzw;
   r1.w = saturate(r1.w);
-  r1 = max(0.f, r1); // fixed OTG in pull screen
 
+  r1.xyz = clamp_bt2020(r1.xyz);
   r1 = debug_mode(r1, w1);
+  r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
+  /*
+  // srg to linear
   r0.yzw = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
   r2.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
   r2.xyz = float3(0.947867334,0.947867334,0.947867334) * r2.xyz;
@@ -93,8 +95,12 @@ void main(
   r2.xyz = log2(r2.xyz);
   r2.xyz = float3(2.4000001,2.4000001,2.4000001) * r2.xyz;
   r2.xyz = exp2(r2.xyz);
-  r3.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
+  r3.xyz = cmp(float3(0.0404499993, 0.0404499993, 0.0404499993) >= r1.xyz);
   r0.yzw = r3.xyz ? r0.yzw : r2.xyz;
+*/
+//  r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
+
+  // bloom?
   r1.xyz = r0.yzw * r0.xxx;
   r0.xyzw = float4(1,1,-1,0) * cb0[32].xyxy;
   r2.xyzw = saturate(-r0.xywy * cb0[34].xxxx + v1.xyxy);
@@ -127,7 +133,9 @@ void main(
   r0.xyzw = t2.Sample(s2_s, r0.xy).xyzw;
   r0.xyzw = r2.xyzw + r0.xyzw;
   r0.xyzw = cb0[34].yyyy * r0.xyzw;
+
   r2.xy = v1.xy * cb0[33].xy + cb0[33].zw;
+  // bloom dirt?
   r2.xyzw = t3.Sample(s3_s, r2.xy).xyzw;
   r3.xyz = float3(0.0625,0.0625,0.0625) * r0.xyz;
   r2.xyz = cb0[34].zzz * r2.xyz;
@@ -135,9 +143,15 @@ void main(
   r4.xyz = cb0[35].xyz * r0.xyz;
   r4.w = 0.0625 * r0.w;
   r0.xyzw = r4.xyzw + r1.xyzw;
+
+
   r1.xyz = r2.xyz * r3.xyz;
   r1.w = 0;
+
+
   r0.xyzw = r1.xyzw + r0.xyzw;
+
+
   r1.x = cmp(0.5 < cb0[42].x);
   if (r1.x != 0) {
     r1.xyz = saturate(r0.xyz);
@@ -145,6 +159,8 @@ void main(
   } else {
     o0.w = r0.w;
   }
+
+  // toscrgb
   /*
   r1.xyz = float3(12.9200001,12.9200001,12.9200001) * r0.xyz;
   r2.xyz = max(float3(1.1920929e-07,1.1920929e-07,1.1920929e-07), abs(r0.xyz));
