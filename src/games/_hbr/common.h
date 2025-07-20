@@ -237,7 +237,7 @@ float4 ToneMapBlock(float3 untonemapped, float r2_w, float cb42_x, Texture2D<flo
     float3 r1_xyz_sat = saturate(color);
     result.w = dot(r1_xyz_sat, float3(0.212672904, 0.715152204, 0.0721750036));
   } else {
-    result.w = r2_w;
+    result.w = saturate(r2_w);
   }
   result.xyz = renodx::draw::RenderIntermediatePass(color);
   return result;
