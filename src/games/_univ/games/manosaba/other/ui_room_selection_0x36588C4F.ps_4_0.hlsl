@@ -8,7 +8,7 @@ cbuffer cb0 : register(b0)
   float4 cb0[3];
 }
 
-#include "../../common.hlsl"
+#include "../../../common.hlsl"
 
 
 // 3Dmigoto declarations
