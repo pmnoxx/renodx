@@ -58,7 +58,7 @@ void main(
     r3.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
     r0.yzw = r3.xyz ? r0.yzw : r2.xyz;
   */
-  r1.xyz = clamp_bt2020(r1.xyz);
+  r1.xyz = renodx::color::bt709::clamp::BT2020(r1.xyz);
   r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
 
 

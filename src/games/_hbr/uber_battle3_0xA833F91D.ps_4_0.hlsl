@@ -59,7 +59,7 @@ void main(
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
 
   r1 = debug_mode(r1, w1);
-  r1.xyz = clamp_bt2020(r1.xyz);
+  r1.xyz = renodx::color::bt709::clamp::BT2020(r1.xyz);
   r0.yzw = renodx::color::srgb::DecodeSafe(r1.xyz);
 
   r1.xyz = r0.yzw * r0.xxx;

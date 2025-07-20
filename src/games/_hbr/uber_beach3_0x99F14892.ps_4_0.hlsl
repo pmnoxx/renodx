@@ -49,7 +49,7 @@ void main(
   r0 = debug_mode(r0, v1);
   // r1 = debug_mode(r1, v1);
 
-  r0.xyz = clamp_bt2020(r0.xyz);
+  r0.xyz = renodx::color::bt709::clamp::BT2020(r0.xyz);
   r1.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
 /*
   r1.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r0.xyz;

@@ -159,15 +159,6 @@ float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 n
     return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color, neutral_sdr_color);
 }
 
-float3 clamp_bt2020(float3 color) {
-    color.xyz = renodx::color::bt2020::from::BT709(color.xyz);
-    color = max(0.f, color);
-    color.xyz = renodx::color::bt709::from::BT2020(color.xyz);
-    return color;
-
-
-}
-
 #define cmp -
 
 float3 UpgradeToneMapCustom(
