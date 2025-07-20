@@ -19,6 +19,9 @@
 
 namespace {
 
+    
+renodx::mods::shader::CustomShaders custom_shaders = {__ALL_CUSTOM_SHADERS};
+/*
 renodx::mods::shader::CustomShaders custom_shaders = {
     CustomShaderEntry(0x0DE9EBCF), // uber_ult2_0x0DE9EBCF.ps_4_0.hlsl
     CustomShaderEntry(0xE5C37261), // uber_ult_0xE5C37261.ps_4_0.hlsl
@@ -34,7 +37,7 @@ renodx::mods::shader::CustomShaders custom_shaders = {
     CustomShaderEntry(0x02DD6FFF), // 2d_background_0x02DD6FFF.ps_4_0.hlsl
     CustomShaderEntry(0x5D2E23EB), // uber_battle1_0x5D2E23EB.ps_4_0.hlsl
 };
-
+*/
 
 
 ShaderInjectData shader_injection;
@@ -61,7 +64,19 @@ renodx::utils::settings::Settings settings = {
         .label = "Tone Mapper",
         .section = "Tone Mapping",
         .tooltip = "Sets the tone mapper type",
-        .labels = {"Vanilla", "None", "ACES", "RenoDRT"},
+        .labels = {"Vanilla", "None", "ACES", "RenoDRT", "DICE"},
+        .is_visible = []() { return current_settings_mode >= 1; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "DiceShoulder",
+        .binding = &shader_injection.dice_shoulder,
+        .default_value = 50.f,
+        .label = "DICE Shoulder",
+        .section = "Tone Mapping",
+        .tooltip = "Controls the shoulder parameter for DICE tonemapper",
+        .min = 0.f,
+        .max = 100.f,
+        .is_enabled = []() { return shader_injection.tone_map_type == 4.f; },
         .is_visible = []() { return current_settings_mode >= 1; },
     },
     new renodx::utils::settings::Setting{
@@ -358,12 +373,33 @@ renodx::utils::settings::Settings settings = {
         .binding = &shader_injection.debug_mode,
         .default_value = 0.f,
         .label = "Debug Mode",
-        .section = "Development",
-        .tooltip = "Debug mode for development and testing (0.0 = disabled, 1.0 = enabled)",
+        .section = "Debug",
+        .tooltip = "Enables debug mode for development and testing.",
         .min = 0.f,
         .max = 1.f,
-        .format = "%.2f",
-        .is_visible = []() { return current_settings_mode >= 2; },
+        .is_visible = []() { return true; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "DebugMode2",
+        .binding = &shader_injection.debug_mode2,
+        .default_value = 1.f,
+        .label = "Debug Mode 2",
+        .section = "Debug",
+        .tooltip = "Enables advanced debug mode for development and testing.",
+        .min = 0.f,
+        .max = 1.f,
+        .is_visible = []() { return true; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "DebugMode3",
+        .binding = &shader_injection.debug_mode3,
+        .default_value = 1.f,
+        .label = "Debug Mode 3",
+        .section = "Debug",
+        .tooltip = "Enables debug mode 3 for development and testing.",
+        .min = 0.f,
+        .max = 1.f,
+        .is_visible = []() { return true; },
     },
     new renodx::utils::settings::Setting{
         .key = "SwapChainCustomColorSpace",

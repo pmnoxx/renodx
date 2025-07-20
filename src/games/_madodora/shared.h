@@ -90,8 +90,14 @@ struct ShaderInjectData {
   // Debug Mode
   float debug_mode; // Debug mode for development and testing (0.0-1.0)
   
+  float debug_mode2; // Debug mode 2 for advanced debugging (0.0-1.0)
+  
+  float debug_mode3; // Debug mode 3 for development and testing (0.0-1.0)
+  
   // Tone Map Pass Control
   float enable_tone_map_pass; // Enable/disable tone mapping pass (0.0 = off, 1.0 = on)
+  
+  float dice_shoulder; // DICE shoulder parameter for DICE tonemapper
 };
 
 #ifndef __cplusplus
@@ -154,9 +160,13 @@ cbuffer shader_injection : register(b13) {
 
 // Debug Mode
 #define RENODX_DEBUG_MODE                      shader_injection.debug_mode
+#define RENODX_DEBUG_MODE2                     shader_injection.debug_mode2
+#define RENODX_DEBUG_MODE3                     shader_injection.debug_mode3
 
 // Tone Map Pass Control
 #define RENODX_ENABLE_UI_TONEMAPPASS           shader_injection.enable_tone_map_pass
+
+#define RENODX_DICE_SHOULDER                   shader_injection.dice_shoulder
 
 #include "../../shaders/renodx.hlsl"
 
