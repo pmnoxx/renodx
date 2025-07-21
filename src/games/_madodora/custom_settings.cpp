@@ -33,14 +33,14 @@ static const std::unordered_map<std::string, float> default_values = {
     {"ColorGradePerChannelBlowoutRestoration", 0.f},
     {"ColorGradePerChannelHueCorrection", 0.f},
     {"ColorGradePerChannelChrominanceCorrection", 0.f},
-    {"ColorGradeClip", 65.f},
+    {"ColorGradeClip", 20.f},
     {"ColorGradeGamma", 50.f},
     {"CustomCharacterBrightness", 1.f},
     {"CustomTextBrightness", 1.f},
     {"CustomBloom2D", 100.f},
     {"CustomBloom3D", 100.f},
     {"EnableUIToneMapPass", 0.f},
-    {"SwapChainCustomColorSpace", 1.f},
+    {"SwapChainCustomColorSpace", 0.f},
     {"IntermediateEncoding", 1.f},
     {"SwapChainDecoding", 1.f},
     {"SwapChainGammaCorrection", 0.f},
@@ -143,7 +143,7 @@ std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection
 
 
 const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UPGRADE_TARGETS = {
-    {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 3.f}}, // needed for lutbuilder
+    {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 2.f}}, // needed for lutbuilder
     {"B8G8R8A8_TYPELESS", {reshade::api::format::b8g8r8a8_typeless, 0.f}},
     {"R8G8B8A8_UNORM", {reshade::api::format::r8g8b8a8_unorm, 0.f}},
     {"B8G8R8A8_UNORM", {reshade::api::format::b8g8r8a8_unorm, 0.f}},
@@ -153,9 +153,11 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
     {"R10G10B10A2_TYPELESS", {reshade::api::format::r10g10b10a2_typeless, 0.f}},
     {"R10G10B10A2_UNORM", {reshade::api::format::r10g10b10a2_unorm, 0.f}},
     {"B10G10R10A2_UNORM", {reshade::api::format::b10g10r10a2_unorm, 0.f}},
-    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 3.f}}, // bloom
+    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 0.f}}, // bloom
     {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
 };
 
 
+inline void AddCustomResourceUpgrades() {
+}
 } // namespace hbr_custom_settings 

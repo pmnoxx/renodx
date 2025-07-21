@@ -1,3 +1,5 @@
+#include "../custom.hlsl"
+
 // ---- Created with 3Dmigoto v1.4.1 on Thu Jul 10 16:54:45 2025
 Texture2D<float4> t7 : register(t7);
 
@@ -44,6 +46,11 @@ void main(
   r1.x = r0.x / cb0[128].x;
   r0.w = -r1.x + r0.y;
   r0.xyz = cb0[128].www * r0.xzw;
+
+  if (RENODX_TONE_MAP_TYPE > 0.f) {
+    r0.xyz = renodx::color::pq::Decode(r0.xyz, 1.f);  // Decode from PQ to linear
+    r0.xyz = renodx::color::bt709::from::BT2020(r0.xyz);
+  }
 
   // linear to ...
   r1.x = dot(float3(0.390404999,0.549941003,0.00892631989), r0.xyz);
@@ -200,6 +207,16 @@ void main(
   r0.x = r0.x * r0.y;
   r0.x = cb0[134].y * r0.x;
   r0.xyz = r0.xxx * r1.xyz + r0.zzz;
+
+  float3 untonemapped = r0.xyz;
+
+  float3 untonemappedSign = sign(untonemapped);
+  untonemapped = abs(untonemapped);
+  float3 sdrTonemapped = saturate(untonemapped = abs(untonemapped));
+  r0.xyz = sdrTonemapped;
+
+  r0.xyz = abs(sdrTonemapped);
+
   r0.xyz = float3(0.00390625,0.00390625,0.00390625) + r0.xyz;
   r0.w = 0;
   r1.xyzw = t0.SampleBias(s0_s, r0.xw, cb0[19].x).xyzw;
@@ -217,5 +234,14 @@ void main(
   o0.z = saturate(r0.x);
   o0.y = saturate(r1.x);
   o0.w = 1;
+
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    float3 sdrGraded = o0.xyz;
+    o0.r = UpgradeToneMapCustom(untonemapped.r, sdrTonemapped.r, sdrGraded.r, 1.f).r;
+    o0.g = UpgradeToneMapCustom(untonemapped.g, sdrTonemapped.g, sdrGraded.g, 1.f).g;
+    o0.b = UpgradeToneMapCustom(untonemapped.b, sdrTonemapped.b, sdrGraded.b, 1.f).b;
+    // o0.rgb = ToneMapPassWrapper(color);  // all 3 colors are in LINEAR here
+  }
+  o0.xyz *= untonemappedSign;
   return;
 }

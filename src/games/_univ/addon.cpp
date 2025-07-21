@@ -1,5 +1,5 @@
 /*
-addon.cpp 0.06
+addon.cpp 0.07
 - 0.04
 perceptual boost for displayoutput
 - 0.05 
@@ -844,6 +844,7 @@ fixed default of highlights restoration
  
        if (!initialized) {
          InitializeSettings();
+         hbr_custom_settings::AddCustomResourceUpgrades();
  
  
          renodx::mods::shader::force_pipeline_cloning = true;
