@@ -44,17 +44,23 @@ float GetPerceptualBoostStrength(float scene_type) {
     return 1.f;
 }
 
-float4 debug_mode(float4 color, float2 pos) {
-    if (pos.x < 0.01f * RENODX_DEBUG_MODE / 3.f && pos.y < 0.01f * RENODX_DEBUG_MODE && RENODX_DEBUG_MODE)
-        return float4(1.f, 0.f, 0.f, 1.f);
-    if (pos.x < 0.01f * RENODX_DEBUG_MODE * 2.f / 3.f && pos.y < 0.01f * RENODX_DEBUG_MODE && RENODX_DEBUG_MODE)
-        return float4(0.f, 1.f, 0.f, 1.f);
-    if (pos.x < 0.01f * RENODX_DEBUG_MODE * 3.f / 3.f && pos.y < 0.01f * RENODX_DEBUG_MODE && RENODX_DEBUG_MODE)
-        return float4(0.f, 0.f, 1.f, 1.f);
-    return color;
-}
-  
+float4 debug_mode(float4 color, float2 pos, float shift_y = 0.f) {
+  float2 box = float2(0.99f, 0.99f - shift_y);
+  float2 dim = float2(0.01f, 0.01f);
 
+  if (length(pos >= box && pos <= box + dim) > 1.f) {
+    float part = (pos.x - box.x) / dim.x;
+    if (part < 1. / 3.f) {
+      return float4(1.f, 0.f, 0.f, 1.f);
+    }
+    if (part < 2. / 3.f) {
+      return float4(0.f, 1.f, 0.f, 1.f);
+    }
+    return float4(0.f, 0.f, 1.f, 1.f);
+  }
+
+  return color;
+}
 
 // Function to apply reverse Reinhard tone mapping
 float3 ApplyReverseReinhard(float3 color, float scene_type = SCENE_TYPE_UNKNOWN) {
@@ -307,8 +313,6 @@ float3 RestoreHighlightSaturation(float3 color) {
     color_scaled = renodx::color::correct::Hue(color_scaled, color_tonemapped_graded);
     return lerp(color_untonemapped, color_scaled, post_process_strength);
   }
-
-// Custom game code
 
 #define cmp -
 

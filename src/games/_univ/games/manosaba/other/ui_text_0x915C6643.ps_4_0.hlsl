@@ -79,7 +79,10 @@ void main(
   r1.xyzw = v7.xyzw * r0.yyyy;
   r0.xyzw = r1.xyzw * r0.xxxx + r2.xyzw;
   o0.xyzw = v1.wwww * r0.xyzw;
-  o0.rgba = renodx_adjust_ui_color(o0.rgba);
+//  o0.rgba = renodx_adjust_ui_color(o0.rgba);
+  o0.xyz = renodx::color::srgb::DecodeSafe(o0.xyz);
+  o0.xyz *= CUSTOM_TEXT_BRIGHTNESS;
+  o0.xyz = renodx::color::srgb::EncodeSafe(o0.xyz);
   o0.w = saturate(o0.w);
   return;
 }
