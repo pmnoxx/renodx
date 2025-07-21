@@ -1,5 +1,5 @@
 /*
-addon.cpp 0.05
+addon.cpp 0.06
 - 0.04
 perceptual boost for displayoutput
 - 0.05 
@@ -295,8 +295,9 @@ fixed default of highlights restoration
              .section = "Color Grading",
              .tooltip = "Restores blown out highlights on a per-channel basis.",
              .max = 100.f,
+             .is_enabled = []() { return shader_injection.tone_map_type > 0; },
              .parse = [](float value) { return value * 0.01f; },
-             .is_visible = []() { return current_settings_mode >= 3; },
+             .is_visible = []() { return current_settings_mode >= 1; },
          },
          new renodx::utils::settings::Setting{
              .key = "ColorGradePerChannelHueCorrection",
@@ -308,8 +309,9 @@ fixed default of highlights restoration
              .section = "Color Grading",
              .tooltip = "Applies hue correction on a per-channel basis.",
              .max = 100.f,
+             .is_enabled = []() { return shader_injection.tone_map_type > 0; },
              .parse = [](float value) { return value * 0.01f; },
-             .is_visible = []() { return current_settings_mode >= 3; },
+             .is_visible = []() { return current_settings_mode >= 1; },
          },
          new renodx::utils::settings::Setting{
              .key = "ColorGradePerChannelChrominanceCorrection",
@@ -322,8 +324,9 @@ fixed default of highlights restoration
              .tooltip = "Applies chrominance correction on a per-channel basis.",
              .min = 0.f,
              .max = 100.f,
+             .is_enabled = []() { return shader_injection.tone_map_type > 0; },
              .parse = [](float value) { return value * 0.01f; },
-             .is_visible = []() { return current_settings_mode >= 3; },
+             .is_visible = []() { return current_settings_mode >= 1; },
          },
          new renodx::utils::settings::Setting{
              .key = "ColorGradeGamma",
@@ -365,38 +368,6 @@ fixed default of highlights restoration
              .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
              .parse = [](float value) { return value * 0.02f; },
              .is_visible = []() { return current_settings_mode >= 1; },
-         },
-         new renodx::utils::settings::Setting{
-             .key = "ColorGradeBlowout",
-             .binding = &shader_injection.tone_map_blowout,
-             .default_value = hbr_custom_settings::get_default_value("ColorGradeBlowout", 0.f),
-             .label = "Blowout",
-             .section = "Color Grading",
-             .tooltip = "Controls highlight desaturation due to overexposure.",
-             .max = 100.f,
-             .parse = [](float value) { return value * 0.01f; },
-         },
-         new renodx::utils::settings::Setting{
-             .key = "ColorGradeFlare",
-             .binding = &shader_injection.tone_map_flare,
-             .default_value = hbr_custom_settings::get_default_value("ColorGradeFlare", 0.f),
-             .label = "Flare",
-             .section = "Color Grading",
-             .tooltip = "Flare/Glare Compensation",
-             .max = 100.f,
-             .is_enabled = []() { return shader_injection.tone_map_type == 3; },
-             .parse = [](float value) { return value * 0.02f; },
-         },
-         new renodx::utils::settings::Setting{
-             .key = "EnableUIToneMapPass",
-             .binding = &shader_injection.enable_tone_map_pass,
-             .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-             .default_value = hbr_custom_settings::get_default_value("EnableUIToneMapPass", 0.f),
-             .label = "UI Tone Mapping Pass (may not work if game nits != UI nits)",
-             .section = "Custom Color Grading",
-             .tooltip = "Enable or disable the tone mapping pass in the final shader. (This applies tonemapping to UI effects, which can exceed peak nits.)",
-             .labels = {"Off", "On"},
-             .is_visible = []() { return current_settings_mode >= 3; },
          },
      };
  }
