@@ -127,6 +127,30 @@ float3 ApplyReverseReinhard(float3 color, float scene_type = SCENE_TYPE_UNKNOWN)
     return color;
 }
 
+float3 ComputeUntonemappedGraded(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
+  [branch]
+  if (shader_injection.color_grade_strength == 0) {
+    return untonemapped;
+  } else {
+    if (shader_injection.color_grade_per_channel_blowout_restoration != 0.f
+        || shader_injection.color_grade_per_channel_hue_correction != 0.f
+        || shader_injection.color_grade_per_channel_chrominance_correction != 0.f) {
+      graded_sdr_color = renodx::draw::ApplyPerChannelCorrection(
+          untonemapped,
+          graded_sdr_color,
+          shader_injection.color_grade_per_channel_blowout_restoration,
+          shader_injection.color_grade_per_channel_hue_correction,
+          shader_injection.color_grade_per_channel_chrominance_correction);
+    }
+
+    return renodx::tonemap::UpgradeToneMap(
+        untonemapped,
+        neutral_sdr_color,
+        graded_sdr_color,
+        shader_injection.color_grade_strength,
+        shader_injection.color_grade_tone_map_pass_autocorrection);
+  }
+}
 
 float3 ApplyPerceptualBoostAndToneMap(float3 color, float scene_type = SCENE_TYPE_UNKNOWN) {
 
@@ -170,35 +194,11 @@ float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 n
   if (RENODX_ENABLE_UI_TONEMAPPASS) {
     return graded_sdr_color;
   }
-  float3 color = renodx::draw::ToneMapPass(untonemapped, graded_sdr_color, neutral_sdr_color);
+  float3 color = ComputeUntonemappedGraded(untonemapped, graded_sdr_color, neutral_sdr_color);
   float gamma = shader_injection.tone_map_gamma * 2.f;
   color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
+  color = renodx::draw::ToneMapPass(color);
   return color;
-}
-
-float3 ComputeUntonemappedGraded(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
-  [branch]
-  if (shader_injection.color_grade_strength == 0) {
-    return untonemapped;
-  } else {
-    if (shader_injection.color_grade_per_channel_blowout_restoration != 0.f
-        || shader_injection.color_grade_per_channel_hue_correction != 0.f
-        || shader_injection.color_grade_per_channel_chrominance_correction != 0.f) {
-      graded_sdr_color = renodx::draw::ApplyPerChannelCorrection(
-          untonemapped,
-          graded_sdr_color,
-          shader_injection.color_grade_per_channel_blowout_restoration,
-          shader_injection.color_grade_per_channel_hue_correction,
-          shader_injection.color_grade_per_channel_chrominance_correction);
-    }
-
-    return renodx::tonemap::UpgradeToneMap(
-        untonemapped,
-        neutral_sdr_color,
-        graded_sdr_color,
-        shader_injection.color_grade_strength,
-        shader_injection.color_grade_tone_map_pass_autocorrection);
-  }
 }
 
 /// Applies Exponential Roll-Off tonemapping using the maximum channel.
