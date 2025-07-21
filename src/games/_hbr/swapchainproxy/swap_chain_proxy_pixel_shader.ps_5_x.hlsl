@@ -1,4 +1,5 @@
 #include "../common.hlsl"
+#include "../../../shaders/draw.hlsl"
 
 Texture2D t0 : register(t0);
 SamplerState s0 : register(s0);
@@ -6,14 +7,27 @@ float4 main(float4 vpos: SV_POSITION, float2 uv: TEXCOORD0)
     : SV_TARGET {
   float4 o0 = t0.Sample(s0, uv);
 
+  float4 finalColor = renodx::draw::SwapChainPass(o0);
 
   if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
-    o0.xyz = renodx::draw::InvertIntermediatePass(o0.xyz);
+    if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_PQ) {
+        finalColor.rgb = renodx::color::pq::DecodeSafe(finalColor.rgb, 1.f);
+    } else if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_SCRGB) {
+        finalColor.rgb *= 80.f;
+    } else if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_SRGB) {
+        finalColor.rgb = renodx::color::srgb::DecodeSafe(finalColor.rgb);
+    }
 
-    o0.xyz = ToneMapPassCustom(o0.xyz);  // game applies post effects to UI, which exceed peak nits.
+    o0.xyz = ToneMapPassCustom(o0.xyz); 
 
-    o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
+    if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_PQ) {
+      finalColor.rgb = renodx::color::pq::EncodeSafe(finalColor.rgb, 1.f);
+    } else if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_SCRGB) {
+      finalColor.rgb /= 80.f;
+    } else if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_SRGB) {
+      finalColor.rgb = renodx::color::srgb::EncodeSafe(finalColor.rgb);
+    }
   }
 
-  return renodx::draw::SwapChainPass(o0);
+  return finalColor;
 }
