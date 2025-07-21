@@ -8,7 +8,7 @@ cbuffer cb0 : register(b0)
   float4 cb0[3];
 }
 
-#include "../../../common.hlsl"
+#include "../../../custom.hlsl"
 
 
 // 3Dmigoto declarations
@@ -33,7 +33,7 @@ void main(
   o0 = saturate(o0);
 
   o0.xyz = renodx::color::srgb::DecodeSafe(o0.xyz);
-  o0.xyzw *= RENODX_CUSTOM_CHARACTER_BRIGHTNESS; // room selection brightness
+  o0.xyzw *= CUSTOM_CHARACTER_BRIGHTNESS; // room selection brightness
   o0.xyz = renodx::color::srgb::EncodeSafe(o0.xyz);
 
   o0.rgb = 0.5f;

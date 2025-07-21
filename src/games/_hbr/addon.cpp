@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2024 Carlos Lopez
- * SPDX-License-Identifier: MIT
+addon.cpp 0.03
  */
 
 #define ImTextureID ImU64
@@ -843,21 +842,6 @@ void AddAdvancedSettings() {
   settings.push_back(swapchain_setting);
 }
 
-const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UPGRADE_TARGETS = {
-    {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 3.f}},
-    {"B8G8R8A8_TYPELESS", {reshade::api::format::b8g8r8a8_typeless, 0.f}},
-    {"R8G8B8A8_UNORM", {reshade::api::format::r8g8b8a8_unorm, 0.f}},
-    {"B8G8R8A8_UNORM", {reshade::api::format::b8g8r8a8_unorm, 0.f}},
-    {"R8G8B8A8_SNORM", {reshade::api::format::r8g8b8a8_snorm, 0.f}},
-    {"R8G8B8A8_UNORM_SRGB", {reshade::api::format::r8g8b8a8_unorm_srgb, 0.f}},
-    {"B8G8R8A8_UNORM_SRGB", {reshade::api::format::b8g8r8a8_unorm_srgb, 0.f}},
-    {"R10G10B10A2_TYPELESS", {reshade::api::format::r10g10b10a2_typeless, 0.f}},
-    {"R10G10B10A2_UNORM", {reshade::api::format::r10g10b10a2_unorm, 0.f}},
-    {"B10G10R10A2_UNORM", {reshade::api::format::b10g10r10a2_unorm, 0.f}},
-    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 3.f}},
-    {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
-};
-
 void OnPresetOff() {
   //   renodx::utils::settings::UpdateSetting("toneMapType", 0.f);
   //   renodx::utils::settings::UpdateSetting("toneMapPeakNits", 203.f);
@@ -1019,7 +1003,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
           settings.push_back(setting);
         }
 
-        for (const auto& [key, format_pair] : UPGRADE_TARGETS) {
+        for (const auto& [key, format_pair] : hbr_custom_settings::UPGRADE_TARGETS) {
           auto* setting = new renodx::utils::settings::Setting{
               .key = "Upgrade_" + key,
               .value_type = renodx::utils::settings::SettingValueType::INTEGER,

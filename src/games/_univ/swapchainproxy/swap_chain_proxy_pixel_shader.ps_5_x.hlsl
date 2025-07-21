@@ -1,34 +1,33 @@
-
 #include "../common.hlsl"
+#include "../../../shaders/draw.hlsl"
 
 Texture2D t0 : register(t0);
 SamplerState s0 : register(s0);
-
-// Returns whether the effect should be applied based on split parameters
-bool ShouldApplyEffect(float2 uv, float split_angle, float split_mode, float split_x) {
-  float angle_rad = radians(split_angle);
-  float2 normal = float2(cos(angle_rad), sin(angle_rad));
-  float2 from_center = float2(uv.x - 0.5, uv.y - 0.5);
-  if (split_mode != 0) {
-    return dot(from_center, normal) < split_x;
-  }
-  return true;
-}
-
 float4 main(float4 vpos: SV_POSITION, float2 uv: TEXCOORD0)
     : SV_TARGET {
-  float4 color = t0.Sample(s0, uv);
+  float4 o0 = t0.Sample(s0, uv);
 
-  bool applyEffect = ShouldApplyEffect(uv, shader_injection.effect_split_angle, shader_injection.effect_split_mode, shader_injection.effect_split_x);
+  float4 finalColor = renodx::draw::SwapChainPass(o0);
 
-  color.rgb = renodx::draw::InvertIntermediatePass(color.rgb);
-  color.rgb *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
+  if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
+    if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_PQ) {
+        finalColor.rgb = renodx::color::pq::DecodeSafe(finalColor.rgb, 1.f);
+    } else if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_SCRGB) {
+        finalColor.rgb *= 80.f;
+    } else if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_SRGB) {
+        finalColor.rgb = renodx::color::srgb::DecodeSafe(finalColor.rgb);
+    }
 
-  if (applyEffect) {
-    color.rgb = renodx_ksp_apply_tonemap_and_boost(color.rgb, uv.xy);
+    o0.xyz = ToneMapPassCustom(o0.xyz); 
+
+    if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_PQ) {
+      finalColor.rgb = renodx::color::pq::EncodeSafe(finalColor.rgb, 1.f);
+    } else if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_SCRGB) {
+      finalColor.rgb /= 80.f;
+    } else if (RENODX_SWAP_CHAIN_DECODING == renodx::draw::ENCODING_SRGB) {
+      finalColor.rgb = renodx::color::srgb::EncodeSafe(finalColor.rgb);
+    }
   }
 
-  color.rgb = renodx::draw::RenderIntermediatePass(color.rgb);
-
-  return renodx::draw::SwapChainPass(color);
+  return finalColor;
 }

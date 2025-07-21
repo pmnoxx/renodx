@@ -12,7 +12,7 @@ cbuffer cb0 : register(b0)
   float4 cb0[5];
 }
 
-#include "../../../common.hlsl"
+#include "../../../custom.hlsl"
 
 // 3Dmigoto declarations
 #define cmp -
@@ -83,7 +83,7 @@ void main(
   // Color space processing and brightness adjustment
   o0.xyzw = color_result;
   o0.xyz = renodx::color::srgb::DecodeSafe(o0.xyz);
-  o0.xyz *= RENODX_CUSTOM_CHARACTER_BRIGHTNESS;
+  o0.xyz *= CUSTOM_CHARACTER_BRIGHTNESS;
   o0.xyz = renodx::color::srgb::EncodeSafe(o0.xyz);
   o0.w = saturate(o0.w);
   
