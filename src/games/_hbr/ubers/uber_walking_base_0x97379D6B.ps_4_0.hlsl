@@ -1,4 +1,4 @@
-#include "../common.hlsl"
+#include "../custom.hlsl"
 
 
 Texture2D<float4> t4 : register(t4);
