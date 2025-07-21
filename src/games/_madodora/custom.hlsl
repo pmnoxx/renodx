@@ -20,7 +20,7 @@ float4 renodx_opening_tonemap_block(float4 untonemapped, float4 aces_output, flo
           sdrTonemapped_first.xyz = lerp(untonemapped.xyz, sdrTonemapped_first.xyz, saturate(y));
         }
 
-        float3 color = renodx::tonemap::UpgradeToneMap(untonemapped.rgb, sdrTonemapped_first, r0.rgb, 1.f);
+        float3 color = ComputeUntonemappedGraded(untonemapped.rgb, r0.rgb, sdrTonemapped_first);
         r0.xyz = color;
         untonemapped.xyz = color;
 
@@ -37,7 +37,7 @@ float4 renodx_opening_tonemap_block(float4 untonemapped, float4 aces_output, flo
             r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
 
             // preserved brightness changes in case t3 lut changes brightness
-            r0.xyz = renodx::tonemap::UpgradeToneMap(untonemapped.rgb, sdrTonemapped, r0.xyz, 1.f);
+            r0.xyz = ComputeUntonemappedGraded(untonemapped.rgb, r0.xyz, sdrTonemapped);
         }
 
         r0.xyz = max(0.f, renodx::color::bt2020::from::BT709(r0.xyz));
@@ -51,7 +51,7 @@ float4 renodx_opening_tonemap_block(float4 untonemapped, float4 aces_output, flo
             r0.xyz = lerp(r0.xyz, renodx::lut::SampleTetrahedral(t3, r0.xyz), t3_intensity);  
             r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
         }
-        float3 color = renodx::tonemap::UpgradeToneMap(untonemapped.rgb, renodx::tonemap::renodrt::NeutralSDR(untonemapped.rgb), r0.rgb, 1.f);
+        float3 color = ComputeUntonemappedGraded(untonemapped.rgb, r0.rgb, renodx::tonemap::renodrt::NeutralSDR(untonemapped.rgb));
         r0.xyz = color;
 
         r0.xyz = max(0.f, renodx::color::bt2020::from::BT709(r0.xyz));
@@ -85,9 +85,9 @@ float4 renodx_opening_tonemap_block(float4 r0, float2 v1, Texture2D<float4> t2, 
       r0.xyz = renodx::color::srgb::EncodeSafe(r0.xyz);
       r0.xyz = lerp(r0.xyz, renodx::lut::SampleTetrahedral(t3, r0.xyz), t3_intensity);  
       r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
-        
+
       float3 sdrGraded = r0.xyz;
-      float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
+      float3 color = ComputeUntonemappedGraded(untonemapped, sdrGraded, sdrTonemapped);
       r0.xyz = color;      
     }
     r0.xyz = max(0.f, renodx::color::bt2020::from::BT709(r0.xyz));

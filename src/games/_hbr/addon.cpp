@@ -1,7 +1,9 @@
 /*
-addon.cpp 0.04
+addon.cpp 0.05
 - 0.04
 perceptual boost for displayoutput
+- 0.05 
+fixed default of highlights restoration
  */
 
  #define ImTextureID ImU64
@@ -287,7 +289,7 @@ perceptual boost for displayoutput
              .key = "ColorGradePerChannelBlowoutRestoration",
              .binding = &shader_injection.color_grade_per_channel_blowout_restoration,
              .value_type = renodx::utils::settings::SettingValueType::FLOAT,
-             .default_value = hbr_custom_settings::get_default_value("ColorGradePerChannelBlowoutRestoration", 100.f),
+             .default_value = hbr_custom_settings::get_default_value("ColorGradePerChannelBlowoutRestoration", 0.f),
              .can_reset = true,
              .label = "Per Channel Blowout Restoration",
              .section = "Color Grading",
@@ -300,7 +302,7 @@ perceptual boost for displayoutput
              .key = "ColorGradePerChannelHueCorrection",
              .binding = &shader_injection.color_grade_per_channel_hue_correction,
              .value_type = renodx::utils::settings::SettingValueType::FLOAT,
-             .default_value = hbr_custom_settings::get_default_value("ColorGradePerChannelHueCorrection", 100.f),
+             .default_value = hbr_custom_settings::get_default_value("ColorGradePerChannelHueCorrection", 0.f),
              .can_reset = true,
              .label = "Per Channel Hue Correction",
              .section = "Color Grading",
@@ -313,7 +315,7 @@ perceptual boost for displayoutput
              .key = "ColorGradePerChannelChrominanceCorrection",
              .binding = &shader_injection.color_grade_per_channel_chrominance_correction,
              .value_type = renodx::utils::settings::SettingValueType::FLOAT,
-             .default_value = hbr_custom_settings::get_default_value("ColorGradePerChannelChrominanceCorrection", 100.f),
+             .default_value = hbr_custom_settings::get_default_value("ColorGradePerChannelChrominanceCorrection", 0.f),
              .can_reset = true,
              .label = "Per Channel Chrominance Correction",
              .section = "Color Grading",

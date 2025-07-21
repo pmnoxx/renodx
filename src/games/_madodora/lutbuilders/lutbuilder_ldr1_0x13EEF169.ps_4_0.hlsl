@@ -321,7 +321,7 @@ void main(
   // ============================================================================
   // RenoDX modification: Apply tone mapping and create SDR version for LUT sampling
   float3 untonemapped = r0.xyz;
-  float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);  // tonemap to SDR you can change this to any SDR tonemapper you want
+  /*float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);  // tonemap to SDR you can change this to any SDR tonemapper you want
   if (RENODX_TONE_MAP_TYPE != 0) {
     if (RENODX_DEBUG_MODE2 > 0.5f) {
       sdrTonemapped = saturate(untonemapped);
@@ -332,6 +332,13 @@ void main(
       sdrTonemapped = r0.xyz;
     }
   }
+*/
+
+  float3 untonemappedSign = sign(untonemapped);
+  untonemapped = abs(untonemapped);
+  float3 sdrTonemapped = saturate(untonemapped);
+  r0.xyz = sdrTonemapped;
+
   // ============================================================================
   // SECTION 22: FINAL LUT SAMPLING AND OUTPUT
   // ============================================================================
@@ -366,20 +373,15 @@ void main(
   // ============================================================================
   // RenoDX modification: Apply final tone mapping if enabled
   if (RENODX_TONE_MAP_TYPE != 0) {
-    if (RENODX_DEBUG_MODE2 > 0.5f) {
-      float3 sdrGraded = o0.xyz;
-      float3 color;
-        color.r = renodx::tonemap::UpgradeToneMap(untonemapped.r, sdrTonemapped.r, sdrGraded.r, 1.f).r;
-        color.g = renodx::tonemap::UpgradeToneMap(untonemapped.g, sdrTonemapped.g, sdrGraded.g, 1.f).r;
-        color.b = renodx::tonemap::UpgradeToneMap(untonemapped.b, sdrTonemapped.b, sdrGraded.b, 1.f).r;
-        o0.rgb = color;
-    } else {
-      float3 sdrGraded = o0.xyz;
-      float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
-      o0.rgb = color;
-    }
+    float3 sdrGraded = o0.xyz;
+    float3 color;
+    color.r = renodx::tonemap::UpgradeToneMap(untonemapped.r, sdrTonemapped.r, sdrGraded.r, 1.f).r;
+    color.g = renodx::tonemap::UpgradeToneMap(untonemapped.g, sdrTonemapped.g, sdrGraded.g, 1.f).r;
+    color.b = renodx::tonemap::UpgradeToneMap(untonemapped.b, sdrTonemapped.b, sdrGraded.b, 1.f).r;
+    o0.rgb = color;
   // o0.rgb = ToneMapPassWrapper(color);  // all 3 colors are in LINEAR here
-}
+  }
+  o0.rgb *= untonemappedSign;
 
   return;
 }
