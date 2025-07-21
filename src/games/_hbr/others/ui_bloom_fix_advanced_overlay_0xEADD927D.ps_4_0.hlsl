@@ -55,7 +55,7 @@ void main(
   o0.xyz = r0.www * r0.xyz + r2.xyz;
 
 
-  o0.xyz = lerp(t0.SampleBias(s0_s, v1.xy, cb0[5].x).xyz, o0.xyz, RENODX_2D_BLOOM);
+  o0.xyz = lerp(t0.SampleBias(s0_s, v1.xy, cb0[5].x).xyz, o0.xyz, CUSTOM_2D_BLOOM);
 //  r0 *= RENODX_2D_BLOOM;
 
   o0.w = 1;

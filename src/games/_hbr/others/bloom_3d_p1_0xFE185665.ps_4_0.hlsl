@@ -93,7 +93,7 @@ float4 saturate_bloom_sdr(float4 color) {
   color.xyzw = saturate(color.xyzw);
   if (RENODX_TONE_MAP_TYPE >= 1.f) {
     color = saturate(color);
-    color.xyzw *= RENODX_3D_BLOOM;
+    color.xyzw *= CUSTOM_3D_BLOOM;
   } else {
     color = saturate(color);
   }
