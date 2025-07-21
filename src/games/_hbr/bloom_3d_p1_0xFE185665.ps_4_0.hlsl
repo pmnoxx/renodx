@@ -87,7 +87,7 @@ cbuffer cb0 : register(b0)
 // 3Dmigoto declarations
 #define cmp -
 
-#include "./common.h"
+#include "./common.hlsl"
 
 float4 saturate_bloom_sdr(float4 color) {
   color.xyzw = saturate(color.xyzw);

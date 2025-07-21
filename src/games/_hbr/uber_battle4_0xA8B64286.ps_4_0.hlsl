@@ -35,7 +35,7 @@ cbuffer cb0 : register(b0)
 #define cmp -
 
 
-#include "./common.h"
+#include "./common.hlsl"
 
 
 void main(
