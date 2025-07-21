@@ -4,7 +4,7 @@ Texture2D<float4> t0 : register(t0);
 SamplerState s0_s : register(s0);
 
 
-#include "./common.h"
+#include "./common.hlsl"
 
 // 3Dmigoto declarations
 #define cmp -

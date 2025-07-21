@@ -29,7 +29,7 @@ cbuffer cb0 : register(b0)
 }
 
 
-#include "./common.h"
+#include "./common.hlsl"
 
 // Function to sample bloom texture
 float4 SampleBloomTexture(float2 uv) {

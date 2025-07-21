@@ -159,6 +159,87 @@ float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 n
     return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color, neutral_sdr_color);
 }
 
+float3 ComputeUntonemappedGraded(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
+  [branch]
+  if (shader_injection.color_grade_strength == 0) {
+    return untonemapped;
+  } else {
+    if (shader_injection.color_grade_per_channel_blowout_restoration != 0.f
+        || shader_injection.color_grade_per_channel_hue_correction != 0.f
+        || shader_injection.color_grade_per_channel_chrominance_correction != 0.f) {
+      graded_sdr_color = renodx::draw::ApplyPerChannelCorrection(
+          untonemapped,
+          graded_sdr_color,
+          shader_injection.color_grade_per_channel_blowout_restoration,
+          shader_injection.color_grade_per_channel_hue_correction,
+          shader_injection.color_grade_per_channel_chrominance_correction);
+    }
+
+    return renodx::tonemap::UpgradeToneMap(
+        untonemapped,
+        neutral_sdr_color,
+        graded_sdr_color,
+        shader_injection.color_grade_strength,
+        shader_injection.color_grade_tone_map_pass_autocorrection);
+  }
+}
+
+/// Applies Exponential Roll-Off tonemapping using the maximum channel.
+/// Used to fit the color into a 0–output_max range for SDR LUT compatibility.
+float3 ToneMapMaxCLL(float3 color, float rolloff_start = 0.375f, float output_max = 1.f) {
+  color = min(color, 100.f);
+  float peak = max(color.r, max(color.g, color.b));
+  peak = min(peak, 100.f);
+  float log_peak = log2(peak);
+
+  // Apply exponential shoulder in log space
+  float log_mapped = renodx::tonemap::ExponentialRollOff(log_peak, log2(rolloff_start), log2(output_max));
+  float scale = exp2(log_mapped - log_peak);  // How much to compress all channels
+
+  return min(output_max, color * scale);
+}
+
+
+
+
+// A banaid fix Adrian found using a Display Mapper (DICE/Frostbite) to restore highlight saturation
+// That was lost running TonemapPass
+// We run this function right after untonemapped, and display map the rest of the sdr path down to ~2.f
+float3 RestoreHighlightSaturation(float3 color) {
+    if (RENODX_TONE_MAP_TYPE != 0.f && DISPLAY_MAP_TYPE != 0.f) {
+      float color_y = renodx::color::y::from::BT709(color);
+  
+      [branch]
+      if (DISPLAY_MAP_TYPE == 1.f) {  // Dice
+  
+        float dice_peak = DISPLAY_MAP_PEAK;          // 2.f default
+        float dice_shoulder = DISPLAY_MAP_SHOULDER;  // 0.5f default
+        float3 dice_color = renodx::tonemap::dice::BT709(color, dice_peak, dice_shoulder);
+        color = lerp(color, dice_color, saturate(color_y));
+  
+      } else if (DISPLAY_MAP_TYPE == 2.f) {  // Frostbite
+  
+        float frostbite_peak = DISPLAY_MAP_PEAK;          // 2.f default
+        float frostbite_shoulder = DISPLAY_MAP_SHOULDER;  // 0.5f default
+        float frostbite_saturation = 1.f;                 // Hardcode to 1.f
+        float3 frostbite_color = renodx::tonemap::frostbite::BT709(color, frostbite_peak, frostbite_shoulder, frostbite_saturation);
+        color = lerp(color, frostbite_color, saturate(color_y));
+  
+      } else if (DISPLAY_MAP_TYPE == 3.f) {  // RenoDRT NeutralSDR
+        float3 neutral_sdr_color = renodx::tonemap::renodrt::NeutralSDR(color);
+        color = lerp(color, neutral_sdr_color, saturate(color_y));
+      } else if (DISPLAY_MAP_TYPE == 4.f) {  // ToneMapMaxCLL
+        color = lerp(color, ToneMapMaxCLL(color), saturate(color_y));
+      }
+  
+    } else {
+      // We dont want to Display Map if the tonemapper is vanilla/preset off or display map is none
+      color = color;
+    }
+  
+    return color;
+  }
+
 #define cmp -
 
 float3 UpgradeToneMapCustom(
@@ -200,18 +281,11 @@ float3 UpgradeToneMapCustom(
 float4 ToneMapBlock(float3 untonemapped, float r2_w, float cb42_x, Texture2D<float4> t4_tex, float scene_type_3d) {
   float3 r0_xyz_out = saturate(untonemapped);
 
-  float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);  // tonemap to SDR you can change this to any SDR tonemapper you want
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    float y = renodx::color::y::from::BT709(untonemapped);
-    r0_xyz_out = lerp(untonemapped, sdrTonemapped, saturate(y));
-    if (RENODX_DEBUG_MODE3 < 0.5f) {
-      r0_xyz_out = saturate(r0_xyz_out);
-    }
-    sdrTonemapped = r0_xyz_out;
-  }
+
+  float3 sdrTonemapped = RestoreHighlightSaturation(untonemapped);
 
   float3 s = sign(r0_xyz_out);
-  r0_xyz_out = abs(r0_xyz_out);
+  r0_xyz_out = lerp(abs(r0_xyz_out), saturate(r0_xyz_out), DISPLAY_MAP_SATURATION);
 
   r0_xyz_out = renodx::color::srgb::EncodeSafe(r0_xyz_out);
   r0_xyz_out = renodx::lut::SampleTetrahedral(t4_tex, r0_xyz_out);
@@ -224,9 +298,9 @@ float4 ToneMapBlock(float3 untonemapped, float r2_w, float cb42_x, Texture2D<flo
   if (RENODX_TONE_MAP_TYPE != 0) {
     float3 sdrGraded = r0_xyz_out;
     if (RENODX_DEBUG_MODE2 >= 0.5f) {
-      color = UpgradeToneMapCustom(untonemapped, sdrTonemapped, sdrGraded, 1.f);
+      color = ComputeUntonemappedGraded(untonemapped, sdrTonemapped, sdrGraded);
     } else {
-      color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
+      color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, shader_injection.color_grade_strength);
     }
     color = ApplyReverseReinhard(color, scene_type_3d);
     color = ToneMapPassWrapper(color);  // all 3 colors are in LINEAR here

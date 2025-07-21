@@ -19,7 +19,7 @@ cbuffer cb0 : register(b0)
 // 3Dmigoto declarations
 #define cmp -
 
-#include "./common.h"
+#include "./common.hlsl"
 
 void main(
   float4 v0 : SV_POSITION0,

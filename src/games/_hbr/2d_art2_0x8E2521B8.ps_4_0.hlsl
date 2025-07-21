@@ -10,7 +10,7 @@ cbuffer cb0 : register(b0)
 
 
 
-#include "./common.h"
+#include "./common.hlsl"
 
 
 // 3Dmigoto declarations
