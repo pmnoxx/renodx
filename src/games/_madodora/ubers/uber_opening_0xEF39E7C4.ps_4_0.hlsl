@@ -1,4 +1,4 @@
-#include "../common.hlsl"
+#include "../custom.hlsl"
 
 // ---- Created with 3Dmigoto v1.4.1 on Wed Jul 16 10:27:26 2025
 Texture2D<float4> t3 : register(t3);

@@ -1,4 +1,4 @@
-#include "../common.hlsl"
+#include "../custom.hlsl"
 
 // ---- Created with 3Dmigoto v1.4.1 on Wed Jul 16 12:24:37 2025
 Texture2D<float4> t1 : register(t1);
@@ -38,7 +38,7 @@ void main(
 
   r0.xyzw = t0.Sample(s1_s, v2.xy).xyzw;
 
-  r0.xyz *= RENODX_CHARACTER_BRIGHTNESS;
+  r0.xyz *= CUSTOM_CHARACTER_BRIGHTNESS;
 
   r1.xyz = cb0[9].xyz * r0.xyz;
   r2.xyz = r0.xyz * cb0[9].xyz + cb0[10].xyz;

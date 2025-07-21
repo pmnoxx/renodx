@@ -120,6 +120,7 @@ struct ShaderInjectData {
   // CUSTOM GAME SETTINGS
   
   float custom_character_brightness; // Custom character brightness for UI slider
+  float custom_text_brightness;
 };
 
 #ifndef __cplusplus
@@ -210,6 +211,7 @@ cbuffer shader_injection : register(b13) {
 // CUSTOM GAME SETTINGS
 
 #define CUSTOM_CHARACTER_BRIGHTNESS      shader_injection.custom_character_brightness
+#define CUSTOM_TEXT_BRIGHTNESS           shader_injection.custom_text_brightness
 
 #include "../../shaders/renodx.hlsl"
 

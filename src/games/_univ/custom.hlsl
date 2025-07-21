@@ -55,7 +55,8 @@ float4 renodx_adjust_ui_color(float4 color) {
   } else if (RENODX_INTERMEDIATE_ENCODING == 2.f) {
     color.rgb = renodx::color::gamma::DecodeSafe(color.rgb, 2.2f);
   }
-  color.rgb *= RENODX_GRAPHICS_WHITE_NITS / RENODX_DIFFUSE_WHITE_NITS;
+//  color.rgb *= RENODX_GRAPHICS_WHITE_NITS / RENODX_DIFFUSE_WHITE_NITS;
+  color.rgb *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
   if (RENODX_INTERMEDIATE_ENCODING == 1.f) {
     color.rgb = renodx::color::srgb::EncodeSafe(color.rgb);
   } else if (RENODX_INTERMEDIATE_ENCODING == 2.f) {
