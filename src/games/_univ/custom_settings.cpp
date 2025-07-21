@@ -128,5 +128,7 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
     {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
 };
 
+inline void AddCustomResourceUpgrades() {
+}
 
 } // namespace hbr_custom_settings 

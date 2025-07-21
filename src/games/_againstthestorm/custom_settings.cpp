@@ -3,6 +3,7 @@
 #include <vector>
 #include "../../utils/settings.hpp"
 #include "./shared.h"
+#include "../../mods/swapchain.hpp"
 
 namespace hbr_custom_settings {
 
@@ -19,7 +20,7 @@ static const std::unordered_map<std::string, float> default_values = {
     {"ToneMapHueProcessor", 0.f},
     {"ToneMapHueCorrection", 100.f},
     {"ToneMapHueShift", 50.f},
-    {"ToneMapClampColorSpace", 2.f},
+    {"ToneMapClampColorSpace", 0.f},
     {"ToneMapClampPeak", 0.f},
     {"ColorGradeExposure", 1.f},
     {"ColorGradeHighlights", 50.f},
@@ -35,13 +36,14 @@ static const std::unordered_map<std::string, float> default_values = {
     {"ColorGradePerChannelChrominanceCorrection", 0.f},
     {"ColorGradeClip", 65.f},
     {"ColorGradeGamma", 50.f},
+    {"CustomCharacterBrightness", 1.f},
+    {"CustomTextBrightness", 1.f},
     {"CustomBloom2D", 100.f},
     {"CustomBloom3D", 100.f},
-    {"CustomTextBrightnessCoef", 1.f},
     {"EnableUIToneMapPass", 0.f},
-    {"SwapChainCustomColorSpace", 0.f},
-    {"IntermediateEncoding", 2.f},
-    {"SwapChainDecoding", 3.f},
+    {"SwapChainCustomColorSpace", 1.f},
+    {"IntermediateEncoding", 1.f},
+    {"SwapChainDecoding", 1.f},
     {"SwapChainGammaCorrection", 0.f},
     {"SwapChainClampColorSpace", 2.f},
     {"EffectSplitMode", 0.f},
@@ -59,7 +61,6 @@ static const std::unordered_map<std::string, float> default_values = {
     {"PerceptualBoost2DCharacter", 0.3f},
     {"PerceptualBoost2DBackground", 1.f},
     {"PerceptualBoost3D", 0.f},
-    {"PerceptualBoostDisplayOutput", 0.f},
     {"DebugMode", 0.f},
     {"DebugMode2", 1.f},
     {"DebugMode3", 1.f},
@@ -82,38 +83,28 @@ inline float get_default_value(const std::string& key, float fallback = 0.f) {
 inline bool get_upgrade_resource_view_cloning() {
     return get_default_value("UpgradeResourceViewCloning", 0.f) != 0.f;
 }
-
 std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection(ShaderInjectData& shader_injection, float& current_settings_mode) {
     return {
+
         new renodx::utils::settings::Setting{
-            .key = "CustomBloom2D",
-            .binding = &shader_injection.custom_bloom_2d,
-            .default_value = get_default_value("CustomBloom2D", 100.f),
-            .label = "2D Bloom",
+            .key = "CharacterBrightness",
+            .binding = &shader_injection.custom_character_brightness,
+            .default_value = 1.f,
+            .can_reset = true,
+            .label = "2d Character Brightness (live2d events only)",
             .section = "Custom Game Settings",
-            .tooltip = "Controls the strength of bloom effect for 2D scenes (0% = disabled, 100% = full strength)",
-            .min = 0.f,
-            .max = 100.f,
-            .parse = [](float value) { return value * 0.01f; },
-            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
+            .tooltip = "2d Character brightness multiplier (default: 1.0)",
+            .min = 0.0f,
+            .max = 2.0f,
+            .format = "%.2f",
+            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 1; },
         },
         new renodx::utils::settings::Setting{
-            .key = "CustomBloom3D",
-            .binding = &shader_injection.custom_bloom_3d,
-            .default_value = get_default_value("CustomBloom3D", 100.f),
-            .label = "3D Bloom",
-            .section = "Custom Game Settings",
-            .tooltip = "Controls the strength of bloom effect for 3D scenes (0% = disabled, 100% = full strength)",
-            .min = 0.f,
-            .max = 100.f,
-            .parse = [](float value) { return value * 0.01f; },
-            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
-        },
-        new renodx::utils::settings::Setting{
-            .key = "CustomTextBrightnessCoef",
+            .key = "TextBrightnessCoef",
             .binding = &shader_injection.custom_text_brightness_coef,
-            .default_value = get_default_value("CustomTextBrightnessCoef", 1.f),
-            .label = "Text Brightness Coefficient",
+            .default_value = 1.f,
+            .can_reset = true,
+            .label = "Text Brightness Coefficient (live2d story events only)",
             .section = "Custom Game Settings",
             .tooltip = "Controls the brightness coefficient for text and UI elements (1.0 = normal brightness)",
             .min = 0.1f,
@@ -121,11 +112,38 @@ std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection
             .format = "%.2f",
             .is_visible = [&current_settings_mode]() { return current_settings_mode >= 1; },
         },
+
+
+  /*      new renodx::utils::settings::Setting{
+            .key = "CustomCharacterBrightness",
+            .binding = &shader_injection.custom_character_brightness,
+            .default_value = 1.0f,
+            .label = "Character Brightness",
+            .section = "Custom Color Grading",
+            .tooltip = "Adjusts the brightness of custom character rendering.",
+            .min = 0.0f,
+            .max = 2.0f,
+            .format = "%.2f",
+            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
+        },
+        new renodx::utils::settings::Setting{
+            .key = "CustomTextBrightness",
+            .binding = &shader_injection.custom_text_brightness,
+            .default_value = 1.0f,
+            .label = "Text Brightness",
+            .section = "Custom Color Grading",
+            .tooltip = "Adjusts the brightness of custom text rendering.",
+            .min = 0.0f,
+            .max = 2.0f,
+            .format = "%.2f",
+            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
+        },*/
     };
 }
 
+
 const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UPGRADE_TARGETS = {
-    {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 3.f}},
+    {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 3.f}}, // needed for lutbuilder
     {"B8G8R8A8_TYPELESS", {reshade::api::format::b8g8r8a8_typeless, 0.f}},
     {"R8G8B8A8_UNORM", {reshade::api::format::r8g8b8a8_unorm, 0.f}},
     {"B8G8R8A8_UNORM", {reshade::api::format::b8g8r8a8_unorm, 0.f}},
@@ -135,10 +153,27 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
     {"R10G10B10A2_TYPELESS", {reshade::api::format::r10g10b10a2_typeless, 0.f}},
     {"R10G10B10A2_UNORM", {reshade::api::format::r10g10b10a2_unorm, 0.f}},
     {"B10G10R10A2_UNORM", {reshade::api::format::b10g10r10a2_unorm, 0.f}},
-    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 3.f}},
+    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 3.f}}, // bloom
     {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
 };
 
+// Add a function to push custom resource upgrades (e.g., LUT 1024x32)
 inline void AddCustomResourceUpgrades() {
+    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+        .old_format = reshade::api::format::r8g8b8a8_typeless,
+        .new_format = reshade::api::format::r16g16b16a16_typeless,
+        .dimensions = {.width = 1024, .height = 32},
+    });
 }
+
+
+/*
+// TODO add me
+      renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+          .old_format = reshade::api::format::r8g8b8a8_typeless,
+          .new_format = reshade::api::format::r16g16b16a16_typeless,
+          .dimensions = {.width=1024, .height=32},
+      });
+*/
+
 } // namespace hbr_custom_settings 

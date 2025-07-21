@@ -1,6 +1,6 @@
-// ---- Created with 3Dmigoto v1.4.1 on Thu Jul 10 15:09:23 2025
-Texture2D<float4> t3 : register(t3);
+#include "../custom.hlsl"
 
+// ---- Created with 3Dmigoto v1.4.1 on Thu Jul 10 17:13:03 2025
 Texture2D<float4> t2 : register(t2);
 
 Texture2D<float4> t1 : register(t1);
@@ -20,8 +20,6 @@ cbuffer cb0 : register(b0)
 // 3Dmigoto declarations
 #define cmp -
 
-#include "./common.h"
-
 void main(
   float4 v0 : SV_POSITION0,
   float2 v1 : TEXCOORD0,
@@ -32,14 +30,6 @@ void main(
   float4 fDest;
 
   r0.xyzw = t0.SampleBias(s0_s, v1.xy, cb0[19].x).xyzw;
-  r1.xyzw = t1.SampleBias(s0_s, v1.xy, cb0[19].x).xyzw;
-  r0.w = cmp(0 < cb0[131].x);
-  if (r0.w != 0) {
-    r2.xyz = r1.xyz * r1.www;
-    r1.xyz = float3(8,8,8) * r2.xyz;
-  }
-  r1.xyz = cb0[130].xxx * r1.xyz;
-  r0.xyz = r1.xyz * cb0[130].yzw + r0.xyz;
   r0.w = cmp(0 < cb0[138].z);
   if (r0.w != 0) {
     r1.xy = -cb0[138].xy + v1.xy;
@@ -55,16 +45,15 @@ void main(
     r1.xyz = r0.www * r1.xyz + cb0[137].xyz;
     r0.xyz = r1.xyz * r0.xyz;
   }
-
-  r0.xyz = cb0[128].www * r0.xyz;
+  r0.xyz = (cb0[128].www * r0.xyz);
 
   
   if (RENODX_TONE_MAP_TYPE == 0) {
     r0.xyz = saturate(r0.xyz);
   }
-  
+
   r0.w = cmp(0 < cb0[129].w);
-  if (r0.w != 0) { // Unity2d-SRV-22-16x16 - grey texture
+  if (r0.w != 0) {
     r1.xyz = cmp(float3(0.00313080009,0.00313080009,0.00313080009) >= r0.xyz);
     r2.xyz = float3(12.9232101,12.9232101,12.9232101) * r0.xyz;
     r3.xyz = log2(r0.xyz);
@@ -77,11 +66,11 @@ void main(
     r2.xw = float2(0.5,0.5) * cb0[129].xy;
     r2.yz = r2.yz * cb0[129].xy + r2.xw;
     r2.x = r0.w * cb0[129].y + r2.y;
-    r3.xyzw = t3.SampleLevel(s0_s, r2.xz, 0).xyzw;
+    r3.xyzw = t2.SampleLevel(s0_s, r2.xz, 0).xyzw;
     r4.x = cb0[129].y;
     r4.y = 0;
     r2.xy = r4.xy + r2.xz;
-    r2.xyzw = t3.SampleLevel(s0_s, r2.xy, 0).xyzw;
+    r2.xyzw = t2.SampleLevel(s0_s, r2.xy, 0).xyzw;
     r0.w = r1.z * cb0[129].z + -r0.w;
     r2.xyz = r2.xyz + -r3.xyz;
     r2.xyz = r0.www * r2.xyz + r3.xyz;
@@ -97,27 +86,9 @@ void main(
     r0.xyz = r1.xyz ? r2.xyz : r3.xyz;
   }
 
-
   
   if (RENODX_TONE_MAP_TYPE != 0) {
-    float3 untonemapped = r0.xyz;
-    float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);
-    if (RENODX_TONE_MAP_TYPE != 0) {
-      float y = renodx::color::y::from::BT709(untonemapped);
-      r0.xyz = lerp(untonemapped, sdrTonemapped, saturate(y));
-    }
-
-    r0.xyz = renodx::lut::SampleTetrahedral(t2,r0.xyz);
-
-    if (RENODX_TONE_MAP_TYPE != 0) {
-      float3 sdrGraded = r0.xyz;
-      float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
-      color = ApplyReverseReinhard(color, SCENE_TYPE_3D);
-      r0.rgb = ToneMapPassWrapper(color);
-    }
-
-    o0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
-    o0.w = 1;
+    o0 = CustomToneMapBlock(r0.xyz, t1, s0_s);
     return;
   }
 
@@ -128,15 +99,14 @@ void main(
   r1.xy = float2(0.5,0.5) * cb0[128].xy;
   r1.yz = r0.xy * cb0[128].xy + r1.xy;
   r1.x = r0.w * cb0[128].y + r1.y;
-  r2.xyzw = t2.SampleLevel(s0_s, r1.xz, 0).xyzw;
+  r2.xyzw = t1.SampleLevel(s0_s, r1.xz, 0).xyzw;
   r0.x = cb0[128].y;
   r0.y = 0;
   r0.xy = r1.xz + r0.xy;
-  r1.xyzw = t2.SampleLevel(s0_s, r0.xy, 0).xyzw;
+  r1.xyzw = t1.SampleLevel(s0_s, r0.xy, 0).xyzw;
   r0.x = r0.z * cb0[128].z + -r0.w;
   r0.yzw = r1.xyz + -r2.xyz;
   o0.xyz = r0.xxx * r0.yzw + r2.xyz;
-  
   o0.w = 1;
   return;
 }
