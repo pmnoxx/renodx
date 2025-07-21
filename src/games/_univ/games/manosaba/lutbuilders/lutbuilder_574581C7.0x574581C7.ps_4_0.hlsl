@@ -205,11 +205,11 @@ void main(
   r0.xyz = r0.xxx * r1.xyz + r0.zzz;
 
   float3 untonemapped = r0.xyz;
-  //float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped);  // tonemap to SDR you can change this to any SDR tonemapper you want
 
-  float3 sdrTonemapped = RestoreHighlightSaturation(r0.xyz);
-
-  float3 s = sign(sdrTonemapped);
+  float3 untonemappedSign = sign(untonemapped);
+  untonemapped = abs(untonemapped);
+  float3 sdrTonemapped = saturate(untonemapped = abs(untonemapped));
+  r0.xyz = sdrTonemapped;
 
 
   r0.xyz = abs(sdrTonemapped);
@@ -232,7 +232,6 @@ void main(
   o0.y = (r1.x);
   o0.w = 1;
 
-  r0.xyz *= s;
   
   if (RENODX_TONE_MAP_TYPE != 0) {
     float3 sdrGraded = o0.xyz;
@@ -241,5 +240,6 @@ void main(
     o0.b = UpgradeToneMapCustom(untonemapped.b, sdrTonemapped.b, sdrGraded.b, 1.f).b;
     // o0.rgb = ToneMapPassWrapper(color);  // all 3 colors are in LINEAR here
   }
+  o0.xyz *= untonemappedSign;
   return;
 }
