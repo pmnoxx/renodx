@@ -717,6 +717,19 @@ std::vector<renodx::utils::settings::Setting*> GeneratePerceptualBoostSection() 
             .is_enabled = []() { return shader_injection.perceptual_boost_mode > 0.f; },
             .is_visible = []() { return current_settings_mode >= 1; },
         },
+        new renodx::utils::settings::Setting{
+            .key = "PerceptualBoostDisplayOutput",
+            .binding = &shader_injection.perceptual_boost_display_output,
+            .default_value = hbr_custom_settings::get_default_value("PerceptualBoostDisplayOutput", 0.f),
+            .label = "Display Output",
+            .section = "Perceptual Boost",
+            .tooltip = "Perceptual boost strength for display output (0.0 = disabled, 1.0 = normal, 10.0 = maximum)",
+            .min = 0.f,
+            .max = 10.f,
+            .format = "%.3f",
+            .is_enabled = []() { return shader_injection.perceptual_boost_mode > 0.f; },
+            .is_visible = []() { return current_settings_mode >= 1; },
+        },
     };
 }
 
