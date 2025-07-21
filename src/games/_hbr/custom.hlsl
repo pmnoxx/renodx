@@ -25,11 +25,7 @@ float4 ToneMapBlock(float3 untonemapped, float r2_w, float cb42_x, Texture2D<flo
   float3 color = r0_xyz_out;
   if (RENODX_TONE_MAP_TYPE != 0) {
     float3 sdrGraded = r0_xyz_out;
-    if (RENODX_DEBUG_MODE2 >= 0.5f) {
-      color = ComputeUntonemappedGraded(untonemapped, sdrTonemapped, sdrGraded);
-    } else {
-      color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, shader_injection.color_grade_strength);
-    }
+    color = ComputeUntonemappedGraded(untonemapped, sdrGraded, sdrTonemapped);
     color = ApplyReverseReinhard(color, scene_type_3d);
     color = ToneMapPassWrapper(color);  // all 3 colors are in LINEAR here
   }
