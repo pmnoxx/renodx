@@ -58,6 +58,7 @@ struct ShaderInjectData {
   float tone_map_hue_processor;
   float tone_map_per_channel;
   float gamma_correction;
+  float tone_map_gamma; // For ColorGradeGamma setting (0.0-1.0)
   float intermediate_scaling;
   float intermediate_encoding;
   float intermediate_color_space;
@@ -100,25 +101,28 @@ struct ShaderInjectData {
   float perceptual_boost_2d_background; // Perceptual boost strength for 2D background scenes (0.0-10.0)
   float perceptual_boost_3d; // Perceptual boost strength for 3D scenes (0.0-10.0)
   
-  // Bloom Settings
-  float bloom_2d; // 2D bloom strength (0.0-1.0)
-  float bloom_3d; // 3D bloom strength (0.0-1.0)
-  
-  // Text Brightness Coefficient
-  float text_brightness_coef; // Text brightness coefficient for UI elements (default: 1.0)
   
   // Debug Mode
   float debug_mode; // Debug mode for development and testing (0.0-1.0)
   float debug_mode2; // Debug mode 2 for development and testing (0.0-1.0)
   float debug_mode3; // Debug mode 3 for development and testing (0.0-1.0)
   
-  // Tone Map Pass Control
-  float enable_tone_map_pass; // Enable/disable tone mapping pass (0.0 = off, 1.0 = on)
 
   float display_map_type;
   float display_map_peak;
   float display_map_shoulder;
   float display_map_saturation;
+
+  // Tone Map Pass Control
+  float enable_tone_map_pass; // Enable/disable tone mapping pass (0.0 = off, 1.0 = on)
+
+  // CUSTOM GAME SETTINGS
+  // Bloom Settings
+  float custom_bloom_2d; // 2D bloom strength (0.0-1.0)
+  float custom_bloom_3d; // 3D bloom strength (0.0-1.0)
+  
+  // Text Brightness Coefficient
+  float custom_text_brightness_coef; // Text brightness coefficient for UI elements (default: 1.0)
 };
 
 #ifndef __cplusplus
@@ -187,12 +191,6 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_PERCEPTUAL_BOOST_2D_BACKGROUND  shader_injection.perceptual_boost_2d_background
 #define RENODX_PERCEPTUAL_BOOST_3D             shader_injection.perceptual_boost_3d
 
-// Bloom Settings
-#define RENODX_2D_BLOOM                        shader_injection.bloom_2d
-#define RENODX_3D_BLOOM                        shader_injection.bloom_3d
-
-// Text Brightness Coefficient
-#define RENODX_TEXT_BRIGHTNESS_COEF            shader_injection.text_brightness_coef
 
 // Debug Mode
 #define RENODX_DEBUG_MODE                      shader_injection.debug_mode
@@ -208,11 +206,21 @@ cbuffer shader_injection : register(b13) {
 #define COLOR_GRADE_PER_CHANNEL_HUE_CORRECTION          shader_injection.color_grade_per_channel_hue_correction
 #define COLOR_GRADE_PER_CHANNEL_CHROMINANCE_CORRECTION  shader_injection.color_grade_per_channel_chrominance_correction
 
-// Tone Map Pass Control
-#define RENODX_ENABLE_UI_TONEMAPPASS           shader_injection.enable_tone_map_pass
+
+#define RENODX_ENABLE_UI_TONEMAPPASS                    shader_injection.enable_tone_map_pass
+
+// CUSTOM GAME SETTINGS
+
+// Bloom Settings
+#define CUSTOM_2D_BLOOM                        shader_injection.custom_bloom_2d
+#define CUSTOM_3D_BLOOM                        shader_injection.custom_bloom_3d
+
+// Text Brightness Coefficient
+#define CUSTOM_TEXT_BRIGHTNESS_COEF            shader_injection.custom_text_brightness_coef
 
 #include "../../shaders/renodx.hlsl"
 
+/*
 float3 renodx_ksp_apply_tonemap_and_boost(float3 linearColor)
 {
     if (RENODX_TONE_MAP_TYPE > 0.f)
@@ -255,7 +263,7 @@ float3 renodx_ksp_apply_tonemap_and_boost(float3 linearColor)
         linearColor = saturate(linearColor);
     }
     return linearColor;
-}
+}*/
 
 #endif
 

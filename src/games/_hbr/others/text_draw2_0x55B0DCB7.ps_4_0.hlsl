@@ -78,6 +78,6 @@ void main(
   r0.xyzw = r1.xyzw * r0.xxxx;
   o0.xyzw = v1.wwww * r0.xyzw;
   
-  o0.xyz *= RENODX_TEXT_BRIGHTNESS_COEF;
+  o0.xyz *= CUSTOM_TEXT_BRIGHTNESS_COEF;
   return;
 }

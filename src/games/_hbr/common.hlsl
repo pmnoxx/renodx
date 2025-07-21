@@ -1,3 +1,5 @@
+// common.hlsl v0.1
+
 #include "./shared.h"
 
 #ifndef COMMON_H_
@@ -137,26 +139,41 @@ float3 ApplyPerceptualBoostAndToneMap(float3 color, float scene_type = SCENE_TYP
     return color;
 }
 
+float3 ToneMapPassCustom(float3 color) {
+  // Apply gamma correction from ColorGradeGamma (0.0-1.0 mapped to gamma 1.0-2.2)
+  float gamma = shader_injection.tone_map_gamma * 2.f;
+  color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
+  return renodx::draw::ToneMapPass(color);
+}
+
 float3 ToneMapPassWrapper(float3 color) {
  //   color = (color > 0 | color < 0) ? color : 0.f;
     if (RENODX_ENABLE_UI_TONEMAPPASS) {
-        return color;
+      return color;
     }
+    float gamma = shader_injection.tone_map_gamma * 2.f;
+    color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
     return renodx::draw::ToneMapPass(color);
 }
 
 float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color) {
-    if (RENODX_ENABLE_UI_TONEMAPPASS) {
-        return graded_sdr_color;
-    }
-    return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color);
+  if (RENODX_ENABLE_UI_TONEMAPPASS) {
+    return graded_sdr_color;
+  }
+  float3 color = renodx::draw::ToneMapPass(untonemapped, graded_sdr_color);
+  float gamma = shader_injection.tone_map_gamma * 2.f;
+  color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
+  return color;
 }
 
 float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
-    if (RENODX_ENABLE_UI_TONEMAPPASS) {
-        return graded_sdr_color;
-    }
-    return renodx::draw::ToneMapPass(untonemapped, graded_sdr_color, neutral_sdr_color);
+  if (RENODX_ENABLE_UI_TONEMAPPASS) {
+    return graded_sdr_color;
+  }
+  float3 color = renodx::draw::ToneMapPass(untonemapped, graded_sdr_color, neutral_sdr_color);
+  float gamma = shader_injection.tone_map_gamma * 2.f;
+  color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
+  return color;
 }
 
 float3 ComputeUntonemappedGraded(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
