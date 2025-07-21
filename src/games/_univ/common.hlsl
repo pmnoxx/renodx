@@ -26,6 +26,7 @@ float ReinhardScalable(float color, float channel_max = 1.f, float channel_min =
 #define SCENE_TYPE_2D_CHARACTER 1
 #define SCENE_TYPE_2D_BACKGROND 2
 #define SCENE_TYPE_3D 3
+#define SCENE_TYPE_DISPLAY_OUTPUT 4
 
 
 // Helper function to get perceptual boost strength for a given scene type
@@ -36,6 +37,8 @@ float GetPerceptualBoostStrength(float scene_type) {
         return RENODX_PERCEPTUAL_BOOST_2D_BACKGROUND;
     } else if (scene_type == SCENE_TYPE_3D) {
         return RENODX_PERCEPTUAL_BOOST_3D;
+    } else if (scene_type == SCENE_TYPE_DISPLAY_OUTPUT) {
+        return RENODX_PERCEPTUAL_BOOST_DISPLAY_OUTPUT;
     }
     // For unknown scene types, default to 1.0
     return 1.f;
@@ -165,8 +168,20 @@ float3 ApplyPerceptualBoostAndToneMap(float3 color, float scene_type = SCENE_TYP
 
 float3 ToneMapPassCustom(float3 color) {
   // Apply gamma correction from ColorGradeGamma (0.0-1.0 mapped to gamma 1.0-2.2)
+  if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
+    return color;
+  }
   float gamma = shader_injection.tone_map_gamma * 2.f;
   color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
+
+  return renodx::draw::ToneMapPass(color);
+}
+
+float3 ToneMapPassCustom2(float3 color) {
+  // Apply gamma correction from ColorGradeGamma (0.0-1.0 mapped to gamma 1.0-2.2)
+  float gamma = shader_injection.tone_map_gamma * 2.f;
+  color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
+
   return renodx::draw::ToneMapPass(color);
 }
 
@@ -179,7 +194,7 @@ float3 ToneMapPassWrapper(float3 color) {
     color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
     return renodx::draw::ToneMapPass(color);
 }
-
+/*
 float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color) {
   if (RENODX_ENABLE_UI_TONEMAPPASS) {
     return graded_sdr_color;
@@ -188,13 +203,13 @@ float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color) {
   float gamma = shader_injection.tone_map_gamma * 2.f;
   color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
   return color;
-}
+}*/
 
 float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
-  if (RENODX_ENABLE_UI_TONEMAPPASS) {
-    return graded_sdr_color;
-  }
   float3 color = ComputeUntonemappedGraded(untonemapped, graded_sdr_color, neutral_sdr_color);
+  if (RENODX_ENABLE_UI_TONEMAPPASS) {
+    return color;
+  }
   float gamma = shader_injection.tone_map_gamma * 2.f;
   color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
   color = renodx::draw::ToneMapPass(color);

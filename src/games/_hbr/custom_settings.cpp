@@ -59,6 +59,7 @@ static const std::unordered_map<std::string, float> default_values = {
     {"PerceptualBoost2DCharacter", 0.3f},
     {"PerceptualBoost2DBackground", 1.f},
     {"PerceptualBoost3D", 0.f},
+    {"PerceptualBoostDisplayOutput", 0.f},
     {"DebugMode", 0.f},
     {"DebugMode2", 1.f},
     {"DebugMode3", 1.f},

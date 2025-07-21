@@ -1,5 +1,7 @@
 /*
-addon.cpp 0.03
+addon.cpp 0.04
+- 0.04
+perceptual boost for displayoutput
  */
 
 #define ImTextureID ImU64
@@ -711,6 +713,19 @@ std::vector<renodx::utils::settings::Setting*> GeneratePerceptualBoostSection() 
             .label = "3D Scenes",
             .section = "Perceptual Boost",
             .tooltip = "Perceptual boost strength for 3D scenes (0.0 = disabled, 1.0 = normal, 10.0 = maximum)",
+            .min = 0.f,
+            .max = 10.f,
+            .format = "%.3f",
+            .is_enabled = []() { return shader_injection.perceptual_boost_mode > 0.f; },
+            .is_visible = []() { return current_settings_mode >= 1; },
+        },
+        new renodx::utils::settings::Setting{
+            .key = "PerceptualBoostDisplayOutput",
+            .binding = &shader_injection.perceptual_boost_display_output,
+            .default_value = 0.f,
+            .label = "Display Output",
+            .section = "Perceptual Boost",
+            .tooltip = "Perceptual boost strength for display output (0.0 = disabled, 1.0 = normal, 10.0 = maximum)",
             .min = 0.f,
             .max = 10.f,
             .format = "%.3f",

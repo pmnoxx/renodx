@@ -100,8 +100,9 @@ struct ShaderInjectData {
   float perceptual_boost_2d_character; // Perceptual boost strength for 2D character scenes (0.0-10.0)
   float perceptual_boost_2d_background; // Perceptual boost strength for 2D background scenes (0.0-10.0)
   float perceptual_boost_3d; // Perceptual boost strength for 3D scenes (0.0-10.0)
-  
-  
+  float perceptual_boost_display_output;
+
+
   // Debug Mode
   float debug_mode; // Debug mode for development and testing (0.0-1.0)
   float debug_mode2; // Debug mode 2 for development and testing (0.0-1.0)
@@ -186,6 +187,7 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_PERCEPTUAL_BOOST_2D_CHARACTER   shader_injection.perceptual_boost_2d_character
 #define RENODX_PERCEPTUAL_BOOST_2D_BACKGROUND  shader_injection.perceptual_boost_2d_background
 #define RENODX_PERCEPTUAL_BOOST_3D             shader_injection.perceptual_boost_3d
+#define RENODX_PERCEPTUAL_BOOST_DISPLAY_OUTPUT shader_injection.perceptual_boost_display_output
 
 
 // Debug Mode
