@@ -85,43 +85,20 @@ inline bool get_upgrade_resource_view_cloning() {
 std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection(ShaderInjectData& shader_injection, float& current_settings_mode) {
     return {
         new renodx::utils::settings::Setting{
-            .key = "CustomBloom2D",
-            .binding = &shader_injection.custom_bloom_2d,
-            .default_value = get_default_value("CustomBloom2D", 100.f),
-            .label = "2D Bloom",
-            .section = "Custom Game Settings",
-            .tooltip = "Controls the strength of bloom effect for 2D scenes (0% = disabled, 100% = full strength)",
-            .min = 0.f,
-            .max = 100.f,
-            .parse = [](float value) { return value * 0.01f; },
-            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
-        },
-        new renodx::utils::settings::Setting{
-            .key = "CustomBloom3D",
-            .binding = &shader_injection.custom_bloom_3d,
-            .default_value = get_default_value("CustomBloom3D", 100.f),
-            .label = "3D Bloom",
-            .section = "Custom Game Settings",
-            .tooltip = "Controls the strength of bloom effect for 3D scenes (0% = disabled, 100% = full strength)",
-            .min = 0.f,
-            .max = 100.f,
-            .parse = [](float value) { return value * 0.01f; },
-            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
-        },
-        new renodx::utils::settings::Setting{
-            .key = "CustomTextBrightnessCoef",
-            .binding = &shader_injection.custom_text_brightness_coef,
-            .default_value = get_default_value("CustomTextBrightnessCoef", 1.f),
-            .label = "Text Brightness Coefficient",
-            .section = "Custom Game Settings",
-            .tooltip = "Controls the brightness coefficient for text and UI elements (1.0 = normal brightness)",
-            .min = 0.1f,
-            .max = 3.f,
+            .key = "CustomCharacterBrightness",
+            .binding = &shader_injection.custom_character_brightness,
+            .default_value = 1.0f,
+            .label = "Character Brightness",
+            .section = "Custom Color Grading",
+            .tooltip = "Adjusts the brightness of custom character rendering.",
+            .min = 0.0f,
+            .max = 2.0f,
             .format = "%.2f",
-            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 1; },
+            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
         },
     };
 }
+
 
 const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UPGRADE_TARGETS = {
     {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 3.f}},
@@ -137,5 +114,6 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
     {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 3.f}},
     {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
 };
+
 
 } // namespace hbr_custom_settings 
