@@ -10,7 +10,7 @@ namespace hbr_custom_settings {
 // Map of setting key to default value
 static const std::unordered_map<std::string, float> default_values = {
     {"SettingsMode", 0.f},
-    {"ToneMapType", 3.f},
+    {"ToneMapType", 4.f}, // Dice
     {"ToneMapPeakNits", 1000.f},
     {"ToneMapGameNits", 203.f},
     {"ToneMapUINits", 203.f},
@@ -42,8 +42,8 @@ static const std::unordered_map<std::string, float> default_values = {
     {"CustomBloom3D", 100.f},
     {"EnableUIToneMapPass", 0.f},
     {"SwapChainCustomColorSpace", 0.f},
-    {"IntermediateEncoding", 2.f},
-    {"SwapChainDecoding", 3.f},
+    {"IntermediateEncoding", 3.f}, // gamma 2.2
+    {"SwapChainDecoding", 3.f}, // gamma 2.2
     {"SwapChainGammaCorrection", 0.f},
     {"SwapChainClampColorSpace", 2.f},
     {"EffectSplitMode", 0.f},
@@ -72,7 +72,7 @@ static const std::unordered_map<std::string, float> default_values = {
     {"DisplayMapShoulder", 0.5f},
     {"UpgradeResourceViewCloning", 0.f}, // 0 = false, 1 = true
     {"PerceptualBoostReinhardMidpoint", 5.f},
-    {"PostSwapChainToneMapping", 0.f},
+    {"PostSwapChainToneMapping", 1.f},
     {"Upgrade_SwapChainCompatibility", 1.f},
 };
 
@@ -91,7 +91,7 @@ inline bool get_upgrade_resource_view_cloning() {
 
 std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection(ShaderInjectData& shader_injection, float& current_settings_mode) {
     return {
-        new renodx::utils::settings::Setting{
+     /*   new renodx::utils::settings::Setting{
             .key = "CustomCharacterBrightness",
             .binding = &shader_injection.custom_character_brightness,
             .default_value = 1.0f,
@@ -115,14 +115,16 @@ std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection
             .format = "%.2f",
             .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
         },
+        */
     };
 }
 
 
+
 const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UPGRADE_TARGETS = {
-    {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 3.f}},
+    {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 1.f}},
     {"B8G8R8A8_TYPELESS", {reshade::api::format::b8g8r8a8_typeless, 0.f}},
-    {"R8G8B8A8_UNORM", {reshade::api::format::r8g8b8a8_unorm, 0.f}},
+    {"R8G8B8A8_UNORM", {reshade::api::format::r8g8b8a8_unorm, 1.f}},
     {"B8G8R8A8_UNORM", {reshade::api::format::b8g8r8a8_unorm, 0.f}},
     {"R8G8B8A8_SNORM", {reshade::api::format::r8g8b8a8_snorm, 0.f}},
     {"R8G8B8A8_UNORM_SRGB", {reshade::api::format::r8g8b8a8_unorm_srgb, 0.f}},
@@ -130,7 +132,7 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
     {"R10G10B10A2_TYPELESS", {reshade::api::format::r10g10b10a2_typeless, 0.f}},
     {"R10G10B10A2_UNORM", {reshade::api::format::r10g10b10a2_unorm, 0.f}},
     {"B10G10R10A2_UNORM", {reshade::api::format::b10g10r10a2_unorm, 0.f}},
-    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 3.f}},
+    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 0.f}},
     {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
 };
 

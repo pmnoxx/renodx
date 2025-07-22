@@ -21,7 +21,7 @@ cbuffer cb0 : register(b0)
   float4 cb0[23];
 }
 
-#include "./common.hlsl"
+#include "../custom.hlsl"
 
 // 3Dmigoto declarations
 #define cmp -
