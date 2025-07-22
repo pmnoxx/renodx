@@ -33,6 +33,7 @@ void main(
   uint4 bitmask, uiDest;
   float4 fDest;
 
+
   r0.xyzw = t0.SampleBias(s0_s, v1.xy, cb0[19].x).xyzw;
   r1.xyzw = t1.SampleBias(s0_s, v1.xy, cb0[19].x).xyzw;
   r0.w = cmp(0 < cb0[131].x);
@@ -60,11 +61,14 @@ void main(
 
   r0.xyz = cb0[128].www * r0.xyz;
 
-  
-  if (RENODX_TONE_MAP_TYPE == 0) {
-    r0.xyz = saturate(r0.xyz);
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    o0.rgb = custom_color_grading(r0.rgb, v1, t2, t3, cb0[129].w, true);
+    o0.w = 1.f;
+
+    return;
   }
-  
+  r0.xyz = saturate(r0.xyz);
+
   r0.w = cmp(0 < cb0[129].w);
   if (r0.w != 0) { // Unity2d-SRV-22-16x16 - grey texture
     r1.xyz = cmp(float3(0.00313080009,0.00313080009,0.00313080009) >= r0.xyz);
@@ -98,14 +102,6 @@ void main(
     r1.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
     r0.xyz = r1.xyz ? r2.xyz : r3.xyz;
   }
-
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    o0 = CustomToneMapBlock(r0.xyz, t2, s0_s);
-
-    return;
-  }
-
-  
 
   r0.xyw = cb0[128].zzz * r0.xyz;
   r0.w = floor(r0.w);

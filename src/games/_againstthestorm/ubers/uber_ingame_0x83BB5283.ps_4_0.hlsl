@@ -47,10 +47,13 @@ void main(
   }
   r0.xyz = (cb0[128].www * r0.xyz);
 
-  
-  if (RENODX_TONE_MAP_TYPE == 0) {
-    r0.xyz = saturate(r0.xyz);
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    o0.rgb = custom_color_grading(r0.rgb, v1, t1, t2, cb0[129].w, true);
+    o0.w = 1.f;
+
+    return;
   }
+  r0.xyz = saturate(r0.xyz);
 
   r0.w = cmp(0 < cb0[129].w);
   if (r0.w != 0) {
@@ -85,14 +88,6 @@ void main(
     r1.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
     r0.xyz = r1.xyz ? r2.xyz : r3.xyz;
   }
-
-  
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    o0 = CustomToneMapBlock(r0.xyz, t1, s0_s);
-    return;
-  }
-
-  
 
   r0.xyw = cb0[128].zzz * r0.xyz;
   r0.w = floor(r0.w);

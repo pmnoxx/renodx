@@ -1,3 +1,5 @@
+#include "../custom.hlsl"
+
 // ---- Created with 3Dmigoto v1.4.1 on Wed Jul  9 15:49:05 2025
 Texture2D<float4> t1 : register(t1);
 
@@ -16,8 +18,6 @@ cbuffer cb0 : register(b0)
 {
   float4 cb0[24];
 }
-
-#include "./common.h"
 
 
 
