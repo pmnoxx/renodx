@@ -1,6 +1,7 @@
-// common.hlsl v0.2
+// common.hlsl v0.3
 
 #include "./shared.h"
+#include "./DICE.hlsl"
 
 #ifndef COMMON_H_
 #define COMMON_H_
@@ -8,16 +9,14 @@
 
 #define INV_REINHARD 2.f
 
-
 float ReinhardScalable(float color, float channel_max = 1.f, float channel_min = 0.f, float gray_in = 0.18f, float gray_out = 0.18f) {
-  /*float exposure = (channel_max * (channel_min * gray_out + channel_min - gray_out));
-                   / max(gray_in * (gray_out - channel_max));
+  /* float exposure = (channel_max * (channel_min * gray_out + channel_min - gray_out));
 
   float numerator = -channel_max * (channel_min * color + channel_min - color);
   float denominator = (exposure * (channel_max - color));
-  return renodx::math::DivideSafe(numerator, denominator, renodx::math::FLT16_MAX); */
-
-  float numerator = color * (channel_max - 0.18f);
+  retur renodx::math::DivideSafe(numerator, denominator, 3.f); //renodx::math::FLT16_MAX); 
+*/
+  float numerator = color * (channel_max - gray_in);
   float denominator = max(.0001f, channel_max - color);
   return renodx::math::DivideSafe(numerator, denominator, 10.f);
 }
@@ -62,6 +61,37 @@ float4 debug_mode(float4 color, float2 pos, float shift_y = 0.f) {
   return color;
 }
 
+#define cmp -
+float3 HueCorrectAP1(float3 incorrect_color_ap1, float3 correct_color_ap1, float hue_correct_strength = 0.5f) {
+  float3 incorrect_color_bt709 = renodx::color::bt709::from::AP1(incorrect_color_ap1);
+  float3 correct_color_bt709 = renodx::color::bt709::from::AP1(correct_color_ap1);
+
+  float3 corrected_color_bt709 = renodx::color::correct::Hue(incorrect_color_bt709, correct_color_bt709, hue_correct_strength, 2u);
+  float3 corrected_color_ap1 = renodx::color::ap1::from::BT709(corrected_color_bt709);
+  return corrected_color_ap1;
+}
+
+float3 acesTonemap(float3 bt709, float peak_nits = 203.f, float diffuse_white_nits = 203.f) {
+  float3 untonemapped_bt709 = bt709;// / 32.f;
+
+  const float ACES_MIN = 0.0001f;
+  float aces_min = ACES_MIN / diffuse_white_nits;
+  float aces_max = (peak_nits / diffuse_white_nits);
+
+  float3 untonemapped_ap0 = mul(renodx::color::BT709_TO_AP0_MAT, untonemapped_bt709);
+  float3 untonemapped_rrt_ap1 = renodx::tonemap::aces::RRT(untonemapped_ap0);
+  float3 tonemapped_ap1 = renodx::tonemap::aces::ODT(untonemapped_rrt_ap1, aces_min * 48.f, aces_max * 48.f, renodx::color::IDENTITY_MAT) / 48.f;
+
+  float3 hue_corrected_ap1 = HueCorrectAP1(tonemapped_ap1, untonemapped_rrt_ap1);
+
+  float3 blended_color_ap1 = lerp(hue_corrected_ap1, tonemapped_ap1, saturate(hue_corrected_ap1));
+
+//  float3 blended_color_bt2020 = renodx::color::bt2020::from::AP1(blended_color_ap1);
+
+  return renodx::color::bt709::from::AP1(blended_color_ap1);
+}
+
+
 // Function to apply reverse Reinhard tone mapping
 float3 ApplyReverseReinhard(float3 color, float scene_type = SCENE_TYPE_UNKNOWN) {
     if (RENODX_TONE_MAP_TYPE == 0) {
@@ -80,17 +110,20 @@ float3 ApplyReverseReinhard(float3 color, float scene_type = SCENE_TYPE_UNKNOWN)
         // OFF
         return color;
     } else if (shader_injection.perceptual_boost_mode == 1.f) {
+        float3 original_color = color;
         // Reinhard
+        float mid_point = shader_injection.perceptual_boost_reinhard_midpoint;
         float y = renodx::color::y::from::BT709(color);
-        float scale = ReinhardScalable(y, shader_injection.perceptual_boost_channel_max, 0.f, 0.18f, 0.18f);
+        float scale = ReinhardScalable(y, shader_injection.perceptual_boost_channel_max, 0.f, mid_point, mid_point);
         color *= min(10.f, renodx::math::DivideSafe(scale, y, 10.f));
         // Apply strength scaling
-        color = lerp(color, color * (1.f + shader_injection.perceptual_boost_reinhard_strength), boost_strength);
+        color = lerp(original_color, color, boost_strength * shader_injection.perceptual_boost_reinhard_strength);
         return color;
-    } else if (shader_injection.perceptual_boost_mode == 2.f) {
+        } else if (shader_injection.perceptual_boost_mode == 2.f) {
         // XY->PQ (inverse tonemapping)
         float3 xyz = renodx::color::XYZ::from::BT709(color.xyz);
-        float new_grey = 0.18f;
+        float mid_point = shader_injection.perceptual_boost_xypq_midpoint;
+        float new_grey = mid_point;
         if (xyz.y > 0.0000001f)
         {
             float3 newXYZ = sign(xyz) * renodx::color::pq::Decode(
@@ -104,24 +137,25 @@ float3 ApplyReverseReinhard(float3 color, float scene_type = SCENE_TYPE_UNKNOWN)
                 newXYZ.xyz,
                 shader_injection.perceptual_boost_xypq_color);
         }
-        color.xyz = lerp(color.xyz, renodx::color::bt709::from::XYZ(xyz) * (0.18f / new_grey), shader_injection.perceptual_boost_xypq_strength * boost_strength);
+        color.xyz = lerp(color.xyz, renodx::color::bt709::from::XYZ(xyz) * (mid_point/ new_grey), shader_injection.perceptual_boost_xypq_strength * boost_strength);
 
         
         return color;
-    } else if (shader_injection.perceptual_boost_mode == 3.f) {
+        } else if (shader_injection.perceptual_boost_mode == 3.f) {
         // ICTCP-based inverse tonemapping
         float3 new_color;
         {
+            float mid_point = shader_injection.perceptual_boost_ictcp_midpoint;
             float3 ictcp = renodx::color::ictcp::from::BT709(color.xyz * (10000.f / 10000.f));
             ictcp.x *= 1.f + shader_injection.perceptual_boost_ictcp_param;
             ictcp.yz *= lerp(1.f, 1.f + shader_injection.perceptual_boost_ictcp_param, shader_injection.perceptual_boost_ictcp_color);
             new_color = renodx::color::bt709::from::ICtCp(ictcp);
 
-            float3 ictcp_grey = renodx::color::ictcp::from::BT709(0.18f * (10000.f / 10000.f));
+            float3 ictcp_grey = renodx::color::ictcp::from::BT709(mid_point * (10000.f / 10000.f));
             ictcp_grey.x *= 1.f + shader_injection.perceptual_boost_ictcp_param;
             ictcp_grey.yz *= lerp(1.f, 1.f + shader_injection.perceptual_boost_ictcp_param, shader_injection.perceptual_boost_ictcp_color);
             float3 new_grey = renodx::color::bt709::from::ICtCp(ictcp_grey);
-            new_color *= (0.18f / new_grey);
+            new_color *= (mid_point / new_grey);
 
 
         }
@@ -172,28 +206,9 @@ float3 ApplyPerceptualBoostAndToneMap(float3 color, float scene_type = SCENE_TYP
     return color;
 }
 
-float3 ToneMapPassCustom(float3 color) {
-  // Apply gamma correction from ColorGradeGamma (0.0-1.0 mapped to gamma 1.0-2.2)
-  if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
-    return color;
-  }
-  float gamma = shader_injection.tone_map_gamma * 2.f;
-  color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
-
-  return renodx::draw::ToneMapPass(color);
-}
-
-float3 ToneMapPassCustom2(float3 color) {
-  // Apply gamma correction from ColorGradeGamma (0.0-1.0 mapped to gamma 1.0-2.2)
-  float gamma = shader_injection.tone_map_gamma * 2.f;
-  color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
-
-  return renodx::draw::ToneMapPass(color);
-}
-
 float3 ToneMapPassWrapper(float3 color) {
- //   color = (color > 0 | color < 0) ? color : 0.f;
-    if (RENODX_ENABLE_UI_TONEMAPPASS) {
+  //   color = (color > 0 | color < 0) ? color : 0.f;
+    if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
       return color;
     }
     float gamma = shader_injection.tone_map_gamma * 2.f;
@@ -202,7 +217,7 @@ float3 ToneMapPassWrapper(float3 color) {
 }
 /*
 float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color) {
-  if (RENODX_ENABLE_UI_TONEMAPPASS) {
+  if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
     return graded_sdr_color;
   }
   float3 color = renodx::draw::ToneMapPass(untonemapped, graded_sdr_color);
@@ -213,7 +228,7 @@ float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color) {
 
 float3 ToneMapPassWrapper(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
   float3 color = ComputeUntonemappedGraded(untonemapped, graded_sdr_color, neutral_sdr_color);
-  if (RENODX_ENABLE_UI_TONEMAPPASS) {
+  if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
     return color;
   }
   float gamma = shader_injection.tone_map_gamma * 2.f;
@@ -276,45 +291,138 @@ float3 RestoreHighlightSaturation(float3 color) {
     }
   
     return color;
+}
+
+float3 applyUserTonemap(float3 untonemapped, float userToneMapType) {
+  float3 outputColor;
+  if (userToneMapType == 0.f) {  // If vanilla is selected
+    outputColor = saturate(untonemapped);
+  } else {
+    outputColor = untonemapped;
   }
 
-  float3 UpgradeToneMapCustom(
-      float3 color_untonemapped,
-      float3 color_tonemapped,
-      float3 color_tonemapped_graded,
-      float post_process_strength = 1.f,
-      float auto_correction = 0.f) {
-    float ratio = 1.f;
-
-    float y_untonemapped = renodx::color::y::from::BT709(color_untonemapped);
-    float y_tonemapped = renodx::color::y::from::BT709(color_tonemapped);
-    float y_tonemapped_graded = renodx::color::y::from::BT709(color_tonemapped_graded);
-
-    if (y_untonemapped < y_tonemapped) {
-      // If substracting (user contrast or paperwhite) scale down instead
-      // Should only apply on mismatched HDR
-      ratio = y_untonemapped / y_tonemapped;
-    } else {
-      // float y_delta = y_untonemapped - y_tonemapped;
-      float y_delta = y_untonemapped / y_tonemapped;
-      // y_delta = max(0, y_delta);  // Cleans up NaN
-      y_delta = max(1, y_delta);  // Cleans up NaN
-                                  // const float y_new = y_tonemapped_graded + y_delta;
-      const float y_new = y_tonemapped_graded * y_delta;
-
-      const bool y_valid = (y_tonemapped_graded > 0);  // Cleans up NaN and ignore black
-      ratio = y_valid ? (y_new / y_tonemapped_graded) : 0;
-    }
-    float auto_correct_ratio = lerp(1.f, ratio, saturate(y_untonemapped));
-    ratio = lerp(ratio, auto_correct_ratio, auto_correction);
-
-    float3 color_scaled = color_tonemapped_graded * ratio;
-    // Match hue
-    color_scaled = renodx::color::correct::Hue(color_scaled, color_tonemapped_graded);
-    return lerp(color_untonemapped, color_scaled, post_process_strength);
+  if (userToneMapType == 5.f) {  // DefaultToneMapper
+    return renodx::draw::ToneMapPass(untonemapped);
   }
+
+  if (userToneMapType != 0) {  // UserColorGrading, pre-tonemap
+    outputColor = renodx::color::grade::UserColorGrading(
+        outputColor,
+        shader_injection.tone_map_exposure,    // exposure
+        shader_injection.tone_map_highlights,  // highlights
+        shader_injection.tone_map_shadows,     // shadows
+        shader_injection.tone_map_contrast,    // contrast
+        1.f,                                   // saturation, we'll do this post-tonemap
+        0.f,                                   // dechroma, post tonemapping
+        0.f);                                  // hue correction, Post tonemapping
+  }
+
+  // Start tonemapper if/else
+  if (userToneMapType == 2.f) {  // DICE
+    DICESettings DICEconfig = DefaultDICESettings();
+    DICEconfig.Type = 3;
+    DICEconfig.ShoulderStart = RENODX_DICE_SHOULDER;  // 0.33f;  // Start shoulder
+
+    float dicePaperWhite = shader_injection.graphics_white_nits / 80.f;
+    float dicePeakWhite = shader_injection.peak_white_nits / 80.f;
+
+    outputColor = DICETonemap(outputColor * dicePaperWhite, dicePeakWhite, DICEconfig) / dicePaperWhite;
+  } else if (userToneMapType == 3.f) {  // baby reinhard
+    float ReinhardPeak = shader_injection.peak_white_nits / shader_injection.graphics_white_nits;
+    outputColor = renodx::tonemap::ReinhardScalable(outputColor, ReinhardPeak);
+
+  } else if (userToneMapType == 4.f) {  // Frostbite
+    float frostbitePeak = shader_injection.peak_white_nits / shader_injection.graphics_white_nits;
+    outputColor = renodx::tonemap::frostbite::BT709(outputColor, frostbitePeak);
+  }
+
+  if (userToneMapType != 0) {  // UserColorGrading, post-tonemap
+    outputColor = renodx::color::grade::UserColorGrading(
+        outputColor,
+        1.f,                                       // exposure
+        1.f,                                       // highlights
+        1.f,                                       // shadows
+        1.f,                                       // contrast
+        shader_injection.tone_map_saturation,      // saturation
+        0.f,                                       // dechroma, we don't need it
+        shader_injection.tone_map_hue_correction,  // Hue Correction Strength
+        renodx::tonemap::Reinhard(untonemapped));  // Hue Correction Type
+  }
+
+  outputColor = renodx::color::bt709::clamp::BT2020(outputColor);  // Clamp to BT2020 to avoid negative colors
+
+  return outputColor;
+}
+
+float3 UpgradeToneMapCustom(
+    float3 color_untonemapped,
+    float3 color_tonemapped,
+    float3 color_tonemapped_graded,
+    float post_process_strength = 1.f,
+    float auto_correction = 0.f) {
+  float ratio = 1.f;
+
+  float y_untonemapped = renodx::color::y::from::BT709(color_untonemapped);
+  float y_tonemapped = renodx::color::y::from::BT709(color_tonemapped);
+  float y_tonemapped_graded = renodx::color::y::from::BT709(color_tonemapped_graded);
+
+  if (y_untonemapped < y_tonemapped) {
+    // If substracting (user contrast or paperwhite) scale down instead
+    // Should only apply on mismatched HDR
+    ratio = y_untonemapped / y_tonemapped;
+  } else {
+    // float y_delta = y_untonemapped - y_tonemapped;
+    float y_delta = y_untonemapped / y_tonemapped;
+    // y_delta = max(0, y_delta);  // Cleans up NaN
+    y_delta = max(1, y_delta);  // Cleans up NaN
+                                // const float y_new = y_tonemapped_graded + y_delta;
+    const float y_new = y_tonemapped_graded * y_delta;
+
+    const bool y_valid = (y_tonemapped_graded > 0);  // Cleans up NaN and ignore black
+    ratio = y_valid ? (y_new / y_tonemapped_graded) : 0;
+  }
+  float auto_correct_ratio = lerp(1.f, ratio, saturate(y_untonemapped));
+  ratio = lerp(ratio, auto_correct_ratio, auto_correction);
+
+  float3 color_scaled = color_tonemapped_graded * ratio;
+  // Match hue
+  color_scaled = renodx::color::correct::Hue(color_scaled, color_tonemapped_graded);
+  return lerp(color_untonemapped, color_scaled, post_process_strength);
+}
+
+float3 ToneMapPassCustom2(float3 color) {
+  // Apply gamma correction from ColorGradeGamma (0.0-1.0 mapped to gamma 1.0-2.2)
+  if (shader_injection.tone_map_gamma != 0.5f) {
+    float gamma = shader_injection.tone_map_gamma * 2.f;
+    color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
+  }
+
+  if (RENODX_DEBUG_MODE3 == 2.0f) {
+    float3 untonemapped = color;
+    float y = renodx::color::y::from::BT709(color);
+    float3 neutral_sdr_color = lerp(untonemapped, renodx::tonemap::renodrt::NeutralSDR(color), saturate(y));
+    color = acesTonemap(neutral_sdr_color);
+    color = UpgradeToneMapCustom(untonemapped, neutral_sdr_color, color, shader_injection.color_grade_strength, 0.f);
+  }
+  if (shader_injection.tone_map_type == 4.f) { // 
+    return applyUserTonemap(color, 2.f); // DICE
+  } else if (shader_injection.tone_map_type == 5.f) {
+    return applyUserTonemap(color, 4.f); // Frostbite
+  }
+
+  return renodx::draw::ToneMapPass(color);
+}
+
+float3 ToneMapPassCustom(float3 color) {
+  // Apply gamma correction from ColorGradeGamma (0.0-1.0 mapped to gamma 1.0-2.2)
+  if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
+    return color;
+  }
+  return ToneMapPassCustom2(color);
+}
 
 #define cmp -
+
 
 
 #endif

@@ -1,5 +1,5 @@
 /*
-addon.cpp 0.06
+addon.cpp 0.07
 - 0.04
 perceptual boost for displayoutput
 - 0.05 
@@ -297,7 +297,7 @@ fixed default of highlights restoration
              .max = 100.f,
              .is_enabled = []() { return shader_injection.tone_map_type > 0; },
              .parse = [](float value) { return value * 0.01f; },
-             .is_visible = []() { return current_settings_mode >= 1; },
+             .is_visible = []() { return current_settings_mode >= 2; },
          },
          new renodx::utils::settings::Setting{
              .key = "ColorGradePerChannelHueCorrection",
@@ -311,7 +311,7 @@ fixed default of highlights restoration
              .max = 100.f,
              .is_enabled = []() { return shader_injection.tone_map_type > 0; },
              .parse = [](float value) { return value * 0.01f; },
-             .is_visible = []() { return current_settings_mode >= 1; },
+             .is_visible = []() { return current_settings_mode >= 2; },
          },
          new renodx::utils::settings::Setting{
              .key = "ColorGradePerChannelChrominanceCorrection",
@@ -326,7 +326,7 @@ fixed default of highlights restoration
              .max = 100.f,
              .is_enabled = []() { return shader_injection.tone_map_type > 0; },
              .parse = [](float value) { return value * 0.01f; },
-             .is_visible = []() { return current_settings_mode >= 1; },
+             .is_visible = []() { return current_settings_mode >= 2; },
          },
          new renodx::utils::settings::Setting{
              .key = "ColorGradeGamma",
@@ -526,7 +526,7 @@ fixed default of highlights restoration
          new renodx::utils::settings::Setting{
              .key = "PerceptualBoostXYPQParam",
              .binding = &shader_injection.perceptual_boost_xypq_param,
-             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostXYPQParam", 268.f),
+             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostXYPQParam", 389.f),
              .label = "XY->PQ Curve Adjustment",
              .section = "Perceptual Boost",
              .tooltip = "Adjusts the XY->PQ perceptual boost curve shape for better color reproduction",
@@ -539,7 +539,7 @@ fixed default of highlights restoration
          new renodx::utils::settings::Setting{
              .key = "PerceptualBoostXYPQColor",
              .binding = &shader_injection.perceptual_boost_xypq_color,
-             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostXYPQColor", 20.f),
+             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostXYPQColor", 36.f),
              .label = "XY->PQ Color Boost",
              .section = "Perceptual Boost",
              .tooltip = "Controls the intensity of XY->PQ color enhancement (0% to 100%)",
@@ -844,6 +844,7 @@ fixed default of highlights restoration
  
        if (!initialized) {
          InitializeSettings();
+         hbr_custom_settings::AddCustomResourceUpgrades();
  
  
          renodx::mods::shader::force_pipeline_cloning = true;

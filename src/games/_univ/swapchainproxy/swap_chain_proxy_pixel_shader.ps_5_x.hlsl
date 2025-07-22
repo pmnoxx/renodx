@@ -19,7 +19,9 @@ float4 main(float4 vpos: SV_POSITION, float2 uv: TEXCOORD0)
     }
 
     finalColor.xyz = ApplyReverseReinhard(finalColor.xyz, SCENE_TYPE_DISPLAY_OUTPUT);
-    finalColor.xyz = ToneMapPassCustom2(finalColor.xyz);
+    if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
+      finalColor.xyz = ToneMapPassCustom2(finalColor.xyz);
+    }
 
     if (RENODX_SWAP_CHAIN_ENCODING == renodx::draw::ENCODING_PQ) {
       finalColor.rgb = renodx::color::pq::EncodeSafe(finalColor.rgb, RENODX_DIFFUSE_WHITE_NITS);
