@@ -1,4 +1,6 @@
-// ---- Created with 3Dmigoto v1.4.1 on Thu Jul 17 13:28:50 2025
+#include "../custom.hlsl"
+
+// ---- Created with 3Dmigoto v1.4.1 on Thu Jul 17 13:09:23 2025
 Texture2D<float4> t2 : register(t2);
 
 Texture2D<float4> t1 : register(t1);
@@ -18,9 +20,9 @@ cbuffer cb1 : register(b1)
 
 cbuffer cb0 : register(b0)
 {
-  float4 cb0[27];
+  float4 cb0[23];
 }
-#include "./common.hlsl"
+
 
 // 3Dmigoto declarations
 #define cmp -
@@ -72,12 +74,8 @@ void main(
   r0.x = saturate(r0.x / r0.y);
   r0.x = 1 + -r0.x;
   r0.xyzw = r1.xyzw * r0.xxxx;
-  r1.xy = cb0[26].zw + -cb0[26].xy;
-  r1.xy = -abs(v4.xy) + r1.xy;
-  r1.xy = saturate(v4.zw * r1.xy);
-  r1.x = r1.x * r1.y;
-  r0.xyzw = r1.xxxx * r0.xyzw;
   o0.xyzw = v1.wwww * r0.xyzw;
   o0.rgba = renodx_adjust_ui_color(o0.rgba);
+//  o0.xyz *= RENODX_GRAPHICS_WHITE_NITS / RENODX_DIFFUSE_WHITE_NITS;
   return;
 }

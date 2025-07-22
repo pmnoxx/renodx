@@ -3,7 +3,7 @@
 SamplerState BlitSampler_s : register(s0);
 Texture2D<float4> BlitTexture : register(t0);
 
-#include "./common.hlsl"
+#include "../custom.hlsl"
 
 // 3Dmigoto declarations
 #define cmp -
@@ -15,6 +15,7 @@ void main(
 {
   float4 color = BlitTexture.Sample(BlitSampler_s, v0.xy).xyzw;
 
+  /*
   // Convert angle to radians
   float angle_rad = radians(shader_injection.effect_split_angle);
 
@@ -36,9 +37,11 @@ void main(
   if (applyEffect) {
     color.rgb = renodx_ksp_apply_tonemap_and_boost(color.rgb, v1.zw);
   }
+*/
 
+  color.rgb = renodx::draw::InvertIntermediatePass(color.rgb);
+  color.rgb *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
   color.rgb = renodx::draw::RenderIntermediatePass(color.rgb);
-
   o0.xyzw = color;
 
   return;
