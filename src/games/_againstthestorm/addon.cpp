@@ -1,5 +1,5 @@
 /*
-addon.cpp 0.06
+addon.cpp 0.07
 - 0.04
 perceptual boost for displayoutput
 - 0.05 
