@@ -1,4 +1,4 @@
-#include "./common.h"
+#include "../custom.hlsl"
 
 Texture2D t0 : register(t0);
 SamplerState s0 : register(s0);

@@ -1,3 +1,5 @@
+#include "../custom.hlsl"
+
 // ---- Created with 3Dmigoto v1.4.1 on Wed Jul  9 14:34:45 2025
 TextureCube<float4> t0 : register(t0);
 
@@ -13,8 +15,6 @@ cbuffer cb0 : register(b0)
 
 // 3Dmigoto declarations
 #define cmp -
-
-#include "./common.h"
 
 void main(
   float4 v0 : SV_POSITION0,
