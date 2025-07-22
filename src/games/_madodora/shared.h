@@ -1,3 +1,4 @@
+
 #ifndef SRC_TEMPLATE_SHARED_H_
 #define SRC_TEMPLATE_SHARED_H_
 
@@ -88,14 +89,17 @@ struct ShaderInjectData {
   float perceptual_boost_channel_max; // Used for Reinhard, user adjustable
   // Reinhard mode parameters
   float perceptual_boost_reinhard_strength; // Used for Reinhard method
+  float perceptual_boost_reinhard_midpoint; // Midpoint for Reinhard perceptual boost (default: 0.18)
   // XY->PQ mode parameters
   float perceptual_boost_xypq_param; // Used for XY->PQ method
   float perceptual_boost_xypq_color; // Used for XY->PQ method
   float perceptual_boost_xypq_strength; // Used for XY->PQ method
+  float perceptual_boost_xypq_midpoint; // Midpoint for XY->PQ perceptual boost (default: 0.18)
   // ICTCP mode parameters
   float perceptual_boost_ictcp_param; // Used for ICTCP method
   float perceptual_boost_ictcp_color; // Used for ICTCP method
   float perceptual_boost_ictcp_strength; // Used for ICTCP method
+  float perceptual_boost_ictcp_midpoint; // Midpoint for ICTCP perceptual boost (default: 0.18)
   // Scene Type Perceptual Boost Strength
   float perceptual_boost_2d_character; // Perceptual boost strength for 2D character scenes (0.0-10.0)
   float perceptual_boost_2d_background; // Perceptual boost strength for 2D background scenes (0.0-10.0)
@@ -118,10 +122,8 @@ struct ShaderInjectData {
   float enable_tone_map_pass; // Enable/disable tone mapping pass (0.0 = off, 1.0 = on)
 
   // CUSTOM GAME SETTINGS
-  // Text Brightness Coefficient
-  float custom_text_brightness_coef; // Text brightness coefficient for UI elements (default: 1.0)
   
-  // Character Brightness
+  float custom_text_brightness_coef; // Text brightness coefficient for UI elements (default: 1.0)
   float custom_character_brightness; // Character brightness multiplier (default: 0.85)
 };
 
@@ -134,7 +136,10 @@ cbuffer shader_injection : register(b13) {
   ShaderInjectData shader_injection : packoffset(c0);
 }
 
-#define RENODX_TONE_MAP_TYPE                 shader_injection.tone_map_type
+// Don't use tonemapper in tonemappass if tone_map_type is 4 or 5
+#define RENODX_TONE_MAP_TYPE                 (shader_injection.tone_map_type < 4.f ? shader_injection.tone_map_type : 1.f)
+// Consider moving these to the shader inject data
+#define RENODX_DICE_SHOULDER                 0.33f
 #define RENODX_PEAK_WHITE_NITS               shader_injection.peak_white_nits
 #define RENODX_DIFFUSE_WHITE_NITS            shader_injection.diffuse_white_nits
 #define RENODX_GRAPHICS_WHITE_NITS           shader_injection.graphics_white_nits
@@ -179,8 +184,12 @@ cbuffer shader_injection : register(b13) {
 
 
 #define RENODX_PERCEPTUAL_BOOST_REINHARD_STRENGTH shader_injection.perceptual_boost_reinhard_strength
+#define RENODX_PERCEPTUAL_BOOST_REINHARD_MIDPOINT shader_injection.perceptual_boost_reinhard_midpoint
 // XY->PQ mode parameters
 #define RENODX_PERCEPTUAL_BOOST_XYPQ_PARAM     shader_injection.perceptual_boost_xypq_param
+#define RENODX_PERCEPTUAL_BOOST_XYPQ_MIDPOINT  shader_injection.perceptual_boost_xypq_midpoint
+// ICTCP mode parameters
+#define RENODX_PERCEPTUAL_BOOST_ICTCP_MIDPOINT shader_injection.perceptual_boost_ictcp_midpoint
 #define RENODX_PERCEPTUAL_BOOST_XYPQ_COLOR     shader_injection.perceptual_boost_xypq_color
 #define RENODX_PERCEPTUAL_BOOST_XYPQ_STRENGTH  shader_injection.perceptual_boost_xypq_strength
 // ICTCP mode parameters
@@ -208,19 +217,36 @@ cbuffer shader_injection : register(b13) {
 #define COLOR_GRADE_PER_CHANNEL_CHROMINANCE_CORRECTION  shader_injection.color_grade_per_channel_chrominance_correction
 
 
-#define RENODX_ENABLE_UI_TONEMAPPASS                    shader_injection.enable_tone_map_pass
+#define RENODX_ENABLE_UI_TONEMAPPASS          shader_injection.enable_tone_map_pass
 
 // CUSTOM GAME SETTINGS
 
-// Text Brightness Coefficient
 #define CUSTOM_TEXT_BRIGHTNESS_COEF            shader_injection.custom_text_brightness_coef
-
-// Character Brightness
 #define CUSTOM_CHARACTER_BRIGHTNESS            shader_injection.custom_character_brightness
-
 
 #include "../../shaders/renodx.hlsl"
 
 #endif
 
 #endif  // SRC_TEMPLATE_SHARED_H_
+
+
+
+/*
+// DO NOT REMOVE THIS COMMENT
+// CUSTOM CHANGES TO SHARED.H ARE LISTED BELOW
+
+
+struct ShaderInjectData {
+  // CUSTOM GAME SETTINGS
+  float custom_text_brightness_coef; // Text brightness coefficient for UI elements (default: 1.0)
+  float custom_character_brightness; // Character brightness multiplier (default: 0.85)
+};
+
+// CUSTOM GAME SETTINGS
+
+#define CUSTOM_TEXT_BRIGHTNESS_COEF            shader_injection.custom_text_brightness_coef
+#define CUSTOM_CHARACTER_BRIGHTNESS            shader_injection.custom_character_brightness
+
+
+*/

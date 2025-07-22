@@ -1,10 +1,21 @@
 /*
-addon.cpp 0.07
 - 0.04
 perceptual boost for displayoutput
 - 0.05 
 fixed default of highlights restoration
+- 0.08
+add tooltip to post swapchain tone mapping
+ - 0.09
+add midpoint settings for perceptual boost
+- 0.10
+add disable swap chain upgrade setting
+- 0.11
+add aces tonemap sdr effect
+- 0.12
+add dice and frostbite tonemappers
  */
+
+ constexpr const char* RENODX_VERSION = "0.12";
 
  #define ImTextureID ImU64
 
@@ -56,7 +67,7 @@ fixed default of highlights restoration
              .label = "Tone Mapper",
              .section = "Tone Mapping",
              .tooltip = "Sets the tone mapper type",
-             .labels = {"Vanilla", "None", "ACES", "RenoDRT",},
+             .labels = {"Vanilla", "None", "ACES", "RenoDRT", "DICE", "Frostbite"},
              .is_visible = []() { return current_settings_mode >= 1; },
          },
          new renodx::utils::settings::Setting{
@@ -187,6 +198,17 @@ fixed default of highlights restoration
              .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
              .parse = [](float value) { return value - 1.f; },
              .is_visible = []() { return current_settings_mode >= 3; },
+         },
+         new renodx::utils::settings::Setting{
+             .key = "PostSwapChainToneMapping",
+             .binding = &shader_injection.enable_tone_map_pass,
+             .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+             .default_value = hbr_custom_settings::get_default_value("PostSwapChainToneMapping", 0.f),
+             .label = "Post-SwapChain Tone Mapping",
+             .section = "Tone Mapping",
+             .tooltip = "Enables tone mapping pass to run after SwapChainPass for additional processing. Not recommended as this will apply tone mapping to UI elements. Useful when FakeHDR is enabled.",
+             .labels = {"Off", "On"},
+             .is_visible = []() { return current_settings_mode >= 2; },
          },
      };
  }
@@ -479,6 +501,22 @@ fixed default of highlights restoration
              .max = 360.f,
              .is_visible = []() { return current_settings_mode >= 3 && shader_injection.effect_split_mode != 0; },
          },
+         new renodx::utils::settings::Setting{
+             .key = "DisableSwapChainUpgrade",
+             .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+             .default_value = hbr_custom_settings::get_default_value("DisableSwapChainUpgrade", 0.f),
+             .label = "Disable Swap Chain Upgrade",
+             .section = "Display Output",
+             .tooltip = "When enabled, forces resize buffer mode for swap chain handling",
+             .labels = {"Off", "On"},
+             .on_change_value = [](float previous, float current) { 
+                 if (current == 1.f) {
+                     renodx::mods::swapchain::use_resize_buffer_on_demand = true;
+                     renodx::mods::swapchain::use_resize_buffer = true;
+                 }
+             },
+             .is_visible = []() { return current_settings_mode >= 2; },
+         },
      };
  }
  
@@ -522,11 +560,24 @@ fixed default of highlights restoration
              .parse = [](float value) { return value * 0.01f; },
              .is_visible = []() { return current_settings_mode >= 1; },
          },
+         new renodx::utils::settings::Setting{
+             .key = "PerceptualBoostReinhardMidpoint",
+             .binding = &shader_injection.perceptual_boost_reinhard_midpoint,
+             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostReinhardMidpoint", 5.f),
+             .label = "Reinhard Midpoint",
+             .section = "Perceptual Boost",
+             .tooltip = "Controls the midpoint for Reinhard perceptual boost (0.01 to 1.0, default: 0.18)",
+             .min = 1.f,
+             .max = 100.f,
+             .is_enabled = []() { return shader_injection.perceptual_boost_mode == 1.f; },
+             .parse = [](float value) { return value * 0.01f; },
+             .is_visible = []() { return current_settings_mode >= 2; },
+         },
          // XY->PQ mode settings
          new renodx::utils::settings::Setting{
              .key = "PerceptualBoostXYPQParam",
              .binding = &shader_injection.perceptual_boost_xypq_param,
-             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostXYPQParam", 268.f),
+             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostXYPQParam", 389.f),
              .label = "XY->PQ Curve Adjustment",
              .section = "Perceptual Boost",
              .tooltip = "Adjusts the XY->PQ perceptual boost curve shape for better color reproduction",
@@ -539,7 +590,7 @@ fixed default of highlights restoration
          new renodx::utils::settings::Setting{
              .key = "PerceptualBoostXYPQColor",
              .binding = &shader_injection.perceptual_boost_xypq_color,
-             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostXYPQColor", 20.f),
+             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostXYPQColor", 36.f),
              .label = "XY->PQ Color Boost",
              .section = "Perceptual Boost",
              .tooltip = "Controls the intensity of XY->PQ color enhancement (0% to 100%)",
@@ -561,6 +612,19 @@ fixed default of highlights restoration
              .is_enabled = []() { return shader_injection.perceptual_boost_mode == 2.f; },
              .parse = [](float value) { return value * 0.01f; },
              .is_visible = []() { return current_settings_mode >= 1; },
+         },
+         new renodx::utils::settings::Setting{
+             .key = "PerceptualBoostXYPQMidpoint",
+             .binding = &shader_injection.perceptual_boost_xypq_midpoint,
+             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostXYPQMidpoint", 1.f),
+             .label = "XY->PQ Midpoint",
+             .section = "Perceptual Boost",
+             .tooltip = "Controls the midpoint for XY->PQ perceptual boost (0.01 to 1.0, default: 0.18)",
+             .min = 1.f,
+             .max = 100.f,
+             .is_enabled = []() { return shader_injection.perceptual_boost_mode == 2.f; },
+             .parse = [](float value) { return value * 0.01f; },
+             .is_visible = []() { return current_settings_mode >= 2; },
          },
          // ICTCP mode settings
          new renodx::utils::settings::Setting{
@@ -603,29 +667,42 @@ fixed default of highlights restoration
              .is_visible = []() { return current_settings_mode >= 1; },
          },
          new renodx::utils::settings::Setting{
+             .key = "PerceptualBoostICTCPMidpoint",
+             .binding = &shader_injection.perceptual_boost_ictcp_midpoint,
+             .default_value = hbr_custom_settings::get_default_value("PerceptualBoostICTCPMidpoint", 18.f),
+             .label = "ICTCP Midpoint",
+             .section = "Perceptual Boost",
+             .tooltip = "Controls the midpoint for ICTCP perceptual boost (0.01 to 1.0, default: 0.18)",
+             .min = 1.f,
+             .max = 100.f,
+             .is_enabled = []() { return shader_injection.perceptual_boost_mode == 3.f; },
+             .parse = [](float value) { return value * 0.01f; },
+             .is_visible = []() { return current_settings_mode >= 2; },
+         },
+         new renodx::utils::settings::Setting{
              .key = "PerceptualBoost2DCharacter",
              .binding = &shader_injection.perceptual_boost_2d_character,
-             .default_value = hbr_custom_settings::get_default_value("PerceptualBoost2DCharacter", 0.3f),
+             .default_value = hbr_custom_settings::get_default_value("PerceptualBoost2DCharacter", 0.f),
              .label = "2D Character Scenes",
              .section = "Perceptual Boost",
              .tooltip = "Perceptual boost strength for 2D character scenes (0.0 = disabled, 1.0 = normal, 10.0 = maximum)",
              .min = 0.f,
-             .max = 10.f,
-             .format = "%.3f",
+             .max = 100.f,
              .is_enabled = []() { return shader_injection.perceptual_boost_mode > 0.f; },
+             .parse = [](float value) { return value * 0.01f; },
              .is_visible = []() { return current_settings_mode >= 1; },
          },
          new renodx::utils::settings::Setting{
              .key = "PerceptualBoost2DBackground",
              .binding = &shader_injection.perceptual_boost_2d_background,
-             .default_value = hbr_custom_settings::get_default_value("PerceptualBoost2DBackground", 1.f),
+             .default_value = hbr_custom_settings::get_default_value("PerceptualBoost2DBackground", 0.f),
              .label = "2D Background Scenes",
              .section = "Perceptual Boost",
              .tooltip = "Perceptual boost strength for 2D background scenes (0.0 = disabled, 1.0 = normal, 10.0 = maximum)",
              .min = 0.f,
-             .max = 10.f,
-             .format = "%.3f",
+             .max = 100.f,
              .is_enabled = []() { return shader_injection.perceptual_boost_mode > 0.f; },
+             .parse = [](float value) { return value * 0.01f; },
              .is_visible = []() { return current_settings_mode >= 1; },
          },
          new renodx::utils::settings::Setting{
@@ -636,22 +713,22 @@ fixed default of highlights restoration
              .section = "Perceptual Boost",
              .tooltip = "Perceptual boost strength for 3D scenes (0.0 = disabled, 1.0 = normal, 10.0 = maximum)",
              .min = 0.f,
-             .max = 10.f,
-             .format = "%.3f",
+             .max = 100.f,
              .is_enabled = []() { return shader_injection.perceptual_boost_mode > 0.f; },
+             .parse = [](float value) { return value * 0.01f; },
              .is_visible = []() { return current_settings_mode >= 1; },
          },
          new renodx::utils::settings::Setting{
              .key = "PerceptualBoostDisplayOutput",
              .binding = &shader_injection.perceptual_boost_display_output,
-             .default_value = 0.f,
+             .default_value = 100.f,
              .label = "Display Output",
              .section = "Perceptual Boost",
              .tooltip = "Perceptual boost strength for display output (0.0 = disabled, 1.0 = normal, 10.0 = maximum)",
              .min = 0.f,
-             .max = 10.f,
-             .format = "%.3f",
+             .max = 100.f,
              .is_enabled = []() { return shader_injection.perceptual_boost_mode > 0.f; },
+             .parse = [](float value) { return value * 0.01f; },
              .is_visible = []() { return current_settings_mode >= 1; },
          },
      };
@@ -777,6 +854,14 @@ fixed default of highlights restoration
    reshade::get_config_value(nullptr, renodx::utils::settings::global_name.c_str(), "Upgrade_SwapChainCompatibility", swapchain_setting->value_as_int);
    renodx::mods::swapchain::swapchain_proxy_compatibility_mode = swapchain_setting->GetValue() != 0;
    settings.push_back(swapchain_setting);
+   
+   // Add version display
+   settings.push_back(new renodx::utils::settings::Setting{
+       .value_type = renodx::utils::settings::SettingValueType::TEXT,
+       .label = std::string("Version: ") + RENODX_VERSION,
+       .section = "About",
+       .tooltip = std::string("RenoDX Universal Template Version ") + RENODX_VERSION,
+   });
  }
  
  void OnPresetOff() {
