@@ -3,6 +3,7 @@
 #include <vector>
 #include "../../utils/settings.hpp"
 #include "./shared.h"
+#include "../../mods/swapchain.hpp"
 
 namespace hbr_custom_settings {
 
@@ -51,9 +52,11 @@ static const std::unordered_map<std::string, float> default_values = {
     {"PerceptualBoostMode", 0.f},
     {"PerceptualBoostChannelMax", 2.f},
     {"PerceptualBoostReinhardStrength", 100.f},
-    {"PerceptualBoostXYPQParam", 268.f},
-    {"PerceptualBoostXYPQColor", 20.f},
+    {"PerceptualBoostReinhardMidpoint", 5.f},
+    {"PerceptualBoostXYPQParam", 389.f}, // 268
+    {"PerceptualBoostXYPQColor", 36.f},
     {"PerceptualBoostXYPQStrength", 100.f},
+    {"PerceptualBoostXYPQMidpoint", 1.f},
     {"PerceptualBoostICTCPParam", 268.f},
     {"PerceptualBoostICTCPColor", 20.f},
     {"PerceptualBoostICTCPStrength", 100.f},
@@ -68,6 +71,8 @@ static const std::unordered_map<std::string, float> default_values = {
     {"DisplayMapPeak", 2.f},
     {"DisplayMapShoulder", 0.5f},
     {"UpgradeResourceViewCloning", 0.f}, // 0 = false, 1 = true
+    {"PerceptualBoostReinhardMidpoint", 5.f},
+    {"PostSwapChainToneMapping", 0.f},
 };
 
 // Returns the default value for a key, or fallback if not found
@@ -129,6 +134,12 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
 };
 
 inline void AddCustomResourceUpgrades() {
+    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+        .old_format = reshade::api::format::r8g8b8a8_unorm,
+        .new_format = reshade::api::format::r16g16b16a16_unorm,
+        .use_resource_view_cloning = false,
+        .dimensions = {.width=1024, .height=32},
+    });
 }
 
 } // namespace hbr_custom_settings 
