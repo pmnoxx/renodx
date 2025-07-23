@@ -81,8 +81,10 @@ void main(
 
     r1.xyz = r1.xyz + -r0.xyz;
     r0.xyz = cb0[135].xxx * r1.xyz + r0.xyz;
-
   }
+
+  r0.xyz = renodx::draw::ToneMapPass(r0.xyz);
+
   o0.xyzw = r0.xyzw;
   
   return;

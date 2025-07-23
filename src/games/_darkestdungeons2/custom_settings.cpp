@@ -4,6 +4,7 @@
 #include "../../utils/settings.hpp"
 #include "./shared.h"
 #include "../../mods/swapchain.hpp"
+#include "./custom.h"
 
 namespace hbr_custom_settings {
 
@@ -92,6 +93,7 @@ inline bool get_upgrade_resource_view_cloning() {
 
 std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection(ShaderInjectData& shader_injection, float& current_settings_mode) {
     return {
+        #ifdef USE_CUSTOM_SETTINGS
         new renodx::utils::settings::Setting{
             .key = "CustomRemoveBanding",
             .binding = &shader_injection.custom_remove_banding,
@@ -103,6 +105,7 @@ std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection
             .labels = {"Off", "On"},
             .is_visible = [&current_settings_mode]() { return current_settings_mode >= 1; },
         },
+        #endif
         /*
         new renodx::utils::settings::Setting{
             .key = "CustomCharacterBrightness",
