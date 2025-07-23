@@ -51,7 +51,7 @@ void main(
   r0 = debug_mode(r0, v1);
   float4 untonemapped = r0;
   if (RENODX_TONE_MAP_TYPE != 0) {
-    o0 = renodx_opening_tonemap_block(untonemapped, r0, v1, t1, t2, cb0[133].w, false);
+    o0 = renodx_opening_tonemap_block(untonemapped, v1, t1, t2, cb0[133].w, false);
     return;
   }
 
