@@ -139,7 +139,7 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
 inline void AddCustomResourceUpgrades() {
     renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
         .old_format = reshade::api::format::r8g8b8a8_unorm,
-        .new_format = reshade::api::format::r16g16b16a16_unorm,
+        .new_format = reshade::api::format::r16g16b16a16_typeless,
         .use_resource_view_cloning = false,
         .dimensions = {.width=1024, .height=32},
     });
