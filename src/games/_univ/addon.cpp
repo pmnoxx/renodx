@@ -13,9 +13,11 @@ add disable swap chain upgrade setting
 add aces tonemap sdr effect
 - 0.12
 add dice and frostbite tonemappers
+- 0.13
+add simulate render pass setting
  */
 
-constexpr const char* RENODX_VERSION = "0.12";
+constexpr const char* RENODX_VERSION = "0.13";
 
  #define ImTextureID ImU64
 
@@ -209,6 +211,17 @@ constexpr const char* RENODX_VERSION = "0.12";
              .tooltip = "Enables tone mapping pass to run after SwapChainPass for additional processing. Not recommended as this will apply tone mapping to UI elements. Useful when FakeHDR is enabled.",
              .labels = {"Off", "On"},
              .is_visible = []() { return current_settings_mode >= 2; },
+         },
+         new renodx::utils::settings::Setting{
+             .key = "SimulateRenderPass",
+             .binding = &shader_injection.simulate_render_pass,
+             .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+             .default_value = hbr_custom_settings::get_default_value("SimulateRenderPass", 0.f),
+             .label = "Simulate Render Pass",
+             .section = "Tone Mapping",
+             .tooltip = "Simulates render pass processing for intermediate color space conversion.",
+             .labels = {"Off", "On"},
+             .is_visible = []() { return current_settings_mode >= 3; },
          },
      };
  }

@@ -1,3 +1,6 @@
+// plog bg half blend
+
+
 // ---- Created with 3Dmigoto v1.4.1 on Wed Jul 16 14:22:33 2025
 Texture2D<float4> t3 : register(t3);
 
@@ -129,6 +132,6 @@ void main(
   o0.xyzw = float4(2, 2, 2, 1) * r0.xyzw;
 
   o0.w = 1.f;
-  o0.xyzw = saturate(o0.xyzw); // xxx
+  o0.xyzw = saturate(o0.xyzw); // xxfixx
   return;
 }

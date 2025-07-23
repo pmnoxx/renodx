@@ -3,6 +3,8 @@
 #include <vector>
 #include "../../utils/settings.hpp"
 #include "./shared.h"
+#include "../../mods/swapchain.hpp"
+
 
 namespace hbr_custom_settings {
 
@@ -153,11 +155,36 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
     {"R10G10B10A2_TYPELESS", {reshade::api::format::r10g10b10a2_typeless, 0.f}},
     {"R10G10B10A2_UNORM", {reshade::api::format::r10g10b10a2_unorm, 0.f}},
     {"B10G10R10A2_UNORM", {reshade::api::format::b10g10r10a2_unorm, 0.f}},
-    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 0.f}}, // bloom
+    {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 3.f}}, // bloom
     {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
 };
 
 
 inline void AddCustomResourceUpgrades() {
+    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+        .old_format = reshade::api::format::r8g8b8a8_unorm,
+        .new_format = reshade::api::format::r16g16b16a16_typeless,
+        .use_resource_view_cloning = false,
+        .dimensions = {.width=1024, .height=32},
+    });
+    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+        .old_format = reshade::api::format::r8g8b8a8_unorm,
+        .new_format = reshade::api::format::r16g16b16a16_typeless,
+        .use_resource_view_cloning = false,
+        .dimensions = {.width=256, .height=16},
+    });
+    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+        .old_format = reshade::api::format::r8g8b8a8_typeless,
+        .new_format = reshade::api::format::r16g16b16a16_typeless,
+        .use_resource_view_cloning = false,
+        .dimensions = {.width=1024, .height=32},
+    });
+    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+        .old_format = reshade::api::format::r8g8b8a8_typeless,
+        .new_format = reshade::api::format::r16g16b16a16_typeless,
+        .use_resource_view_cloning = false,
+        .dimensions = {.width=256, .height=16},
+    });
 }
+
 } // namespace hbr_custom_settings 
