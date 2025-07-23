@@ -1,3 +1,7 @@
+
+#include "./custom.h"
+
+
 #ifndef SRC_TEMPLATE_SHARED_H_
 #define SRC_TEMPLATE_SHARED_H_
 
@@ -89,9 +93,9 @@ struct ShaderInjectData {
   float simulate_render_pass; // Simulate render pass processing (0.0 = off, 1.0 = on)
   float random_seed;
 
-  // CUSTOM GAME SETTINGS
-  
+  #ifdef USE_CUSTOM_SETTINGS
   float custom_remove_banding;
+  #endif
 
 };
 
@@ -189,7 +193,9 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_SIMULATE_RENDER_PASS           shader_injection.simulate_render_pass
 
 // CUSTOM GAME SETTINGS
+#ifdef USE_CUSTOM_SETTINGS
 #define RENODX_CUSTOM_REMOVE_BANDING            shader_injection.custom_remove_banding
+#endif
 
 #include "../../shaders/renodx.hlsl"
 

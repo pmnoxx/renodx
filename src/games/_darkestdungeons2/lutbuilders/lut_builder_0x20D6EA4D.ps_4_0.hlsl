@@ -47,7 +47,7 @@ void main(
   r1.x = r0.x / cb0[132].x;
   r0.w = -r1.x + r0.y;
 
-  if (RENODX_TONE_MAP_TYPE > 0.f) {
+  if (RENODX_TONE_MAP_TYPE > 0.f && CUSTOM_USE_PQ_TONE_MAP_FOR_LUT == 1.f) {
     // Use PQ decoding for HDR content
     r0.xyz = renodx::color::pq::Decode(r0.xzw, 100.f);
     r0.xyz = renodx::color::bt709::from::BT2020(r0.xyz);

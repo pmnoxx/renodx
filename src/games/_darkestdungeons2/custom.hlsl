@@ -2,8 +2,8 @@
 
 #include "./common.hlsl"
 
-#ifndef CUSTOM_H_
-#define CUSTOM_H_
+#ifndef CUSTOM_HLSL_H
+#define CUSTOM_HLSL_H
 
 #define cmp -
 
@@ -22,6 +22,25 @@ float3 ProcessLUTWithUntonemappedGrading(float3 untonemapped, Texture2D<float4> 
   result = untonemappedSign * result;
   
   return result;
+}
+
+float3 ProcessBT2020PQWithLUT(float3 color, Texture2D<float4> lut_texture, Texture2D<float4> grading_lut, float grading_intensity) {
+  float3 lut_input;
+
+  if (CUSTOM_USE_PQ_TONE_MAP_FOR_LUT == 1.f) {
+    const float3 bt2020_converted = max(0.f, renodx::color::bt2020::from::BT709(color));
+    lut_input = renodx::color::pq::Encode(bt2020_converted, 100.f);
+  } else {
+    float4 r0 = float4(color, 0.f);
+    r0.xyz = r0.xyz * float3(5.55555582, 5.55555582, 5.55555582) + float3(0.0479959995, 0.0479959995, 0.0479959995);
+    r0.xyz = max(float3(0, 0, 0), r0.xyz);
+    r0.xyz = log2(r0.xyz);
+    r0.xyz = saturate(r0.xyz * float3(0.0734997839, 0.0734997839, 0.0734997839) + float3(0.386036009, 0.386036009, 0.386036009));
+    lut_input = r0.yzw;
+  }
+  float3 lut_result = renodx::lut::SampleTetrahedral(lut_texture, saturate(lut_input));
+  
+  return ProcessLUTWithUntonemappedGrading(lut_result, grading_lut, grading_intensity);
 }
 
 float4 unity_color_grade_user(float4 color, float2 uv, Texture2D<float4> user_lut, float t3_intensity) {
