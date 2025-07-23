@@ -48,16 +48,17 @@ void main(
   r0.xy = v2.xy * float2(2,2) + float2(-1,-1);
   r0.xy = r0.xy * float2(0.400000006,0.400000006) + float2(0.5,0.5);
   r0.z = 0.00300000003 * cb0[6].z;
-  r0.zw = v2.xy * float2(0.0500000007,0.0500000007) + r0.zz;
+  r0.zw = v2.xy * float2(0.0500000007, 0.0500000007) + r0.zz;
   r1.xyzw = t0.Sample(s3_s, r0.zw).xyzw;
+
   r0.z = r1.x * 0.150000006 + -0.0219999999;
   r0.xy = r0.zz * float2(1,0.200000003) + r0.xy;
   r0.xy = -v2.xy + r0.xy;
   r0.xy = cb0[6].zz * r0.xy + v2.xy;
   r1.xyzw = t1.Sample(s0_s, r0.xy).xyzw;
-  r1.xyzw = saturate(r1.xyzw);  // xxx
+
   r2.xyzw = t2.Sample(s2_s, r0.xy).xyzw;
-  r2.xyzw = saturate(r2.xyzw);  // xxx
+
   r0.z = cb0[4].z / cb0[5].y;
   r0.w = r0.x * r0.z;
   r0.w = cmp(cb0[5].x >= r0.w);
@@ -79,14 +80,15 @@ void main(
   r2.x = 1;
   r0.zw = r2.xy * r0.xy;
   r2.xyzw = t0.Sample(s3_s, r0.zw).xyzw;
-  r2.xyzw = saturate(r2.xyzw);  // xxx
+
   r0.z = cmp(r2.x >= cb0[6].y);
   r0.z = r0.z ? 1.000000 : 0;
   r2.xyz = r1.xyz * r0.zzz;
   r0.z = cmp(0 >= cb0[5].w);
   if (r0.z != 0) {
     r3.xyzw = t3.Sample(s1_s, r0.xy).xyzw;
-    r3.xyzw = saturate(r3.xyzw);  // xxx
+    r3.w = saturate(r3.w);  // saturete w
+
     r0.z = r3.x + -r1.w;
     r0.z = cb0[2].x * r0.z + r1.w;
     r1.xy = float2(-0.5,-0.5) + r0.xy;
@@ -131,7 +133,6 @@ void main(
   r0.xyzw = v1.xyzw * r2.xyzw;
   o0.xyzw = float4(2, 2, 2, 1) * r0.xyzw;
 
-  o0.w = 1.f;
-  o0.xyzw = saturate(o0.xyzw); // xxfixx
+
   return;
 }
