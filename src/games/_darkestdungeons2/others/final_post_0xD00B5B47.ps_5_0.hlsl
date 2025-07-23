@@ -18,8 +18,7 @@ cbuffer cb0 : register(b0)
 
 
 float3 saturate_or_not(float3 color, float2 v1) {
-
-  if (RENODX_TONE_MAP_TYPE == 0 || v1.x <= shader_injection.horizontal_split_screen) {
+  if (RENODX_TONE_MAP_TYPE == 0) {
    color = saturate(color);
   }
   return color;

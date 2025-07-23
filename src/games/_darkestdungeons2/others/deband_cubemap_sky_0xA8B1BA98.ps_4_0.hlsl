@@ -26,7 +26,7 @@ void main(
   float4 fDest;
 
   
-  if (RENODX_REMOVE_BANDING) {
+  if (shader_injection.custom_remove_banding > 0.f) {
     // 8x sampling to eliminate banding with position-based weights
     float3 sample_offsets[4] = {
       float3(-1, -1, 0),
@@ -51,8 +51,7 @@ void main(
 
       sample_pos = renodx::effects::ApplyFilmGrain(
         sample_pos,
-          sample_pos,
-          shader_injection.custom_random,
+          shader_injection.random_seed,
           1.f / 1024.f * 16.f,
           1.f
           );

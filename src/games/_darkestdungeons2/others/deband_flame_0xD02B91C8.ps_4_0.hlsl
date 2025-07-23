@@ -31,7 +31,7 @@ float4 deband(Texture2D<float4> tex, SamplerState sam, float2 v1, float strength
     float4 sample_sum = float4(0, 0, 0, 0);
     float weight_sum = 0.0;
     const float num_samples = 1;
-    float seed = shader_injection.custom_random;
+    float seed = shader_injection.random_seed;
     
     for (int i = 0; i < num_samples; i++) {
       float2 sample_pos = v1.xy;
