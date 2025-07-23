@@ -94,31 +94,46 @@ void main(
     r1.xyz = r0.www * r1.xyz + cb0[141].xyz;
     r0.xyz = r1.xyz * r0.xyz;
   }
-  r0.xyz = cb0[132].www * r0.zxy;
 
-  // linear to log C
-  r0.xyz = r0.xyz * float3(5.55555582,5.55555582,5.55555582) + float3(0.0479959995,0.0479959995,0.0479959995);
-  r0.xyz = max(float3(0,0,0), r0.xyz);
-  r0.xyz = log2(r0.xyz);
-  r0.xyz = saturate(r0.xyz * float3(0.0734997839,0.0734997839,0.0734997839) + float3(0.386036009,0.386036009,0.386036009));
-  r0.yzw = cb0[132].zzz * r0.xyz;
-  r0.y = floor(r0.y);
-  r1.xy = float2(0.5,0.5) * cb0[132].xy;
-  r1.yz = r0.zw * cb0[132].xy + r1.xy;
-  r1.x = r0.y * cb0[132].y + r1.y;
-  
-  // lut query
-  r2.xyzw = t2.SampleLevel(s0_s, r1.xz, 0).xyzw;
-  r3.x = cb0[132].y;
-  r3.y = 0;
-  r0.zw = r3.xy + r1.xz;
-  r1.xyzw = t2.SampleLevel(s0_s, r0.zw, 0).xyzw;
-  r0.x = r0.x * cb0[132].z + -r0.y;
-  r0.yzw = r1.xyz + -r2.xyz;
-  r0.xyz = r0.xxx * r0.yzw + r2.xyz;
+  if (RENODX_TONE_MAP_TYPE != 0.f) {
+    const float3 bt2020_converted = max(0.f, renodx::color::bt2020::from::BT709(r0.xyz));
+    float3 lut_input = renodx::color::pq::Encode(bt2020_converted, 100.f);
+    r0.xyz = renodx::lut::SampleTetrahedral(t2, saturate(lut_input));
+  } else {
+    r0.xyz = cb0[132].www * r0.zxy; 
+    r0.xyz = r0.xyz * float3(5.55555582, 5.55555582, 5.55555582) + float3(0.0479959995, 0.0479959995, 0.0479959995);
+    r0.xyz = max(float3(0, 0, 0), r0.xyz);
+    r0.xyz = log2(r0.xyz);
+    r0.xyz = saturate(r0.xyz * float3(0.0734997839, 0.0734997839, 0.0734997839) + float3(0.386036009, 0.386036009, 0.386036009));
+    r0.yzw = cb0[132].zzz * r0.xyz;
+
+    r0.y = floor(r0.y);
+    r1.xy = float2(0.5, 0.5) * cb0[132].xy;
+    r1.yz = r0.zw * cb0[132].xy + r1.xy;
+    r1.x = r0.y * cb0[132].y + r1.y;
+
+    // lut query
+    r2.xyzw = t2.SampleLevel(s0_s, r1.xz, 0).xyzw;
+    r3.x = cb0[132].y;
+    r3.y = 0;
+    r0.zw = r3.xy + r1.xz;
+    r1.xyzw = t2.SampleLevel(s0_s, r0.zw, 0).xyzw;
+    r0.x = r0.x * cb0[132].z + -r0.y;
+    r0.yzw = r1.xyz + -r2.xyz;
+    r0.xyz = r0.xxx * r0.yzw + r2.xyz;
+  }
+
+  if (r1.x != 0 && RENODX_TONE_MAP_TYPE != 0.f) {
+    r0.xyz = ProcessLUTWithUntonemappedGrading(r0.xyz, t3, cb0[133].x);
+
+    o0.xyz = r0.xyz;
+    o0.w = 1.f;
+    return;
+  }
+
 
   r0.w = cmp(0 < cb0[133].w);
-  if (r0.w != 0) {
+  if (r0.w != 0) { // maybeunused
     r0.xyz = saturate(r0.xyz);
     r1.xyz = cmp(float3(0.00313080009,0.00313080009,0.00313080009) >= r0.xyz);
     r2.xyz = float3(12.9232101,12.9232101,12.9232101) * r0.xyz;

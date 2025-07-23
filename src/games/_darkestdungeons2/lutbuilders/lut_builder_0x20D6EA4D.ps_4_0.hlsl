@@ -46,11 +46,20 @@ void main(
   r0.x = frac(r1.x);
   r1.x = r0.x / cb0[132].x;
   r0.w = -r1.x + r0.y;
-  r0.xyz = r0.xzw * cb0[132].www + float3(-0.386036009,-0.386036009,-0.386036009);
-  r0.xyz = float3(13.6054821,13.6054821,13.6054821) * r0.xyz;
-  r0.xyz = exp2(r0.xyz);
-  r0.xyz = float3(-0.0479959995,-0.0479959995,-0.0479959995) + r0.xyz;
-  r0.xyz = float3(0.179999992,0.179999992,0.179999992) * r0.xyz;
+
+  if (RENODX_TONE_MAP_TYPE > 0.f) {
+    // Use PQ decoding for HDR content
+    r0.xyz = renodx::color::pq::Decode(r0.xzw, 100.f);
+    r0.xyz = renodx::color::bt709::from::BT2020(r0.xyz);
+  } else {
+    r0.xyz = r0.xzw * cb0[132].www;
+    r0.xyz = r0.xyz + float3(-0.386036009,-0.386036009,-0.386036009);
+    r0.xyz = float3(13.6054821,13.6054821,13.6054821) * r0.xyz;
+    r0.xyz = exp2(r0.xyz);
+    r0.xyz = float3(-0.0479959995,-0.0479959995,-0.0479959995) + r0.xyz;
+    r0.xyz = float3(0.179999992, 0.179999992, 0.179999992) * r0.xyz;
+  }
+
   r1.x = dot(float3(0.390404999,0.549941003,0.00892631989), r0.xyz);
   r1.y = dot(float3(0.070841603,0.963172019,0.00135775004), r0.xyz);
   r1.z = dot(float3(0.0231081992,0.128021002,0.936245024), r0.xyz);

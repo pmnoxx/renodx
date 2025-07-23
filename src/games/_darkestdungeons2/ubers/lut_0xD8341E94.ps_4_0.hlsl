@@ -20,14 +20,6 @@ cbuffer cb0 : register(b0)
 #define cmp -
 
 
-float3 saturate_or_not(float3 color, float2 v1) {
-
-  if (RENODX_TONE_MAP_TYPE == 0 || v1.x <= shader_injection.horizontal_split_screen) {
-   color = saturate(color);
-  }
-  return color;
-}
-
 void main(
   float4 v0 : SV_POSITION0,
   float2 v1 : TEXCOORD0,
@@ -39,16 +31,20 @@ void main(
 
   r0.xyzw = t0.SampleBias(s0_s, v1.xy, cb0[5].x).xyzw;
   r1.x = cmp(0 < cb0[135].x);
+
+  if (r1.x != 0 && RENODX_TONE_MAP_TYPE != 0.f) {
+    r0.xyz = ProcessLUTWithUntonemappedGrading(r0.xyz, t1, cb0[135].x);
+    
+    o0.xyz = r0.xyz;
+    o0.w = 1.f;
+    return;
+  }
+
+
   if (r1.x != 0) {
     float3 untonemapped = r0.xyz; // untonemapped here is still in SRGB
 
     r0.xyz = saturate(untonemapped);
-
-    float3 sdrTonemapped = renodx::tonemap::renodrt::NeutralSDR(untonemapped); // tonemap to SDR you can change this to any SDR tonemapper you want 
-    if (RENODX_TONE_MAP_TYPE != 0 && v1.x > shader_injection.horizontal_split_screen) {
-      float y = renodx::color::y::from::BT709(untonemapped);
-      r0.xyz = lerp(untonemapped, sdrTonemapped, saturate(y));
-    }
 
     r1.x = -1 + cb0[133].w;
     r0.xyz = saturate(r0.xyz);
@@ -59,7 +55,8 @@ void main(
     r3.xyz = exp2(r3.xyz);
     r3.xyz = r3.xyz * float3(1.05499995,1.05499995,1.05499995) + float3(-0.0549999997,-0.0549999997,-0.0549999997);
     r1.yzw = r1.yzw ? r2.xyz : r3.xyz;
-    r2.xyz = r1.yzw * r1.xxx;
+    
+    r2.xyz = r1.yzw * r1.xxx; // (1- strength)
     r1.z = floor(r2.x);
     r2.xw = float2(0.5,0.5) * cb0[133].xy;
     r2.yz = r2.yz * cb0[133].xy + r2.xw;
@@ -72,6 +69,7 @@ void main(
     r1.x = r1.y * r1.x + -r1.z;
     r1.yzw = r2.xyz + -r3.xyz;
     r1.xyz = r1.xxx * r1.yzw + r3.xyz;
+    
     r2.xyz = float3(0.0773993805,0.0773993805,0.0773993805) * r1.xyz;
     r3.xyz = float3(0.0549999997,0.0549999997,0.0549999997) + r1.xyz;
     r3.xyz = float3(0.947867334,0.947867334,0.947867334) * r3.xyz;
@@ -80,15 +78,10 @@ void main(
     r3.xyz = exp2(r3.xyz);
     r1.xyz = cmp(float3(0.0404499993,0.0404499993,0.0404499993) >= r1.xyz);
     r1.xyz = r1.xyz ? r2.xyz : r3.xyz;
+
     r1.xyz = r1.xyz + -r0.xyz;
     r0.xyz = cb0[135].xxx * r1.xyz + r0.xyz;
 
-    if (RENODX_TONE_MAP_TYPE != 0 && v1.x > shader_injection.horizontal_split_screen) { 
-      float3 sdrGraded = r0.xyz;
-      float3 color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, 1.f);
-
-      r0.xyz = color;
-    }
   }
   o0.xyzw = r0.xyzw;
   
