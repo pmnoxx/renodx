@@ -7,46 +7,103 @@
 
 #define cmp -
 
+// UNITY START
+#define CUSTOM_USE_PQ_TONE_MAP_FOR_LUT 1.f
 
-/*
-float4 ToneMapBlock(float3 untonemapped, float r2_w, float cb42_x, Texture2D<float4> t4_tex, float scene_type_3d) {
-  float3 r0_xyz_out = saturate(untonemapped);
+float3 UnityLookupPQ(float4 input_color,Texture2D<float4> lut) {
+  const float3 bt2020_converted = max(0.f, renodx::color::bt2020::from::BT709(input_color.xyz));
+  float3 lut_input = renodx::color::pq::Encode(bt2020_converted, 100.f);
+  float3 lut_output = renodx::lut::SampleTetrahedral(lut, saturate(lut_input));
+  return lut_output;
+}
 
-  float3 sdrTonemapped = RestoreHighlightSaturation(untonemapped);
+float3 UnityLookupARID(float4 input_color, float4 lut_param, SamplerState s0_s, Texture2D<float4> lut) {
+  // incorrect code
+  float4 r0 = float4(input_color.xyz, 0.f);
+  float4 r1, r2, r3;
+  r0.xyz = lut_param.www * r0.zxy;
+  r0.xyz = r0.xyz * float3(5.55555582, 5.55555582, 5.55555582) + float3(0.0479959995, 0.0479959995, 0.0479959995);
+  r0.xyz = max(float3(0, 0, 0), r0.xyz);
+  r0.xyz = log2(r0.xyz);
+  r0.xyz = saturate(r0.xyz * float3(0.0734997839, 0.0734997839, 0.0734997839) + float3(0.386036009, 0.386036009, 0.386036009));
+  r0.yzw = lut_param.zzz * r0.xyz;
 
-  float3 s = sign(r0_xyz_out);
-  r0_xyz_out = lerp(abs(r0_xyz_out), saturate(r0_xyz_out), DISPLAY_MAP_SATURATION);
+  r0.y = floor(r0.y);
+  r1.xy = float2(0.5, 0.5) * lut_param.xy;
+  r1.yz = r0.zw * lut_param.xy + r1.xy;
+  r1.x = r0.y * lut_param.y + r1.y;
 
-  r0_xyz_out = renodx::color::srgb::EncodeSafe(r0_xyz_out);
-  r0_xyz_out = renodx::lut::SampleTetrahedral(t4_tex, r0_xyz_out);
-  r0_xyz_out = renodx::color::srgb::DecodeSafe(r0_xyz_out);
+  // lut query
+  r2.xyzw = lut.SampleLevel(s0_s, r1.xz, 0).xyzw;
+  r3.x = lut_param.y;
+  r3.y = 0;
+  r0.zw = r3.xy + r1.xz;
+  r1.xyzw = lut.SampleLevel(s0_s, r0.zw, 0).xyzw;
+  r0.x = r0.x * lut_param.z + -r0.y;
+  r0.yzw = r1.xyz + -r2.xyz;
+  r0.xyz = r0.xxx * r0.yzw + r2.xyz;
+  return r0.xyz;
+}
 
-  r0_xyz_out *= s;
+float3 UnityLookupSDRsRGB(float3 input_color, float2 texcoord, float lut_strength2, Texture2D<float4> lut_2) {
+  float3 untonemappedSign = sign(input_color);
+  float3 untonemappedAbs = abs(input_color);
+  float3 sdrTonemapped = RestoreHighlightSaturation(input_color);
 
-  float4 result;
-  float3 color = r0_xyz_out;
-  if (RENODX_TONE_MAP_TYPE != 0) {
-    float3 sdrGraded = r0_xyz_out;
-    if (RENODX_DEBUG_MODE2 >= 0.5f) {
-      color = ComputeUntonemappedGraded(untonemapped, sdrTonemapped, sdrGraded);
-    } else {
-      color = renodx::tonemap::UpgradeToneMap(untonemapped, sdrTonemapped, sdrGraded, shader_injection.color_grade_strength);
-    }
-    color = ApplyReverseReinhard(color, scene_type_3d);
-    color = ToneMapPassWrapper(color);  // all 3 colors are in LINEAR here
-  }
- // result.w = dot(ungraded_sdr, float3(0.212672904, 0.715152204, 0.0721750036));
-  float r0_w = cmp(0.5 < cb42_x);
-  if (r0_w != 0) {
-    float3 r1_xyz_sat = saturate(color);
-    result.w = dot(r1_xyz_sat, float3(0.212672904, 0.715152204, 0.0721750036));
-  } else {
-    result.w = saturate(r2_w);
-  }
-  result.xyz = renodx::draw::RenderIntermediatePass(color);
+  float3 encoded = renodx::color::srgb::EncodeSafe(sdrTonemapped);
+  float3 lutResult = renodx::lut::SampleTetrahedral(lut_2, encoded);
+  float3 decoded = renodx::color::srgb::DecodeSafe(lutResult);
+
+  float3 graded = ComputeUntonemappedGraded(untonemappedAbs, decoded, sdrTonemapped);
+
+  float3 result = lerp(untonemappedAbs, graded, lut_strength2);
+  result = untonemappedSign * result;
+
   return result;
-} 
-*/
+}
+
+// Unity YRGB Curves LUT Builder - processes color through tone mapping and YRGB LUT system
+float4 UnityYRGBCurvesLutBuilder(float3 input_color, SamplerState texSampler, 
+                                Texture2D<float4> lut_y, Texture2D<float4> lut_r, 
+                                Texture2D<float4> lut_g, Texture2D<float4> lut_b, float4 cb0_5) {
+  float3 untonemappedSign = sign(input_color);
+  float3 untonemapped = abs(input_color);
+  float3 sdrTonemapped = saturate(untonemapped);
+  float3 r0 = sdrTonemapped;
+
+  r0.xyz = float3(0.00390625, 0.00390625, 0.00390625) + r0.xyz;  // equals to 1 / 256 = 0.00390625
+  float r0_w = 0;
+
+  float3 r1;
+  r1.x = lut_y.SampleBias(texSampler, float2(r0.x, r0_w), cb0_5.x).x;
+  r1.y = lut_y.SampleBias(texSampler, float2(r0.y, r0_w), cb0_5.x).x;
+  r1.z = lut_y.SampleBias(texSampler, float2(r0.z, r0_w), cb0_5.x).x;
+
+  r0.xyz = float3(0.00390625, 0.00390625, 0.00390625) + r1.xyz;
+  r0_w = 0;
+
+  float4 output;
+  output.x = lut_r.SampleBias(texSampler, float2(r0.x, r0_w), cb0_5.x).x;
+  output.y = lut_g.SampleBias(texSampler, float2(r0.y, r0_w), cb0_5.x).x;
+  output.z = lut_b.SampleBias(texSampler, float2(r0.z, r0_w), cb0_5.x).x;
+  output.w = 1;     
+
+  float3 sdrGraded = output.xyz;
+  float3 color;
+  if (true) {
+    color.r = sdrTonemapped.r < 1.f ? sdrGraded.r : sdrGraded.r * untonemapped.r;
+    color.g = sdrTonemapped.g < 1.f ? sdrGraded.g : sdrGraded.g * untonemapped.g;
+    color.b = sdrTonemapped.b < 1.f ? sdrGraded.b : sdrGraded.b * untonemapped.b;
+  } else { // old tone mapping
+    color.r = renodx::tonemap::UpgradeToneMap(untonemapped.r, sdrTonemapped.r, sdrGraded.r, 1.f).r;
+    color.g = renodx::tonemap::UpgradeToneMap(untonemapped.g, sdrTonemapped.g, sdrGraded.g, 1.f).r;
+    color.b = renodx::tonemap::UpgradeToneMap(untonemapped.b, sdrTonemapped.b, sdrGraded.b, 1.f).r;
+  }
+  output.rgb = color * untonemappedSign;
+  return output;
+}
+
+// UNITY END
 
 // Utility function to adjust UI color gamma and scale
 float4 renodx_adjust_ui_color(float4 color) {
@@ -64,5 +121,8 @@ float4 renodx_adjust_ui_color(float4 color) {
   }
   return color;
 }
+
+
+
 
 #endif

@@ -107,6 +107,17 @@ def process_files_for_type(type_key):
     patterns = SUBSTRING_TYPES.get(type_key, [])
     count = 0  # Counter for files found and copied
     hlsl_found = 0
+
+    files_to_copy = [
+        "cmd_Decompiler.exe",
+        "d3dcompiler_46.dll",
+    ]
+    # copyt to SCAN_DIR from SCRIPT_DIR
+    for fname in files_to_copy:
+        src_path = os.path.join(SCRIPT_DIR, fname)
+        dest_path = os.path.join(SCAN_DIR, fname)
+        shutil.copy2(src_path, dest_path)
+
     for fname in os.listdir(SCAN_DIR):
         if not fname.lower().endswith('.hlsl'):
             continue
@@ -142,8 +153,17 @@ def process_files_for_type(type_key):
                 cand_path = os.path.join(cand_dir, new_name)
                 # Create candidate directory only if needed
                 os.makedirs(cand_dir, exist_ok=True)
-                print(f"Copying {fname} -> {os.path.relpath(cand_path, DEST_DIR)}")
-                shutil.copy2(src_path, cand_path)
+                print(f"Moving {fname} -> {os.path.relpath(cand_path, DEST_DIR)}")
+                shutil.move(src_path, cand_path)
+                
+                # Also move corresponding .cso file if it exists
+                cso_name = fname.replace('.hlsl', '.cso')
+                cso_src_path = os.path.join(SCAN_DIR, cso_name)
+                if os.path.exists(cso_src_path):
+                    cso_cand_path = os.path.join(cand_dir, cso_name.replace('.cso', f'_{hex_part}.cso'))
+                    print(f"Moving {cso_name} -> {os.path.relpath(cso_cand_path, DEST_DIR)}")
+                    shutil.move(cso_src_path, cso_cand_path)
+                
                 count += 1
             else:
                 print(f"No hex pattern found in {fname}, skipping.")
