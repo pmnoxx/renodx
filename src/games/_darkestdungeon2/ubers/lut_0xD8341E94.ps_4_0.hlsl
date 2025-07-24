@@ -33,7 +33,10 @@ void main(
   r1.x = cmp(0 < cb0[135].x);
 
   if (r1.x != 0 && RENODX_TONE_MAP_TYPE != 0.f) {
-    r0.xyz = ProcessLUTWithUntonemappedGrading(r0.xyz, t1, cb0[135].x);
+    r0.xyz = UnityLookupSDRsRGB(r0.xyz, v1.xy, cb0[135].x, t1);
+    r0.xyz = debug_mode(r0.xyzw, v1.xy, 0.00f).xyz;
+    r0.xyz = renodx::draw::ToneMapPass(r0.xyz);
+    r0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
     
     o0.xyz = r0.xyz;
     o0.w = 1.f;
@@ -83,7 +86,6 @@ void main(
     r0.xyz = cb0[135].xxx * r1.xyz + r0.xyz;
   }
 
-  r0.xyz = renodx::draw::ToneMapPass(r0.xyz);
 
   o0.xyzw = r0.xyzw;
   

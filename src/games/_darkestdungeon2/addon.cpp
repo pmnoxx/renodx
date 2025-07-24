@@ -16,10 +16,16 @@ add dice and frostbite tonemappers
 - 0.13
 add simulate render pass setting
 - 0.14
-add random seed setting for debanding
+add random seed setting for debandingbd
+- 0.15
+add custom.h for tone mapping
+- 0.16
+increase max nits for tone mapping
+- 0.17
+add dump lut shaders setting    
  */
 
-constexpr const char* RENODX_VERSION = "0.14";
+constexpr const char* RENODX_VERSION = "0.17";
 
  #define ImTextureID ImU64
 
@@ -34,6 +40,10 @@ constexpr const char* RENODX_VERSION = "0.14";
  #include "../../mods/swapchain.hpp"
 #include "../../utils/random.hpp"
  #include "../../utils/settings.hpp"
+ #include "../../utils/shader.hpp"
+ #include "../../utils/shader_dump.hpp"
+ #include "../../utils/swapchain.hpp"
+ #include "../../utils/resource.hpp"
  #include "./shared.h"
  #include "custom_settings.cpp"
  
@@ -43,6 +53,9 @@ constexpr const char* RENODX_VERSION = "0.14";
  renodx::mods::shader::CustomShaders custom_shaders = {__ALL_CUSTOM_SHADERS};
  
  ShaderInjectData shader_injection;
+ 
+ float g_dump_shaders = 0;
+ std::unordered_set<uint32_t> g_dumped_shaders = {};
  
  float current_settings_mode = 0;
  
@@ -79,7 +92,7 @@ constexpr const char* RENODX_VERSION = "0.14";
          new renodx::utils::settings::Setting{
              .key = "ToneMapPeakNits",
              .binding = &shader_injection.peak_white_nits,
-             .default_value = hbr_custom_settings::get_default_value("ToneMapPeakNits", 1000.f),
+             .default_value = hbr_custom_settings::get_default_value("ToneMapPeakNits", 203.f),
              .can_reset = false,
              .label = "Peak Brightness",
              .section = "Tone Mapping",
@@ -95,17 +108,17 @@ constexpr const char* RENODX_VERSION = "0.14";
              .section = "Tone Mapping",
              .tooltip = "Sets the value of 100% white in nits",
              .min = 48.f,
-             .max = 500.f,
+             .max = 1000.f,
          },
          new renodx::utils::settings::Setting{
-             .key = "ToneMapUINits",
+             .key = "ToneMapUINits2",
              .binding = &shader_injection.graphics_white_nits,
              .default_value = hbr_custom_settings::get_default_value("ToneMapUINits", 203.f),
              .label = "UI Brightness",
              .section = "Tone Mapping",
              .tooltip = "Sets the brightness of UI and HUD elements in nits",
              .min = 48.f,
-             .max = 500.f,
+             .max = 1000.f,
          },
          new renodx::utils::settings::Setting{
              .key = "GammaCorrection",
@@ -325,6 +338,18 @@ constexpr const char* RENODX_VERSION = "0.14";
              .parse = [](float value) { return value * 0.01f; },
          },
          new renodx::utils::settings::Setting{
+             .key = "ColorGradeClip",
+             .binding = &shader_injection.reno_drt_white_clip,
+             .default_value = hbr_custom_settings::get_default_value("ColorGradeClip", 65.f),
+             .label = "White Clip",
+             .section = "Custom Color Grading",
+             .tooltip = "Clip point for white in nits",
+             .min = 1.f,
+             .max = 100.f,
+             .is_enabled = []() { return shader_injection.tone_map_type == 3; },
+             .is_visible = []() { return current_settings_mode >= 1; },
+         },
+         new renodx::utils::settings::Setting{
              .key = "ColorGradePerChannelBlowoutRestoration",
              .binding = &shader_injection.color_grade_per_channel_blowout_restoration,
              .value_type = renodx::utils::settings::SettingValueType::FLOAT,
@@ -377,35 +402,6 @@ constexpr const char* RENODX_VERSION = "0.14";
              .min = 0.f,
              .max = 100.f,
              .parse = [](float value) { return value * 0.01f; },
-             .is_visible = []() { return current_settings_mode >= 1; },
-         },
-     };
- }
- 
- std::vector<renodx::utils::settings::Setting*> GenerateCustomColorGradingSection() {
-     return {
-         new renodx::utils::settings::Setting{
-             .key = "ColorGradeClip",
-             .binding = &shader_injection.reno_drt_white_clip,
-             .default_value = hbr_custom_settings::get_default_value("ColorGradeClip", 65.f),
-             .label = "White Clip",
-             .section = "Custom Color Grading",
-             .tooltip = "Clip point for white in nits",
-             .min = 1.f,
-             .max = 100.f,
-             .is_enabled = []() { return shader_injection.tone_map_type == 3; },
-             .is_visible = []() { return current_settings_mode >= 1; },
-         },
-         new renodx::utils::settings::Setting{
-             .key = "ColorGradeHighlightSaturation",
-             .binding = &shader_injection.tone_map_highlight_saturation,
-             .default_value = hbr_custom_settings::get_default_value("ColorGradeHighlightSaturation", 50.f),
-             .label = "Highlight Saturation",
-             .section = "Color Grading",
-             .tooltip = "Adds or removes highlight color.",
-             .max = 100.f,
-             .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
-             .parse = [](float value) { return value * 0.02f; },
              .is_visible = []() { return current_settings_mode >= 1; },
          },
      };
@@ -751,6 +747,84 @@ constexpr const char* RENODX_VERSION = "0.14";
      };
  }
  
+ bool OnDrawForLUTDump(
+     reshade::api::command_list* cmd_list,
+     uint32_t vertex_count,
+     uint32_t instance_count,
+     uint32_t first_vertex,
+     uint32_t first_instance) {
+   if (g_dump_shaders == 0) return false;
+ 
+   auto* shader_state = renodx::utils::shader::GetCurrentState(cmd_list);
+ 
+   auto* pixel_state = renodx::utils::shader::GetCurrentPixelState(shader_state);
+ 
+   auto pixel_shader_hash = renodx::utils::shader::GetCurrentPixelShaderHash(pixel_state);
+   if (pixel_shader_hash == 0u) return false;
+ 
+   auto* swapchain_state = renodx::utils::swapchain::GetCurrentState(cmd_list);
+   /*
+   bool found_lut_render_target = false;
+ 
+   auto* device = cmd_list->get_device();
+   for (auto render_target : swapchain_state->current_render_targets) {
+     auto resource_tag = renodx::utils::resource::GetResourceTag(render_target);
+     if (resource_tag == 1.f) {
+       found_lut_render_target = true;
+       break;
+     }
+   }
+   found_lut_render_target = true; // OVERRIDE PMNOX
+   if (!found_lut_render_target) return false;
+ */
+ 
+   if (custom_shaders.contains(pixel_shader_hash)) return false;
+ 
+   if (g_dumped_shaders.contains(pixel_shader_hash)) return false;
+ 
+   reshade::log::message(
+       reshade::log::level::debug,
+       std::format("Dumping lutbuiler: 0x{:08x}", pixel_shader_hash).c_str());
+ 
+   g_dumped_shaders.emplace(pixel_shader_hash);
+ 
+   renodx::utils::path::default_output_folder = "renodx";
+   renodx::utils::shader::dump::default_dump_folder = ".";
+   bool found = false;
+   try {
+     auto shader_data = renodx::utils::shader::GetShaderData(pixel_state);
+     if (!shader_data.has_value()) {
+       std::stringstream s;
+       s << "utils::shader::dump(Failed to retreive shader data: ";
+       s << PRINT_CRC32(pixel_shader_hash);
+       s << ")";
+       reshade::log::message(reshade::log::level::warning, s.str().c_str());
+       return false;
+     }
+ 
+     auto shader_version = renodx::utils::shader::compiler::directx::DecodeShaderVersion(shader_data.value());
+     if (shader_version.GetMajor() == 0) {
+       // No shader information found
+       return false;
+     }
+ 
+     renodx::utils::shader::dump::DumpShader(
+         pixel_shader_hash,
+         shader_data.value(),
+         reshade::api::pipeline_subobject_type::pixel_shader,
+         "shader_");
+ 
+   } catch (...) {
+     std::stringstream s;
+     s << "utils::shader::dump(Failed to decode shader data: ";
+     s << PRINT_CRC32(pixel_shader_hash);
+     s << ")";
+     reshade::log::message(reshade::log::level::warning, s.str().c_str());
+   }
+ 
+   return false;
+ }
+ 
  std::vector<renodx::utils::settings::Setting*> GenerateDebugSection() {
      return {
          new renodx::utils::settings::Setting{
@@ -787,6 +861,21 @@ constexpr const char* RENODX_VERSION = "0.14";
              .min = 0.f,
              .max = 1.f,
              .format = "%.2f",
+             .is_visible = []() { return current_settings_mode >= 3; },
+         },
+         new renodx::utils::settings::Setting{
+             .key = "DumpLUTShaders",
+             .binding = &g_dump_shaders,
+             .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+             .default_value = 1.f,
+             .label = "Dump LUT Shaders",
+             .section = "Debug",
+             .tooltip = "Traces and dumps LUT shaders.",
+             .labels = {
+                 "Off",
+                 "On",
+             },
+             .is_global = true,
              .is_visible = []() { return current_settings_mode >= 3; },
          },
      };
@@ -911,7 +1000,6 @@ constexpr const char* RENODX_VERSION = "0.14";
      add_section(GenerateSettingsModeSection());
      add_section(GenerateToneMappingSection());
      add_section(GenerateColorGradingSection());
-     add_section(GenerateCustomColorGradingSection());
      add_section(GenerateDisplayOutputSection());
      add_section(GeneratePerceptualBoostSection());
      add_section(GenerateDebugSection());
@@ -947,6 +1035,14 @@ constexpr const char* RENODX_VERSION = "0.14";
        if (!initialized) {
          InitializeSettings();
          hbr_custom_settings::AddCustomResourceUpgrades();
+ 
+         // Initialize dump shaders setting
+         for (auto* setting : settings) {
+           if (setting->key == "DumpLUTShaders") {
+             g_dump_shaders = setting->GetValue();
+             break;
+           }
+         }
  
  
          renodx::mods::shader::force_pipeline_cloning = true;
@@ -1081,11 +1177,29 @@ constexpr const char* RENODX_VERSION = "0.14";
              reshade::log::message(reshade::log::level::info, s.str().c_str());
            }
          }
+         {
+          std::stringstream s;
+  
+          s << "g_dump_shaders " << g_dump_shaders;
+          reshade::log::message(reshade::log::level::info, s.str().c_str());
+         }
+         if (g_dump_shaders != 0.f) {
+           renodx::utils::swapchain::Use(fdw_reason);
+           renodx::utils::shader::Use(fdw_reason);
+           renodx::utils::shader::use_shader_cache = true;
+           renodx::utils::resource::Use(fdw_reason);
+           reshade::register_event<reshade::addon_event::draw>(OnDrawForLUTDump);
+           reshade::log::message(reshade::log::level::info, "DumpLUTShaders enabled.");
+         }
+   
          initialized = true;
        }
- 
        break;
      case DLL_PROCESS_DETACH:
+       renodx::utils::shader::Use(fdw_reason);
+       renodx::utils::swapchain::Use(fdw_reason);
+       renodx::utils::resource::Use(fdw_reason);
+       reshade::unregister_event<reshade::addon_event::draw>(OnDrawForLUTDump);
        reshade::unregister_addon(h_module);
        break;
    }

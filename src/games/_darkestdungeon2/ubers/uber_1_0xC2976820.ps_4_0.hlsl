@@ -96,20 +96,16 @@ void main(
   }
 
   if (RENODX_TONE_MAP_TYPE != 0.f) {
-    r0.xyzw = debug_mode(r0.xyzw, v1.xy, 0.f);
-    const float3 bt2020_converted = max(0.f, renodx::color::bt2020::from::BT709(r0.xyz));
-    float3 lut_input = renodx::color::pq::Encode(bt2020_converted, 100.f);
-    r0.xyz = renodx::lut::SampleTetrahedral(t2, saturate(lut_input));
-
-    r0.xyz = ProcessLUTWithUntonemappedGrading(r0.xyz, t3, cb0[133].x);
-
+    r0.xyz = UnityLookupARIDPQ(r0.xyzw, v1.xy, cb0[132], s0_s, t2);
+    r0.xyz = UnityLookupSDRsRGB(r0.xyz, v1.xy, cb0[133].w, t3);
+    r0.xyz = debug_mode(r0.xyzw, v1.xy, 0.02f).xyz;
 
     o0.xyz = r0.xyz;
     o0.w = 1.f;
     return;
   }
-
   
+
   r0.xyz = cb0[132].www * r0.zxy; 
   r0.xyz = r0.xyz * float3(5.55555582, 5.55555582, 5.55555582) + float3(0.0479959995, 0.0479959995, 0.0479959995);
   r0.xyz = max(float3(0, 0, 0), r0.xyz);
