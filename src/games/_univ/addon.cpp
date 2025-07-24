@@ -27,9 +27,13 @@ add dump lut shaders setting
 add version display on top
 - 0.19
 change default output folder to renodx-dev/dump
+- 0.20
+change default dump folder to dump
+- 0.21
+fix setting visibility for resource upgrades
  */
 
- constexpr const char* RENODX_VERSION = "0.19";
+ constexpr const char* RENODX_VERSION = "0.21";
 
  #define ImTextureID ImU64
 
@@ -791,8 +795,8 @@ change default output folder to renodx-dev/dump
  
    g_dumped_shaders.emplace(pixel_shader_hash);
  
-   renodx::utils::path::default_output_folder = "renodx-dev/dump";
-   renodx::utils::shader::dump::default_dump_folder = ".";
+   renodx::utils::path::default_output_folder = "renodx-dev";
+   renodx::utils::shader::dump::default_dump_folder = "dump";
    bool found = false;
    try {
      auto shader_data = renodx::utils::shader::GetShaderData(pixel_state);
@@ -806,10 +810,10 @@ change default output folder to renodx-dev/dump
      }
  
      auto shader_version = renodx::utils::shader::compiler::directx::DecodeShaderVersion(shader_data.value());
-   // .. if (shader_version.GetMajor() == 0) {
+     if (shader_version.GetMajor() == 0) {
        // No shader information found
-  //     return false;
-   //  }
+       return false;
+     }
  
      renodx::utils::shader::dump::DumpShader(
          pixel_shader_hash,
@@ -1158,7 +1162,7 @@ change default output folder to renodx-dev/dump
                    "Any size",
                },
                .is_global = true,
-               .is_visible = []() { return settings[0]->GetValue() >= 3; },
+               .is_visible = []() { return current_settings_mode >= 3; },
            };
            renodx::utils::settings::LoadSetting(renodx::utils::settings::global_name, setting);
            settings.push_back(setting);
