@@ -8,10 +8,21 @@ import re
 import subprocess
 
 
-# Directory to scan
-SCAN_DIR = r"D:\SteamLibrary\steamapps\common\Darkest Dungeon® II\renodx"
 # Current directory (where this script is run)
-DEST_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Check if parent folder is called "renodx"
+parent_folder = os.path.basename(SCRIPT_DIR)
+
+print(f"Parent folder: {parent_folder}")
+if parent_folder == "renodx" or parent_folder == "renodx-dev" or parent_folder == "dump":
+    # If parent folder is "renodx", scan the current directory and output to output subfolder
+    SCAN_DIR = SCRIPT_DIR
+    DEST_DIR = os.path.join(SCRIPT_DIR, "output")
+else:
+    # Otherwise use the default scan directory and current directory as destination
+    SCAN_DIR = r"D:\SteamLibrary\steamapps\common\Darkest Dungeon® II\renodx"
+    DEST_DIR = SCRIPT_DIR
 # Path to the decompiler executable
 DECOMPILER_PATH = os.path.join(SCAN_DIR, "cmd_Decompiler.exe")
 
@@ -21,6 +32,7 @@ SUBSTRING_TYPES = {
       # ["cb0[136].xy", "SampleLevel"],
        ["cb0[132]", "floor", "SampleLevel"],
        ["cb0[133]", "floor", "SampleLevel"],
+       ["cb0", "floor", "SampleLevel"],
         # Add more patterns for 'uber' as needed
     ],
     'lutbuilder': [
@@ -81,6 +93,7 @@ def file_matches_type(filepath, type_key):
             content = f.read()
             for substrs in patterns:
                 if all(x in content for x in substrs):
+                    print(f"Found {type_key} in {filepath}")
                     return True
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
@@ -88,6 +101,7 @@ def file_matches_type(filepath, type_key):
 
 # Generalized function to process files for a given type
 def process_files_for_type(type_key):
+    os.makedirs(DEST_DIR, exist_ok=True)
     cand_dir = os.path.join(DEST_DIR, f"{type_key}_cands")
     patterns = SUBSTRING_TYPES.get(type_key, [])
     count = 0  # Counter for files found and copied
@@ -99,6 +113,7 @@ def process_files_for_type(type_key):
         src_path = os.path.join(SCAN_DIR, fname)
         if not os.path.isfile(src_path):
             continue
+        print(f"Processing {fname}")
         if file_matches_type(src_path, type_key):
             match = re.search(r'0x([A-Fa-f0-9]+)', fname)
             if match:
@@ -120,7 +135,7 @@ def process_files_for_type(type_key):
                         found = True
                         break
                 if found:
-                    print(f"A file with hex pattern {hex_pattern} already exists in destination or candidate directory, skipping {fname}.")
+                    print(f"A file with hex pattern {hex_pattern} already exists in destination or candidate directory, skipping {fname}. Full path: {src_path}")
                     continue
                 new_name = f"{type_key}_{hex_part}.{fname}"
                 dest_path = os.path.join(DEST_DIR, new_name)
@@ -132,6 +147,12 @@ def process_files_for_type(type_key):
                 count += 1
             else:
                 print(f"No hex pattern found in {fname}, skipping.")
+    
+    # Remove candidate directory if it's empty
+    if os.path.exists(cand_dir) and not os.listdir(cand_dir):
+        os.rmdir(cand_dir)
+        print(f"Removed empty candidate directory: {cand_dir}")
+    
     print(f"Total {type_key} files found and copied: {hlsl_found} {count}")
 
 if __name__ == "__main__":

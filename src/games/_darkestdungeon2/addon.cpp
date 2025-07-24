@@ -761,9 +761,9 @@ constexpr const char* RENODX_VERSION = "0.17";
  
    auto pixel_shader_hash = renodx::utils::shader::GetCurrentPixelShaderHash(pixel_state);
    if (pixel_shader_hash == 0u) return false;
- 
-   auto* swapchain_state = renodx::utils::swapchain::GetCurrentState(cmd_list);
    /*
+   auto* swapchain_state = renodx::utils::swapchain::GetCurrentState(cmd_list);
+ 
    bool found_lut_render_target = false;
  
    auto* device = cmd_list->get_device();
@@ -774,7 +774,6 @@ constexpr const char* RENODX_VERSION = "0.17";
        break;
      }
    }
-   found_lut_render_target = true; // OVERRIDE PMNOX
    if (!found_lut_render_target) return false;
  */
  
@@ -803,10 +802,10 @@ constexpr const char* RENODX_VERSION = "0.17";
      }
  
      auto shader_version = renodx::utils::shader::compiler::directx::DecodeShaderVersion(shader_data.value());
-     if (shader_version.GetMajor() == 0) {
+   // .. if (shader_version.GetMajor() == 0) {
        // No shader information found
-       return false;
-     }
+  //     return false;
+   //  }
  
      renodx::utils::shader::dump::DumpShader(
          pixel_shader_hash,
