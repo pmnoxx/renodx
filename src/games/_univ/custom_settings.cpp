@@ -141,6 +141,24 @@ inline void AddCustomResourceUpgrades() {
         .use_resource_view_cloning = false,
         .dimensions = {.width=1024, .height=32},
     });
+    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+        .old_format = reshade::api::format::r8g8b8a8_unorm,
+        .new_format = reshade::api::format::r16g16b16a16_typeless,
+        .use_resource_view_cloning = false,
+        .dimensions = {.width=256, .height=16},
+    });
+    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+        .old_format = reshade::api::format::r8g8b8a8_typeless,
+        .new_format = reshade::api::format::r16g16b16a16_typeless,
+        .use_resource_view_cloning = false,
+        .dimensions = {.width=1024, .height=32},
+    });
+    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+        .old_format = reshade::api::format::r8g8b8a8_typeless,
+        .new_format = reshade::api::format::r16g16b16a16_typeless,
+        .use_resource_view_cloning = false,
+        .dimensions = {.width=256, .height=16},
+    });
 }
 
 } // namespace hbr_custom_settings 

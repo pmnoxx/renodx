@@ -87,6 +87,7 @@ struct ShaderInjectData {
 
   // Render Pass Simulation
   float simulate_render_pass; // Simulate render pass processing (0.0 = off, 1.0 = on)
+  float random_seed;
 
   // CUSTOM GAME SETTINGS
   

@@ -17,7 +17,7 @@ parent_folder = os.path.basename(SCRIPT_DIR)
 print(f"Parent folder: {parent_folder}")
 if parent_folder == "renodx" or parent_folder == "renodx-dev" or parent_folder == "dump" or parent_folder == "renodx-dump":
     # If parent folder is "renodx", scan the current directory and output to output subfolder
-    SCAN_DIR = SCRIPT_DIR
+    SCAN_DIR = os.path.join(SCRIPT_DIR, "dump")
     DEST_DIR = os.path.join(SCRIPT_DIR, "output")
 else:
     # Otherwise use the default scan directory and current directory as destination
@@ -25,6 +25,7 @@ else:
     DEST_DIR = SCRIPT_DIR
 # Path to the decompiler executable
 DECOMPILER_PATH = os.path.join(SCAN_DIR, "cmd_Decompiler.exe")
+
 
 # Define what makes a file 'uber' or other types by substring patterns
 SUBSTRING_TYPES = {
@@ -113,7 +114,6 @@ def process_files_for_type(type_key):
         src_path = os.path.join(SCAN_DIR, fname)
         if not os.path.isfile(src_path):
             continue
-        print(f"Processing {fname}")
         if file_matches_type(src_path, type_key):
             match = re.search(r'0x([A-Fa-f0-9]+)', fname)
             if match:

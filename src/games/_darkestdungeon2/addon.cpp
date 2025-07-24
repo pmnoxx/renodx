@@ -23,9 +23,11 @@ add custom.h for tone mapping
 increase max nits for tone mapping
 - 0.17
 add dump lut shaders setting    
+- 0.18
+add version display on top
  */
 
-constexpr const char* RENODX_VERSION = "0.17";
+ constexpr const char* RENODX_VERSION = "0.17";
 
  #define ImTextureID ImU64
 
@@ -787,7 +789,7 @@ constexpr const char* RENODX_VERSION = "0.17";
  
    g_dumped_shaders.emplace(pixel_shader_hash);
  
-   renodx::utils::path::default_output_folder = "renodx";
+   renodx::utils::path::default_output_folder = "renodx-dump";
    renodx::utils::shader::dump::default_dump_folder = ".";
    bool found = false;
    try {
@@ -863,13 +865,13 @@ constexpr const char* RENODX_VERSION = "0.17";
              .is_visible = []() { return current_settings_mode >= 3; },
          },
          new renodx::utils::settings::Setting{
-             .key = "DumpLUTShaders",
+             .key = "AutomaticShaderDumping",
              .binding = &g_dump_shaders,
              .value_type = renodx::utils::settings::SettingValueType::INTEGER,
              .default_value = 1.f,
-             .label = "Dump LUT Shaders",
+             .label = "Automatic Shader Dumping",
              .section = "Debug",
-             .tooltip = "Traces and dumps LUT shaders.",
+             .tooltip = "Automatically dump shaders into renodx-dump folder.",
              .labels = {
                  "Off",
                  "On",
@@ -959,14 +961,6 @@ constexpr const char* RENODX_VERSION = "0.17";
    reshade::get_config_value(nullptr, renodx::utils::settings::global_name.c_str(), "Upgrade_SwapChainCompatibility", swapchain_setting->value_as_int);
    renodx::mods::swapchain::swapchain_proxy_compatibility_mode = swapchain_setting->GetValue() != 0;
    settings.push_back(swapchain_setting);
-   
-   // Add version display
-   settings.push_back(new renodx::utils::settings::Setting{
-       .value_type = renodx::utils::settings::SettingValueType::TEXT,
-       .label = std::string("Version: ") + RENODX_VERSION,
-       .section = "About",
-       .tooltip = std::string("RenoDX Universal Template Version ") + RENODX_VERSION,
-   });
  }
  
  void OnPresetOff() {
@@ -992,6 +986,15 @@ constexpr const char* RENODX_VERSION = "0.17";
  bool initialized = false;
  void InitializeSettings() {
      settings.clear();
+     
+     // Add version display at the top
+     settings.push_back(new renodx::utils::settings::Setting{
+         .value_type = renodx::utils::settings::SettingValueType::TEXT,
+         .label = std::string("Version: ") + RENODX_VERSION,
+         .section = "About",
+         .tooltip = std::string("RenoDX Universal Template Version ") + RENODX_VERSION,
+     });
+     
      // Add each section's settings
      auto add_section = [](const std::vector<renodx::utils::settings::Setting*>& section) {
          settings.insert(settings.end(), section.begin(), section.end());
@@ -1037,7 +1040,7 @@ constexpr const char* RENODX_VERSION = "0.17";
  
          // Initialize dump shaders setting
          for (auto* setting : settings) {
-           if (setting->key == "DumpLUTShaders") {
+           if (setting->key == "AutomaticShaderDumping") {
              g_dump_shaders = setting->GetValue();
              break;
            }
@@ -1209,4 +1212,8 @@ constexpr const char* RENODX_VERSION = "0.17";
  
    return TRUE;
  }
+ 
+
+
+
  
