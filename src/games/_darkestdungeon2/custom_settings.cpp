@@ -15,7 +15,7 @@ static const std::unordered_map<std::string, float> default_values = {
     {"ToneMapPeakNits", 1000.f},
     {"ToneMapGameNits", 203.f},
     {"ToneMapUINits", 203.f},
-    {"GammaCorrection", 0.f},
+    {"GammaCorrection",1.f},
     {"ToneMapScaling", 0.f},
     {"ToneMapWorkingColorSpace", 0.f},
     {"ToneMapHueProcessor", 0.f},
@@ -32,9 +32,9 @@ static const std::unordered_map<std::string, float> default_values = {
     {"ColorGradeBlowout", 0.f},
     {"ColorGradeFlare", 0.f},
     {"ColorGradeScene", 100.f},
-    {"ColorGradePerChannelBlowoutRestoration", 100.f},
-    {"ColorGradePerChannelHueCorrection", 100.f},
-    {"ColorGradePerChannelChrominanceCorrection", 100.f},
+    {"ColorGradePerChannelBlowoutRestoration", 0.f},
+    {"ColorGradePerChannelHueCorrection", 0.f},
+    {"ColorGradePerChannelChrominanceCorrection", 0.f},
     {"ColorGradeClip", 65.f},
     {"ColorGradeGamma", 50.f},
     {"CustomCharacterBrightness", 1.f},
@@ -43,9 +43,9 @@ static const std::unordered_map<std::string, float> default_values = {
     {"CustomBloom3D", 100.f},
     {"EnableUIToneMapPass", 0.f},
     {"SwapChainCustomColorSpace", 0.f},
-    {"IntermediateEncoding", 2.f},
-    {"SwapChainDecoding", 3.f},
-    {"SwapChainGammaCorrection", 0.f},
+    {"IntermediateEncoding", 1.f},
+    {"SwapChainDecoding", 1.f},
+    {"SwapChainGammaCorrection", 1.f},
     {"SwapChainClampColorSpace", 2.f},
     {"EffectSplitMode", 0.f},
     {"EffectSplitX", 1.f},
@@ -106,32 +106,6 @@ std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection
             .is_visible = [&current_settings_mode]() { return current_settings_mode >= 1; },
         },
         #endif
-        /*
-        new renodx::utils::settings::Setting{
-            .key = "CustomCharacterBrightness",
-            .binding = &shader_injection.custom_character_brightness,
-            .default_value = 1.0f,
-            .label = "Character Brightness",
-            .section = "Custom Color Grading",
-            .tooltip = "Adjusts the brightness of custom character rendering.",
-            .min = 0.0f,
-            .max = 2.0f,
-            .format = "%.2f",
-            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
-        },
-        new renodx::utils::settings::Setting{
-            .key = "CustomTextBrightness",
-            .binding = &shader_injection.custom_text_brightness,
-            .default_value = 1.0f,
-            .label = "Text Brightness",
-            .section = "Custom Color Grading",
-            .tooltip = "Adjusts the brightness of custom text rendering.",
-            .min = 0.0f,
-            .max = 2.0f,
-            .format = "%.2f",
-            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
-        },*/
-        
     };
 }
 
