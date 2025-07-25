@@ -333,55 +333,70 @@ void main(
     }
   }
 */
-
   float3 untonemappedSign = sign(untonemapped);
-  untonemapped = abs(untonemapped);
-  float3 sdrTonemapped = saturate(untonemapped);
-  r0.xyz = sdrTonemapped;
+  if (RENODX_TONE_MAP_TYPE != 0) {
+    untonemapped = abs(untonemapped);
+    float3 maxColor = max(untonemapped.r, max(untonemapped.g, untonemapped.b));
+    r0.xyz = untonemapped / (1.f + maxColor);
+  }
+  
 
-  // ============================================================================
-  // SECTION 22: FINAL LUT SAMPLING AND OUTPUT
-  // ============================================================================
-  // Final LUT sampling and output preparation
-  // This samples from the main LUT textures (t0-t3) for the final color
   r0.xyz = float3(0.00390625,0.00390625,0.00390625) + r0.xyz;  // Add small offset for sampling
   r0.w = 0;
   
-  // Sample from main LUT textures for final color components
-  r1.xyzw = t0.SampleBias(s0_s, r0.xw, cb0[5].x).xyzw;  // Red channel LUT
-  r1.x = (r1.x);
-  r2.xyzw = t0.SampleBias(s0_s, r0.yw, cb0[5].x).xyzw;  // Green channel LUT
-  r0.xyzw = t0.SampleBias(s0_s, r0.zw, cb0[5].x).xyzw;  // Blue channel LUT
-  r1.z = (r0.x);
-  r1.y = (r2.x);
+  r1.xyzw = t0.SampleBias(s0_s, r0.xw, cb0[5].x).xyzw; 
+  r1.x = saturate(r1.x);
+  r2.xyzw = t0.SampleBias(s0_s, r0.yw, cb0[5].x).xyzw; 
+  r0.xyzw = t0.SampleBias(s0_s, r0.zw, cb0[5].x).xyzw; 
+  r1.z = saturate(r0.x);
+  r1.y = saturate(r2.x);
   
-  // Combine color components
   r0.xyz = float3(0.00390625,0.00390625,0.00390625) + r1.xyz;
   r0.w = 0;
   
-  // Final sampling from remaining LUT textures
   r1.xyzw = t1.SampleBias(s0_s, r0.xw, cb0[5].x).xyzw;
-  o0.x = (r1.x);  // Final red output
+  o0.x = saturate(r1.x);  // Final red output
   r1.xyzw = t2.SampleBias(s0_s, r0.yw, cb0[5].x).xyzw;
   r0.xyzw = t3.SampleBias(s0_s, r0.zw, cb0[5].x).xyzw;
-  o0.z = (r0.x);  // Final blue output
-  o0.y = (r1.x);  // Final green output
-  o0.w = 1;               // Alpha = 1 (fully opaque)
+  o0.z = saturate(r0.x);
+  o0.y = saturate(r1.x); 
+  o0.w = 1;            
 
-  // ============================================================================
-  // SECTION 23: RENODX FINAL TONE MAPPING (MODIFICATION)
-  // ============================================================================
-  // RenoDX modification: Apply final tone mapping if enabled
   if (RENODX_TONE_MAP_TYPE != 0) {
-    float3 sdrGraded = o0.xyz;
-    float3 color;
-    color.r = renodx::tonemap::UpgradeToneMap(untonemapped.r, sdrTonemapped.r, sdrGraded.r, 1.f).r;
-    color.g = renodx::tonemap::UpgradeToneMap(untonemapped.g, sdrTonemapped.g, sdrGraded.g, 1.f).r;
-    color.b = renodx::tonemap::UpgradeToneMap(untonemapped.b, sdrTonemapped.b, sdrGraded.b, 1.f).r;
-    o0.rgb = color;
-  // o0.rgb = ToneMapPassWrapper(color);  // all 3 colors are in LINEAR here
+    float3 maxColor = max(o0.r, max(o0.g, o0.b));
+    o0.rgb /= (1.f - maxColor);
+    o0.rgb *= untonemappedSign;
   }
-  o0.rgb *= untonemappedSign;
 
   return;
 }
+
+/*
+
+    r0.w = max(r1.x, r1.y);
+    r0.w = max(r0.w, r1.z);
+    r0.w = 1 + r0.w;
+    r0.w = rcp(r0.w);
+    r1.xyz = r1.xyz * r0.www + float3(0.00390625,0.00390625,0.00390625);
+    r1.w = 0;
+    r2.x = t0.SampleLevel(s0_s, r1.xw, 0).x;
+    r2.x = saturate(r2.x);
+    r2.y = t0.SampleLevel(s0_s, r1.yw, 0).x;
+    r2.y = saturate(r2.y);
+    r2.z = t0.SampleLevel(s0_s, r1.zw, 0).x;
+    r2.z = saturate(r2.z);
+    r1.xyz = float3(0.00390625,0.00390625,0.00390625) + r2.xyz;
+    r1.w = 0;
+    r2.x = t1.SampleLevel(s0_s, r1.xw, 0).x;
+    r2.x = saturate(r2.x);
+    r2.y = t2.SampleLevel(s0_s, r1.yw, 0).x;
+    r2.y = saturate(r2.y);
+    r2.z = t3.SampleLevel(s0_s, r1.zw, 0).x;
+    r2.z = saturate(r2.z);
+    r0.w = max(r2.x, r2.y);
+    r0.w = max(r0.w, r2.z);
+    r0.w = 1 + -r0.w;
+    r0.w = rcp(r0.w);
+    r1.xyz = r2.xyz * r0.www;
+    r1.xyz = max(float3(0,0,0), r1.xyz);
+    */
