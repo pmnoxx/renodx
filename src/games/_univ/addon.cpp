@@ -31,9 +31,11 @@ change default output folder to renodx-dev/dump
 change default dump folder to dump
 - 0.21
 fix setting visibility for resource upgrades
- */
+- 0.22
+disable automatic shader dumping
+*/
 
- constexpr const char* RENODX_VERSION = "0.21";
+ constexpr const char* RENODX_VERSION = "0.22";
 
  #define ImTextureID ImU64
 
@@ -58,7 +60,9 @@ fix setting visibility for resource upgrades
  
  namespace {
  
- renodx::mods::shader::CustomShaders custom_shaders = {__ALL_CUSTOM_SHADERS};
+ renodx::mods::shader::CustomShaders custom_shaders = {
+    __ALL_CUSTOM_SHADERS
+};
  
  ShaderInjectData shader_injection;
  
@@ -874,7 +878,7 @@ fix setting visibility for resource upgrades
              .key = "AutomaticShaderDumping",
              .binding = &g_dump_shaders,
              .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-             .default_value = 1.f,
+             .default_value = 0.f,
              .label = "Automatic Shader Dumping",
              .section = "Debug",
              .tooltip = "Automatically dump shaders into renodx-dump folder.",
