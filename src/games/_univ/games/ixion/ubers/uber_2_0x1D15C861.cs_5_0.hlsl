@@ -1,15 +1,19 @@
 #include "../../../custom.hlsl"
 
-// ---- Created with 3Dmigoto v1.4.1 on Thu Jul 24 12:43:50 2025
-Texture2D<float4> t4 : register(t4);
+// ---- Created with 3Dmigoto v1.4.1 on Thu Jul 24 23:28:34 2025
+Texture2D<float4> t5 : register(t5);
 
-Texture3D<float4> t3 : register(t3);
+Texture3D<float4> t4 : register(t4);
+
+Texture2D<float4> t3 : register(t3);
 
 Texture2D<float4> t2 : register(t2);
 
 Texture2DArray<float4> t1 : register(t1);
 
 Texture2DArray<float4> t0 : register(t0);
+
+SamplerState s3_s : register(s3);
 
 SamplerState s2_s : register(s2);
 
@@ -29,7 +33,6 @@ cbuffer cb0 : register(b0)
 
 RWTexture2D<float4> outputUber : register(u0);
 
-
 // 3Dmigoto declarations
 #define cmp -
 
@@ -46,11 +49,44 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
   r0.xyz = (uint3)vThreadID.xyz;
   r1.xy = float2(0.5,0.5) + r0.xy;
   r1.zw = cb0[47].zw * r1.xy;
-  r2.xy = -cb0[47].zw * float2(0.5,0.5) + float2(1,1);
-  r2.xy = min(r2.xy, r1.zw);
-  r0.xy = cb0[50].xy * r2.xy;
-  r2.xyz = t0.SampleLevel(s0_s, r0.xyz, 0).xyz;
-  float2 uv = r0.xy;
+  r2.xy = r1.zw * float2(2,2) + float2(-1,-1);
+  r0.w = dot(r2.xy, r2.xy);
+  r2.xy = r2.xy * r0.ww;
+  r2.xy = cb1[0].xx * r2.xy;
+  r2.zw = cb0[47].xy * -r2.xy;
+  r2.zw = float2(0.5,0.5) * r2.zw;
+  r0.w = dot(r2.zw, r2.zw);
+  r0.w = sqrt(r0.w);
+  r0.w = (int)r0.w;
+  r2.z = (int)cb1[0].y;
+  r0.w = max(3, (int)r0.w);
+  r0.w = min((int)r0.w, (int)r2.z);
+  r2.z = (int)r0.w;
+  r2.xy = -r2.xy / r2.zz;
+  r3.xy = -cb0[47].zw * float2(0.5,0.5) + float2(1,1);
+  r4.y = 0;
+  r5.xyz = float3(0,0,0);
+  r6.xyz = float3(0,0,0);
+  r3.zw = r1.zw;
+  r2.w = 0;
+  float2 uv = float2(0,0);
+  while (true) {
+    r4.z = cmp((int)r2.w >= (int)r0.w);
+    if (r4.z != 0) break;
+    r4.z = (int)r2.w;
+    r4.z = 0.5 + r4.z;
+    r4.x = r4.z / r2.z;
+    r4.zw = min(r3.zw, r3.xy);
+    r0.xy = cb0[50].xy * r4.zw;
+    r7.xyz = t0.SampleLevel(s0_s, r0.xyz, 0).xyz;
+    uv = r0.xy;
+    r4.xzw = t3.SampleLevel(s1_s, r4.xy, 0).xyz;
+    r5.xyz = r7.xyz * r4.xzw + r5.xyz;
+    r6.xyz = r6.xyz + r4.xzw;
+    r3.zw = r3.zw + r2.xy;
+    r2.w = (int)r2.w + 1;
+  }
+  r2.xyz = r5.xyz / r6.xyz;
   r0.w = cmp(0 != cb1[7].z);
   if (r0.w != 0) {
     r3.xy = cb0[50].xy * r1.zw;
@@ -136,7 +172,7 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
     r0.xyz = r0.xxx * r0.yzw + cb1[3].xyz;
     r0.xyz = r2.xyz * r0.xyz;
   } else {
-    r0.w = t4.SampleLevel(s2_s, r1.zw, 0).w;
+    r0.w = t5.SampleLevel(s3_s, r1.zw, 0).w;
     r1.x = r0.w * 0.305306017 + 0.682171106;
     r1.x = r0.w * r1.x + 0.0125228781;
     r0.w = r1.x * r0.w;
@@ -150,27 +186,20 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
     r1.xyz = r0.xyz * float3(5.55555582,5.55555582,5.55555582) + float3(0.0479959995,0.0479959995,0.0479959995);
     r1.xyz = max(float3(0,0,0), r1.xyz);
     r1.xyz = log2(r1.xyz);
-    r1.xyz = saturate(r1.xyz * float3(0.0734997839, 0.0734997839, 0.0734997839) + float3(0.386036009, 0.386036009, 0.386036009));
+    r1.xyz = saturate(r1.xyz * float3(0.0734997839,0.0734997839,0.0734997839) + float3(0.386036009,0.386036009,0.386036009));
   } else {
     r0.xyz = cb1[6].zzz * r0.xyz;
-    if (RENODX_TONE_MAP_TYPE > 0.f) {
-      r0.xyz = renodx::color::bt2020::from::BT709(r0.xyz);
-      r0.xyz = renodx::color::pq::EncodeSafe(r0.xyz, 100.f);
-      r1.xyz = renodx::lut::SampleTetrahedral(t3, r0.xyz, 1 / cb1[6].x); //cb1[6].z); //  ?
-    } else {
-      r0.xyz = r0.xyz * float3(5.55555582,5.55555582,5.55555582) + float3(0.0479959995,0.0479959995,0.0479959995);
-      r0.xyz = max(float3(0,0,0), r0.xyz);
-      r0.xyz = log2(r0.xyz);
-      r0.xyz = saturate(r0.xyz * float3(0.0734997839,0.0734997839,0.0734997839) + float3(0.386036009,0.386036009,0.386036009));
-      r0.xyz = cb1[6].yyy * r0.xyz;
-      r0.w = 0.5 * cb1[6].x;
-      r0.xyz = r0.xyz * cb1[6].xxx + r0.www;
-      r1.xyz = t3.SampleLevel(s1_s, r0.xyz, 0).xyz;
-    }
+    r0.xyz = r0.xyz * float3(5.55555582,5.55555582,5.55555582) + float3(0.0479959995,0.0479959995,0.0479959995);
+    r0.xyz = max(float3(0,0,0), r0.xyz);
+    r0.xyz = log2(r0.xyz);
+    r0.xyz = saturate(r0.xyz * float3(0.0734997839,0.0734997839,0.0734997839) + float3(0.386036009,0.386036009,0.386036009));
+    r0.xyz = cb1[6].yyy * r0.xyz;
+    r0.w = 0.5 * cb1[6].x;
+    r0.xyz = r0.xyz * cb1[6].xxx + r0.www;
+    r1.xyz = t4.SampleLevel(s2_s, r0.xyz, 0).xyz;
   }
   // No code for instruction (needs manual fix):
-  // store_uav_typed u0.xyzw, vThreadID.xyzz, r1.xyzx
-
+  //store_uav_typed u0.xyzw, vThreadID.xyzz, r1.xyzx
   r1 = debug_mode(r1, uv);
   outputUber[vThreadID.xy] = r1;
   return;

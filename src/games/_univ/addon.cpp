@@ -53,24 +53,119 @@ disable automatic shader dumping
  #include "../../utils/shader.hpp"
  #include "../../utils/shader_dump.hpp"
  #include "../../utils/swapchain.hpp"
- #include "../../utils/resource.hpp"
- #include "./shared.h"
- #include "custom_settings.cpp"
+   #include "../../utils/resource.hpp"
+  #include <crc32_hash.hpp>
+   #include "./shared.h"
+  #include "custom_settings.cpp"
  
+ bool has_fired_on_init_pipeline_track_addons = false;
+
+void OnInitPipelineTrackAddons(
+    reshade::api::device* device,
+    reshade::api::pipeline_layout layout,
+    uint32_t subobject_count,
+    const reshade::api::pipeline_subobject* subobjects,
+    reshade::api::pipeline pipeline) {
+  if (has_fired_on_init_pipeline_track_addons) return;
+  has_fired_on_init_pipeline_track_addons = true;
+
+  // Track addon shaders
+  auto* store = renodx::utils::shader::GetStore();
+  store->runtime_replacements.for_each(
+      [&](const std::pair<const std::pair<reshade::api::device*, uint32_t>, std::span<const uint8_t>>& pair) {
+        const auto& [pair_device, shader_hash] = pair.first;
+        if (pair_device != device) return;
+        // Track addon shader replacements
+      });
+}
+
  
- namespace {
+namespace {
  
- renodx::mods::shader::CustomShaders custom_shaders = {
-    __ALL_CUSTOM_SHADERS
-};
+    renodx::mods::shader::CustomShaders custom_shaders = {
+       __ALL_CUSTOM_SHADERS
+    };
+    
+    ShaderInjectData shader_injection;
+    
+    float g_dump_shaders = 0;
+    std::unordered_set<uint32_t> g_dumped_shaders = {};
+    
+    float current_settings_mode = 0;
  
- ShaderInjectData shader_injection;
- 
- float g_dump_shaders = 0;
- std::unordered_set<uint32_t> g_dumped_shaders = {};
- 
- float current_settings_mode = 0;
- 
+    
+void OnInitPipeline(
+    reshade::api::device* device,
+    reshade::api::pipeline_layout layout,
+    uint32_t subobject_count,
+    const reshade::api::pipeline_subobject* subobjects,
+    reshade::api::pipeline pipeline) {
+  if (pipeline.handle == 0u) return;
+  if (layout.handle == 0u) return;
+
+  // Extract and dump any new shaders from pipeline subobjects
+  for (uint32_t i = 0; i < subobject_count; ++i) {
+    const auto& subobject = subobjects[i];
+    
+    // Check if this is a shader subobject
+    if (subobject.type == reshade::api::pipeline_subobject_type::pixel_shader) {
+      
+      if (subobject.data == nullptr) continue;
+      
+      // Get shader data
+      const auto* shader_desc = reinterpret_cast<const reshade::api::shader_desc*>(subobject.data);
+      if (shader_desc == nullptr || shader_desc->code_size == 0) continue;
+      
+             // Calculate shader hash
+       auto shader_hash = compute_crc32(
+           reinterpret_cast<const uint8_t*>(shader_desc->code), 
+           shader_desc->code_size);
+      
+      // Skip if we've already dumped this shader
+      if (g_dumped_shaders.contains(shader_hash)) continue;
+      
+      // Skip if this is a custom shader we injected
+      if (custom_shaders.contains(shader_hash)) continue;
+      
+      reshade::log::message(
+          reshade::log::level::info,
+          std::format("XXX Dumping pipeline shader: 0x{:08x}", shader_hash).c_str());
+      
+      g_dumped_shaders.emplace(shader_hash);
+      
+      try {
+        std::vector<uint8_t> shader_data(
+            reinterpret_cast<const uint8_t*>(shader_desc->code),
+            reinterpret_cast<const uint8_t*>(shader_desc->code) + shader_desc->code_size);
+        
+        auto shader_version = renodx::utils::shader::compiler::directx::DecodeShaderVersion(shader_data);
+        if (shader_version.GetMajor() == 0) {
+          // No shader information found
+          continue;
+        }
+        
+        renodx::utils::path::default_output_folder = "renodx-dev";
+        renodx::utils::shader::dump::default_dump_folder = "dump";
+        
+        renodx::utils::shader::dump::DumpShader(
+            shader_hash,
+            shader_data,
+            subobject.type,
+            "pipeline_");
+            
+      } catch (...) {
+        std::stringstream s;
+        s << "utils::shader::dump(Failed to dump pipeline shader: ";
+        s << PRINT_CRC32(shader_hash);
+        s << ")";
+        reshade::log::message(reshade::log::level::warning, s.str().c_str());
+      }
+    }
+  }
+  
+  // Dump any pending shaders
+  renodx::utils::shader::dump::DumpAllPending();
+}
  // Sectioned settings generator functions
  std::vector<renodx::utils::settings::Setting*> GenerateSettingsModeSection() {
      return {
@@ -759,6 +854,7 @@ disable automatic shader dumping
      };
  }
  
+
  bool OnDrawForLUTDump(
      reshade::api::command_list* cmd_list,
      uint32_t vertex_count,
@@ -832,6 +928,9 @@ disable automatic shader dumping
      s << ")";
      reshade::log::message(reshade::log::level::warning, s.str().c_str());
    }
+
+   // Dump any pending shaders
+   renodx::utils::shader::dump::DumpAllPending();
  
    return false;
  }
@@ -872,21 +971,6 @@ disable automatic shader dumping
              .min = 0.f,
              .max = 1.f,
              .format = "%.2f",
-             .is_visible = []() { return current_settings_mode >= 3; },
-         },
-         new renodx::utils::settings::Setting{
-             .key = "AutomaticShaderDumping",
-             .binding = &g_dump_shaders,
-             .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-             .default_value = 0.f,
-             .label = "Automatic Shader Dumping",
-             .section = "Debug",
-             .tooltip = "Automatically dump shaders into renodx-dump folder.",
-             .labels = {
-                 "Off",
-                 "On",
-             },
-             .is_global = true,
              .is_visible = []() { return current_settings_mode >= 3; },
          },
      };
@@ -1048,15 +1132,6 @@ disable automatic shader dumping
          InitializeSettings();
          hbr_custom_settings::AddCustomResourceUpgrades();
  
-         // Initialize dump shaders setting
-         for (auto* setting : settings) {
-           if (setting->key == "AutomaticShaderDumping") {
-             g_dump_shaders = setting->GetValue();
-             break;
-           }
-         }
- 
- 
          renodx::mods::shader::force_pipeline_cloning = true;
          renodx::mods::shader::expected_constant_buffer_space = 50;
          renodx::mods::shader::expected_constant_buffer_index = 13;
@@ -1084,6 +1159,27 @@ disable automatic shader dumping
          };
          renodx::mods::swapchain::ignored_device_apis = { reshade::api::device_api::d3d9 }; // needed to prevent crash
  
+         {
+
+            auto* setting = new renodx::utils::settings::Setting{
+             .key = "AutomaticShaderDumping",
+             .binding = &g_dump_shaders,
+             .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+             .default_value = 0.f,
+             .label = "Automatic Shader Dumping",
+             .section = "Debug",
+             .tooltip = "Automatically dump shaders into renodx-dump folder.",
+             .labels = {
+                 "Off",
+                 "On",
+             },
+             .is_global = true,
+             .is_visible = []() { return current_settings_mode >= 3; }
+            };
+            renodx::utils::settings::LoadSetting(renodx::utils::settings::global_name, setting);
+            settings.push_back(setting);
+            g_dump_shaders = setting->GetValue();
+         }
          {
            auto* setting = new renodx::utils::settings::Setting{
                .key = "SwapChainForceBorderless",
@@ -1199,8 +1295,11 @@ disable automatic shader dumping
            renodx::utils::swapchain::Use(fdw_reason);
            renodx::utils::shader::Use(fdw_reason);
            renodx::utils::shader::use_shader_cache = true;
+           renodx::utils::shader::dump::Use(fdw_reason);
            renodx::utils::resource::Use(fdw_reason);
-           reshade::register_event<reshade::addon_event::draw>(OnDrawForLUTDump);
+         //  reshade::register_event<reshade::addon_event::init_pipeline>(OnInitPipelineTrackAddons);
+           reshade::register_event<reshade::addon_event::init_pipeline>(OnInitPipeline);
+         //  reshade::register_event<reshade::addon_event::draw>(OnDrawForLUTDump);
            reshade::log::message(reshade::log::level::info, "DumpLUTShaders enabled.");
          }
    
@@ -1209,9 +1308,12 @@ disable automatic shader dumping
        break;
      case DLL_PROCESS_DETACH:
        renodx::utils::shader::Use(fdw_reason);
+       renodx::utils::shader::dump::Use(fdw_reason);
        renodx::utils::swapchain::Use(fdw_reason);
        renodx::utils::resource::Use(fdw_reason);
-       reshade::unregister_event<reshade::addon_event::draw>(OnDrawForLUTDump);
+    //   reshade::unregister_event<reshade::addon_event::init_pipeline>(OnInitPipelineTrackAddons);
+       reshade::unregister_event<reshade::addon_event::init_pipeline>(OnInitPipeline);
+     //  reshade::unregister_event<reshade::addon_event::draw>(OnDrawForLUTDump);
        reshade::unregister_addon(h_module);
        break;
    }
