@@ -391,8 +391,11 @@ float3 UpgradeToneMapCustom(
   return lerp(color_untonemapped, color_scaled, post_process_strength);
 }
 
-float3 ToneMapPassCustom2(float3 color) {
+float3 ToneMapPassCustom(float3 color, float ignore_tonemap_flag = 0.f) {
   // Apply gamma correction from ColorGradeGamma (0.0-1.0 mapped to gamma 1.0-2.2)
+  if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f && ignore_tonemap_flag == 0.f) {
+    return color;
+  }
   if (shader_injection.tone_map_gamma != 0.5f) {
     float gamma = shader_injection.tone_map_gamma * 2.f;
     color.xyz = sign(color.xyz) * pow(abs(color.xyz), 1.f / gamma);
@@ -405,21 +408,25 @@ float3 ToneMapPassCustom2(float3 color) {
     color = acesTonemap(neutral_sdr_color);
     color = UpgradeToneMapCustom(untonemapped, neutral_sdr_color, color, shader_injection.color_grade_strength, 0.f);
   }
-  if (shader_injection.tone_map_type == 4.f) { // 
-    return applyUserTonemap(color, 2.f); // DICE
+  if (shader_injection.tone_map_type == 4.f) {  //
+    return applyUserTonemap(color, 2.f);        // DICE
   } else if (shader_injection.tone_map_type == 5.f) {
-    return applyUserTonemap(color, 4.f); // Frostbite
+    return applyUserTonemap(color, 4.f);  // Frostbite
   }
 
   return renodx::draw::ToneMapPass(color);
 }
 
-float3 ToneMapPassCustom(float3 color) {
-  // Apply gamma correction from ColorGradeGamma (0.0-1.0 mapped to gamma 1.0-2.2)
-  if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
-    return color;
-  }
-  return ToneMapPassCustom2(color);
+float3 ToneMapPassCustom(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
+  float3 color = ComputeUntonemappedGraded(untonemapped, graded_sdr_color, neutral_sdr_color);
+
+  return ToneMapPassCustom(color); ;
+}
+
+float3 ToneMapPassCustom(float3 untonemapped, float3 graded_sdr_color) {
+  float3 color = ComputeUntonemappedGraded(untonemapped, graded_sdr_color, renodx::tonemap::renodrt::NeutralSDR(untonemapped));
+
+  return ToneMapPassCustom(color); ;
 }
 
 #define cmp -

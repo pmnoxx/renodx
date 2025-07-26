@@ -257,7 +257,7 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
 
   float3 untonemapped = r1.xyz;
   if (RENODX_TONE_MAP_TYPE == 2.f) {                               // only apply Aces once
-    r0.xyz = renodx::draw::ToneMapPass(untonemapped.xyz, r1.xyz);  //, sdrTonemapped);
+    r0.xyz = renodx::draw::ToneMapPass(untonemapped.xyz);  //, sdrTonemapped);
     r0.w = 1.f;
     outputLUT[vThreadID.xyz] = r0;
     return;

@@ -32,9 +32,9 @@ static std::unordered_map<std::string, float> default_values = {
     {"ColorGradeBlowout", 0.f},
     {"ColorGradeFlare", 0.f},
     {"ColorGradeScene", 100.f},
-    {"ColorGradePerChannelBlowoutRestoration", 100.f},
-    {"ColorGradePerChannelHueCorrection", 100.f},
-    {"ColorGradePerChannelChrominanceCorrection", 100.f},
+    {"ColorGradePerChannelBlowoutRestoration", 0.f},
+    {"ColorGradePerChannelHueCorrection", 0.f},
+    {"ColorGradePerChannelChrominanceCorrection", 0.f},
     {"ColorGradeClip", 65.f},
     {"ColorGradeGamma", 50.f},
     {"CustomCharacterBrightness", 1.f},
@@ -65,8 +65,8 @@ static std::unordered_map<std::string, float> default_values = {
     {"PerceptualBoost2DBackground", 1.f},
     {"PerceptualBoost3D", 0.f},
     {"DebugMode", 0.f},
-    {"DebugMode2", 1.f},
-    {"DebugMode3", 1.f},
+    {"DebugMode2", 0.f},
+    {"DebugMode3", 0.f},
     {"DisplayMapType", 3.f},
     {"DisplayMapSaturation", 0.f},
     {"DisplayMapPeak", 2.f},
@@ -85,12 +85,15 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["PostSwapChainToneMapping"] = 1.f;
     }
     if (filename == "Ixion.exe") {
-        default_values["ToneMapType"] = 2.f; // ACES
+    //    default_values["ToneMapType"] = 3.f; // ACES
     }
     if (filename == "No Creeps Were Harmed TD.exe") {
         default_values["ToneMapType"] = 4.f; // DICE
         default_values["SimulateRenderPass"] = 1.f; 
         default_values["PostSwapChainToneMapping"] = 1.f;
+    }
+    if (filename == "Phantom Brigade.exe") {
+      //  default_values["ToneMapType"] = 2.f; // ACES
     }
 }
 
