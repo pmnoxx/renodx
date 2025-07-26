@@ -46,7 +46,7 @@ void main(
   r0.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
   r0.w = saturate(r0.w); // fix for bloom
   
-  r0 = debug_mode(r0, v1);
+  r0 = debug_mode(r0, w1);
   // r1 = debug_mode(r1, v1);
 
   r0.xyz = renodx::color::bt709::clamp::BT2020(r0.xyz);

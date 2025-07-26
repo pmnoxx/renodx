@@ -36,7 +36,7 @@ void main(
   float4 fDest;
 
   r0.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
-  r0 = debug_mode(r0, v1);
+  r0 = debug_mode(r0, w1);
 
   r0.xyz = renodx::color::bt709::clamp::BT2020(r0.xyz);
   r0.xyz = renodx::color::srgb::DecodeSafe(r0.xyz);
