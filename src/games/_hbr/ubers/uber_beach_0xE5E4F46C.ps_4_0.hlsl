@@ -45,8 +45,6 @@ void main(
 
   r0.xyzw = t1.Sample(s1_s, v1.xy).xyzw;
   r1.xyzw = t0.Sample(s0_s, w1.xy).xyzw;
-  r0.w = saturate(r0.w); // fix for bloom
-  //r0 = debug_mode(r0, v1);
   r1 = debug_mode(r1, w1);
 
   r1.w = saturate(r1.w);
