@@ -33,18 +33,21 @@ change default dump folder to dump
 fix setting visibility for resource upgrades
 - 0.22
 disable automatic shader dumping
+- 0.23
+optimize shader dumping
 */
 
- constexpr const char* RENODX_VERSION = "0.22";
+ constexpr const char* RENODX_VERSION = "0.23";
 
  #define ImTextureID ImU64
 
  #define DEBUG_LEVEL_0
  
- #include <deps/imgui/imgui.h>
- #include <include/reshade.hpp>
- 
- #include <embed/shaders.h>
+   #include <deps/imgui/imgui.h>
+  #include <include/reshade.hpp>
+  #include <cstring>
+  
+  #include <embed/shaders.h>
  
  #include "../../mods/shader.hpp"
  #include "../../mods/swapchain.hpp"
@@ -58,27 +61,6 @@ disable automatic shader dumping
    #include "./shared.h"
   #include "custom_settings.cpp"
  
- bool has_fired_on_init_pipeline_track_addons = false;
-
-void OnInitPipelineTrackAddons(
-    reshade::api::device* device,
-    reshade::api::pipeline_layout layout,
-    uint32_t subobject_count,
-    const reshade::api::pipeline_subobject* subobjects,
-    reshade::api::pipeline pipeline) {
-  if (has_fired_on_init_pipeline_track_addons) return;
-  has_fired_on_init_pipeline_track_addons = true;
-
-  // Track addon shaders
-  auto* store = renodx::utils::shader::GetStore();
-  store->runtime_replacements.for_each(
-      [&](const std::pair<const std::pair<reshade::api::device*, uint32_t>, std::span<const uint8_t>>& pair) {
-        const auto& [pair_device, shader_hash] = pair.first;
-        if (pair_device != device) return;
-        // Track addon shader replacements
-      });
-}
-
  
 namespace {
  
@@ -88,23 +70,87 @@ namespace {
     
     ShaderInjectData shader_injection;
     
-    float g_dump_shaders = 0;
-    std::unordered_set<uint32_t> g_dumped_shaders = {};
-    
-    float current_settings_mode = 0;
+         float g_dump_shaders = 0;
+     float g_autodump_lutbuilders = 0;
+     std::unordered_set<uint32_t> g_dumped_shaders = {};
+     
+     float current_settings_mode = 0;
+
+    // Check if shader data contains binary representation of the lutbuilder float
+    static bool ContainsLutBuilderFloat(const std::span<const uint8_t>& shader_data) {
+      float target_float = 0.070841603f;
+      const uint8_t* target_bytes = reinterpret_cast<const uint8_t*>(&target_float);
+      
+      if (shader_data.size() >= 4) {
+        for (size_t i = 0; i <= shader_data.size() - 4; ++i) {
+          if (std::memcmp(&shader_data[i], target_bytes, 4) == 0) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // Scan existing dumped shaders on application start for performance
+    static void ScanExistingDumpedShaders() {
+      auto dump_path = renodx::utils::path::GetOutputPath();
+      
+      if (!std::filesystem::exists(dump_path)) return;
+      dump_path /= renodx::utils::shader::dump::default_dump_folder;
+      if (!std::filesystem::exists(dump_path)) return;
+      
+      size_t shaders_found = 0;
+      
+      for (const auto& entry : std::filesystem::directory_iterator(dump_path)) {
+        if (!entry.is_regular_file()) continue;
+        const auto& entry_path = entry.path();
+        
+        // Check various possible extensions (.cso, .hlsl, etc.)
+        const auto extension = entry_path.extension().string();
+        if (extension != ".cso" && extension != ".hlsl" && extension != ".ps_5_0" && 
+            extension != ".vs_5_0" && extension != ".cs_5_0" && extension != ".gs_5_0") continue;
+            
+        const auto& basename = entry_path.stem().string();
+        if (basename.length() < 10) continue;  // 0x + 8 hex chars minimum
+        if (!basename.starts_with("0x")) continue;
+        
+        // Extract the 8-character hex hash
+        auto hash_string = basename.substr(2, 8);
+        uint32_t shader_hash;
+        try {
+          shader_hash = std::stoul(hash_string, nullptr, 16);
+        } catch (const std::exception& e) {
+          // Skip invalid hash files
+          continue;
+        }
+        
+        if (g_dumped_shaders.insert(shader_hash).second) {
+          shaders_found++;
+        }
+      }
+      
+      if (shaders_found > 0) {
+        std::stringstream s;
+        s << "Loaded " << shaders_found << " existing dumped shader hashes for performance optimization";
+        reshade::log::message(reshade::log::level::info, s.str().c_str());
+      }
+    }
  
     
-void OnInitPipeline(
-    reshade::api::device* device,
-    reshade::api::pipeline_layout layout,
-    uint32_t subobject_count,
-    const reshade::api::pipeline_subobject* subobjects,
-    reshade::api::pipeline pipeline) {
-  if (pipeline.handle == 0u) return;
-  if (layout.handle == 0u) return;
+ void OnInitPipeline(
+     reshade::api::device* device,
+     reshade::api::pipeline_layout layout,
+     uint32_t subobject_count,
+     const reshade::api::pipeline_subobject* subobjects,
+     reshade::api::pipeline pipeline) {
+   if (pipeline.handle == 0u) return;
+   if (layout.handle == 0u) return;
 
-  // Extract and dump any new shaders from pipeline subobjects
-  for (uint32_t i = 0; i < subobject_count; ++i) {
+   // Check if any dumping is enabled
+   if (g_dump_shaders == 0 && g_autodump_lutbuilders == 0) return;
+
+   // Extract and dump any new shaders from pipeline subobjects
+   for (uint32_t i = 0; i < subobject_count; ++i) {
     const auto& subobject = subobjects[i];
     
     // Check if this is a shader subobject
@@ -114,6 +160,7 @@ void OnInitPipeline(
       
       // Get shader data
       const auto* shader_desc = reinterpret_cast<const reshade::api::shader_desc*>(subobject.data);
+      
       if (shader_desc == nullptr || shader_desc->code_size == 0) continue;
       
              // Calculate shader hash
@@ -124,34 +171,53 @@ void OnInitPipeline(
       // Skip if we've already dumped this shader
       if (g_dumped_shaders.contains(shader_hash)) continue;
       
-      // Skip if this is a custom shader we injected
-      if (custom_shaders.contains(shader_hash)) continue;
-      
-      reshade::log::message(
-          reshade::log::level::info,
-          std::format("XXX Dumping pipeline shader: 0x{:08x}", shader_hash).c_str());
-      
-      g_dumped_shaders.emplace(shader_hash);
-      
-      try {
-        std::vector<uint8_t> shader_data(
-            reinterpret_cast<const uint8_t*>(shader_desc->code),
-            reinterpret_cast<const uint8_t*>(shader_desc->code) + shader_desc->code_size);
-        
-        auto shader_version = renodx::utils::shader::compiler::directx::DecodeShaderVersion(shader_data);
-        if (shader_version.GetMajor() == 0) {
-          // No shader information found
-          continue;
-        }
-        
-        renodx::utils::path::default_output_folder = "renodx-dev";
-        renodx::utils::shader::dump::default_dump_folder = "dump";
-        
-        renodx::utils::shader::dump::DumpShader(
-            shader_hash,
-            shader_data,
-            subobject.type,
-            "pipeline_");
+             // Skip if this is a custom shader we injected
+     //  if (custom_shaders.contains(shader_hash)) continue;
+       
+       g_dumped_shaders.emplace(shader_hash);
+       
+               try {
+          std::vector<uint8_t> shader_data(
+              reinterpret_cast<const uint8_t*>(shader_desc->code),
+              reinterpret_cast<const uint8_t*>(shader_desc->code) + shader_desc->code_size);
+          
+          auto shader_version = renodx::utils::shader::compiler::directx::DecodeShaderVersion(shader_data);
+          if (shader_version.GetMajor() == 0) {
+            // No shader information found
+            continue;
+          }
+          
+                     // Check if shader data contains lutbuilder float
+           bool contains_lutbuilder_float = ContainsLutBuilderFloat(shader_data);
+           
+           // Determine if we should dump this shader
+           bool should_dump = false;
+           if (g_dump_shaders != 0) {
+             // Dump all shaders if general dumping is enabled
+             should_dump = true;
+           } else if (g_autodump_lutbuilders != 0 && contains_lutbuilder_float) {
+             // Only dump lutbuilders if only lutbuilder dumping is enabled
+             should_dump = true;
+           }
+           
+           if (!should_dump) continue;
+           
+           std::string prefix = contains_lutbuilder_float ? "lutbuilder_" : "";
+           
+          reshade::log::message(
+              reshade::log::level::info,
+              std::format("Dumping pipeline shader: 0x{:08x}{}", shader_hash, 
+                         contains_lutbuilder_float ? " (LUT builder detected)" : "").c_str());
+           
+           renodx::utils::path::default_output_folder = "renodx-dev";
+           renodx::utils::shader::dump::default_dump_folder = "dump";
+          
+          renodx::utils::shader::dump::DumpShader(
+              shader_hash,
+              shader_data,
+              subobject.type,
+              prefix,
+              "");
             
       } catch (...) {
         std::stringstream s;
@@ -163,8 +229,8 @@ void OnInitPipeline(
     }
   }
   
-  // Dump any pending shaders
-  renodx::utils::shader::dump::DumpAllPending();
+             // Dump any pending shaders (ignoring custom shaders and already dumped shaders)
+     renodx::utils::shader::dump::DumpAllPending(custom_shaders, g_dumped_shaders, ContainsLutBuilderFloat, g_dump_shaders, g_autodump_lutbuilders);
 }
  // Sectioned settings generator functions
  std::vector<renodx::utils::settings::Setting*> GenerateSettingsModeSection() {
@@ -854,101 +920,36 @@ void OnInitPipeline(
      };
  }
  
-
- bool OnDrawForLUTDump(
-     reshade::api::command_list* cmd_list,
-     uint32_t vertex_count,
-     uint32_t instance_count,
-     uint32_t first_vertex,
-     uint32_t first_instance) {
-   if (g_dump_shaders == 0) return false;
  
-   auto* shader_state = renodx::utils::shader::GetCurrentState(cmd_list);
- 
-   auto* pixel_state = renodx::utils::shader::GetCurrentPixelState(shader_state);
- 
-   auto pixel_shader_hash = renodx::utils::shader::GetCurrentPixelShaderHash(pixel_state);
-   if (pixel_shader_hash == 0u) return false;
-   /*
-   auto* swapchain_state = renodx::utils::swapchain::GetCurrentState(cmd_list);
- 
-   bool found_lut_render_target = false;
- 
-   auto* device = cmd_list->get_device();
-   for (auto render_target : swapchain_state->current_render_targets) {
-     auto resource_tag = renodx::utils::resource::GetResourceTag(render_target);
-     if (resource_tag == 1.f) {
-       found_lut_render_target = true;
-       break;
-     }
-   }
-   if (!found_lut_render_target) return false;
- */
- 
-   if (custom_shaders.contains(pixel_shader_hash)) return false;
- 
-   if (g_dumped_shaders.contains(pixel_shader_hash)) return false;
- 
-   reshade::log::message(
-       reshade::log::level::debug,
-       std::format("Dumping lutbuiler: 0x{:08x}", pixel_shader_hash).c_str());
- 
-   g_dumped_shaders.emplace(pixel_shader_hash);
- 
-   renodx::utils::path::default_output_folder = "renodx-dev";
-   renodx::utils::shader::dump::default_dump_folder = "dump";
-   bool found = false;
-   try {
-     auto shader_data = renodx::utils::shader::GetShaderData(pixel_state);
-     if (!shader_data.has_value()) {
-       std::stringstream s;
-       s << "utils::shader::dump(Failed to retreive shader data: ";
-       s << PRINT_CRC32(pixel_shader_hash);
-       s << ")";
-       reshade::log::message(reshade::log::level::warning, s.str().c_str());
-       return false;
-     }
- 
-     auto shader_version = renodx::utils::shader::compiler::directx::DecodeShaderVersion(shader_data.value());
-     if (shader_version.GetMajor() == 0) {
-       // No shader information found
-       return false;
-     }
- 
-     renodx::utils::shader::dump::DumpShader(
-         pixel_shader_hash,
-         shader_data.value(),
-         reshade::api::pipeline_subobject_type::pixel_shader,
-         "shader_");
- 
-   } catch (...) {
-     std::stringstream s;
-     s << "utils::shader::dump(Failed to decode shader data: ";
-     s << PRINT_CRC32(pixel_shader_hash);
-     s << ")";
-     reshade::log::message(reshade::log::level::warning, s.str().c_str());
-   }
-
-   // Dump any pending shaders
-   renodx::utils::shader::dump::DumpAllPending();
- 
-   return false;
- }
- 
- std::vector<renodx::utils::settings::Setting*> GenerateDebugSection() {
-     return {
-         new renodx::utils::settings::Setting{
-             .key = "DebugMode",
-             .binding = &shader_injection.debug_mode,
-             .default_value = hbr_custom_settings::get_default_value("DebugMode", 0.f),
-             .label = "Debug Mode",
-             .section = "Debug",
-             .tooltip = "Debug mode for development and testing (0.0-1.0)",
-             .min = 0.f,
-             .max = 1.f,
-             .format = "%.2f",
-             .is_visible = []() { return current_settings_mode >= 3; },
-         },
+   std::vector<renodx::utils::settings::Setting*> GenerateDebugSection() {
+      return {
+          new renodx::utils::settings::Setting{
+              .key = "AutodumpLutbuilders",
+              .binding = &g_autodump_lutbuilders,
+              .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+              .default_value = 0.f,
+              .label = "Autodump Lutbuilders",
+              .section = "Debug",
+              .tooltip = "Automatically dump only lutbuilder shaders. Works independently of general shader dumping.",
+              .labels = {
+                  "Off",
+                  "On",
+              },
+              .is_global = true,
+              .is_visible = []() { return current_settings_mode >= 3; },
+          },
+          new renodx::utils::settings::Setting{
+              .key = "DebugMode",
+              .binding = &shader_injection.debug_mode,
+              .default_value = hbr_custom_settings::get_default_value("DebugMode", 0.f),
+              .label = "Debug Mode",
+              .section = "Debug",
+              .tooltip = "Debug mode for development and testing (0.0-1.0)",
+              .min = 0.f,
+              .max = 1.f,
+              .format = "%.2f",
+              .is_visible = []() { return current_settings_mode >= 3; },
+          },
          new renodx::utils::settings::Setting{
              .key = "DebugMode2",
              .binding = &shader_injection.debug_mode2,
@@ -1161,24 +1162,44 @@ void OnInitPipeline(
  
          {
 
+                         auto* setting = new renodx::utils::settings::Setting{
+              .key = "AutomaticShaderDumping",
+              .binding = &g_dump_shaders,
+              .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+              .default_value = 0.f,
+              .label = "Automatic Shader Dumping",
+              .section = "Debug",
+              .tooltip = "Automatically dump shaders into renodx-dump folder.",
+              .labels = {
+                  "Off",
+                  "On",
+              },
+              .is_global = true,
+              .is_visible = []() { return current_settings_mode >= 3; }
+             };
+             renodx::utils::settings::LoadSetting(renodx::utils::settings::global_name, setting);
+             settings.push_back(setting);
+             g_dump_shaders = setting->GetValue();
+          }
+          {
             auto* setting = new renodx::utils::settings::Setting{
-             .key = "AutomaticShaderDumping",
-             .binding = &g_dump_shaders,
-             .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-             .default_value = 0.f,
-             .label = "Automatic Shader Dumping",
-             .section = "Debug",
-             .tooltip = "Automatically dump shaders into renodx-dump folder.",
-             .labels = {
-                 "Off",
-                 "On",
-             },
-             .is_global = true,
-             .is_visible = []() { return current_settings_mode >= 3; }
-            };
-            renodx::utils::settings::LoadSetting(renodx::utils::settings::global_name, setting);
-            settings.push_back(setting);
-            g_dump_shaders = setting->GetValue();
+              .key = "AutodumpLutbuilders",
+              .binding = &g_autodump_lutbuilders,
+              .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+              .default_value = 0.f,
+              .label = "Autodump Lutbuilders",
+              .section = "Debug",
+              .tooltip = "Automatically dump only lutbuilder shaders. Works independently of general shader dumping.",
+              .labels = {
+                  "Off",
+                  "On",
+              },
+              .is_global = true,
+              .is_visible = []() { return current_settings_mode >= 3; }
+             };
+             renodx::utils::settings::LoadSetting(renodx::utils::settings::global_name, setting);
+             settings.push_back(setting);
+             g_autodump_lutbuilders = setting->GetValue();
          }
          {
            auto* setting = new renodx::utils::settings::Setting{
@@ -1285,23 +1306,32 @@ void OnInitPipeline(
              reshade::log::message(reshade::log::level::info, s.str().c_str());
            }
          }
-         {
-          std::stringstream s;
-  
-          s << "g_dump_shaders " << g_dump_shaders;
-          reshade::log::message(reshade::log::level::info, s.str().c_str());
-         }
-         if (g_dump_shaders != 0.f) {
-           renodx::utils::swapchain::Use(fdw_reason);
-           renodx::utils::shader::Use(fdw_reason);
-           renodx::utils::shader::use_shader_cache = true;
-           renodx::utils::shader::dump::Use(fdw_reason);
-           renodx::utils::resource::Use(fdw_reason);
-         //  reshade::register_event<reshade::addon_event::init_pipeline>(OnInitPipelineTrackAddons);
-           reshade::register_event<reshade::addon_event::init_pipeline>(OnInitPipeline);
-         //  reshade::register_event<reshade::addon_event::draw>(OnDrawForLUTDump);
-           reshade::log::message(reshade::log::level::info, "DumpLUTShaders enabled.");
-         }
+                   {
+           std::stringstream s;
+   
+           s << "g_dump_shaders " << g_dump_shaders << ", g_autodump_lutbuilders " << g_autodump_lutbuilders;
+           reshade::log::message(reshade::log::level::info, s.str().c_str());
+          }
+          if (g_dump_shaders != 0.f || g_autodump_lutbuilders != 0.f) {
+            // Scan existing dumped shaders for performance optimization
+            ScanExistingDumpedShaders();
+            
+            renodx::utils::swapchain::Use(fdw_reason);
+            renodx::utils::shader::Use(fdw_reason);
+            renodx::utils::shader::use_shader_cache = true;
+            renodx::utils::shader::dump::Use(fdw_reason);
+            renodx::utils::resource::Use(fdw_reason);
+          //  reshade::register_event<reshade::addon_event::init_pipeline>(OnInitPipelineTrackAddons);
+            reshade::register_event<reshade::addon_event::init_pipeline>(OnInitPipeline);
+            
+            if (g_dump_shaders != 0.f && g_autodump_lutbuilders != 0.f) {
+              reshade::log::message(reshade::log::level::info, "Shader dumping and lutbuilder dumping enabled.");
+            } else if (g_dump_shaders != 0.f) {
+              reshade::log::message(reshade::log::level::info, "General shader dumping enabled.");
+            } else {
+              reshade::log::message(reshade::log::level::info, "Lutbuilder dumping enabled.");
+            }
+          }
    
          initialized = true;
        }

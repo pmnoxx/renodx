@@ -3,8 +3,8 @@
 #include "./shared.h"
 #include "./DICE.hlsl"
 
-#ifndef COMMON_H_
-#define COMMON_H_
+#ifndef COMMON_HLSL_
+#define COMMON_HLSL_
 
 
 #define INV_REINHARD 2.f
@@ -46,8 +46,8 @@ float GetPerceptualBoostStrength(float scene_type) {
 float4 debug_mode(float4 color, float2 pos, float shift_y = 0.f) {
   float2 box = float2(0.99f, 0.99f - shift_y);
   float2 dim = float2(0.01f, 0.01f) * shader_injection.debug_mode;
-
-  if (length(pos >= box & pos <= box + dim ? 1.f : 0.f) > 1.f) {
+  
+  if (length((pos >= box & pos <= box + dim ? 1.f : 0.f)) > 1.f) {
     float part = (pos.x - box.x) / dim.x;
     if (part < 1. / 3.f) {
       return float4(1.f, 0.f, 0.f, 1.f);
