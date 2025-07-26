@@ -35,9 +35,13 @@ fix setting visibility for resource upgrades
 disable automatic shader dumping
 - 0.23
 optimize shader dumping
+- 0.24
+print exe name and title
+- 0.25
+change defaults for Unity
 */
 
- constexpr const char* RENODX_VERSION = "0.23";
+ constexpr const char* RENODX_VERSION = "0.25";
 
  #define ImTextureID ImU64
 
@@ -51,6 +55,7 @@ optimize shader dumping
  
  #include "../../mods/shader.hpp"
  #include "../../mods/swapchain.hpp"
+#include "../../utils/platform.hpp"
 #include "../../utils/random.hpp"
  #include "../../utils/settings.hpp"
  #include "../../utils/shader.hpp"
@@ -924,21 +929,6 @@ namespace {
    std::vector<renodx::utils::settings::Setting*> GenerateDebugSection() {
       return {
           new renodx::utils::settings::Setting{
-              .key = "AutodumpLutbuilders",
-              .binding = &g_autodump_lutbuilders,
-              .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-              .default_value = 0.f,
-              .label = "Autodump Lutbuilders",
-              .section = "Debug",
-              .tooltip = "Automatically dump only lutbuilder shaders. Works independently of general shader dumping.",
-              .labels = {
-                  "Off",
-                  "On",
-              },
-              .is_global = true,
-              .is_visible = []() { return current_settings_mode >= 3; },
-          },
-          new renodx::utils::settings::Setting{
               .key = "DebugMode",
               .binding = &shader_injection.debug_mode,
               .default_value = hbr_custom_settings::get_default_value("DebugMode", 0.f),
@@ -1130,6 +1120,16 @@ namespace {
        if (!reshade::register_addon(h_module)) return FALSE;
  
        if (!initialized) {
+                   // Print exe name and title
+          auto process_path = renodx::utils::platform::GetCurrentProcessPath();
+          auto filename = process_path.filename().string();
+          auto product_name = renodx::utils::platform::GetProductName(process_path);
+          auto window_title = renodx::utils::platform::GetWindowTitle();
+          reshade::log::message(reshade::log::level::info, std::format("RenoDX Universal loaded for {} ({}) ({}).", filename, product_name, window_title).c_str());
+
+        // Apply filename-based settings overrides
+        hbr_custom_settings::ApplyFilenameBasedOverrides(filename);
+
          InitializeSettings();
          hbr_custom_settings::AddCustomResourceUpgrades();
  
@@ -1162,7 +1162,7 @@ namespace {
  
          {
 
-                         auto* setting = new renodx::utils::settings::Setting{
+           auto* setting = new renodx::utils::settings::Setting{
               .key = "AutomaticShaderDumping",
               .binding = &g_dump_shaders,
               .value_type = renodx::utils::settings::SettingValueType::INTEGER,

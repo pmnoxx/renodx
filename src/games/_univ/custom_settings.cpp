@@ -1,20 +1,21 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <algorithm>
 #include "../../utils/settings.hpp"
 #include "./shared.h"
 #include "../../mods/swapchain.hpp"
 
 namespace hbr_custom_settings {
 
-// Map of setting key to default value
-static const std::unordered_map<std::string, float> default_values = {
+// Map of setting key to default value (made mutable for filename overrides)
+static std::unordered_map<std::string, float> default_values = {
     {"SettingsMode", 0.f},
     {"ToneMapType", 3.f},
     {"ToneMapPeakNits", 1000.f},
     {"ToneMapGameNits", 203.f},
     {"ToneMapUINits", 203.f},
-    {"GammaCorrection", 0.f},
+    {"GammaCorrection", 1.f},
     {"ToneMapScaling", 0.f},
     {"ToneMapWorkingColorSpace", 0.f},
     {"ToneMapHueProcessor", 0.f},
@@ -42,9 +43,9 @@ static const std::unordered_map<std::string, float> default_values = {
     {"CustomBloom3D", 100.f},
     {"EnableUIToneMapPass", 0.f},
     {"SwapChainCustomColorSpace", 0.f},
-    {"IntermediateEncoding", 2.f},
-    {"SwapChainDecoding", 3.f},
-    {"SwapChainGammaCorrection", 0.f},
+    {"IntermediateEncoding", 1.f},
+    {"SwapChainDecoding", 1.f},
+    {"SwapChainGammaCorrection", 1.f},
     {"SwapChainClampColorSpace", 2.f},
     {"EffectSplitMode", 0.f},
     {"EffectSplitX", 1.f},
@@ -70,11 +71,24 @@ static const std::unordered_map<std::string, float> default_values = {
     {"DisplayMapSaturation", 0.f},
     {"DisplayMapPeak", 2.f},
     {"DisplayMapShoulder", 0.5f},
-    {"UpgradeResourceViewCloning", 1.f}, // 0 = false, 1 = true
+    {"UpgradeResourceViewCloning", 0.f}, // 0 = false, 1 = true
     {"PerceptualBoostReinhardMidpoint", 5.f},
     {"PostSwapChainToneMapping", 0.f},
     {"Upgrade_SwapChainCompatibility", 1.f},
 };
+
+// Apply filename-based settings overrides
+void ApplyFilenameBasedOverrides(const std::string& filename) {
+    // Convert filename to lowercase for case-insensitive matching
+    std::string lower_filename = filename;
+    std::transform(lower_filename.begin(), lower_filename.end(), lower_filename.begin(), ::tolower);
+    
+    // Game-specific overrides based on executable filename
+    if (lower_filename == "ixion.exe") {
+        // Strategy game - different tone mapping and nits
+        default_values["ToneMapType"] = 2.f; // ACES
+    }
+}
 
 // Returns the default value for a key, or fallback if not found
 inline float get_default_value(const std::string& key, float fallback = 0.f) {
@@ -121,15 +135,15 @@ std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection
 
 const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UPGRADE_TARGETS = {
     {"R8G8B8A8_TYPELESS", {reshade::api::format::r8g8b8a8_typeless, 2.f}},
-    {"B8G8R8A8_TYPELESS", {reshade::api::format::b8g8r8a8_typeless, 0.f}},
-    {"R8G8B8A8_UNORM", {reshade::api::format::r8g8b8a8_unorm, 0.f}},
-    {"B8G8R8A8_UNORM", {reshade::api::format::b8g8r8a8_unorm, 0.f}},
-    {"R8G8B8A8_SNORM", {reshade::api::format::r8g8b8a8_snorm, 0.f}},
-    {"R8G8B8A8_UNORM_SRGB", {reshade::api::format::r8g8b8a8_unorm_srgb, 0.f}},
-    {"B8G8R8A8_UNORM_SRGB", {reshade::api::format::b8g8r8a8_unorm_srgb, 0.f}},
-    {"R10G10B10A2_TYPELESS", {reshade::api::format::r10g10b10a2_typeless, 0.f}},
-    {"R10G10B10A2_UNORM", {reshade::api::format::r10g10b10a2_unorm, 0.f}},
-    {"B10G10R10A2_UNORM", {reshade::api::format::b10g10r10a2_unorm, 0.f}},
+    {"B8G8R8A8_TYPELESS", {reshade::api::format::b8g8r8a8_typeless, 2.f}},
+    {"R8G8B8A8_UNORM", {reshade::api::format::r8g8b8a8_unorm, 2.f}},
+    {"B8G8R8A8_UNORM", {reshade::api::format::b8g8r8a8_unorm, 2.f}},
+    {"R8G8B8A8_SNORM", {reshade::api::format::r8g8b8a8_snorm, 2.f}},
+    {"R8G8B8A8_UNORM_SRGB", {reshade::api::format::r8g8b8a8_unorm_srgb, 2.f}},
+    {"B8G8R8A8_UNORM_SRGB", {reshade::api::format::b8g8r8a8_unorm_srgb, 2.f}},
+    {"R10G10B10A2_TYPELESS", {reshade::api::format::r10g10b10a2_typeless, 2.f}},
+    {"R10G10B10A2_UNORM", {reshade::api::format::r10g10b10a2_unorm, 2.f}},
+    {"B10G10R10A2_UNORM", {reshade::api::format::b10g10r10a2_unorm, 2.f}},
     {"R11G11B10_FLOAT", {reshade::api::format::r11g11b10_float, 2.f}},
     {"R16G16B16A16_TYPELESS", {reshade::api::format::r16g16b16a16_typeless, 0.f}},
 };
