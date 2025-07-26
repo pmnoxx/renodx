@@ -82,8 +82,7 @@ namespace {
      float current_settings_mode = 0;
 
     // Check if shader data contains binary representation of the lutbuilder float
-    static bool ContainsLutBuilderFloat(const std::span<const uint8_t>& shader_data) {
-      float target_float = 0.070841603f;
+    static bool ConstainsFloat(const std::span<const uint8_t>& shader_data, float target_float) {
       const uint8_t* target_bytes = reinterpret_cast<const uint8_t*>(&target_float);
       
       if (shader_data.size() >= 4) {
@@ -94,6 +93,20 @@ namespace {
         }
       }
       return false;
+    }
+
+    static std::optional<std::string> DumpShaderPrefix(const std::span<const uint8_t>& shader_data) {
+        if (g_autodump_lutbuilders != 0 && ConstainsFloat(shader_data, 0.070841603f)) {
+            return "lutbuilder_";
+        }
+        if (g_autodump_lutbuilders != 0 && ConstainsFloat(shader_data, 0.947867334)) {
+            return "uber_srgb_";
+        }
+        if (g_dump_shaders != 0) {
+            return "shader_";
+        }
+
+        return std::nullopt;
     }
 
     // Scan existing dumped shaders on application start for performance
@@ -192,27 +205,16 @@ namespace {
             continue;
           }
           
-                     // Check if shader data contains lutbuilder float
-           bool contains_lutbuilder_float = ContainsLutBuilderFloat(shader_data);
+                     // Check if shader should be dumped and get prefix
+           auto dump_prefix = DumpShaderPrefix(shader_data);
            
-           // Determine if we should dump this shader
-           bool should_dump = false;
-           if (g_dump_shaders != 0) {
-             // Dump all shaders if general dumping is enabled
-             should_dump = true;
-           } else if (g_autodump_lutbuilders != 0 && contains_lutbuilder_float) {
-             // Only dump lutbuilders if only lutbuilder dumping is enabled
-             should_dump = true;
-           }
+           if (!dump_prefix.has_value()) continue;
            
-           if (!should_dump) continue;
-           
-           std::string prefix = contains_lutbuilder_float ? "lutbuilder_" : "";
+           std::string prefix = dump_prefix.value();
            
           reshade::log::message(
               reshade::log::level::info,
-              std::format("Dumping pipeline shader: 0x{:08x}{}", shader_hash, 
-                         contains_lutbuilder_float ? " (LUT builder detected)" : "").c_str());
+              std::format("Dumping pipeline shader: 0x{:08x} ({})", shader_hash, prefix).c_str());
            
            renodx::utils::path::default_output_folder = "renodx-dev";
            renodx::utils::shader::dump::default_dump_folder = "dump";
@@ -235,7 +237,7 @@ namespace {
   }
   
              // Dump any pending shaders (ignoring custom shaders and already dumped shaders)
-     renodx::utils::shader::dump::DumpAllPending(custom_shaders, g_dumped_shaders, ContainsLutBuilderFloat, g_dump_shaders, g_autodump_lutbuilders);
+     renodx::utils::shader::dump::DumpAllPending(custom_shaders, g_dumped_shaders, DumpShaderPrefix);
 }
  // Sectioned settings generator functions
  std::vector<renodx::utils::settings::Setting*> GenerateSettingsModeSection() {
@@ -1124,11 +1126,11 @@ namespace {
           auto process_path = renodx::utils::platform::GetCurrentProcessPath();
           auto filename = process_path.filename().string();
           auto product_name = renodx::utils::platform::GetProductName(process_path);
-          auto window_title = renodx::utils::platform::GetWindowTitle();
-          reshade::log::message(reshade::log::level::info, std::format("RenoDX Universal loaded for {} ({}) ({}).", filename, product_name, window_title).c_str());
+          bool is_no_creeps_were_harmed = filename == "No Creeps Were Harmed TD.exe";
+          reshade::log::message(reshade::log::level::info, std::format("RenoDX Universal loaded for {} ({}) {}.", filename, product_name, is_no_creeps_were_harmed ? "No Creeps Were Harmed TD" : "").c_str());
 
         // Apply filename-based settings overrides
-        hbr_custom_settings::ApplyFilenameBasedOverrides(filename);
+         hbr_custom_settings::ApplyFilenameBasedOverrides(filename);
 
          InitializeSettings();
          hbr_custom_settings::AddCustomResourceUpgrades();
