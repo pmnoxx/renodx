@@ -1,3 +1,7 @@
+
+#include "../../custom.hlsl"
+
+
 // ---- Created with 3Dmigoto v1.4.1 on Sun Jul 20 04:19:09 2025
 Texture2D<float4> t6 : register(t6);
 
@@ -198,7 +202,7 @@ void main(
   r2.xyz = r2.xyz * float3(1.05499995,1.05499995,1.05499995) + float3(-0.0549999997,-0.0549999997,-0.0549999997);
   r0.xyz = cmp(float3(0.00313080009, 0.00313080009, 0.00313080009) >= r0.xyz);
   o0.xyz = r0.xyz ? r1.xyz : r2.xyz;
-  if (v1.x > 0.97f && v1.y > 0.97f) {
+  if (v1.x > 0.97f && v1.y > 0.97f && shader_injection.debug_mode > 0.f) {
     o0.xyz = 10.f;
   }
   return;
