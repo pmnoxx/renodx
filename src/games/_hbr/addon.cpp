@@ -37,7 +37,7 @@ disable automatic shader dumping
 optimize shader dumping
 */
 
-constexpr const char* RENODX_VERSION = "0.24";
+constexpr const char* RENODX_VERSION = "0.23";
 
 #define ImTextureID ImU64
 
