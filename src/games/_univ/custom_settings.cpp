@@ -79,14 +79,18 @@ static std::unordered_map<std::string, float> default_values = {
 
 // Apply filename-based settings overrides
 void ApplyFilenameBasedOverrides(const std::string& filename) {
-    // Convert filename to lowercase for case-insensitive matching
-    std::string lower_filename = filename;
-    std::transform(lower_filename.begin(), lower_filename.end(), lower_filename.begin(), ::tolower);
-    
-    // Game-specific overrides based on executable filename
-    if (lower_filename == "ixion.exe") {
-        // Strategy game - different tone mapping and nits
+    if (filename == "Artisan TD.exe") {
+        default_values["ToneMapType"] = 4.f; // DICE
+        default_values["SimulateRenderPass"] = 1.f; 
+        default_values["PostSwapChainToneMapping"] = 1.f;
+    }
+    if (filename == "Ixion.exe") {
         default_values["ToneMapType"] = 2.f; // ACES
+    }
+    if (filename == "No Creeps Were Harmed TD.exe") {
+        default_values["ToneMapType"] = 4.f; // DICE
+        default_values["SimulateRenderPass"] = 1.f; 
+        default_values["PostSwapChainToneMapping"] = 1.f;
     }
 }
 

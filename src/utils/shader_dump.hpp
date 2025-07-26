@@ -478,6 +478,58 @@ static void DumpAllPending(const CustomShadersType& custom_shaders, const Dumped
   internal::shaders_pending.clear();
 }
 
+// New overload that uses DumpShaderPrefix approach
+template<typename CustomShadersType, typename DumpedShadersType, typename DumpShaderPrefixFunc>
+static void DumpAllPending(const CustomShadersType& custom_shaders, const DumpedShadersType& external_dumped_shaders, DumpShaderPrefixFunc dump_shader_prefix_func) {
+  std::unique_lock lock(internal::mutex);
+  for (auto& [shader_hash, shader_info] : internal::shaders_pending) {
+    // Skip shaders that have already been dumped internally
+    if (internal::shaders_dumped.contains(shader_hash)) {
+      std::stringstream s;
+      s << "utils::shader::dump(Skipping already dumped shader: ";
+      s << PRINT_CRC32(shader_hash);
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+      continue;
+    }
+
+    // Skip shaders that have already been dumped externally
+    if (external_dumped_shaders.contains(shader_hash)) {
+      std::stringstream s;
+      s << "utils::shader::dump(Skipping externally dumped shader: ";
+      s << PRINT_CRC32(shader_hash);
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+      continue;
+    }
+    
+    // Skip custom shaders
+    if (custom_shaders.contains(shader_hash)) {
+      std::stringstream s;
+      s << "utils::shader::dump(Skipping custom shader: ";
+      s << PRINT_CRC32(shader_hash);
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+      continue;
+    }
+    
+    // Use the DumpShaderPrefix function to determine if we should dump and get the prefix
+    std::span<const uint8_t> shader_span(shader_info.data.data(), shader_info.data.size());
+    auto dump_prefix = dump_shader_prefix_func(shader_span);
+    
+    if (!dump_prefix.has_value()) continue;
+
+    std::stringstream s;
+    s << "utils::shader::dump(Starting dump: ";
+    s << PRINT_CRC32(shader_hash);
+    s << ")";
+    reshade::log::message(reshade::log::level::debug, s.str().c_str());
+
+    DumpShader(shader_hash, shader_info.data, shader_info.type, dump_prefix.value());
+  }
+  internal::shaders_pending.clear();
+}
+
 static void Use(DWORD fdw_reason) {
   renodx::utils::shader::Use(fdw_reason);
   switch (fdw_reason) {
