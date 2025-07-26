@@ -7,7 +7,7 @@
 
 #include <atomic>
 #include <cstdint>
-
+#include <regex>
 #include <mutex>
 #include <span>
 #include <sstream>
@@ -193,7 +193,8 @@ static std::filesystem::path GetShaderDumpPath(
     uint32_t shader_hash,
     std::span<uint8_t> shader_data,
     reshade::api::pipeline_subobject_type shader_type = reshade::api::pipeline_subobject_type::unknown,
-    const std::string& prefix = "") {
+    const std::string& prefix = "",
+    const std::string& entry_point = "") {
   auto dump_path = renodx::utils::path::GetOutputPath();
 
   if (!std::filesystem::exists(dump_path)) {
@@ -212,6 +213,12 @@ static std::filesystem::path GetShaderDumpPath(
   } else {
     dump_path /= prefix;
     dump_path += hash_string;
+  }
+  
+  // Add entry point name to filename if provided
+  if (!entry_point.empty()) {
+    dump_path += L"_";
+    dump_path += entry_point;
   }
 
   switch (internal::device_api) {
@@ -294,6 +301,10 @@ static bool DumpShader(
     // trim null
     renodx::utils::path::WriteBinaryFile(dump_path, shader_data.subspan(0, shader_data.size() - 1));
   }
+  
+  // Mark shader as dumped to avoid re-dumping
+  internal::shaders_dumped.emplace(shader_hash);
+  
   return true;
 }
 
@@ -347,6 +358,16 @@ static std::filesystem::path GetShaderDumpPath(
 static void DumpAllPending() {
   std::unique_lock lock(internal::mutex);
   for (auto& [shader_hash, shader_info] : internal::shaders_pending) {
+    // Skip shaders that have already been dumped
+    if (internal::shaders_dumped.contains(shader_hash)) {
+      std::stringstream s;
+      s << "utils::shader::dump(Skipping already dumped shader: ";
+      s << PRINT_CRC32(shader_hash);
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+      continue;
+    }
+
     std::stringstream s;
     s << "utils::shader::dump(Starting dump: ";
     s << PRINT_CRC32(shader_hash);
@@ -354,6 +375,105 @@ static void DumpAllPending() {
     reshade::log::message(reshade::log::level::debug, s.str().c_str());
 
     DumpShader(shader_hash, shader_info.data, shader_info.type);
+  }
+  internal::shaders_pending.clear();
+}
+
+template<typename CustomShadersType>
+static void DumpAllPending(const CustomShadersType& custom_shaders) {
+  std::unique_lock lock(internal::mutex);
+  for (auto& [shader_hash, shader_info] : internal::shaders_pending) {
+    // Skip shaders that have already been dumped
+    if (internal::shaders_dumped.contains(shader_hash)) {
+      std::stringstream s;
+      s << "utils::shader::dump(Skipping already dumped shader: ";
+      s << PRINT_CRC32(shader_hash);
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+      continue;
+    }
+
+    // Skip custom shaders
+    if (custom_shaders.contains(shader_hash)) {
+      std::stringstream s;
+      s << "utils::shader::dump(Skipping custom shader: ";
+      s << PRINT_CRC32(shader_hash);
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+      continue;
+    }
+
+    std::stringstream s;
+    s << "utils::shader::dump(Starting dump: ";
+    s << PRINT_CRC32(shader_hash);
+    s << ")";
+    reshade::log::message(reshade::log::level::debug, s.str().c_str());
+
+    DumpShader(shader_hash, shader_info.data, shader_info.type);
+  }
+  internal::shaders_pending.clear();
+}
+
+template<typename CustomShadersType, typename DumpedShadersType, typename LutBuilderCheckFunc>
+static void DumpAllPending(const CustomShadersType& custom_shaders, const DumpedShadersType& external_dumped_shaders, LutBuilderCheckFunc contains_lutbuilder_float, float g_dump_shaders, float g_autodump_lutbuilders) {
+  std::unique_lock lock(internal::mutex);
+  for (auto& [shader_hash, shader_info] : internal::shaders_pending) {
+    // Skip shaders that have already been dumped internally
+    if (internal::shaders_dumped.contains(shader_hash)) {
+      std::stringstream s;
+      s << "utils::shader::dump(Skipping already dumped shader: ";
+      s << PRINT_CRC32(shader_hash);
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+      continue;
+    }
+
+    
+    // Skip shaders that have already been dumped externally
+    if (external_dumped_shaders.contains(shader_hash)) {
+      std::stringstream s;
+      s << "utils::shader::dump(Skipping externally dumped shader: ";
+      s << PRINT_CRC32(shader_hash);
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+      continue;
+    }
+    
+    // Skip custom shaders
+    if (custom_shaders.contains(shader_hash)) {
+      std::stringstream s;
+      s << "utils::shader::dump(Skipping custom shader: ";
+      s << PRINT_CRC32(shader_hash);
+      s << ")";
+      reshade::log::message(reshade::log::level::debug, s.str().c_str());
+      continue;
+    }
+    
+    // Check if shader contains lutbuilder float and set prefix accordingly
+    std::span<const uint8_t> shader_span(shader_info.data.data(), shader_info.data.size());
+    bool is_lutbuilder = contains_lutbuilder_float(shader_span);
+    
+    // Determine if we should dump this shader
+    bool should_dump = false;
+    if (g_dump_shaders != 0) {
+      // Dump all shaders if general dumping is enabled
+      should_dump = true;
+    } else if (g_autodump_lutbuilders != 0 && is_lutbuilder) {
+      // Only dump lutbuilders if only lutbuilder dumping is enabled
+      should_dump = true;
+    }
+    
+    if (!should_dump) continue;
+
+    std::stringstream s;
+    s << "utils::shader::dump(Starting dump: ";
+    s << PRINT_CRC32(shader_hash);
+    s << ")";
+    reshade::log::message(reshade::log::level::debug, s.str().c_str());
+
+    std::string prefix = is_lutbuilder ? "lutbuilder_" : "shader_";
+    
+    DumpShader(shader_hash, shader_info.data, shader_info.type, prefix);
   }
   internal::shaders_pending.clear();
 }

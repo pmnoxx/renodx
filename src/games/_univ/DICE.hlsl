@@ -1,5 +1,8 @@
 #include "./shared.h"
 
+#ifndef DICE_H_
+#define DICE_H_
+
 float max3(float a, float b, float c) {
   return max(a, max(b, c));
 }
@@ -197,3 +200,5 @@ float3 DICETonemap(
 
   return Color;
 }
+
+#endif  // DICE_H_

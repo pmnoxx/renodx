@@ -30,15 +30,11 @@ DECOMPILER_PATH = os.path.join(SCAN_DIR, "cmd_Decompiler.exe")
 # Define what makes a file 'uber' or other types by substring patterns
 SUBSTRING_TYPES = {
     'uber': [
-      # ["cb0[136].xy", "SampleLevel"],
-       ["cb0[132]", "floor", "SampleLevel"],
-       ["cb0[133]", "floor", "SampleLevel"],
-       ["cb0", "floor", "SampleLevel"],
-        # Add more patterns for 'uber' as needed
+	    ["float3(0.0734997839,0.0734997839,0.0734997839)"],
     ],
     'lutbuilder': [
         ["0.00390625", "0.549941003"],  # Example: both 'LUT' and 'builder' must be present
-        # Add more patterns for 'lut_builder' as needed
+	    ["float3(0.262677222,0.262677222,0.262677222) + float3(0.0695999935,0.0695999935,0.0695999935)"],
     ],
 }
 
@@ -108,15 +104,7 @@ def process_files_for_type(type_key):
     count = 0  # Counter for files found and copied
     hlsl_found = 0
 
-    files_to_copy = [
-        "cmd_Decompiler.exe",
-        "d3dcompiler_46.dll",
-    ]
-    # copyt to SCAN_DIR from SCRIPT_DIR
-    for fname in files_to_copy:
-        src_path = os.path.join(SCRIPT_DIR, fname)
-        dest_path = os.path.join(SCAN_DIR, fname)
-        shutil.copy2(src_path, dest_path)
+
 
     for fname in os.listdir(SCAN_DIR):
         if not fname.lower().endswith('.hlsl'):
@@ -154,7 +142,7 @@ def process_files_for_type(type_key):
                 # Create candidate directory only if needed
                 os.makedirs(cand_dir, exist_ok=True)
                 print(f"Moving {fname} -> {os.path.relpath(cand_path, DEST_DIR)}")
-                shutil.move(src_path, cand_path)
+                shutil.copy(src_path, cand_path)
                 
                 # Also move corresponding .cso file if it exists
                 cso_name = fname.replace('.hlsl', '.cso')
@@ -162,7 +150,7 @@ def process_files_for_type(type_key):
                 if os.path.exists(cso_src_path):
                     cso_cand_path = os.path.join(cand_dir, cso_name.replace('.cso', f'_{hex_part}.cso'))
                     print(f"Moving {cso_name} -> {os.path.relpath(cso_cand_path, DEST_DIR)}")
-                    shutil.move(cso_src_path, cso_cand_path)
+                    # shutil.move(cso_src_path, cso_cand_path)
                 
                 count += 1
             else:
@@ -170,12 +158,24 @@ def process_files_for_type(type_key):
     
     # Remove candidate directory if it's empty
     if os.path.exists(cand_dir) and not os.listdir(cand_dir):
-        os.rmdir(cand_dir)
+        # os.rmdir(cand_dir)
         print(f"Removed empty candidate directory: {cand_dir}")
     
     print(f"Total {type_key} files found and copied: {hlsl_found} {count}")
 
 if __name__ == "__main__":
+    files_to_copy = [
+        "cmd_Decompiler.exe",
+        "d3dcompiler_46.dll",
+    ]
+    # copyt to SCAN_DIR from SCRIPT_DIR
+    for fname in files_to_copy:
+        src_path = os.path.join(SCRIPT_DIR, fname)
+        dest_path = os.path.join(SCAN_DIR, fname)
+        print("COPY", src_path, dest_path)
+        shutil.copy2(src_path, dest_path)
+
+
     # First, ensure all CSO files are converted to HLSL
     print("Checking for CSO files that need conversion...")
     ensure_hlsl_exists()
