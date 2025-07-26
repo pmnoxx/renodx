@@ -43,20 +43,20 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
   r0.xyz = float3(vThreadID.xyz);
   r0.w = cmp(0 < cb0[17].x); // 1 
   if (r0.w != 0) {
-    if (RENODX_TONE_MAP_TYPE > 0.f && CUSTOM_USE_PQ_TONE_MAP_FOR_LUT == 1.f) {
+    /*if (RENODX_TONE_MAP_TYPE > 0.f && CUSTOM_USE_PQ_TONE_MAP_FOR_LUT == 1.f && false) {
       // Use PQ decoding for HDR content
       r0.xyz = r0.xyz / 15.f;
       r0.xyz = renodx::color::pq::Decode(r0.xyz, 100.f);
       r0.xyz = renodx::color::bt709::from::BT2020(r0.xyz);
       r1.xyz = r0.xyz;
-    } else {
+    } else {*/
       // cb0[0].y = 16.f
       r1.xyz = r0.xyz * cb0[0].yyy + float3(-0.386036009, -0.386036009, -0.386036009);
       r1.xyz = float3(13.6054821, 13.6054821, 13.6054821) * r1.xyz;
       r1.xyz = exp2(r1.xyz);
       r1.xyz = float3(-0.0479959995, -0.0479959995, -0.0479959995) + r1.xyz;
       r1.xyz = float3(0.179999992, 0.179999992, 0.179999992) * r1.xyz;
-    }
+    //}
 
 
     r2.x = dot(float3(0.390404999,0.549941003,0.00892631989), r1.xyz);
@@ -261,20 +261,20 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
     r1.xyz = max(float3(0, 0, 0), r1.xyz);
 
   } else {
-    if (RENODX_TONE_MAP_TYPE > 0.f && CUSTOM_USE_PQ_TONE_MAP_FOR_LUT == 1.f) {
+    /*if (RENODX_TONE_MAP_TYPE > 0.f && CUSTOM_USE_PQ_TONE_MAP_FOR_LUT == 1.f && false) {
       // Use PQ decoding for HDR content
       r0.xyz = r0.xyz / 15.f;
       r0.xyz = renodx::color::pq::Decode(r0.xyz, 100.f);
       r0.xyz = renodx::color::bt709::from::BT2020(r0.xyz);
       r1.xyz = r0.xyz;
-    } else {
+    } else {*/
       r0.xyz = r0.xyz * cb0[0].yyy + float3(-0.386036009,-0.386036009,-0.386036009);
       r0.xyz = float3(13.6054821,13.6054821,13.6054821) * r0.xyz;
       r0.xyz = exp2(r0.xyz);
       r0.xyz = float3(-0.0479959995,-0.0479959995,-0.0479959995) + r0.xyz;
       r0.xyz = float3(0.179999992, 0.179999992, 0.179999992) * r0.xyz;
-    }
-    r2.x = dot(float3(0.439700991,0.382977992,0.177334994), r0.xyz);
+      // }
+     r2.x = dot(float3(0.439700991,0.382977992,0.177334994), r0.xyz);
     r2.y = dot(float3(0.0897922963,0.813422978,0.0967615992), r0.xyz);
     r2.z = dot(float3(0.0175439995,0.111543998,0.870703995), r0.xyz);
     r1.x = dot(float3(1.45143926,-0.236510754,-0.214928567), r2.xyz);
@@ -288,7 +288,7 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
  // r1.xyz = sdrTonemapped;
 
   if (RENODX_TONE_MAP_TYPE == 2.f) { // only apply Aces once
-    r0.xyz = renodx::draw::ToneMapPass(untonemapped.xyz, r0.xyz);  //, sdrTonemapped);
+    r0.xyz = renodx::draw::ToneMapPass(untonemapped.xyz);  //, sdrTonemapped);
     r0.w = 1.f;
     outputLUT[vThreadID.xyz] = r0;
     return;
@@ -430,7 +430,10 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
   r0.w = 1;
 
   if (RENODX_TONE_MAP_TYPE > 0.f) {
-    r0.xyz = renodx::draw::ToneMapPass(untonemapped.xyz, r0.xyz);  //, sdrTonemapped);
+    float3 neutral_sdr_color = RestoreHighlightSaturation(untonemapped);
+
+    r0.xyz = ToneMapPassCustom(untonemapped.xyz, r0.xyz, neutral_sdr_color);
+
   }
   outputLUT[vThreadID.xyz] = r0;
   return;

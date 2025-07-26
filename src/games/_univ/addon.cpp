@@ -617,7 +617,7 @@ namespace {
              .label = "Intermediate Encoding",
              .section = "Display Output",
              .labels = {"Auto", "None", "SRGB", "2.2", "2.4"},
-             .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
+         //    .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
              .parse = [](float value) {
                  if (value == 0) return shader_injection.gamma_correction + 1.f;
                  return value - 1.f; },
@@ -631,7 +631,7 @@ namespace {
              .label = "Swapchain Decoding",
              .section = "Display Output",
              .labels = {"Auto", "None", "SRGB", "2.2", "2.4"},
-             .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
+      //       .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
              .parse = [](float value) {
                  if (value == 0) return shader_injection.intermediate_encoding;
                  return value - 1.f; },
@@ -645,7 +645,6 @@ namespace {
              .label = "Gamma Correction",
              .section = "Display Output",
              .labels = {"None", "2.2", "2.4"},
-             .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
              .is_visible = []() { return current_settings_mode >= 3; },
          },
          new renodx::utils::settings::Setting{
@@ -1254,7 +1253,7 @@ namespace {
                .label = "Encoding",
                .section = "Display Output",
                .labels = {"None", "SRGB", "2.2", "2.4", "HDR10", "scRGB"},
-               .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
+           //    .is_enabled = []() { return shader_injection.tone_map_type >= 1; },
                .on_change_value = [](float previous, float current) {
                  bool is_hdr10 = current == 4;
                  shader_injection.swap_chain_encoding_color_space = (is_hdr10 ? 1.f : 0.f);

@@ -193,7 +193,7 @@ void main(
   o0.xyzw = r1.yzwx;
 
   if (RENODX_TONE_MAP_TYPE > 0) {
-    o0.xyz = renodx::draw::ToneMapPass(untonemapped, o0.xyz);
+   // o0.xyz = renodx::draw::ToneMapPass(untonemapped, o0.xyz);
   }
 
   return;
