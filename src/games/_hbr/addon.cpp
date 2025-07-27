@@ -198,22 +198,22 @@ void OnInitPipeline(
          if (shader_version.GetMajor() == 0) {
            // No shader information found
            continue;
-         }
-         
-                    // Check if shader should be dumped and get prefix
-          auto dump_prefix = DumpShaderPrefix(shader_data);
-          
-          if (!dump_prefix.has_value()) continue;
-          
-          std::string prefix = dump_prefix.value();
-          
-         reshade::log::message(
-             reshade::log::level::info,
-             std::format("Dumping pipeline shader: 0x{:08x} ({})", shader_hash, prefix).c_str());
-          
-          renodx::utils::path::default_output_folder = "renodx-dev";
-          renodx::utils::shader::dump::default_dump_folder = "dump";
-         
+        }
+
+        // Check if shader should be dumped and get prefix
+        auto dump_prefix = DumpShaderPrefix(shader_data);
+
+        if (!dump_prefix.has_value()) continue;
+
+        std::string prefix = dump_prefix.value();
+
+        reshade::log::message(
+        reshade::log::level::info,
+        std::format("Dumping pipeline shader: 0x{:08x} ({})", shader_hash, prefix).c_str());
+
+        renodx::utils::path::default_output_folder = "renodx-dev";
+        renodx::utils::shader::dump::default_dump_folder = "dump";
+
          renodx::utils::shader::dump::DumpShader(
              shader_hash,
              shader_data,
@@ -263,6 +263,18 @@ std::vector<renodx::utils::settings::Setting*> GenerateToneMappingSection() {
             .tooltip = "Sets the tone mapper type",
             .labels = {"Vanilla", "None", "ACES", "RenoDRT", "DICE", "Frostbite"},
             .is_visible = []() { return current_settings_mode >= 1; },
+        },
+        new renodx::utils::settings::Setting{
+            .key = "DiceShoulder",
+            .binding = &shader_injection.dice_shoulder,
+            .default_value = 0.33f,
+            .can_reset = true,
+            .label = "DICE Shoulder",
+            .section = "Tone Mapping",
+            .tooltip = "Adjusts the shoulder start point for DICE tone mapping",
+            .min = 0.0f,
+            .max = 1.0f,
+            .is_visible = []() { return current_settings_mode >= 1 && shader_injection.tone_map_type == 2.f; },
         },
         new renodx::utils::settings::Setting{
             .key = "ToneMapPeakNits",

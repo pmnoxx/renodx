@@ -143,10 +143,12 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
     r0.xyz = r0.xxx * r0.yzw + r1.yyy;
 
     float3 untonemapped = r0.xyz;
-    if (RENODX_TONE_MAP_TYPE == 2.f) {  // only apply Aces once
+    if (RENODX_TONE_MAP_TYPE == 2.f) {             // only apply Aces once
+      r0.xyz = max(0.f, r0.xyz);
       r0.xyz = renodx::draw::ToneMapPass(r0.xyz);  //, sdrTonemapped);
+      r0.xyz = max(0.f, r0.xyz);
       r0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
-      r0.xyz = max(float3(0.f, 0.f, 0.f), r0.xyz);
+      r0.xyz = max(0.f, r0.xyz);
       r0.w = 1.f;
       outputLUT[vThreadID.xyz] = r0;
       return;
@@ -285,10 +287,14 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
     r0.xyz = max(float3(0, 0, 0), r1.xyz);
     r0.w = 1;
     if (RENODX_TONE_MAP_TYPE > 0.f) {
-      r0.xyz = renodx::draw::ToneMapPass(untonemapped.xyz, r0.xyz);  //, sdrTonemapped);
-      r0.xyz = max(float3(0.f, 0.f, 0.f), r0.xyz);
+      r0.xyz = max(0.f, r0.xyz);
+      untonemapped.xyz = max(0.f, untonemapped.xyz);
+      r0.xyz = ToneMapPassCustom(untonemapped.xyz, r0.xyz, RestoreHighlightSaturation(untonemapped));
+      r0.xyz = max(0.f, r0.xyz);
+      r0.xyz = renodx::draw::RenderIntermediatePass(r0.xyz);
+      r0.xyz = max(0.f, r0.xyz);
     }
+    outputLUT[vThreadID.xyz] = r0;
   }
-  outputLUT[vThreadID.xyz] = r0;
   return;
 }

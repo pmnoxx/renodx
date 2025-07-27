@@ -396,7 +396,7 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
   r0.xyz = max(float3(0,0,0), r1.xyz);
   r0.w = 1;
   if (RENODX_TONE_MAP_TYPE > 0.f) {
-    r0.xyz = renodx::draw::ToneMapPass(untonemapped.xyz, r0.xyz);  //, sdrTonemapped);
+    r0.xyz = ToneMapPassCustom(untonemapped.xyz, r0.xyz, RestoreHighlightSaturation(untonemapped)); 
   }
   outputLUT[vThreadID.xyz] = r0;
   return;

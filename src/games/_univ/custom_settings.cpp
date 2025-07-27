@@ -93,6 +93,8 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["PostSwapChainToneMapping"] = 1.f;
     }
     if (filename == "Phantom Brigade.exe") {
+        default_values["WhiteClip"] = 25.f;
+        default_values["PerChannelBlowoutRestoration"] = 0.75f;
       //  default_values["ToneMapType"] = 2.f; // ACES
     }
 }
