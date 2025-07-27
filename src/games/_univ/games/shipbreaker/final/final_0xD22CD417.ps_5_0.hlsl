@@ -46,10 +46,7 @@ void main(
   r0.x = cmp(cb0[5].x == 1.000000);
   o0.w = r0.x ? r0.z : 1;
 
-  if (RENODX_TONE_MAP_TYPE == 0.f) {
-    o0 = saturate(o0);
-  } else {
-    o0 = renodx::draw::ToneMapPass(o0);
-  }
+  o0.xyz = ToneMapPassCustom(o0.xyz);
+  o0.xyz = renodx::draw::RenderIntermediatePass(o0.xyz);
   return;
 }

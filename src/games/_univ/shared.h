@@ -24,6 +24,7 @@ struct ShaderInjectData {
   float tone_map_per_channel;
   float gamma_correction;
   float tone_map_gamma; // For ColorGradeGamma setting (0.0-1.0)
+  float dice_shoulder;
   float intermediate_scaling;
   float intermediate_encoding;
   float intermediate_color_space;
@@ -107,7 +108,7 @@ cbuffer shader_injection : register(b13) {
 // Don't use tonemapper in tonemappass if tone_map_type is 4 or 5
 #define RENODX_TONE_MAP_TYPE                 (shader_injection.tone_map_type < 4.f ? shader_injection.tone_map_type : 1.f)
 // Consider moving these to the shader inject data
-#define RENODX_DICE_SHOULDER                 0.33f
+#define RENODX_DICE_SHOULDER                 shader_injection.dice_shoulder
 #define RENODX_PEAK_WHITE_NITS               shader_injection.peak_white_nits
 #define RENODX_DIFFUSE_WHITE_NITS            shader_injection.diffuse_white_nits
 #define RENODX_GRAPHICS_WHITE_NITS           shader_injection.graphics_white_nits

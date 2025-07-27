@@ -276,9 +276,8 @@ void main(uint3 vThreadID: SV_DispatchThreadID) {
   r0.x = r0.w ? r0.x : 0;
   r3.z = r0.x * r2.w + r2.y;
   r0.xyz = max(float3(0, 0, 0), r3.xyz);
-
-  float3 neutralSdr = renodx::tonemap::renodrt::NeutralSDR(untonemapped);
-  r0.xyz = renodx::tonemap::UpgradeToneMap(untonemapped, neutralSdr, r0.xyz, 1.f);
+  float3 neutralSdr = RestoreHighlightSaturation(untonemapped);
+  r0.xyz = ComputeUntonemappedGraded(r0.xyz, untonemapped, neutralSdr);
   r0.w = 1;
 
   outputLUT[vThreadID.xyz] = r0;
