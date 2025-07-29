@@ -39,9 +39,11 @@ optimize shader dumping
 print exe name and title
 - 0.25
 change defaults for Unity
+- 0.26
+fix dump shaders setting
 */
 
- constexpr const char* RENODX_VERSION = "0.25";
+ constexpr const char* RENODX_VERSION = "0.26";
 
  #define ImTextureID ImU64
 
@@ -96,10 +98,10 @@ namespace {
     }
 
     static std::optional<std::string> DumpShaderPrefix(const std::span<const uint8_t>& shader_data) {
-        if (g_autodump_lutbuilders != 0 && ConstainsFloat(shader_data, 0.070841603f)) {
+        if ((g_dump_shaders != 0 || g_autodump_lutbuilders != 0) && ConstainsFloat(shader_data, 0.070841603f)) {
             return "lutbuilder_";
         }
-        if (g_autodump_lutbuilders != 0 && ConstainsFloat(shader_data, 0.947867334)) {
+        if ((g_dump_shaders != 0 || g_autodump_lutbuilders != 0) && ConstainsFloat(shader_data, 0.947867334)) {
             return "uber_srgb_";
         }
         if (g_dump_shaders != 0) {
@@ -707,22 +709,6 @@ namespace {
              .max = 360.f,
              .is_visible = []() { return current_settings_mode >= 3 && shader_injection.effect_split_mode != 0; },
          },
-         new renodx::utils::settings::Setting{
-             .key = "DisableSwapChainUpgrade",
-             .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-             .default_value = hbr_custom_settings::get_default_value("DisableSwapChainUpgrade", 0.f),
-             .label = "Disable Swap Chain Upgrade",
-             .section = "Display Output",
-             .tooltip = "When enabled, forces resize buffer mode for swap chain handling",
-             .labels = {"Off", "On"},
-             .on_change_value = [](float previous, float current) { 
-                 if (current == 1.f) {
-                     renodx::mods::swapchain::use_resize_buffer_on_demand = true;
-                     renodx::mods::swapchain::use_resize_buffer = true;
-                 }
-             },
-             .is_visible = []() { return current_settings_mode >= 2; },
-         },
      };
  }
  
@@ -1061,6 +1047,23 @@ namespace {
    reshade::get_config_value(nullptr, renodx::utils::settings::global_name.c_str(), "Upgrade_SwapChainCompatibility", swapchain_setting->value_as_int);
    renodx::mods::swapchain::swapchain_proxy_compatibility_mode = swapchain_setting->GetValue() != 0;
    settings.push_back(swapchain_setting);
+   settings.push_back(new renodx::utils::settings::Setting{
+       .key = "DisableSwapChainUpgrade",
+       .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+       .default_value = hbr_custom_settings::get_default_value("DisableSwapChainUpgrade", 0.f),
+       .label = "Disable Swap Chain Upgrade",
+       .section = "Display Output",
+       .tooltip = "When enabled, forces resize buffer mode for swap chain handling",
+       .labels = {"Off", "On"},
+       .on_change_value = [](float previous, float current) { 
+           if (current == 1.f) {
+               renodx::mods::swapchain::use_resize_buffer_on_demand = true;
+               renodx::mods::swapchain::use_resize_buffer = true;
+           }
+       },
+       .is_global = true,
+       .is_visible = []() { return current_settings_mode >= 2; },
+   });
  }
  
  void OnPresetOff() {
@@ -1156,6 +1159,7 @@ namespace {
          renodx::mods::swapchain::expected_constant_buffer_index = 13;
          renodx::mods::swapchain::expected_constant_buffer_space = 50;
          renodx::mods::swapchain::use_resource_cloning = true;
+         renodx::mods::swapchain::use_device_proxy = hbr_custom_settings::get_use_device_proxy();
          renodx::utils::random::binds.push_back(&shader_injection.random_seed);
          renodx::mods::swapchain::swap_chain_proxy_shaders = {
              {
@@ -1173,8 +1177,10 @@ namespace {
                  },
              },
          };
-         renodx::mods::swapchain::ignored_device_apis = { reshade::api::device_api::d3d9 }; // needed to prevent crash
- 
+         // add settings to disable d3d9 resource upgrade
+         if (hbr_custom_settings::get_disable_d3d9_resource_upgrade()) {
+            renodx::mods::swapchain::ignored_device_apis = { reshade::api::device_api::d3d9 }; // needed to prevent crash
+         }
          {
 
            auto* setting = new renodx::utils::settings::Setting{
