@@ -535,6 +535,7 @@ file(GLOB ADDON_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/games/_*
 file(GLOB DEVKIT_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/addons/**/addon.cpp)
 file(GLOB UNREALENGINE_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/games/unrealengine/addon.cpp)
 file(GLOB THEHUNDREDLINE_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/games/thehundredline/addon.cpp)
+file(GLOB THEHUNDREDLINE_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/games/generic/addon.cpp)
 list(APPEND ADDON_FILES ${DEVKIT_FILES} ${UNREALENGINE_FILES} ${THEHUNDREDLINE_FILES})
 
 foreach(FILE ${ADDON_FILES})
@@ -550,6 +551,7 @@ foreach(FILE ${ADDON_FILES})
   target_include_directories(${ADDON} SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/reshade)
   target_include_directories(${ADDON} SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_include_directories(${ADDON} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${ADDON}.include)
+  target_link_libraries(${ADDON} PRIVATE dbghelp)
   #target_compile_definitions(${ADDON} PRIVATE _UNICODE)
   set_target_properties(${ADDON}
     PROPERTIES

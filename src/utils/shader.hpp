@@ -9,6 +9,8 @@
 #include <d3d12.h>
 #include <dxgi.h>
 #include <dxgi1_6.h>
+#include <windows.h>
+#include <dbghelp.h>
 
 #include <array>
 #include <atomic>
@@ -362,8 +364,53 @@ inline PipelineShaderDetails* GetPipelineShaderDetails(const reshade::api::pipel
       });
 
   if (details == nullptr) {
+    if (true) {
+      return details;
+    }
+    // Capture stack trace for debugging
+    void* stack_trace[32];
+    WORD frames = CaptureStackBackTrace(0, 32, stack_trace, nullptr);
+    
+    // Initialize symbol handler for current process
+    HANDLE process = GetCurrentProcess();
+    bool symbols_initialized = SymInitialize(process, nullptr, TRUE) != FALSE;
+    
+    std::stringstream stack_ss;
+    stack_ss << "Stack trace (" << frames << " frames):";
+    
+    for (WORD i = 0; i < frames; ++i) {
+      stack_ss << "\n  [" << i << "] " << log::AsPtr(stack_trace[i]);
+      
+      if (symbols_initialized) {
+        // Get symbol information
+        DWORD64 displacement = 0;
+        char symbol_buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
+        PSYMBOL_INFO symbol = (PSYMBOL_INFO)symbol_buffer;
+        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+        symbol->MaxNameLen = MAX_SYM_NAME;
+        
+        if (SymFromAddr(process, (DWORD64)stack_trace[i], &displacement, symbol)) {
+          stack_ss << " " << symbol->Name;
+          
+          // Get line information
+          DWORD line_displacement = 0;
+          IMAGEHLP_LINE64 line;
+          line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+          
+          if (SymGetLineFromAddr64(process, (DWORD64)stack_trace[i], &line_displacement, &line)) {
+            stack_ss << " (" << line.FileName << ":" << line.LineNumber << ")";
+          }
+        }
+      }
+    }
+    
+    // Clean up symbol handler
+    if (symbols_initialized) {
+      SymCleanup(process);
+    }
+    
     log::e("utils::shader::GetPipelineShaderDetails(Pipeline not found for handle: ",
-           log::AsPtr(pipeline.handle), ")");
+           log::AsPtr(pipeline.handle), ")\n", stack_ss.str());
     assert(details != nullptr);
   }
 

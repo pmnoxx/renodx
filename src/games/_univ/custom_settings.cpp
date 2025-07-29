@@ -39,6 +39,7 @@ static std::unordered_map<std::string, float> default_values = {
     {"ColorGradeGamma", 50.f},
     {"CustomCharacterBrightness", 1.f},
     {"CustomTextBrightness", 1.f},
+    {"CustomGameCompatibilityMode", 1.f},
     {"CustomBloom2D", 100.f},
     {"CustomBloom3D", 100.f},
     {"EnableUIToneMapPass", 0.f},
@@ -75,6 +76,8 @@ static std::unordered_map<std::string, float> default_values = {
     {"PerceptualBoostReinhardMidpoint", 5.f},
     {"PostSwapChainToneMapping", 0.f},
     {"Upgrade_SwapChainCompatibility", 1.f},
+    {"DisableD3D9ResourceUpgrade", 1.f},
+    {"UseDeviceProxy", 0.f},
 };
 
 // Apply filename-based settings overrides
@@ -96,6 +99,9 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["WhiteClip"] = 25.f;
         default_values["PerChannelBlowoutRestoration"] = 0.75f;
       //  default_values["ToneMapType"] = 2.f; // ACES
+    } else if (filename == "This War of Mine.exe") {
+        default_values["DisableD3D9ResourceUpgrade"] = 0.f;
+        default_values["UseDeviceProxy"] = 1.f;
     }
 }
 
@@ -105,6 +111,14 @@ inline float get_default_value(const std::string& key, float fallback = 0.f) {
     if (it != default_values.end())
         return it->second;
     return fallback;
+}
+
+inline bool get_use_device_proxy() {
+    return get_default_value("UseDeviceProxy", 0.f) != 0.f;
+}
+
+inline bool get_disable_d3d9_resource_upgrade() {
+    return get_default_value("DisableD3D9ResourceUpgrade", 0.f) != 0.f;
 }
 
 // Returns the value for global resource view cloning (0 = false, 1 = true)
@@ -137,6 +151,17 @@ std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection
             .max = 2.0f,
             .format = "%.2f",
             .is_visible = [&current_settings_mode]() { return current_settings_mode >= 3; },
+        },
+        new renodx::utils::settings::Setting{
+            .key = "CustomGameCompatibilityMode",
+            .binding = &shader_injection.custom_game_compatiblity_mode,
+            .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+            .default_value = hbr_custom_settings::get_default_value("CustomGameCompatibilityMode", 1.f),
+            .label = "Game Compatibility Mode",
+            .section = "Custom Color Grading",
+            .tooltip = "Disable broken in-game features for better compatibility.",
+            .labels = {"Off", "On"},
+            .is_visible = [&current_settings_mode]() { return current_settings_mode >= 1; },
         },
     };
 }
