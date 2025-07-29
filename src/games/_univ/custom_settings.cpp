@@ -80,6 +80,30 @@ static std::unordered_map<std::string, float> default_values = {
     {"UseDeviceProxy", 0.f},
 };
 
+namespace {
+// Returns the default value for a key, or fallback if not found
+inline float get_default_value(const std::string& key, float fallback = 0.f) {
+    auto it = default_values.find(key);
+    if (it != default_values.end()){
+        return it->second;
+    }
+    return fallback;
+}
+
+inline bool get_use_device_proxy() {
+    return get_default_value("UseDeviceProxy", 0.f) != 0.f;
+}
+
+inline bool get_disable_d3d9_resource_upgrade() {
+    return get_default_value("DisableD3D9ResourceUpgrade", 0.f) != 0.f;
+}
+
+// Returns the value for global resource view cloning (0 = false, 1 = true)
+inline bool get_upgrade_resource_view_cloning() {
+    return get_default_value("UpgradeResourceViewCloning", 0.f) != 0.f;
+}
+} // anonymous namespace
+
 // Apply filename-based settings overrides
 void ApplyFilenameBasedOverrides(const std::string& filename) {
     if (filename == "Artisan TD.exe") {
@@ -103,27 +127,6 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["DisableD3D9ResourceUpgrade"] = 0.f;
         default_values["UseDeviceProxy"] = 1.f;
     }
-}
-
-// Returns the default value for a key, or fallback if not found
-inline float get_default_value(const std::string& key, float fallback = 0.f) {
-    auto it = default_values.find(key);
-    if (it != default_values.end())
-        return it->second;
-    return fallback;
-}
-
-inline bool get_use_device_proxy() {
-    return get_default_value("UseDeviceProxy", 0.f) != 0.f;
-}
-
-inline bool get_disable_d3d9_resource_upgrade() {
-    return get_default_value("DisableD3D9ResourceUpgrade", 0.f) != 0.f;
-}
-
-// Returns the value for global resource view cloning (0 = false, 1 = true)
-inline bool get_upgrade_resource_view_cloning() {
-    return get_default_value("UpgradeResourceViewCloning", 0.f) != 0.f;
 }
 
 std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection(ShaderInjectData& shader_injection, float& current_settings_mode) {
