@@ -1,3 +1,5 @@
+#include "../../custom.hlsl"
+
 // Generated HLSL code from ASM instructions
 //
 // #pragma target ps_3_0
@@ -93,7 +95,11 @@ float4 main(
 
     //  6 0x00000210:: add_sat_pp oC0.xyz, r0, r0
     // sig: float3 = add_sat(float4)
-    oC0.xyz = (__asm_add_sat_pp(r0, r0)).xyz;
+    if (RENODX_TONE_MAP_TYPE > 0.f) {
+        oC0.xyz = (__asm_add_pp(r0, r0)).xyz;
+    } else {
+        oC0.xyz = (__asm_add_sat_pp(r0, r0)).xyz;
+    }
 
     //  7 0x00000220:: mul_pp r0.xyz, r1, c26.y
     // sig: float3 = float4 * float1
@@ -102,6 +108,8 @@ float4 main(
     //  8 0x00000230:: mul_pp r0.xyz, r0, c0.x
     // sig: float3 = float4 * float1
     r0.xyz = (r0 * c0.x).xyz;
+
+    float3 untonemapped_color = r0.xyz;
 
     //  9 0x00000240:: texld_pp r1, r0.x, s1
     // sig: float4 = tex1D(sampler1D, float1)
@@ -123,10 +131,14 @@ float4 main(
     // sig: half1 = float1
     r1.y = r2.y;
 
+    
     // approximately 19 instruction slots used (7 texture, 12 arithmetic)
     // 11 0x00000288:: dp3_pp oC0.w, r1, c0.yzww
     // sig: float1 = dp3(float4)
     oC0.w = (__asm_dp3_pp(r1, c0.yzww));
+    
+
+
 
     return oC0;  // Return the final result
 }

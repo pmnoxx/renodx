@@ -1,3 +1,5 @@
+#include "../../custom.hlsl"
+
 // Generated HLSL code from ASM instructions
 //
 // #pragma target ps_3_0
@@ -87,6 +89,7 @@ float4 main(
     // Temporary registers
     float4 r0 = 0, r1 = 0, r2 = 0, r3 = 0;
 
+    
     //  0 0x000003C4:: add r0.xy, c32, v0
     // sig: float2 = float4 + float4
     r0.xy = (SharpenParams + v0).xy;
@@ -103,6 +106,7 @@ float4 main(
     // sig: float3 = __asm_lerp(float1, float4, float4)
     r2.xyz = (__asm_lerp(SharpenParams.z, r0, r1)).xyz;
 
+
     //  2 0x00000408:: mul_pp r0.xyz, r2, c32.w
     // sig: float3 = float4 * float1
     r0.xyz = (r2 * SharpenParams.w).xyz;
@@ -110,6 +114,9 @@ float4 main(
     //  3 0x00000418:: mul_pp r0.xyz, r0, c0.x
     // sig: float3 = float4 * float1
     r0.xyz = (r0 * c0.x).xyz;
+
+
+    float3 untonemapped_color = r0.xyz;
 
     //  4 0x00000428:: texld_pp r1, r0.x, s4
     // sig: float4 = tex1D(sampler1D, float1)
@@ -130,6 +137,29 @@ float4 main(
     //  5 0x00000464:: mov_pp r1.y, r2.y
     // sig: half1 = float1
     r1.y = r2.y;
+
+    if (RENODX_TONE_MAP_TYPE >= 0.f) {
+        if (RENODX_DEBUG_MODE == 3.f) { // no tonemapping
+            return r1;
+//            r1.xyz = sqrt(untonemapped_color.xyz);
+        } else if (RENODX_DEBUG_MODE == 2.f) { // bad results
+            r1.xyz = lerp(r1.xyz, untonemapped_color, min(1.f, untonemapped_color));
+/*        } else if (RENODX_DEBUG_MODE == 1.f) { // bad results
+            float input = 1.0 / 0.9;
+            float output = v10 / v09;
+            float b = log(output) / log(input);
+
+            r1.xyz = lerp(r1.xyz, r1.xyz * pow(untonemapped_color, b), (untonemapped_color > 1.f ? 1.f : 0.f));
+            */
+        } else if (RENODX_DEBUG_MODE == 4.f) { // best solution2 so far
+            float y_untonemapped = renodx::color::y::from::BT709(untonemapped_color.xyz);
+            float y_new = renodx::color::y::from::BT709(r1.xyz);
+            
+            r1.xyz *= max(1.f, y_untonemapped / y_new);
+        } else { // best solution so far
+            r1.xyz = lerp(r1.xyz, r1.xyz * untonemapped_color, (untonemapped_color > 1.f ? 1.f : 0.f));
+        }
+    }
 
     //  6 0x00000470:: texld_pp r0, v0.zwzw, s1
     // sig: float4 = tex2D(sampler2D, float2)
@@ -157,7 +187,13 @@ float4 main(
 
     // 11 0x000004D4:: mad_sat_pp r0.xyz, r2, c35, r0
     // sig: float3 = mad_sat(float3, float1, float3)
-    r0.xyz = (saturate(r2 * LayerCloudColor + r0)).xyz;
+    //r0.xyz = (saturate(r2 * LayerCloudColor + r0)).xyz;
+    r0.xyz = ((r2 * LayerCloudColor + r0)).xyz;
+    if (RENODX_TONE_MAP_TYPE == 0.f) { // uncaps color partially
+        r0.xyz = saturate(r0.xyz);
+    } 
+
+    // sqrt?
 
     // 12 0x000004E8:: rsq_pp r0.w, r0.x
     // sig: float1 = rsq(float1)
@@ -189,7 +225,7 @@ float4 main(
 
     // 19 0x00000540:: dp3_pp r2.x, r2, r2
     // sig: float1 = dp3(float4)
-    r2.x = dot(r2, r2);
+    r2.x = dot(r2.xyz, r2.xyz);
 
     // 20 0x00000550:: add_pp r3.xyz, -, r1, c30
     // sig: float3 = float4 + float4
@@ -197,7 +233,7 @@ float4 main(
 
     // 21 0x00000560:: dp3_sat_pp r0.w, r1, c1
     // sig: float1 = dp3_sat(float4, float4)
-    r0.w = saturate(dot(r1, c1));
+    r0.w = saturate(dot(r1.xyz, c1.xyz));
 
     // 22 0x00000570:: texld_pp r1, r0.w, s3
     // sig: float4 = tex1D(sampler1D, float1)
@@ -205,7 +241,7 @@ float4 main(
 
     // 22 0x00000580:: dp3_pp r2.y, r3, r3
     // sig: float1 = dp3(float4)
-    r2.y = dot(r3, r3);
+    r2.y = dot(r3.xyz, r3.xyz);
 
     // 23 0x00000590:: mad_sat_pp r2.xy, r2, c31, c31.zwzw
     // sig: float2 = mad_sat(float2, float1, float2)
@@ -225,7 +261,10 @@ float4 main(
 
     // 27 0x000005D8:: dp3_pp r0.x, r2, c1
     // sig: float1 = dp3(float4)
-    r0.x = dot(r2, c1);
+    r0.x = dot(r2.xyz, c1.xyz);
+    if (RENODX_TONE_MAP_TYPE > 0.f) { // prevents overapplying effects
+        r0.x = min(1.f, r0.x);
+    }
 
     // 28 0x000005E8:: lrp_pp r1.xyz, c27.z, r2, r0.x
     // sig: float3 = __asm_lerp(float1, float4, float1)
@@ -265,11 +304,16 @@ float4 main(
 
     // 37 0x00000664:: mul_sat_pp r0.xyz, r1, c0.y
     // sig: float3 = mul_sat(float3, float1)
-    r0.xyz = (saturate(r1 * c0.y)).xyz;
+    //r0.xyz = (saturate(r1 * c0.y)).xyz;
+    r0.xyz = ((r1 * c0.y)).xyz;
+    if (RENODX_TONE_MAP_TYPE == 0.f) { // uncaps the color partially
+        r0.xyz = saturate(r0.xyz);
+    }
 
     // 38 0x00000674:: dp3_pp r0.w, r0, c1
     // sig: float1 = dp3(float4)
-    r0.w = dot(r0, c1);
+    // r0.w = dot(r0.xyz, c1.xyz);
+    r0.w = min(1.f, dot(r0.xyz, c1.xyz));
 
     // 39 0x00000684:: add r1.x, r0.w, -, c37.x
     // sig: float1 = float1 + float1
@@ -303,7 +347,7 @@ float4 main(
     // sig: float4 = tex2D(sampler2D, float2)
     r2 = tex2D(MaskTexture, v0.xy);
 
-    // 46 0x00000704:: add_pp r1.y, -, r2.x, c0.z
+    // 46 0x00000704:: add_pp r1.y, -r2.x, c0.z
     // sig: float1 = float1 + float1
     r1.y = (-r2.x + c0.z);
 
@@ -329,6 +373,7 @@ float4 main(
 
     // 50 0x0000076C:: lrp_pp r3.xyz, r1.x, r2.x, r0
     // sig: float3 = __asm_lerp(float1, float1, float4)
+    // lerp (cloud_color, color)
     r3.xyz = (__asm_lerp(r1.x, r2.x, r0)).xyz;
 
     // 51 0x00000780:: mul_pp r0.xyz, r3, v2
@@ -353,12 +398,20 @@ float4 main(
 
     // 57 0x000007D8:: dp3_pp oC0.w, r0, c1
     // sig: float1 = dp3(float4)
-    oC0.w = dot(r0, c1);
+    oC0.w = dot(r0.xyz, c1.xyz);
 
     // approximately 69 instruction slots used (10 texture, 59 arithmetic)
     // 58 0x000007E8:: mov_pp oC0.xyz, r0
     // sig: half3 = float4
     oC0.xyz = (r0).xyz;
+
+    if (RENODX_DEBUG_MODE >= 1.f) {
+        oC0.xyz *= RENODX_DEBUG_MODE2;
+    }
+
+    if (RENODX_TONE_MAP_TYPE == 0.f) {
+        oC0.xyz = saturate(oC0.xyz);
+    }
 
     return oC0;  // Return the final result
 }

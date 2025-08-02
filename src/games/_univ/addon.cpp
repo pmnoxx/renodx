@@ -938,7 +938,7 @@ namespace {
               .section = "Debug",
               .tooltip = "Debug mode for development and testing (0.0-1.0)",
               .min = 0.f,
-              .max = 1.f,
+              .max = 10.f,
               .format = "%.2f",
               .is_visible = []() { return current_settings_mode >= 3; },
           },
@@ -950,7 +950,7 @@ namespace {
              .section = "Debug",
              .tooltip = "Debug mode 2 for development and testing (0.0-1.0)",
              .min = 0.f,
-             .max = 1.f,
+             .max = 10.f,
              .format = "%.2f",
              .is_visible = []() { return current_settings_mode >= 3; },
          },
@@ -962,7 +962,7 @@ namespace {
              .section = "Debug",
              .tooltip = "Debug mode 3 for development and testing (0.0-1.0)",
              .min = 0.f,
-             .max = 1.f,
+             .max = 10.f,
              .format = "%.2f",
              .is_visible = []() { return current_settings_mode >= 3; },
          },
@@ -1159,6 +1159,12 @@ namespace {
  
          renodx::mods::swapchain::expected_constant_buffer_index = 13;
          renodx::mods::swapchain::expected_constant_buffer_space = 50;
+
+        // #ifdef USE_CB50
+         renodx::mods::shader::constant_buffer_offset = hbr_custom_settings::get_constant_buffer_offset();
+         // 50 * 4;
+      //   #endif
+
          renodx::mods::swapchain::use_resource_cloning = true;
          renodx::mods::swapchain::use_device_proxy = hbr_custom_settings::get_use_device_proxy();
          renodx::utils::random::binds.push_back(&shader_injection.random_seed);

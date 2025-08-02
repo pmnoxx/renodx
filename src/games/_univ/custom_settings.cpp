@@ -77,7 +77,8 @@ static std::unordered_map<std::string, float> default_values = {
     {"PostSwapChainToneMapping", 0.f},
     {"Upgrade_SwapChainCompatibility", 1.f},
     {"DisableD3D9ResourceUpgrade", 1.f},
-    {"UseDeviceProxy", 0.f},
+    {"UseDeviceProxy", 0.f},    
+    {"ConstantBufferOffset", 0},
 };
 
 namespace {
@@ -104,6 +105,10 @@ inline bool get_upgrade_resource_view_cloning() {
 }
 } // anonymous namespace
 
+inline int get_constant_buffer_offset() {
+    return get_default_value("ConstantBufferOffset", 0);
+}
+
 // Apply filename-based settings overrides
 void ApplyFilenameBasedOverrides(const std::string& filename) {
     if (filename == "Artisan TD.exe") {
@@ -126,6 +131,10 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
     } else if (filename == "This War of Mine.exe") {
         default_values["DisableD3D9ResourceUpgrade"] = 0.f;
         default_values["UseDeviceProxy"] = 1.f;
+        default_values["ConstantBufferOffset"] = 50 * 4;
+        default_values["ToneMapType"] = 4.f; // DICE
+        default_values["SimulateRenderPass"] = 1.f; 
+        default_values["PostSwapChainToneMapping"] = 1.f;
     }
 }
 
