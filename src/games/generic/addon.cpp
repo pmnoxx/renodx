@@ -403,6 +403,12 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         renodx::mods::swapchain::expected_constant_buffer_index = 13;
         renodx::mods::swapchain::expected_constant_buffer_space = 50;
         renodx::mods::swapchain::use_resource_cloning = true;
+            
+        renodx::mods::swapchain::prevent_full_screen = false;
+        renodx::mods::swapchain::force_screen_tearing = false;
+        renodx::mods::swapchain::set_color_space = false;
+        renodx::mods::swapchain::use_device_proxy = true;
+
         renodx::mods::swapchain::swap_chain_proxy_shaders = {
             {
                 reshade::api::device_api::d3d11,
@@ -533,7 +539,11 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
     case DLL_PROCESS_DETACH:
       reshade::unregister_addon(h_module);
       break;
-  }
+  }        
+  renodx::mods::swapchain::prevent_full_screen = false;
+  renodx::mods::swapchain::force_screen_tearing = false;
+  renodx::mods::swapchain::set_color_space = false;
+  renodx::mods::swapchain::use_device_proxy = true;
 
   renodx::utils::settings::Use(fdw_reason, &settings, &OnPresetOff);
   renodx::mods::swapchain::Use(fdw_reason, &shader_injection);

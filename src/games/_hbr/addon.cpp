@@ -218,8 +218,7 @@ void OnInitPipeline(
              shader_hash,
              shader_data,
              subobject.type,
-             prefix,
-             "");
+             prefix);
            
      } catch (...) {
        std::stringstream s;
