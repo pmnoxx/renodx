@@ -1168,6 +1168,15 @@ namespace {
          renodx::mods::swapchain::use_resource_cloning = true;
          renodx::mods::swapchain::use_device_proxy = hbr_custom_settings::get_use_device_proxy();
          renodx::utils::random::binds.push_back(&shader_injection.random_seed);
+
+
+         if (filename == "No Creeps Were Harmed TD.exe") {        
+            renodx::mods::swapchain::prevent_full_screen = false;
+            renodx::mods::swapchain::force_screen_tearing = false;
+            renodx::mods::swapchain::set_color_space = false;
+            renodx::mods::swapchain::use_device_proxy = true;
+         }
+
          renodx::mods::swapchain::swap_chain_proxy_shaders = {
              {
                  reshade::api::device_api::d3d11,

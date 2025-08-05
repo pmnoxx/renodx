@@ -138,7 +138,7 @@ float4 main(
     // sig: half1 = float1
     r1.y = r2.y;
 
-    if (RENODX_TONE_MAP_TYPE >= 0.f) {
+    if (RENODX_TONE_MAP_TYPE > 0.f) {
         if (RENODX_DEBUG_MODE == 3.f) { // no tonemapping
             return r1;
 //            r1.xyz = sqrt(untonemapped_color.xyz);
