@@ -302,10 +302,6 @@ float3 applyUserTonemap(float3 untonemapped, float userToneMapType) {
     outputColor = untonemapped;
   }
 
-  if (userToneMapType == 5.f) {  // DefaultToneMapper
-    return renodx::draw::ToneMapPass(untonemapped);
-  }
-
   if (userToneMapType != 0) {  // UserColorGrading, pre-tonemap
     outputColor = renodx::color::grade::UserColorGrading(
         outputColor,
@@ -319,7 +315,7 @@ float3 applyUserTonemap(float3 untonemapped, float userToneMapType) {
   }
 
   // Start tonemapper if/else
-  if (userToneMapType == 2.f) {  // DICE
+  if (userToneMapType == 4.f) {  // DICE
     DICESettings DICEconfig = DefaultDICESettings();
     DICEconfig.Type = 3;
     DICEconfig.ShoulderStart = RENODX_DICE_SHOULDER;  // 0.33f;  // Start shoulder
@@ -328,14 +324,14 @@ float3 applyUserTonemap(float3 untonemapped, float userToneMapType) {
     float dicePeakWhite = RENODX_PEAK_WHITE_NITS / 80.f;
 
     outputColor = DICETonemap(outputColor * dicePaperWhite, dicePeakWhite, DICEconfig) / dicePaperWhite;
-  } else if (userToneMapType == 3.f) {  // baby reinhard
+  } else if (userToneMapType == 5.f) {  // Frostbite
+    float frostbitePeak = RENODX_PEAK_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
+    outputColor = renodx::tonemap::frostbite::BT709(outputColor, frostbitePeak);
+  } else if (userToneMapType == 6.f) {  // baby reinhard
     float ReinhardPeak = RENODX_PEAK_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
     outputColor = renodx::tonemap::ReinhardScalable(outputColor, ReinhardPeak);
 
-  } else if (userToneMapType == 4.f) {  // Frostbite
-    float frostbitePeak = RENODX_PEAK_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
-    outputColor = renodx::tonemap::frostbite::BT709(outputColor, frostbitePeak);
-  }
+  } 
 
   if (userToneMapType != 0) {  // UserColorGrading, post-tonemap
     outputColor = renodx::color::grade::UserColorGrading(
@@ -408,10 +404,8 @@ float3 ToneMapPassCustom(float3 color, float ignore_tonemap_flag = 0.f) {
     color = acesTonemap(neutral_sdr_color);
     color = UpgradeToneMapCustom(untonemapped, neutral_sdr_color, color, shader_injection.color_grade_strength, 0.f);
   }*/
-  if (RENODX_TONE_MAP_TYPE == 4.f) {  //
-    return applyUserTonemap(color, 2.f);        // DICE
-  } else if (RENODX_TONE_MAP_TYPE == 5.f) {
-    return applyUserTonemap(color, 4.f);  // Frostbite
+  if (RENODX_TONE_MAP_TYPE >= 4.f) {  //
+    return applyUserTonemap(color, RENODX_TONE_MAP_TYPE);        // DICE
   }
 
   return renodx::draw::ToneMapPass(color);

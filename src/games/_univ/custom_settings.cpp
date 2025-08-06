@@ -17,7 +17,7 @@ static std::unordered_map<std::string, float> default_values = {
     {"ToneMapUINits", 203.f},
     {"GammaCorrection", 1.f},
     {"ToneMapScaling", 0.f},
-    {"ToneMapWorkingColorSpace", 0.f},
+    {"ToneMapWorkingColorSpace", 2.f},
     {"ToneMapHueProcessor", 0.f},
     {"ToneMapHueCorrection", 100.f},
     {"ToneMapHueShift", 50.f},

@@ -212,8 +212,7 @@ cbuffer shader_injection : register(b13) {
   ShaderInjectData shader_injection : packoffset(c0);
 }
 
-// Don't use tonemapper in tonemappass if tone_map_type is 4 or 5
-#define RENODX_TONE_MAP_TYPE                 (shader_injection.tone_map_type < 4.f ? shader_injection.tone_map_type : 1.f)
+#define RENODX_TONE_MAP_TYPE                 shader_injection.tone_map_type
 // Consider moving these to the shader inject data
 #define RENODX_DICE_SHOULDER                 shader_injection.dice_shoulder
 #define RENODX_PEAK_WHITE_NITS               shader_injection.peak_white_nits
