@@ -3,8 +3,14 @@
 
 Texture2D t0 : register(t0);
 SamplerState s0 : register(s0);
-float4 main(float4 vpos: SV_POSITION, float2 uv: TEXCOORD0)
+float4 main(float4 vpos: SV_POSITION, float2 uv_org: TEXCOORD0)
     : SV_TARGET {
+  float2 uv = uv_org;
+  if (RENODX_IS_UPSIDE_DOWN != 0.f) {
+    uv.y = 1.f - uv.y;
+  }
+
+
   float4 o0 = t0.Sample(s0, uv);
 
   if (RENODX_SIMULATE_RENDER_PASS > 0.f) {

@@ -98,6 +98,7 @@ struct ShaderInjectData {
   float custom_character_brightness; // Custom character brightness for UI slider - shader_injection[18][2]
   float custom_text_brightness;      // shader_injection[18][3]
   float custom_game_compatiblity_mode; // Custom game compatibility mode (disable broken in-game features) - shader_injection[19][0]
+  float is_upside_down;              // Controls if the image should be flipped vertically - shader_injection[19][1]
 };
 
 #ifndef __cplusplus
@@ -199,6 +200,7 @@ float4 shader_injection[20] : register(c50);
 #define CUSTOM_CHARACTER_BRIGHTNESS      shader_injection[18][2]
 #define CUSTOM_TEXT_BRIGHTNESS           shader_injection[18][3]
 #define CUSTOM_GAME_COMPATIBLITY_MODE    shader_injection[19][0]
+#define RENODX_IS_UPSIDE_DOWN            shader_injection[19][1]
 
 #define RENODX_RENO_DRT_TONE_MAP_METHOD renodx::tonemap::renodrt::config::tone_map_method::REINHARD
 #else
@@ -317,6 +319,7 @@ cbuffer shader_injection : register(b13) {
 #define CUSTOM_CHARACTER_BRIGHTNESS      shader_injection.custom_character_brightness
 #define CUSTOM_TEXT_BRIGHTNESS           shader_injection.custom_text_brightness
 #define CUSTOM_GAME_COMPATIBLITY_MODE    shader_injection.custom_game_compatiblity_mode
+#define RENODX_IS_UPSIDE_DOWN            shader_injection.is_upside_down
 
 #endif
 

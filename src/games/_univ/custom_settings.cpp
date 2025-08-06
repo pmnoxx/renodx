@@ -92,6 +92,7 @@ static std::unordered_map<std::string, float> default_values = {
     {"Upgrade_B10G10R10A2_UNORM", 2.f},
     {"Upgrade_R11G11B10_FLOAT", 2.f},
     {"Upgrade_R16G16B16A16_TYPELESS", 0.f},
+    {"IsUpsideDown", 0.f},
 };
 
 namespace {
@@ -151,33 +152,16 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
     } else if (filename == "TheSwapper.exe") {
         default_values["UseDeviceProxy"] = 1.f;
         default_values["UpgradeLUTResources"] = 0.f;
-        default_values["Upgrade_R8G8B8A8_TYPELESS"] = 0.f;
-        default_values["Upgrade_B8G8R8A8_TYPELESS"] = 0.f;
-        default_values["Upgrade_R8G8B8A8_UNORM"] = 0.f;
-        default_values["Upgrade_B8G8R8A8_UNORM"] = 0.f;
-        default_values["Upgrade_R8G8B8A8_SNORM"] = 0.f;
-        default_values["Upgrade_R8G8B8A8_UNORM_SRGB"] = 0.f;
-        default_values["Upgrade_B8G8R8A8_UNORM_SRGB"] = 0.f;
-        default_values["Upgrade_R10G10B10A2_TYPELESS"] = 0.f;
-        default_values["Upgrade_R10G10B10A2_UNORM"] = 0.f;
-        default_values["Upgrade_B10G10R10A2_UNORM"] = 0.f;
-        default_values["Upgrade_R11G11B10_FLOAT"] = 0.f;
-        default_values["Upgrade_R16G16B16A16_TYPELESS"] = 0.f;
+        default_values["PostSwapChainToneMapping"] = 1.f;
+
+        //gamam correction
+        default_values["GammaCorrection"] = 0.f;
+        default_values["SwapChainGammaCorrection"] = 0.f;
+        // decoding 2.2
+        default_values["SwapChainDecoding"] = 2.f;
+        // upside down
+        default_values["IsUpsideDown"] = 1.f;
     }
-    default_values["UseDeviceProxy"] = 1.f;
-    default_values["UpgradeLUTResources"] = 0.f;
-    default_values["Upgrade_R8G8B8A8_TYPELESS"] = 0.f;
-    default_values["Upgrade_B8G8R8A8_TYPELESS"] = 0.f;
-    default_values["Upgrade_R8G8B8A8_UNORM"] = 0.f;
-    default_values["Upgrade_B8G8R8A8_UNORM"] = 0.f;
-    default_values["Upgrade_R8G8B8A8_SNORM"] = 0.f;
-    default_values["Upgrade_R8G8B8A8_UNORM_SRGB"] = 0.f;
-    default_values["Upgrade_B8G8R8A8_UNORM_SRGB"] = 0.f;
-    default_values["Upgrade_R10G10B10A2_TYPELESS"] = 0.f;
-    default_values["Upgrade_R10G10B10A2_UNORM"] = 0.f;
-    default_values["Upgrade_B10G10R10A2_UNORM"] = 0.f;
-    default_values["Upgrade_R11G11B10_FLOAT"] = 0.f;
-    default_values["Upgrade_R16G16B16A16_TYPELESS"] = 0.f;
 }
 
 std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection(ShaderInjectData& shader_injection, float& current_settings_mode) {

@@ -79,6 +79,7 @@ namespace {
     ShaderInjectData shader_injection;
     
          float g_dump_shaders = 0;
+         float g_upgrade_copy_destinations = 0;
      float g_autodump_lutbuilders = 0;
      std::unordered_set<uint32_t> g_dumped_shaders = {};
      
@@ -709,6 +710,17 @@ namespace {
              .max = 360.f,
              .is_visible = []() { return current_settings_mode >= 3 && shader_injection.effect_split_mode != 0; },
          },
+         new renodx::utils::settings::Setting{
+             .key = "IsUpsideDown",
+             .binding = &shader_injection.is_upside_down,
+             .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+             .default_value = hbr_custom_settings::get_default_value("IsUpsideDown", 0.f),
+             .label = "Flip Image Vertically",
+             .section = "Display Output",
+             .tooltip = "Flips the image vertically (useful for games that render upside down)",
+             .labels = {"Off", "On"},
+             .is_visible = []() { return current_settings_mode >= 2; },
+         },
      };
  }
  
@@ -1169,12 +1181,13 @@ namespace {
          renodx::utils::random::binds.push_back(&shader_injection.random_seed);
 
 
-         if (filename == "No Creeps Were Harmed TD.exe") {        
+         if (filename == "TheSwapper.exe") {        
             renodx::mods::swapchain::prevent_full_screen = false;
             renodx::mods::swapchain::force_screen_tearing = false;
             renodx::mods::swapchain::set_color_space = false;
             renodx::mods::swapchain::use_device_proxy = true;
          }
+         g_upgrade_copy_destinations = 1;    
 
          renodx::mods::swapchain::swap_chain_proxy_shaders = {
              {
@@ -1334,7 +1347,10 @@ namespace {
                  .aspect_ratio = static_cast<float>((value == UPGRADE_TYPE_OUTPUT_RATIO)
                                                         ? renodx::mods::swapchain::SwapChainUpgradeTarget::BACK_BUFFER
                                                         : renodx::mods::swapchain::SwapChainUpgradeTarget::ANY),
-                 .usage_include = reshade::api::resource_usage::render_target,
+                 .usage_include = reshade::api::resource_usage::render_target
+                 | (g_upgrade_copy_destinations == 0.f
+                        ? reshade::api::resource_usage::undefined
+                        : reshade::api::resource_usage::copy_dest),
              });
              std::stringstream s;
              s << "Applying user resource upgrade for ";
