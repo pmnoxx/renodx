@@ -269,7 +269,7 @@ namespace {
              .label = "Tone Mapper",
              .section = "Tone Mapping",
              .tooltip = "Sets the tone mapper type",
-             .labels = {"Vanilla", "None", "ACES", "RenoDRT", "DICE", "Frostbite", "BabyReinhard"},
+             .labels = {"Vanilla", "None", "ACES", "RenoDRT", "DICE", "Frostbite", "BabyReinhard", "ACES (v2)"},
              .is_visible = []() { return current_settings_mode >= 1; },
          },
          new renodx::utils::settings::Setting{

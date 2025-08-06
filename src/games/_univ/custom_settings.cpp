@@ -158,7 +158,7 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["GammaCorrection"] = 0.f;
         default_values["SwapChainGammaCorrection"] = 0.f;
         // decoding 2.2
-        default_values["SwapChainDecoding"] = 2.f;
+        default_values["SwapChainDecoding"] = 3.f;
         // upside down
         default_values["IsUpsideDown"] = 1.f;
     }
