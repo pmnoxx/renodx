@@ -10,9 +10,10 @@ float4 main(float4 vpos: SV_POSITION, float2 uv_org: TEXCOORD0)
     uv.y = 1.f - uv.y;
   }
 
-
   float4 o0 = t0.Sample(s0, uv);
-/*
+
+  
+  /*
   if (RENODX_SIMULATE_RENDER_PASS > 0.f) {
     o0.rgb = renodx::draw::InvertIntermediatePass(o0.rgb);
     o0.rgb *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
@@ -22,13 +23,13 @@ float4 main(float4 vpos: SV_POSITION, float2 uv_org: TEXCOORD0)
   if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f || SCENE_TYPE_DISPLAY_OUTPUT > 0.f) {
     o0.rgb = renodx::draw::DecodeColor(o0.rgb, RENODX_SWAP_CHAIN_DECODING);
 
-    o0.rgb = renodx::color::bt709::clamp::BT2020(o0.rgb);
+    o0.rgb = renodx::color::bt709::clamp::AP1(o0.rgb);
 
     if (SCENE_TYPE_DISPLAY_OUTPUT > 0.f) {
-      o0.rgb = ApplyReverseReinhard(o0.rgb, SCENE_TYPE_DISPLAY_OUTPUT);
+  //    o0.rgb = ApplyReverseReinhard(o0.rgb, SCENE_TYPE_DISPLAY_OUTPUT);
     }
     if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
-      o0.rgb = ToneMapPassCustom(o0.rgb, 1.f);
+      o0.rgb = ToneMapPassCustomSpecial(o0.rgb, 1.f);
     }
 
     o0.xyz *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;

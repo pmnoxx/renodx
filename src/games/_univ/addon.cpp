@@ -41,6 +41,8 @@ print exe name and title
 change defaults for Unity
 - 0.26
 fix dump shaders setting
+- 0.27
+fix untonemapped capping
 */
 
  constexpr const char* RENODX_VERSION = "0.26";
@@ -1161,6 +1163,7 @@ namespace {
          hbr_custom_settings::ApplyFilenameBasedOverrides(filename);
 
          InitializeSettings();
+         /*
          hbr_custom_settings::AddCustomResourceUpgrades();
  
          renodx::mods::shader::force_pipeline_cloning = true;
@@ -1180,7 +1183,6 @@ namespace {
          renodx::mods::swapchain::use_device_proxy = hbr_custom_settings::get_use_device_proxy();
          renodx::utils::random::binds.push_back(&shader_injection.random_seed);
 
-
          if (filename == "TheSwapper.exe") {        
             renodx::mods::swapchain::prevent_full_screen = false;
             renodx::mods::swapchain::force_screen_tearing = false;
@@ -1188,6 +1190,7 @@ namespace {
             renodx::mods::swapchain::use_device_proxy = true;
          }
          g_upgrade_copy_destinations = 1;    
+*/
 
          renodx::mods::swapchain::swap_chain_proxy_shaders = {
              {
@@ -1399,6 +1402,14 @@ namespace {
        reshade::unregister_addon(h_module);
        break;
    }
+   renodx::mods::shader::force_pipeline_cloning = true;
+   renodx::mods::shader::expected_constant_buffer_space = 50;
+   renodx::mods::shader::expected_constant_buffer_index = 13;
+   renodx::mods::shader::allow_multiple_push_constants = true;
+
+   renodx::mods::swapchain::expected_constant_buffer_index = 13;
+   renodx::mods::swapchain::expected_constant_buffer_space = 50;
+   renodx::mods::swapchain::use_resource_cloning = true;
  
    renodx::utils::settings::Use(fdw_reason, &settings, &OnPresetOff);
    renodx::mods::swapchain::Use(fdw_reason, &shader_injection);

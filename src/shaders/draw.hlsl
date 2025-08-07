@@ -460,7 +460,8 @@ float3 SwapChainPass(float3 color, Config config) {
     config.swap_chain_decoding_color_space = renodx::color::convert::COLOR_SPACE_BT709;
   }
 
-  color = min(color, config.swap_chain_clamp_nits);  // Clamp UI or Videos
+  // PMNOXX
+  //color = min(color, config.swap_chain_clamp_nits);  // Clamp UI or Videos
 
   [branch]
   if (config.swap_chain_clamp_color_space == renodx::color::convert::COLOR_SPACE_UNKNOWN) {

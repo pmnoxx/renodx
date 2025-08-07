@@ -58,6 +58,11 @@ struct ShaderInjectData {
   float color_grade_per_channel_chrominance_correction;  // 0.f - shader_injection[11][2]
   float color_grade_tone_map_pass_autocorrection;        // TODO add slider - shader_injection[11][3]
   
+  float display_map_type;             // shader_injection[16][3]
+  float display_map_peak;             // shader_injection[17][0]
+  float display_map_shoulder;         // shader_injection[17][1]
+  float display_map_saturation;       // shader_injection[17][2]
+  
   // Perceptual Boost
   float perceptual_boost_mode; // 0 = OFF, 1 = Reinhard, 2 = XY->PQ, 3 = ICTCP - shader_injection[12][0]
   float perceptual_boost_channel_max; // Used for Reinhard, user adjustable - shader_injection[12][1]
@@ -81,10 +86,6 @@ struct ShaderInjectData {
   float perceptual_boost_display_output; // shader_injection[15][3]
 
 
-  float display_map_type;             // shader_injection[16][3]
-  float display_map_peak;             // shader_injection[17][0]
-  float display_map_shoulder;         // shader_injection[17][1]
-  float display_map_saturation;       // shader_injection[17][2]
 
   // Tone Map Pass Control
   float enable_tone_map_pass; // Enable/disable tone mapping pass (0.0 = off, 1.0 = on) - shader_injection[17][3]

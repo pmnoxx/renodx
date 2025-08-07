@@ -43,6 +43,7 @@ float GetPerceptualBoostStrength(float scene_type) {
     return 1.f;
 }
 
+
 float4 debug_mode(float4 color, float2 pos, float shift_y = 0.f) {
   float2 box = float2(0.99f, 0.99f - shift_y);
   float2 dim = float2(0.01f, 0.01f) * RENODX_DEBUG_MODE;
@@ -510,7 +511,7 @@ float3 UpgradeToneMapCustom(
   return lerp(color_untonemapped, color_scaled, post_process_strength);
 }
 
-float3 ToneMapPassCustom(float3 color, float ignore_tonemap_flag = 0.f) {
+float3 ToneMapPassCustomSpecial(float3 color, float ignore_tonemap_flag = 0.f) {
   // Apply gamma correction from ColorGradeGamma (0.0-1.0 mapped to gamma 1.0-2.2)
   if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f && ignore_tonemap_flag == 0.f) {
     return color;
@@ -530,20 +531,27 @@ float3 ToneMapPassCustom(float3 color, float ignore_tonemap_flag = 0.f) {
   if (RENODX_TONE_MAP_TYPE >= 4.f) { 
     return applyUserTonemap(color, RENODX_TONE_MAP_TYPE);       
   }
+  if (RENODX_TONE_MAP_TYPE >= 2.f) {
+    return renodx::draw::ToneMapPass(color);
+  }
+  return color;
+}
 
-  return renodx::draw::ToneMapPass(color);
+
+float3 ToneMapPassCustom(float3 color, float ignore_tonemap_flag = 0.f) {
+  return ToneMapPassCustomSpecial(color, 0.f);
 }
 
 float3 ToneMapPassCustom(float3 untonemapped, float3 graded_sdr_color, float3 neutral_sdr_color) {
   float3 color = ComputeUntonemappedGraded(untonemapped, graded_sdr_color, neutral_sdr_color);
 
-  return ToneMapPassCustom(color); ;
+  return ToneMapPassCustom(color); 
 }
 
 float3 ToneMapPassCustom(float3 untonemapped, float3 graded_sdr_color) {
   float3 color = ComputeUntonemappedGraded(untonemapped, graded_sdr_color, renodx::tonemap::renodrt::NeutralSDR(untonemapped));
 
-  return ToneMapPassCustom(color); ;
+  return ToneMapPassCustom(color);
 }
 
 #define cmp -
