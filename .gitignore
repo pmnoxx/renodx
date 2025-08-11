@@ -41,3 +41,6 @@ build32.vs/**
 bin/**
 **/.vshistory/
 .cache/**
+
+# Temporary files and directories
+/tmp

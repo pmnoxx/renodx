@@ -104,6 +104,8 @@ extern std::atomic<float> g_default_fps_limit;
 
 extern std::vector<MonitorInfo> g_monitors;
 
+
+
 // Function declarations
 const char* DxgiBypassModeToString(DxgiBypassMode mode);
 bool SetIndependentFlipState(reshade::api::swapchain* swapchain);

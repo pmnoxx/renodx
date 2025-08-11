@@ -1,3 +1,4 @@
+
 #include "addon.hpp"
 
 // Global variable definitions
@@ -1225,34 +1226,34 @@ renodx::utils::settings::Settings settings = {
         .label = "Experimental: Try Fixing Independent Flip",
         .section = "Performance",
         .tooltip = "Attempt to configure swapchain for Independent Flip using DXGI-only changes (no window ops).",
-        .on_click = [](){
-            auto* sc = g_last_swapchain_ptr.load();
-            if (sc != nullptr) {
-              SetIndependentFlipState(sc);
-              LogIndependentFlipConditions(sc);
-            } else {
-              LogWarn("Try Independent Flip: no swapchain yet");
-            }
-            return false;
-          },
-    },
-    new renodx::utils::settings::Setting{
-        .key = "ForceWindowToOrigin",
-        .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .default_value = 0.f,
-        .label = "Force Window to Monitor Origin (experimental)",
-        .section = "Performance",
-        .tooltip = "Force the window to be positioned so its client area starts at monitor origin (0,0). Required for Independent Flip.",
-        .on_click = [](){
-            HWND hwnd = g_last_swapchain_hwnd.load();
-            if (hwnd != nullptr) {
-              ForceWindowToMonitorOriginThreaded(hwnd);
-            } else {
-              LogWarn("Force Window to Origin: no window handle yet");
-            }
-            return false;
-          },
+                                  .on_click = [](){
+                            auto* sc = g_last_swapchain_ptr.load();
+                            if (sc != nullptr) {
+                              SetIndependentFlipState(sc);
+                              LogIndependentFlipConditions(sc);
+    } else {
+                              LogWarn("Try Independent Flip: no swapchain yet");
+                            }
+                            return false;
+                          },
+                        },
+                        new renodx::utils::settings::Setting{
+                          .key = "ForceWindowToOrigin",
+                          .binding = nullptr,
+                          .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+                          .default_value = 0.f,
+                          .label = "Force Window to Monitor Origin (experimental)",
+                          .section = "Performance",
+                          .tooltip = "Force the window to be positioned so its client area starts at monitor origin (0,0). Required for Independent Flip.",
+                          .on_click = [](){
+                            HWND hwnd = g_last_swapchain_hwnd.load();
+                            if (hwnd != nullptr) {
+                              ForceWindowToMonitorOriginThreaded(hwnd);
+                            } else {
+                              LogWarn("Force Window to Origin: no window handle yet");
+                            }
+                            return false;
+                          },
     },
     // DXGI composition/backbuffer info (text only) — placed at bottom
     new renodx::utils::settings::Setting{
@@ -1325,38 +1326,38 @@ renodx::utils::settings::Settings settings = {
                       is_exclusive_fullscreen ? "Exclusive" : "Windowed/Borderless",
                       colorspace_str.c_str());
           
-          // Display current window position and size
-          if (hwnd != nullptr) {
-            RECT wr{};
-            RECT cr{};
-            if (GetWindowRect(hwnd, &wr) != FALSE && GetClientRect(hwnd, &cr) != FALSE) {
-              int window_width = wr.right - wr.left;
-              int window_height = wr.bottom - wr.top;
-              int client_width = cr.right - cr.left;
-              int client_height = cr.bottom - cr.top;
-              
-              // Convert client coordinates to screen coordinates
-              POINT client_origin = {cr.left, cr.top};
-              ClientToScreen(hwnd, &client_origin);
-              
-              ImGui::Text("Window Frame: %dx%d at (%ld, %ld)", window_width, window_height, wr.left, wr.top);
-              ImGui::Text("Client Area: %dx%d at (%ld, %ld)", client_width, client_height, client_origin.x, client_origin.y);
-              ImGui::Text("Decorations: %dx%d offset", window_width - client_width, window_height - client_height);
-            }
-            
-            // Display current monitor resolution
-            HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-            if (hmon != nullptr) {
-              MONITORINFOEXW mi{};
-              mi.cbSize = sizeof(mi);
-              if (GetMonitorInfoW(hmon, &mi) != FALSE) {
-                int monitor_width = mi.rcMonitor.right - mi.rcMonitor.left;
-                int monitor_height = mi.rcMonitor.bottom - mi.rcMonitor.top;
-                ImGui::Text("Monitor: %dx%d at (%ld, %ld)", 
-                           monitor_width, monitor_height, mi.rcMonitor.left, mi.rcMonitor.top);
-              }
-            }
-          }
+                                      // Display current window position and size
+                            if (hwnd != nullptr) {
+                              RECT wr{};
+                              RECT cr{};
+                              if (GetWindowRect(hwnd, &wr) != FALSE && GetClientRect(hwnd, &cr) != FALSE) {
+                                int window_width = wr.right - wr.left;
+                                int window_height = wr.bottom - wr.top;
+                                int client_width = cr.right - cr.left;
+                                int client_height = cr.bottom - cr.top;
+                                
+                                // Convert client coordinates to screen coordinates
+                                POINT client_origin = {cr.left, cr.top};
+                                ClientToScreen(hwnd, &client_origin);
+                                
+                                ImGui::Text("Window Frame: %dx%d at (%ld, %ld)", window_width, window_height, wr.left, wr.top);
+                                ImGui::Text("Client Area: %dx%d at (%ld, %ld)", client_width, client_height, client_origin.x, client_origin.y);
+                                ImGui::Text("Decorations: %dx%d offset", window_width - client_width, window_height - client_height);
+                              }
+                              
+                              // Display current monitor resolution
+                              HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                              if (hmon != nullptr) {
+                                MONITORINFOEXW mi{};
+                                mi.cbSize = sizeof(mi);
+                                if (GetMonitorInfoW(hmon, &mi) != FALSE) {
+                                  int monitor_width = mi.rcMonitor.right - mi.rcMonitor.left;
+                                  int monitor_height = mi.rcMonitor.bottom - mi.rcMonitor.top;
+                                  ImGui::Text("Monitor: %dx%d at (%ld, %ld)", 
+                                             monitor_width, monitor_height, mi.rcMonitor.left, mi.rcMonitor.top);
+                                }
+                              }
+                            }
           
           return false;
         },
