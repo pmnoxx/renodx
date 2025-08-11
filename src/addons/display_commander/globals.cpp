@@ -22,7 +22,11 @@ float s_aspect_index = 3.f; // default to 16:9 (now at index 3 after sorting)
 float s_move_to_zero_if_out = 1.f; // 0 = None, 1 = Center, 2 = Top Left, 3 = Top Right, 4 = Bottom Left, 5 = Bottom Right
 // Global swapchain behaviors
 float s_force_borderless = 0.f;
-float s_prevent_fullscreen = 1.f;
+// Force Windowed (Experimental)
+float s_force_windowed = 0.f; // 0 = Off, 1 = On
+
+// Prevent Fullscreen
+float s_prevent_fullscreen = 0.f; // 0 = Off, 1 = On
 
 // Audio: mute when in background
 float s_mute_in_background = 0.f;
@@ -45,9 +49,6 @@ float s_prevent_minimize = 0.f;
 
 // Track frames since last minimize restore to prevent excessive calls
 std::atomic<int> g_frames_since_last_restore{0};
-
-// Colorspace override - forces specific DXGI colorspace for swapchain
-float s_colorspace_override = 0.f; // 0 = None, 1+ = specific colorspace index
 
 std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr{nullptr};
 

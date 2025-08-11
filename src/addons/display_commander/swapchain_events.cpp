@@ -12,38 +12,7 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
                                 << ", resize=" << (resize ? "true" : "false") << ")";
     LogDebug(oss.str());
     
-    // Apply colorspace override if enabled
-    if (s_colorspace_override > 0.f) {
-      try {
-        // Get the underlying DXGI swapchain interface
-        auto* dxgi_swapchain = static_cast<IDXGISwapChain3*>(reinterpret_cast<void*>(swapchain->get_native()));
-        if (dxgi_swapchain != nullptr) {
-          // Map setting index to DXGI colorspace
-          DXGI_COLOR_SPACE_TYPE colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709; // Default
-          
-          switch (static_cast<int>(s_colorspace_override)) {
-            case 1: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709; break;      // BT709 Full
-            case 2: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020; break;     // BT2020 Full
-            case 3: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020; break;   // HDR10
-            case 4: colorspace = DXGI_COLOR_SPACE_RGB_STUDIO_G22_NONE_P709; break;    // BT709 Studio
-            case 5: colorspace = DXGI_COLOR_SPACE_RGB_STUDIO_G22_NONE_P2020; break;   // BT2020 Studio
-            case 6: colorspace = DXGI_COLOR_SPACE_RGB_STUDIO_G2084_NONE_P2020; break; // HDR10 Studio
-            default: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709; break;
-          }
-          
-          HRESULT hr = dxgi_swapchain->SetColorSpace1(colorspace);
-          if (SUCCEEDED(hr)) {
-            std::ostringstream oss2; oss2 << "Colorspace Override: Applied colorspace " << static_cast<int>(colorspace);
-            LogInfo(oss2.str().c_str());
-          } else {
-            std::ostringstream oss2; oss2 << "Colorspace Override: Failed to set colorspace, HRESULT: 0x" << std::hex << hr;
-            LogWarn(oss2.str().c_str());
-          }
-        }
-      } catch (...) {
-        LogWarn("Colorspace Override: Exception occurred while setting colorspace");
-      }
-    }
+    // Schedule auto-apply even on resizes (generation counter ensures only latest runs)
   }
 
   // Schedule auto-apply even on resizes (generation counter ensures only latest runs)

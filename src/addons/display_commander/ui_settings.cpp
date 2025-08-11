@@ -236,8 +236,8 @@ renodx::utils::settings::Settings settings = {
         .default_value = 0.f,
         .label = "Force Borderless",
         .section = "Display",
-        .tooltip = "Force borderless presentation when game requests fullscreen.",
-        .labels = {"Disabled", "Enabled"},
+        .tooltip = "Force window to be borderless. Useful for games that don't support borderless mode.",
+        .labels = {"Off", "On"},
         .on_change_value = [](float previous, float current){ renodx::mods::swapchain::force_borderless = (current >= 0.5f); },
     },
     // Prevent Fullscreen (global)
@@ -262,17 +262,6 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Prevent window from being minimized by checking every 1 second and restoring if needed. This is a workaround for a full solution.",
         .labels = {"Disabled", "Enabled"},
-    },
-    // Colorspace Override
-    new renodx::utils::settings::Setting{
-        .key = "ColorspaceOverride",
-        .binding = &s_colorspace_override,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
-        .label = "Colorspace Override (requires restart)",
-        .section = "Display",
-        .tooltip = "Force specific DXGI colorspace for swapchain. Useful for HDR, wide gamut, and color accuracy.",
-        .labels = {"None", "BT709 Full", "BT2020 Full", "HDR10", "BT709 Studio", "BT2020 Studio", "HDR10 Studio"},
     },
     // Force Windowed (Experimental)
     new renodx::utils::settings::Setting{
@@ -383,29 +372,12 @@ renodx::utils::settings::Settings settings = {
             }
           }
           
-          // Display colorspace override status
-          std::string colorspace_str = "None";
-          if (s_colorspace_override > 0.f) {
-            switch (static_cast<int>(s_colorspace_override)) {
-              case 1: colorspace_str = "BT709 Full"; break;
-              case 2: colorspace_str = "BT2020 Full"; break;
-              case 3: colorspace_str = "HDR10"; break;
-              case 4: colorspace_str = "BT709 Studio"; break;
-              case 5: colorspace_str = "BT2020 Studio"; break;
-              case 6: colorspace_str = "HDR10 Studio"; break;
-              default: colorspace_str = "Unknown"; break;
-            }
-          }
-          
           ImGui::Separator();
           ImGui::Text("DXGI Composition: %s | Backbuffer: %dx%d | Format: %s",
                       mode_str,
                       g_last_backbuffer_width.load(),
                       g_last_backbuffer_height.load(),
                       format_str.c_str());
-          ImGui::Text("Fullscreen Mode: %s | Colorspace Override: %s", 
-                      is_exclusive_fullscreen ? "Exclusive" : "Windowed/Borderless",
-                      colorspace_str.c_str());
           
           // Display current window position and size
           if (hwnd != nullptr) {

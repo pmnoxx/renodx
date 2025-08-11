@@ -44,6 +44,9 @@ extern std::atomic<int> g_last_backbuffer_height;
 enum class DxgiBypassMode : std::uint8_t { kUnknown, kComposed, kOverlay, kIndependentFlip };
 enum class WindowStyleMode : std::uint8_t { KEEP, BORDERLESS, OVERLAPPED_WINDOW };
 
+// Forward declarations that depend on enums
+DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain);
+
 // Structs
 struct IndependentFlipFailures {
   std::atomic<bool> swapchain_null{false};
@@ -88,7 +91,6 @@ extern float s_target_monitor_index;
 extern float s_dxgi_composition_state;
 extern float s_try_independent_flip;
 extern float s_prevent_minimize;
-extern float s_colorspace_override;
 
 extern std::atomic<int> g_comp_query_counter;
 extern std::atomic<int> g_comp_last_logged;
