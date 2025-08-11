@@ -1,0 +1,122 @@
+#include "addon.hpp"
+
+void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
+  // Update last known backbuffer size
+  auto* device = swapchain->get_device();
+  if (device != nullptr && swapchain->get_back_buffer_count() > 0) {
+    auto bb = swapchain->get_back_buffer(0);
+    auto desc = device->get_resource_desc(bb);
+    g_last_backbuffer_width.store(static_cast<int>(desc.texture.width));
+    g_last_backbuffer_height.store(static_cast<int>(desc.texture.height));
+    std::ostringstream oss; oss << "OnInitSwapchain(backbuffer=" << desc.texture.width << "x" << desc.texture.height
+                                << ", resize=" << (resize ? "true" : "false") << ")";
+    LogDebug(oss.str());
+    
+    // Apply colorspace override if enabled
+    if (s_colorspace_override > 0.f) {
+      try {
+        // Get the underlying DXGI swapchain interface
+        auto* dxgi_swapchain = static_cast<IDXGISwapChain3*>(reinterpret_cast<void*>(swapchain->get_native()));
+        if (dxgi_swapchain != nullptr) {
+          // Map setting index to DXGI colorspace
+          DXGI_COLOR_SPACE_TYPE colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709; // Default
+          
+          switch (static_cast<int>(s_colorspace_override)) {
+            case 1: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709; break;      // BT709 Full
+            case 2: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020; break;     // BT2020 Full
+            case 3: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020; break;   // HDR10
+            case 4: colorspace = DXGI_COLOR_SPACE_RGB_STUDIO_G22_NONE_P709; break;    // BT709 Studio
+            case 5: colorspace = DXGI_COLOR_SPACE_RGB_STUDIO_G22_NONE_P2020; break;   // BT2020 Studio
+            case 6: colorspace = DXGI_COLOR_SPACE_RGB_STUDIO_G2084_NONE_P2020; break; // HDR10 Studio
+            default: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709; break;
+          }
+          
+          HRESULT hr = dxgi_swapchain->SetColorSpace1(colorspace);
+          if (SUCCEEDED(hr)) {
+            std::ostringstream oss2; oss2 << "Colorspace Override: Applied colorspace " << static_cast<int>(colorspace);
+            LogInfo(oss2.str().c_str());
+          } else {
+            std::ostringstream oss2; oss2 << "Colorspace Override: Failed to set colorspace, HRESULT: 0x" << std::hex << hr;
+            LogWarn(oss2.str().c_str());
+          }
+        }
+      } catch (...) {
+        LogWarn("Colorspace Override: Exception occurred while setting colorspace");
+      }
+    }
+  }
+
+  // Schedule auto-apply even on resizes (generation counter ensures only latest runs)
+  HWND hwnd = static_cast<HWND>(swapchain->get_hwnd());
+  g_last_swapchain_hwnd.store(hwnd);
+  g_last_swapchain_ptr.store(swapchain);
+  if (hwnd == nullptr) return;
+  // Update DXGI composition state if possible
+  {
+    DxgiBypassMode mode = GetIndependentFlipState(swapchain);
+    switch (mode) {
+      case DxgiBypassMode::kUnknown: s_dxgi_composition_state = 0.f; break;
+      case DxgiBypassMode::kComposed: s_dxgi_composition_state = 1.f; break;
+      case DxgiBypassMode::kOverlay: s_dxgi_composition_state = 2.f; break;
+      case DxgiBypassMode::kIndependentFlip: s_dxgi_composition_state = 3.f; break;
+    }
+    std::ostringstream oss2;
+    oss2 << "DXGI Composition State (onSwapChainInit): " << DxgiBypassModeToString(mode)
+         << " (" << static_cast<int>(s_dxgi_composition_state) << ")";
+    LogInfo(oss2.str().c_str());
+  }
+  
+  // Log Independent Flip conditions to update failure tracking
+  LogIndependentFlipConditions(swapchain);
+  LogDebug(resize ? "Schedule auto-apply on swapchain init (resize)"
+                  : "Schedule auto-apply on swapchain init");
+  ScheduleAutoApplyOnInit(hwnd);
+}
+
+// Update composition state after presents (required for valid stats)
+static void OnPresentUpdate(
+    reshade::api::command_queue* /*queue*/, reshade::api::swapchain* swapchain,
+    const reshade::api::rect* /*source_rect*/, const reshade::api::rect* /*dest_rect*/,
+    uint32_t /*dirty_rect_count*/, const reshade::api::rect* /*dirty_rects*/) {
+  // Throttle queries to ~every 30 presents
+  int c = ++g_comp_query_counter;
+  // Check for minimized window and restore if needed (prevent minimize feature)
+  if (s_prevent_minimize >= 0.5f) {
+    // Only restore if we haven't restored in the last 30 frames
+      HWND hwnd = g_last_swapchain_hwnd.load();
+      if (hwnd != nullptr && IsIconic(hwnd) && g_frames_since_last_restore.load() >= 1) {
+        // Window is minimized, restore it in a separate thread to avoid blocking render thread
+        std::thread([hwnd]() {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Small delay to ensure UI thread is not blocked
+          ShowWindow(hwnd, SW_SHOWNOACTIVATE); // should restore but not bring focus back
+          LogDebug("Prevent Minimize: restored minimized window (bg thread)");
+        }).detach();
+        
+        // Reset the counter after initiating restore
+        g_frames_since_last_restore.store(0);
+      }
+  }
+  
+  // Increment frame counter for prevent minimize feature
+  g_frames_since_last_restore.fetch_add(1);
+  if ((c % 30) != 0) return;
+  
+  
+  DxgiBypassMode mode = GetIndependentFlipState(swapchain);
+  int state = 0;
+  switch (mode) {
+    case DxgiBypassMode::kComposed: state = 1; break;
+    case DxgiBypassMode::kOverlay: state = 2; break;
+    case DxgiBypassMode::kIndependentFlip: state = 3; break;
+    case DxgiBypassMode::kUnknown:
+    default: state = 0; break;
+  }
+  s_dxgi_composition_state = static_cast<float>(state);
+  int last = g_comp_last_logged.load();
+  if (state != last) {
+    g_comp_last_logged.store(state);
+    std::ostringstream oss;
+    oss << "DXGI Composition State (present): " << DxgiBypassModeToString(mode) << " (" << state << ")";
+    LogInfo(oss.str().c_str());
+  }
+}

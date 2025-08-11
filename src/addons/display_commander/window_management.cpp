@@ -1,0 +1,262 @@
+#include "addon.hpp"
+#include "utils.hpp"
+
+// Forward declaration
+void ComputeDesiredSize(int& out_w, int& out_h);
+
+void ApplyWindowChange(HWND hwnd,
+                       bool do_resize, int client_width, int client_height,
+                       bool do_move, int pos_x, int pos_y,
+                       WindowStyleMode style_mode) {
+  if (hwnd == nullptr) return;
+
+  // If window is maximized, restore it so size/style changes take effect
+  const bool was_maximized = IsZoomed(hwnd) != FALSE;
+  if (was_maximized) {
+    ShowWindow(hwnd, SW_RESTORE);
+  }
+
+  LONG_PTR current_style = GetWindowLongPtrW(hwnd, GWL_STYLE);
+  LONG_PTR current_ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+
+  LONG_PTR new_style = current_style;
+  LONG_PTR new_ex_style = current_ex_style;
+
+  bool style_changed = false;
+  switch (style_mode) {
+    case WindowStyleMode::KEEP:
+      break;
+    case WindowStyleMode::BORDERLESS: {
+      // Use the RemoveWindowBorderLocal function directly
+      RemoveWindowBorderLocal(hwnd);
+      style_changed = false; // Always mark as changed since RemoveWindowBorderLocal handles the logic
+      break;
+    }
+    case WindowStyleMode::OVERLAPPED_WINDOW: {
+      new_style &= ~WS_POPUP;
+      new_style |= WS_OVERLAPPEDWINDOW;
+      new_ex_style &= ~WS_EX_TOPMOST;
+      style_changed = (new_style != current_style) || (new_ex_style != current_ex_style);
+      if (style_changed) {
+        SetWindowLongPtrW(hwnd, GWL_STYLE, new_style);
+        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, new_ex_style);
+      }
+      break;
+    }
+  }
+
+  RECT wr_current{};
+  GetWindowRect(hwnd, &wr_current);
+
+  // Resolve target monitor
+  HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+  MONITORINFOEXW mi{};
+  mi.cbSize = sizeof(mi);
+  if (s_target_monitor_index > 0.5f) {
+    // Use enumerated monitor if available
+    const int index = static_cast<int>(s_target_monitor_index) - 1; // labels start at 1
+    g_monitors.clear();
+    EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&g_monitors));
+    if (index >= 0 && index < static_cast<int>(g_monitors.size())) {
+      hmon = g_monitors[index].handle;
+      mi = g_monitors[index].info;
+    }
+  }
+  if (mi.cbSize != sizeof(mi)) {
+    mi.cbSize = sizeof(mi);
+    GetMonitorInfoW(hmon, &mi);
+  }
+
+  int target_w = 0;
+  int target_h = 0;
+  int target_x = 0;
+  int target_y = 0;
+
+  if (do_resize) {
+    RECT client_rect = RectFromWH(client_width, client_height);
+    if (AdjustWindowRectEx(&client_rect, static_cast<DWORD>(new_style), FALSE, static_cast<DWORD>(new_ex_style)) == FALSE) {
+      LogWarn("AdjustWindowRectEx failed for ApplyWindowChange.");
+      return;
+    }
+    target_w = client_rect.right - client_rect.left;
+    target_h = client_rect.bottom - client_rect.top;
+  }
+
+  if (do_move) {
+    // If targeting a specific monitor, offset desired pos by monitor origin
+    target_x = pos_x + mi.rcMonitor.left;
+    target_y = pos_y + mi.rcMonitor.top;
+  } else {
+    // Keep current placement
+    target_x = wr_current.left;
+    target_y = wr_current.top;
+  }
+
+  // Ensure we have dimensions to check bounds when not resizing
+  if (!do_resize) {
+    target_w = wr_current.right - wr_current.left;
+    target_h = wr_current.bottom - wr_current.top;
+  }
+
+  bool repositioned = false;
+  bool effective_do_move = do_move;
+  if (s_move_to_zero_if_out > 0) { // 0 = None, 1+ = different alignment options
+    // First check against chosen monitor
+    const RECT& mr = mi.rcMonitor;
+    bool out_of_bounds = (target_x < mr.left) || (target_y < mr.top) ||
+                         (target_x + target_w > mr.right) || (target_y + target_h > mr.bottom);
+    if (out_of_bounds) {
+      // Apply alignment based on setting value
+      switch (static_cast<int>(s_move_to_zero_if_out)) {
+        case 1: // Center
+          target_x = mr.left + (mr.right - mr.left - target_w) / 2;
+          target_y = mr.top + (mr.bottom - mr.top - target_h) / 2;
+          break;
+        case 2: // Top Left
+          target_x = mr.left;
+          target_y = mr.top;
+          break;
+        case 3: // Top Right
+          target_x = mr.right - target_w;
+          target_y = mr.top;
+          break;
+        case 4: // Bottom Left
+          target_x = mr.left;
+          target_y = mr.bottom - target_h;
+          break;
+        case 5: // Bottom Right
+          target_x = mr.right - target_w;
+          target_y = mr.bottom - target_h;
+          break;
+        default: // Fallback to top left
+          target_x = mr.left;
+          target_y = mr.top;
+          break;
+      }
+      repositioned = true;
+      effective_do_move = true;
+    }
+    // As a fallback, clamp to virtual screen if still invalid
+    const int vx = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    const int vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
+    const int vw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    const int vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+    out_of_bounds = (target_x < vx) || (target_y < vy) ||
+                    (target_x + target_w > vx + vw) || (target_y + target_h > vy + vh);
+    if (out_of_bounds) {
+      // Apply same alignment logic to virtual screen
+      switch (static_cast<int>(s_move_to_zero_if_out)) {
+        case 1: // Center
+          target_x = vx + (vw - target_w) / 2;
+          target_y = vy + (vh - target_h) / 2;
+          break;
+        case 2: // Top Left
+          target_x = vx;
+          target_y = vy;
+          break;
+        case 3: // Top Right
+          target_x = vx + vw - target_w;
+          target_y = vy;
+          break;
+        case 4: // Bottom Left
+          target_x = vx;
+          target_y = vy + vh - target_h;
+          break;
+        case 5: // Bottom Right
+          target_x = vx + vw - target_w;
+          target_y = vy + vh - target_h;
+          break;
+        default: // Fallback to top left
+          target_x = vx;
+          target_y = vy;
+          break;
+      }
+      repositioned = true;
+      effective_do_move = true;
+    }
+  }
+
+  UINT flags = ComputeSWPFlags(hwnd, style_changed);
+  if (!do_resize) { flags |= SWP_NOSIZE; }
+  if (!effective_do_move) { flags |= SWP_NOMOVE; }
+
+  {
+    std::ostringstream log_oss;
+    const char* style_mode_str = "";
+    if (style_mode == WindowStyleMode::KEEP) {
+      style_mode_str = "Keep";
+    } else if (style_mode == WindowStyleMode::BORDERLESS) {
+      style_mode_str = "Borderless";
+    } else {
+      style_mode_str = "OverlappedWindow";
+    }
+    log_oss << "ApplyWindowChange hwnd=" << hwnd
+            << " style_mode=" << style_mode_str
+            << " do_resize=" << (do_resize ? "1" : "0")
+            << " client=" << client_width << "x" << client_height
+            << " do_move=" << (do_move ? "1" : "0")
+            << " pos=" << target_x << "," << target_y
+            << " flags=0x" << std::hex << flags
+            << std::dec
+            << " was_maximized=" << (was_maximized ? "1" : "0")
+            << " style_changed=" << (style_changed ? "1" : "0")
+            << " repositioned=" << (repositioned ? "1" : "0");
+    LogInfo(log_oss.str().c_str());
+  }
+
+  SetWindowPos(
+      hwnd, nullptr,
+      target_x, target_y,
+      do_resize ? target_w : 0,
+      do_resize ? target_h : 0,
+      flags);
+}
+
+bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h) {
+  const int bb_w = g_last_backbuffer_width.load();
+  const int bb_h = g_last_backbuffer_height.load();
+  std::ostringstream oss;
+  oss << "Backbuffer check (desired=" << desired_w << "x" << desired_h
+      << ", current=" << bb_w << "x" << bb_h << ")";
+  LogDebug(oss.str());
+  if (bb_w <= 0 || bb_h <= 0) return true; // Unknown → apply
+  return bb_w != desired_w || bb_h != desired_h;
+}
+
+void ScheduleAutoApplyOnInit(HWND hwnd) {
+  if (s_auto_apply_enabled < 0.5f) return;
+  const uint64_t my_gen = ++g_init_apply_generation;
+  // Compute absolute target time: max(app_start + X, init_time + Y)
+  const auto now = std::chrono::steady_clock::now();
+  auto t_app = g_attach_time + std::chrono::seconds(static_cast<int>(s_auto_apply_delay_sec));
+  auto t_init = now + std::chrono::seconds(static_cast<int>(s_auto_apply_init_delay_sec));
+  auto target = (t_app > t_init) ? t_app : t_init;
+  int delay_ms = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(target - now).count());
+  delay_ms = (std::max)(delay_ms, 0);
+
+  // Capture current desired size at schedule time
+  int want_w = 0; int want_h = 0; ComputeDesiredSize(want_w, want_h);
+  const int target_pos_x = static_cast<int>(s_windowed_pos_x);
+  const int target_pos_y = static_cast<int>(s_windowed_pos_y);
+  const WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
+  std::thread([my_gen, delay_ms, hwnd, want_w, want_h, target_pos_x, target_pos_y, mode]() {
+    if (delay_ms > 0) std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+    if (g_init_apply_generation.load() != my_gen) return;
+    if (hwnd == nullptr) return;
+    std::ostringstream oss; oss << "AutoApply on init after " << delay_ms << "ms: size=" << want_w << "x" << want_h;
+    LogDebug(oss.str());
+    const int bb_w = g_last_backbuffer_width.load();
+    const int bb_h = g_last_backbuffer_height.load();
+    // Apply if style needs change or size differs
+    const bool size_matches = (bb_w == want_w && bb_h == want_h);
+    const bool style_matches = (mode != WindowStyleMode::BORDERLESS) || IsBorderless(hwnd);
+    if (size_matches && style_matches) {
+      LogDebug("AutoApply skipped: backbuffer and style match desired state");
+      return;
+    }
+    ApplyWindowChange(hwnd,
+                      /*do_resize=*/true, want_w, want_h,
+                      /*do_move=*/true, target_pos_x, target_pos_y,
+                      mode);
+  }).detach();
+}

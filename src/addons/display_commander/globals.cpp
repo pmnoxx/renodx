@@ -1,0 +1,88 @@
+#include "addon.hpp"
+
+// Global variable definitions
+float s_auto_apply_enabled = 0.f; // 0 off, 1 on
+float s_auto_apply_delay_sec = 10.f; // 1..60 seconds (app start delay)
+float s_auto_apply_init_delay_sec = 1.f; // 1..60 seconds (swapchain init delay)
+
+// Selected numeric windowed size
+float s_windowed_width = 1280.f;
+float s_windowed_height = 720.f;
+// Current window position baseline
+float s_windowed_pos_x = 100.f;
+float s_windowed_pos_y = 100.f;
+
+// Style preference
+float s_remove_top_bar = 1.f; // 0 keep title bar, 1 remove (borderless)
+// Resize mode: 0 = width/height, 1 = aspect
+float s_resize_mode = 0.f;
+// Aspect selection index when in aspect mode
+float s_aspect_index = 3.f; // default to 16:9 (now at index 3 after sorting)
+// Window alignment when repositioning is needed
+float s_move_to_zero_if_out = 1.f; // 0 = None, 1 = Center, 2 = Top Left, 3 = Top Right, 4 = Bottom Left, 5 = Bottom Right
+// Global swapchain behaviors
+float s_force_borderless = 0.f;
+float s_prevent_fullscreen = 1.f;
+
+// Audio: mute when in background
+float s_mute_in_background = 0.f;
+// Audio: master volume (0..100) and manual mute toggle
+float s_audio_volume_percent = 100.f;
+float s_audio_mute = 0.f;
+// Performance: background FPS cap
+float s_fps_limit_background = 30.f;
+// Monitor targeting (0 = Auto/current). Values > 0 map to enumerated monitors.
+float s_target_monitor_index = 0.f;
+// UI: DXGI composition state (0 Unknown, 1 Composed, 2 Overlay, 3 IndependentFlip)
+float s_dxgi_composition_state = 0.f;
+std::atomic<int> g_comp_query_counter{0};
+std::atomic<int> g_comp_last_logged{-1};
+// Try to configure swapchain for Independent Flip using DXGI-only changes
+float s_try_independent_flip = 0.f;
+
+// Prevent minimize (workaround for full solution)
+float s_prevent_minimize = 0.f;
+
+// Track frames since last minimize restore to prevent excessive calls
+std::atomic<int> g_frames_since_last_restore{0};
+
+// Colorspace override - forces specific DXGI colorspace for swapchain
+float s_colorspace_override = 0.f; // 0 = None, 1+ = specific colorspace index
+
+std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr{nullptr};
+
+// No persistent window handle; resolve on demand
+
+// Implementation of IndependentFlipFailures::reset()
+void IndependentFlipFailures::reset() {
+    swapchain_null.store(false);
+    device_null.store(false);
+    non_dxgi_api.store(false);
+    swapchain_media_failed.store(false);
+    frame_stats_failed.store(false);
+    not_flip_model.store(false);
+    backbuffer_size_mismatch.store(false);
+    window_size_mismatch.store(false);
+    window_not_at_origin.store(false);
+    window_layered.store(false);
+    window_topmost.store(false);
+    window_maximized.store(false);
+    window_minimized.store(false);
+    hwnd_null.store(false);
+}
+
+std::atomic<IndependentFlipFailures*> g_if_failures{nullptr};
+
+// Additional global variable definitions
+std::atomic<uint64_t> g_init_apply_generation{0};
+std::chrono::steady_clock::time_point g_attach_time;
+std::atomic<HWND> g_last_swapchain_hwnd{nullptr};
+std::atomic<bool> g_shutdown{false};
+std::atomic<bool> g_muted_applied{false};
+std::atomic<float> g_default_fps_limit{0.0f};
+
+std::vector<MonitorInfo> g_monitors;
+
+// Global variable definitions
+std::atomic<int> g_last_backbuffer_width{0};
+std::atomic<int> g_last_backbuffer_height{0};
