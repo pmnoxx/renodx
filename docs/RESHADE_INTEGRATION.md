@@ -231,3 +231,4 @@ void on_create_device(reshade::api::device *device)
 
 
 
+

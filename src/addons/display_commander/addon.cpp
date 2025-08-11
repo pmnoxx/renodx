@@ -1,37 +1,7 @@
 
-#define ImTextureID ImU64
+#include "addon.hpp"
 
-#define DEBUG_LEVEL_0
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <windef.h>
-#include <dxgi1_3.h>
-#include <wrl/client.h>
-#include <deps/imgui/imgui.h>
-#include <include/reshade.hpp>
-
-#include <sstream>
-#include <thread>
-#include <atomic>
-#include <chrono>
-#include <cstdint>
-#include <cmath>
-#include <vector>
-
-#include "../../utils/settings.hpp"
-#include "../../utils/swapchain.hpp"
-#include "../../mods/swapchain.hpp"
-
-// WASAPI per-app volume control
-#include <mmdeviceapi.h>
-#include <audiopolicy.h>
-
-namespace {
-
-// No persistent window handle; resolve on demand
-
-// Settings bindings
+// Global variable definitions
 float s_auto_apply_enabled = 0.f; // 0 off, 1 on
 float s_auto_apply_delay_sec = 10.f; // 1..60 seconds (app start delay)
 float s_auto_apply_init_delay_sec = 1.f; // 1..60 seconds (swapchain init delay)
@@ -71,27 +41,21 @@ std::atomic<int> g_comp_last_logged{-1};
 // Try to configure swapchain for Independent Flip using DXGI-only changes
 float s_try_independent_flip = 0.f;
 
+// Prevent minimize (workaround for full solution)
+float s_prevent_minimize = 0.f;
+
+// Track frames since last minimize restore to prevent excessive calls
+std::atomic<int> g_frames_since_last_restore{0};
+
+// Colorspace override - forces specific DXGI colorspace for swapchain
+float s_colorspace_override = 0.f; // 0 = None, 1+ = specific colorspace index
 
 std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr{nullptr};
 
-// Thread-safe Independent Flip failure reasons tracking
-struct IndependentFlipFailures {
-  std::atomic<bool> swapchain_null{false};
-  std::atomic<bool> device_null{false};
-  std::atomic<bool> non_dxgi_api{false};
-  std::atomic<bool> swapchain_media_failed{false};
-  std::atomic<bool> frame_stats_failed{false};
-  std::atomic<bool> not_flip_model{false};
-  std::atomic<bool> backbuffer_size_mismatch{false};
-  std::atomic<bool> window_size_mismatch{false};
-  std::atomic<bool> window_not_at_origin{false};
-  std::atomic<bool> window_layered{false};
-  std::atomic<bool> window_topmost{false};
-  std::atomic<bool> window_maximized{false};
-  std::atomic<bool> window_minimized{false};
-  std::atomic<bool> hwnd_null{false};
-  
-  void reset() {
+// No persistent window handle; resolve on demand
+
+// Implementation of IndependentFlipFailures::reset()
+void IndependentFlipFailures::reset() {
     swapchain_null.store(false);
     device_null.store(false);
     non_dxgi_api.store(false);
@@ -107,78 +71,39 @@ struct IndependentFlipFailures {
     window_minimized.store(false);
     hwnd_null.store(false);
   }
-};
 
 std::atomic<IndependentFlipFailures*> g_if_failures{nullptr};
+
+// Additional global variable definitions
+std::atomic<uint64_t> g_init_apply_generation{0};
+std::chrono::steady_clock::time_point g_attach_time;
+std::atomic<HWND> g_last_swapchain_hwnd{nullptr};
+std::atomic<bool> g_shutdown{false};
+std::atomic<bool> g_muted_applied{false};
+std::atomic<float> g_default_fps_limit{0.0f};
+
+std::vector<MonitorInfo> g_monitors;
+
+// Constants moved to utils.cpp
 
 // Forward decl
 void ComputeDesiredSize(int& out_w, int& out_h);
 
-// Helpers
-inline RECT RectFromWH(LONG w, LONG h) {
-  RECT r{0, 0, w, h};
-  return r;
-}
+// RectFromWH is now defined in the header file
 
-// Check if the game is in exclusive fullscreen mode
-inline bool IsExclusiveFullscreen(HWND hwnd) {
-  if (hwnd == nullptr) return false;
-  
-  // Check if window is maximized and covers the entire monitor
-  if (IsZoomed(hwnd) == FALSE) return false;
-  
-  // Get monitor info
-  HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-  if (hmon == nullptr) return false;
-  
-  MONITORINFOEXW mi{};
-  mi.cbSize = sizeof(mi);
-  if (GetMonitorInfoW(hmon, &mi) == FALSE) return false;
-  
-  // Get window rect
-  RECT wr{};
-  if (GetWindowRect(hwnd, &wr) == FALSE) return false;
-  
-  // Check if window covers the entire monitor area
-  const RECT& mr = mi.rcMonitor;
-  return (wr.left <= mr.left && wr.top <= mr.top && 
-          wr.right >= mr.right && wr.bottom >= mr.bottom);
-}
+// IsExclusiveFullscreen moved to utils.cpp
 
-// Derive conservative SetWindowPos flags from current window state to preserve behavior
-UINT ComputeSWPFlags(HWND hwnd, bool style_changed) {
-  UINT flags = 0;
-  flags |= SWP_NOZORDER; // preserve z-order
-  if (GetForegroundWindow() != hwnd) flags |= SWP_NOACTIVATE; // don't steal focus
-  if (style_changed) flags |= SWP_FRAMECHANGED; // notify style changes
-  if (IsWindowVisible(hwnd) == FALSE) flags |= SWP_SHOWWINDOW; // ensure visible if hidden
-  return flags;
-}
+// ComputeSWPFlags moved to utils.cpp
 
-void LogInfo(const char* msg) { reshade::log::message(reshade::log::level::info, msg); }
-void LogWarn(const char* msg) { reshade::log::message(reshade::log::level::warning, msg); }
-void LogDebug(const std::string& s) { reshade::log::message(reshade::log::level::debug, s.c_str()); }
+// Logging functions moved to utils.cpp
 
-std::string FormatLastError() {
-  DWORD err = GetLastError();
-  if (err == 0) return std::string();
-  LPSTR buf = nullptr;
-  DWORD len = FormatMessageA(
-      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-      nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&buf), 0, nullptr);
-  std::string out = (len != 0 && buf != nullptr) ? std::string(buf, buf + len) : std::string("Unknown error");
-  if (buf != nullptr) LocalFree(buf);
-  std::ostringstream oss; oss << "GLE=0x" << std::hex << err << ": " << out;
-  return oss.str();
-}
+// Borderless functions moved to utils.cpp
 
-// Forward declarations for helpers used before definitions
-inline bool IsBorderlessStyleBits(LONG_PTR style);
-inline bool IsBorderless(HWND hwnd);
-extern std::atomic<int> g_last_backbuffer_width;
-extern std::atomic<int> g_last_backbuffer_height;
+// Global variable definitions
+std::atomic<int> g_last_backbuffer_width{0};
+std::atomic<int> g_last_backbuffer_height{0};
 
-enum class DxgiBypassMode : std::uint8_t { kUnknown, kComposed, kOverlay, kIndependentFlip };
+// DxgiBypassMode is now defined in the header file
 
 inline DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain) {
   // Get or create the failure tracking structure
@@ -273,24 +198,7 @@ inline const char* DxgiBypassModeToString(DxgiBypassMode mode) {
   }
 }
 
-// Remove window borders while keeping title bar and system buttons
-inline void RemoveWindowBorder(HWND window) {
-  auto current_style = GetWindowLongPtr(window, GWL_STYLE);
-  if (current_style != 0) {
-    auto new_style = current_style & ~WS_BORDER & ~WS_THICKFRAME & ~WS_DLGFRAME;
-    if (new_style != current_style) {
-      SetWindowLongPtr(window, GWL_STYLE, new_style);
-    }
-  }
-  auto current_exstyle = GetWindowLongPtr(window, GWL_EXSTYLE);
-  if (current_exstyle != 0) {
-    auto new_exstyle = current_exstyle & ~WS_EX_CLIENTEDGE & ~WS_EX_WINDOWEDGE;
-    if (new_exstyle != current_exstyle) {
-      SetWindowLongPtr(window, GWL_EXSTYLE, new_exstyle);
-    }
-  }
-}
-// duplicate implementation removed
+// RemoveWindowBorder moved to utils.cpp
 
 // Attempt to configure the DXGI swapchain for conditions that allow Independent Flip
 // Only uses DXGI APIs (no Win32 window sizing). Returns true if a change was applied.
@@ -387,40 +295,16 @@ inline bool SetIndependentFlipState(reshade::api::swapchain* swapchain) {
   return changed;
 }
 
-inline bool IsBorderlessStyleBits(LONG_PTR style) {
-  const LONG_PTR decorations = WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
-  return ((style & WS_POPUP) != 0) && ((style & decorations) == 0);
-}
+// Borderless functions moved to utils.cpp
 
-inline bool IsBorderless(HWND hwnd) {
-  LONG_PTR style = GetWindowLongPtrW(hwnd, GWL_STYLE);
-  return IsBorderlessStyleBits(style);
-}
+// MonitorInfo is now defined in the header file
+// g_monitors is now defined at the top of the file
 
-// Monitor enumeration and labels
-struct MonitorInfo {
-  HMONITOR handle;
-  MONITORINFOEXW info;
-};
-
-std::vector<MonitorInfo> g_monitors;
-
-BOOL CALLBACK MonitorEnumProc(HMONITOR hmon, HDC /*hdc*/, LPRECT /*rect*/, LPARAM /*lparam*/) {
-  MONITORINFOEXW mi{};
-  mi.cbSize = sizeof(mi);
-  if (GetMonitorInfoW(hmon, &mi) != FALSE) {
-    MonitorInfo m{};
-    m.handle = hmon;
-    m.info = mi;
-    g_monitors.push_back(m);
-  }
-  return TRUE;
-}
+// MonitorEnumProc moved to utils.cpp
 
 std::vector<std::string> MakeMonitorLabels();
 
-// Unified window operation
-enum class WindowStyleMode : std::uint8_t { KEEP, BORDERLESS, OVERLAPPED_WINDOW };
+// WindowStyleMode is now defined in the header file
 
 void ApplyWindowChange(HWND hwnd,
                        bool do_resize, int client_width, int client_height,
@@ -445,9 +329,9 @@ void ApplyWindowChange(HWND hwnd,
     case WindowStyleMode::KEEP:
       break;
     case WindowStyleMode::BORDERLESS: {
-      // Use the RemoveWindowBorder function directly
-      RemoveWindowBorder(hwnd);
-      style_changed = false; // Always mark as changed since RemoveWindowBorder handles the logic
+      // Use the RemoveWindowBorderLocal function directly
+      RemoveWindowBorderLocal(hwnd);
+      style_changed = false; // Always mark as changed since RemoveWindowBorderLocal handles the logic
       break;
     }
     case WindowStyleMode::OVERLAPPED_WINDOW: {
@@ -635,14 +519,7 @@ void ApplyWindowChange(HWND hwnd,
 // Fullscreen detection/exit removed
 
 // Auto-apply on swapchain init scheduler
-std::atomic<uint64_t> g_init_apply_generation{0};
-std::chrono::steady_clock::time_point g_attach_time;
-std::atomic<int> g_last_backbuffer_width{0};
-std::atomic<int> g_last_backbuffer_height{0};
-std::atomic<HWND> g_last_swapchain_hwnd{nullptr};
-std::atomic<bool> g_shutdown{false};
-std::atomic<bool> g_muted_applied{false};
-std::atomic<float> g_default_fps_limit{0.0f};
+// Global variables are now defined at the top of the file
 
 bool SetMuteForCurrentProcess(bool mute) {
   const DWORD target_pid = GetCurrentProcessId();
@@ -803,67 +680,7 @@ void RunBackgroundAudioMonitor() {
   }
 }
 
-// Force window to monitor origin for Independent Flip compatibility
-inline void ForceWindowToMonitorOrigin(HWND hwnd) {
-  if (hwnd == nullptr) return;
-  
-  HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-  if (hmon == nullptr) return;
-  
-  MONITORINFO mi{};
-  mi.cbSize = sizeof(mi);
-  if (GetMonitorInfo(hmon, &mi) == FALSE) return;
-  
-  // Get current window style to calculate proper size
-  LONG_PTR style = GetWindowLongPtrW(hwnd, GWL_STYLE);
-  LONG_PTR ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
-  
-  // Get current client size
-  RECT client_rect{};
-  GetClientRect(hwnd, &client_rect);
-  
-  // Calculate window size needed for this client size
-  RECT window_rect = client_rect;
-  if (AdjustWindowRectEx(&window_rect, static_cast<DWORD>(style), FALSE, static_cast<DWORD>(ex_style)) == FALSE) {
-    LogWarn("ForceWindowToMonitorOrigin: AdjustWindowRectEx failed");
-    return;
-  }
-  
-  int window_width = window_rect.right - window_rect.left;
-  int window_height = window_rect.bottom - window_rect.top;
-  
-  // Position window so client area starts at monitor origin
-  int target_x = mi.rcMonitor.left;
-  int target_y = mi.rcMonitor.top;
-  
-  // Adjust for window decorations
-  target_x -= window_rect.left;
-  target_y -= window_rect.top;
-  
-  std::ostringstream oss;
-  oss << "ForceWindowToMonitorOrigin: moving window to (" << target_x << "," << target_y << ") size=" << window_width << "x" << window_height;
-  LogInfo(oss.str().c_str());
-  
-  SetWindowPos(hwnd, nullptr, target_x, target_y, window_width, window_height, 
-               SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-}
-
-// Thread-safe version that runs ForceWindowToMonitorOrigin in a separate thread
-inline void ForceWindowToMonitorOriginThreaded(HWND hwnd) {
-  if (hwnd == nullptr) return;
-  
-  // Create a copy of the HWND for the thread
-  HWND hwnd_copy = hwnd;
-  
-  // Run the function in a separate thread to prevent crashes
-  std::thread([hwnd_copy]() {
-    // Add a small delay to ensure the UI thread is not blocked
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    
-    // Call the original function
-    ForceWindowToMonitorOrigin(hwnd_copy);
-  }).detach();
-}
+// ForceWindowToMonitorOrigin functions moved to utils.cpp
 
 inline void LogIndependentFlipConditions(reshade::api::swapchain* swapchain) {
   // Get or create the failure tracking structure
@@ -1097,148 +914,11 @@ void ScheduleAutoApplyOnInit(HWND hwnd) {
   }).detach();
 }
 
-// Preset lists and helpers for labeled width/height
-const int WIDTH_OPTIONS[] = {1280, 1366, 1600, 1920, 2560, 3440, 3840};
-const int HEIGHT_OPTIONS[] = {720, 900, 1080, 1200, 1440, 1600, 2160};
+// Utility functions moved to utils.cpp
 
-std::vector<std::string> MakeLabels(const int* values, size_t count) {
-  std::vector<std::string> labels;
-  labels.reserve(count);
-  for (size_t i = 0; i < count; ++i) {
-    labels.emplace_back(std::to_string(values[i]));
-  }
-  return labels;
-}
+// ComputeDesiredSize functions moved to utils.cpp
 
-int FindClosestIndex(int value, const int* values, size_t count) {
-  int best_index = 0;
-  int best_delta = INT_MAX;
-  for (size_t i = 0; i < count; ++i) {
-    int d = std::abs(values[i] - value);
-    if (d < best_delta) {
-      best_delta = d;
-      best_index = static_cast<int>(i);
-    }
-  }
-  return best_index;
-}
-
-// Aspect ratio list (width:height) - sorted by ratio (ascending)
-struct AspectRatio { int w; int h; };
-
-// Forward declarations for height computation functions
-int ComputeHeightFromWidth(int width);
-int ComputeHeightFromWidthAndAspect(int width, const AspectRatio& ar);
-
-const AspectRatio ASPECT_OPTIONS[] = {
-  {3, 2},    // 1.5:1
-  {4, 3},    // 1.333:1
-  {16, 10},  // 1.6:1
-  {16, 9},   // 1.778:1
-  {19, 9},   // 2.111:1
-  {195, 90}, // 2.167:1 (19.5:9)
-  {21, 9},   // 2.333:1
-  {32, 9},   // 3.556:1
-};
-
-std::vector<std::string> MakeAspectLabels() {
-  std::vector<std::string> labels;
-  labels.reserve(std::size(ASPECT_OPTIONS));
-  for (size_t i = 0; i < std::size(ASPECT_OPTIONS); ++i) {
-    const auto ar = ASPECT_OPTIONS[i];
-    std::ostringstream oss;
-    
-    // Special case: 195:90 should display as "19.5:9"
-    if (ar.w == 195 && ar.h == 90) {
-      oss << "19.5:9";
-    } else {
-      oss << ar.w << ":" << ar.h;
-    }
-    
-    labels.emplace_back(oss.str());
-  }
-  return labels;
-}
-
-AspectRatio GetAspectByIndex(int index) {
-  index = (std::max)(index, 0);
-  int max_i = static_cast<int>(std::size(ASPECT_OPTIONS)) - 1;
-  index = (std::min)(index, max_i);
-  return ASPECT_OPTIONS[index];
-}
-
-void ComputeDesiredSize(int& out_w, int& out_h) {
-  const int want_w = static_cast<int>(s_windowed_width);
-  if (s_resize_mode < 0.5f) {
-    out_w = want_w;
-    out_h = static_cast<int>(s_windowed_height);
-    return;
-  }
-  // Aspect mode
-  int index = static_cast<int>(s_aspect_index);
-  AspectRatio ar = GetAspectByIndex(index);
-  // height = round(width * h / w)
-  // prevent division by zero
-  if (ar.w <= 0) ar.w = 1;
-  std::int64_t num = static_cast<std::int64_t>(want_w) * static_cast<std::int64_t>(ar.h);
-  int want_h = static_cast<int>((num + (ar.w / 2)) / ar.w);
-  out_w = want_w;
-  out_h = (std::max)(want_h, 1);
-}
-
-// Compute height based on current resize mode and settings
-int ComputeHeightFromWidth(int width) {
-  if (s_resize_mode < 0.5f) {
-    // Manual height mode - return the stored height setting
-    return static_cast<int>(s_windowed_height);
-  }
-  
-  // Aspect mode - compute height from width and aspect ratio
-  int index = static_cast<int>(s_aspect_index);
-  AspectRatio ar = GetAspectByIndex(index);
-  
-  // Prevent division by zero
-  if (ar.w <= 0) ar.w = 1;
-  
-  // height = round(width * h / w)
-  std::int64_t num = static_cast<std::int64_t>(width) * static_cast<std::int64_t>(ar.h);
-  int height = static_cast<int>((num + (ar.w / 2)) / ar.w);
-  
-  // Ensure minimum height of 1
-  return (std::max)(height, 1);
-}
-
-// Compute height from width using a specific aspect ratio
-int ComputeHeightFromWidthAndAspect(int width, const AspectRatio& ar) {
-  // Prevent division by zero
-  int w = ar.w;
-  if (w <= 0) w = 1;
-  
-  // height = round(width * h / w)
-  std::int64_t num = static_cast<std::int64_t>(width) * static_cast<std::int64_t>(ar.h);
-  int height = static_cast<int>((num + (w / 2)) / w);
-  
-  // Ensure minimum height of 1
-  return (std::max)(height, 1);
-}
-
-std::vector<std::string> MakeMonitorLabels() {
-  g_monitors.clear();
-  EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, 0);
-  std::vector<std::string> labels;
-  labels.reserve(g_monitors.size() + 1);
-  labels.emplace_back("Auto (Current)");
-  for (size_t i = 0; i < g_monitors.size(); ++i) {
-    const auto& mi = g_monitors[i].info;
-    const RECT& r = mi.rcMonitor;
-    const bool primary = (mi.dwFlags & MONITORINFOF_PRIMARY) != 0;
-    std::ostringstream oss;
-    oss << i + 1 << ": " << (primary ? "Primary " : "")
-        << (r.right - r.left) << "x" << (r.bottom - r.top);
-    labels.emplace_back(oss.str());
-  }
-  return labels;
-}
+// MakeMonitorLabels moved to utils.cpp
 
 // UI/settings
 renodx::utils::settings::Settings settings = {
@@ -1284,11 +964,11 @@ renodx::utils::settings::Settings settings = {
         .default_value = 3.f, // default to 1920
         .label = "Window Width",
         .section = "Display",
-        .labels = MakeLabels(WIDTH_OPTIONS, std::size(WIDTH_OPTIONS)),
+        .labels = MakeLabels(WIDTH_OPTIONS, 7),
         .parse = [](float index) {
           int i = static_cast<int>(index);
           i = (std::max)(i, 0);
-          int max_i = static_cast<int>(std::size(WIDTH_OPTIONS)) - 1;
+          int max_i = 6;
           i = (std::min)(i, max_i);
           return static_cast<float>(WIDTH_OPTIONS[i]);
         },
@@ -1301,12 +981,12 @@ renodx::utils::settings::Settings settings = {
         .default_value = 2.f, // default to 1080
         .label = "Window Height",
         .section = "Display",
-        .labels = MakeLabels(HEIGHT_OPTIONS, std::size(HEIGHT_OPTIONS)),
+        .labels = MakeLabels(HEIGHT_OPTIONS, 7),
         .is_enabled = [](){ return s_resize_mode < 0.5f; },
         .parse = [](float index) {
           int i = static_cast<int>(index);
           i = (std::max)(i, 0);
-          int max_i = static_cast<int>(std::size(HEIGHT_OPTIONS)) - 1;
+          int max_i = 6;
           i = (std::min)(i, max_i);
           return static_cast<float>(HEIGHT_OPTIONS[i]);
         },
@@ -1491,6 +1171,28 @@ renodx::utils::settings::Settings settings = {
         .labels = {"Disabled", "Enabled"},
         .on_change_value = [](float previous, float current){ renodx::mods::swapchain::prevent_full_screen = (current >= 0.5f); },
     },
+    // Prevent Minimize (workaround)
+    new renodx::utils::settings::Setting{
+        .key = "PreventMinimize",
+        .binding = &s_prevent_minimize,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Prevent Minimize (workaround)",
+        .section = "Display",
+        .tooltip = "Prevent window from being minimized by checking every 1 second and restoring if needed. This is a workaround for a full solution.",
+        .labels = {"Disabled", "Enabled"},
+    },
+    // Colorspace Override
+    new renodx::utils::settings::Setting{
+        .key = "ColorspaceOverride",
+        .binding = &s_colorspace_override,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Colorspace Override (requires restart)",
+        .section = "Display",
+        .tooltip = "Force specific DXGI colorspace for swapchain. Useful for HDR, wide gamut, and color accuracy.",
+        .labels = {"None", "BT709 Full", "BT2020 Full", "HDR10", "BT709 Studio", "BT2020 Studio", "HDR10 Studio"},
+    },
     // Force Windowed (Experimental)
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
@@ -1600,13 +1302,29 @@ renodx::utils::settings::Settings settings = {
             }
           }
           
+          // Display colorspace override status
+          std::string colorspace_str = "None";
+          if (s_colorspace_override > 0.f) {
+            switch (static_cast<int>(s_colorspace_override)) {
+              case 1: colorspace_str = "BT709 Full"; break;
+              case 2: colorspace_str = "BT2020 Full"; break;
+              case 3: colorspace_str = "HDR10"; break;
+              case 4: colorspace_str = "BT709 Studio"; break;
+              case 5: colorspace_str = "BT2020 Studio"; break;
+              case 6: colorspace_str = "HDR10 Studio"; break;
+              default: colorspace_str = "Unknown"; break;
+            }
+          }
+          
           ImGui::Separator();
           ImGui::Text("DXGI Composition: %s | Backbuffer: %dx%d | Format: %s",
                       mode_str,
                       g_last_backbuffer_width.load(),
                       g_last_backbuffer_height.load(),
                       format_str.c_str());
-          ImGui::Text("Fullscreen Mode: %s", is_exclusive_fullscreen ? "Exclusive" : "Windowed/Borderless");
+          ImGui::Text("Fullscreen Mode: %s | Colorspace Override: %s", 
+                      is_exclusive_fullscreen ? "Exclusive" : "Windowed/Borderless",
+                      colorspace_str.c_str());
           
                                       // Display current window position and size
                             if (hwnd != nullptr) {
@@ -1698,9 +1416,9 @@ renodx::utils::settings::Settings settings = {
     // Test button for RemoveWindowBorder
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "Test RemoveWindowBorder",
+        .label = "Test RemoveWindowBorderLocal",
         .section = "Display",
-        .tooltip = "Test button that calls RemoveWindowBorder in another thread.",
+        .tooltip = "Test button that calls RemoveWindowBorderLocal in another thread.",
         .on_click = []() {
           std::thread([](){
             HWND hwnd = g_last_swapchain_hwnd.load();
@@ -1710,15 +1428,15 @@ renodx::utils::settings::Settings settings = {
               return;
             }
             LogDebug("Test RemoveWindowBorder button pressed (bg thread)");
-            RemoveWindowBorder(hwnd);
-            LogInfo("Test RemoveWindowBorder completed");
+            RemoveWindowBorderLocal(hwnd);
+            LogInfo("Test RemoveWindowBorderLocal completed");
           }).detach();
           return false; // do not save on button click
         },
     },
 };
 
-}  // namespace
+// Namespace removed - all functions are now in global scope
 
 extern "C" __declspec(dllexport) constexpr const char* NAME = "Resolution Override";
 extern "C" __declspec(dllexport) constexpr const char* DESCRIPTION =
@@ -1735,6 +1453,39 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
     std::ostringstream oss; oss << "OnInitSwapchain(backbuffer=" << desc.texture.width << "x" << desc.texture.height
                                 << ", resize=" << (resize ? "true" : "false") << ")";
     LogDebug(oss.str());
+    
+    // Apply colorspace override if enabled
+    if (s_colorspace_override > 0.f) {
+      try {
+        // Get the underlying DXGI swapchain interface
+        auto* dxgi_swapchain = static_cast<IDXGISwapChain3*>(reinterpret_cast<void*>(swapchain->get_native()));
+        if (dxgi_swapchain != nullptr) {
+          // Map setting index to DXGI colorspace
+          DXGI_COLOR_SPACE_TYPE colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709; // Default
+          
+          switch (static_cast<int>(s_colorspace_override)) {
+            case 1: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709; break;      // BT709 Full
+            case 2: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020; break;     // BT2020 Full
+            case 3: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020; break;   // HDR10
+            case 4: colorspace = DXGI_COLOR_SPACE_RGB_STUDIO_G22_NONE_P709; break;    // BT709 Studio
+            case 5: colorspace = DXGI_COLOR_SPACE_RGB_STUDIO_G22_NONE_P2020; break;   // BT2020 Studio
+            case 6: colorspace = DXGI_COLOR_SPACE_RGB_STUDIO_G2084_NONE_P2020; break; // HDR10 Studio
+            default: colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709; break;
+          }
+          
+          HRESULT hr = dxgi_swapchain->SetColorSpace1(colorspace);
+          if (SUCCEEDED(hr)) {
+            std::ostringstream oss2; oss2 << "Colorspace Override: Applied colorspace " << static_cast<int>(colorspace);
+            LogInfo(oss2.str().c_str());
+          } else {
+            std::ostringstream oss2; oss2 << "Colorspace Override: Failed to set colorspace, HRESULT: 0x" << std::hex << hr;
+            LogWarn(oss2.str().c_str());
+          }
+        }
+      } catch (...) {
+        LogWarn("Colorspace Override: Exception occurred while setting colorspace");
+      }
+    }
   }
 
   // Schedule auto-apply even on resizes (generation counter ensures only latest runs)
@@ -1771,7 +1522,28 @@ static void OnPresentUpdate(
     uint32_t /*dirty_rect_count*/, const reshade::api::rect* /*dirty_rects*/) {
   // Throttle queries to ~every 30 presents
   int c = ++g_comp_query_counter;
+  // Check for minimized window and restore if needed (prevent minimize feature)
+  if (s_prevent_minimize >= 0.5f) {
+    // Only restore if we haven't restored in the last 30 frames
+      HWND hwnd = g_last_swapchain_hwnd.load();
+      if (hwnd != nullptr && IsIconic(hwnd) && g_frames_since_last_restore.load() >= 1) {
+        // Window is minimized, restore it in a separate thread to avoid blocking render thread
+        std::thread([hwnd]() {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Small delay to ensure UI thread is not blocked
+          ShowWindow(hwnd, SW_SHOWNOACTIVATE); // should restore but not bring focus back
+          LogDebug("Prevent Minimize: restored minimized window (bg thread)");
+        }).detach();
+        
+        // Reset the counter after initiating restore
+        g_frames_since_last_restore.store(0);
+      }
+  }
+  
+  // Increment frame counter for prevent minimize feature
+  g_frames_since_last_restore.fetch_add(1);
   if ((c % 30) != 0) return;
+  
+  
   DxgiBypassMode mode = GetIndependentFlipState(swapchain);
   int state = 0;
   switch (mode) {

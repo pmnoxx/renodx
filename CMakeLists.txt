@@ -542,7 +542,14 @@ foreach(FILE ${ADDON_FILES})
   cmake_path(GET FILE PARENT_PATH ADDON_PATH)
   cmake_path(GET ADDON_PATH FILENAME ADDON) # treat as filename
   add_compile_options(/bigobj)
-  add_library(${ADDON} MODULE ${FILE})
+  
+  # Check if utils.cpp exists in the same directory
+  set(ADDON_SOURCES ${FILE})
+  if(EXISTS ${ADDON_PATH}/utils.cpp)
+    list(APPEND ADDON_SOURCES ${ADDON_PATH}/utils.cpp)
+  endif()
+  
+  add_library(${ADDON} MODULE ${ADDON_SOURCES})
   build_shader_target(${ADDON} ${ADDON_PATH})
   generate_resource_rc(${ADDON})
   add_dependencies(${ADDON} ${ADDON}-shaders)
