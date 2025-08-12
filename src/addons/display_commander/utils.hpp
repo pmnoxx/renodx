@@ -43,6 +43,8 @@ void LogWarn(const char* msg);
 void LogDebug(const std::string& s);
 std::string FormatLastError();
 bool IsExclusiveFullscreen(HWND hwnd);
+bool GetSpoofedFullscreenState(HWND hwnd);
+int GetFullscreenSpoofingMode();
 UINT ComputeSWPFlags(HWND hwnd, bool style_changed);
 bool IsBorderlessStyleBits(LONG_PTR style);
 bool IsBorderless(HWND hwnd);

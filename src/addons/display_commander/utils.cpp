@@ -79,6 +79,33 @@ bool IsExclusiveFullscreen(HWND hwnd) {
             window_rect.bottom == client_br.y);
 }
 
+// Spoof fullscreen state detection based on user settings
+bool GetSpoofedFullscreenState(HWND hwnd) {
+    // Import the global variable
+    extern float s_spoof_fullscreen_state;
+    
+    // If spoofing is disabled, return actual state
+    if (s_spoof_fullscreen_state < 0.5f) {
+        return IsExclusiveFullscreen(hwnd);
+    }
+    
+    // Spoof as fullscreen (value 1)
+    if (s_spoof_fullscreen_state < 1.5f) {
+        return true;
+    }
+    
+    // Spoof as windowed (value 2)
+    return false;
+}
+
+// Get the current spoofing setting value (0=disabled, 1=spoof as fullscreen, 2=spoof as windowed)
+int GetFullscreenSpoofingMode() {
+    extern float s_spoof_fullscreen_state;
+    if (s_spoof_fullscreen_state < 0.5f) return 0;
+    if (s_spoof_fullscreen_state < 1.5f) return 1;
+    return 2;
+}
+
 UINT ComputeSWPFlags(HWND hwnd, bool style_changed) {
     UINT flags = SWP_NOZORDER | SWP_NOACTIVATE;
     if (style_changed) flags |= SWP_FRAMECHANGED;

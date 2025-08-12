@@ -30,6 +30,9 @@ void ComputeDesiredSize(int& out_w, int& out_h);
 // Swapchain event handlers moved to swapchain_events.cpp
 #include "swapchain_events.cpp"
 
+// Keyboard hook functions moved to keyboard_hook.cpp
+#include "keyboard_hook.cpp"
+
 // UI settings moved to ui_settings.cpp
 #include "ui_settings.cpp"
 

@@ -28,6 +28,9 @@ float s_force_windowed = 0.f; // 0 = Off, 1 = On
 // Prevent Fullscreen
 float s_prevent_fullscreen = 0.f; // 0 = Off, 1 = On
 
+// Spoof Fullscreen State (for applications that query fullscreen status)
+float s_spoof_fullscreen_state = 0.f; // 0 = Off, 1 = On (spoof as fullscreen), 2 = On (spoof as windowed)
+
 // Audio: mute when in background
 float s_mute_in_background = 0.f;
 // Audio: master volume (0..100) and manual mute toggle
@@ -46,6 +49,9 @@ float s_try_independent_flip = 0.f;
 
 // Prevent minimize (workaround for full solution)
 float s_prevent_minimize = 0.f;
+
+// Suppress Alt-Tab (by installing Windows hook)
+float s_suppress_alt_tab = 0.f; // 0 = Off, 1 = On
 
 // Track frames since last minimize restore to prevent excessive calls
 std::atomic<int> g_frames_since_last_restore{0};

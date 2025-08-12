@@ -252,6 +252,31 @@ renodx::utils::settings::Settings settings = {
         .labels = {"Disabled", "Enabled"},
         .on_change_value = [](float previous, float current){ renodx::mods::swapchain::prevent_full_screen = (current >= 0.5f); },
     },
+    // Spoof Fullscreen State
+    new renodx::utils::settings::Setting{
+        .key = "SpoofFullscreenState",
+        .binding = &s_spoof_fullscreen_state,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Spoof Fullscreen State",
+        .section = "Display",
+        .tooltip = "Spoof fullscreen state detection for applications that query fullscreen status. Useful for games that change behavior based on fullscreen state.",
+        .labels = {"Disabled", "Spoof as Fullscreen", "Spoof as Windowed"},
+        .on_change_value = [](float previous, float current){ 
+            // Update the global spoofing state
+            // This will be used by the fullscreen state interception logic
+            std::ostringstream oss;
+            oss << "Fullscreen state spoofing changed from " << previous << " to " << current;
+            if (current < 0.5f) {
+                oss << " (Disabled)";
+            } else if (current < 1.5f) {
+                oss << " (Spoof as Fullscreen)";
+            } else {
+                oss << " (Spoof as Windowed)";
+            }
+            LogInfo(oss.str().c_str());
+        },
+    },
     // Prevent Minimize (workaround)
     new renodx::utils::settings::Setting{
         .key = "PreventMinimize",
@@ -262,6 +287,31 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Prevent window from being minimized by checking every 1 second and restoring if needed. This is a workaround for a full solution.",
         .labels = {"Disabled", "Enabled"},
+    },
+    // Suppress Alt-Tab
+    new renodx::utils::settings::Setting{
+        .key = "SuppressAltTab",
+        .binding = &s_suppress_alt_tab,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Suppress Alt-Tab",
+        .section = "Display",
+        .tooltip = "Suppress Alt-Tab functionality by installing Windows hook. Some games don't get informed about Alt-Tab but it still works and allows switching back.",
+        .labels = {"Disabled", "Enabled"},
+        .on_change_value = [](float previous, float current){ 
+            // Update the Alt-Tab suppression state
+            std::ostringstream oss;
+            oss << "Alt-Tab suppression changed from " << (previous >= 0.5f ? "enabled" : "disabled") 
+                << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            LogInfo(oss.str().c_str());
+            
+            // Install/uninstall the hook based on the setting
+            if (current >= 0.5f) {
+                InstallAltTabHook();
+            } else {
+                UninstallAltTabHook();
+            }
+        },
     },
     // Force Windowed (Experimental)
     new renodx::utils::settings::Setting{
@@ -345,7 +395,7 @@ renodx::utils::settings::Settings settings = {
           // Check exclusive fullscreen status
           HWND hwnd = g_last_swapchain_hwnd.load();
           if (hwnd == nullptr) hwnd = GetForegroundWindow();
-          const bool is_exclusive_fullscreen = IsExclusiveFullscreen(hwnd);
+          const bool is_exclusive_fullscreen = GetSpoofedFullscreenState(hwnd);
           
           // Get backbuffer format
           std::string format_str = "Unknown";
@@ -445,7 +495,7 @@ renodx::utils::settings::Settings settings = {
           
           if (has_failures) {
             ImGui::Separator();
-            ImGui::Text("Independent Flip Blocked:");
+            ImGui::Text("Independent Flip Debug Info:");
             
             if (failures->swapchain_null.load()) ImGui::BulletText("Swapchain is null");
             if (failures->device_null.load()) ImGui::BulletText("Device is null");
