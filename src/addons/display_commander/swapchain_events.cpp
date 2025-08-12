@@ -40,6 +40,13 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
   LogDebug(resize ? "Schedule auto-apply on swapchain init (resize)"
                   : "Schedule auto-apply on swapchain init");
   ScheduleAutoApplyOnInit(hwnd);
+  
+  // Reinstall minimize prevention if it was enabled and the window handle changed
+  extern float s_prevent_windows_minimize;
+  if (s_prevent_windows_minimize >= 0.5f) {
+    extern bool InstallMinimizeHook();
+    InstallMinimizeHook();
+  }
 }
 
 // Update composition state after presents (required for valid stats)

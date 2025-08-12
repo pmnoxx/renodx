@@ -1,5 +1,8 @@
 #include "addon.hpp"
 
+// Include the UI settings to get the settings vector
+#include "ui_settings.cpp"
+
 BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   switch (fdw_reason) {
     case DLL_PROCESS_ATTACH:
@@ -53,6 +56,19 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
 
   renodx::utils::settings::Use(fdw_reason, &settings);
   renodx::utils::swapchain::Use(fdw_reason);
+
+  // Initialize hooks if settings are enabled on startup
+  if (fdw_reason == DLL_PROCESS_ATTACH) {
+    // Check if Alt-Tab suppression should be enabled
+    if (s_suppress_alt_tab >= 0.5f) {
+      InstallAltTabHook();
+    }
+    
+    // Check if Windows minimize prevention should be enabled
+    if (s_prevent_windows_minimize >= 0.5f) {
+      InstallMinimizeHook();
+    }
+  }
 
   return TRUE;
 }

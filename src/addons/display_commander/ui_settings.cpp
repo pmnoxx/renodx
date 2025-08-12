@@ -301,6 +301,7 @@ renodx::utils::settings::Settings settings = {
             LogInfo(oss.str().c_str());
         },
     },
+
     // Suppress Alt-Tab
     new renodx::utils::settings::Setting{
         .key = "SuppressAltTab",
@@ -314,11 +315,10 @@ renodx::utils::settings::Settings settings = {
         .on_change_value = [](float previous, float current){ 
             // Update the Alt-Tab suppression state
             std::ostringstream oss;
-            oss << "Alt-Tab suppression changed from " << (previous >= 0.5f ? "enabled" : "disabled") 
-                << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            oss << "Alt-Tab suppression changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
             LogInfo(oss.str().c_str());
             
-            // Install/uninstall the hook based on the setting
+            // Install or uninstall the hook based on the new setting
             if (current >= 0.5f) {
                 InstallAltTabHook();
             } else {
@@ -339,11 +339,10 @@ renodx::utils::settings::Settings settings = {
         .on_change_value = [](float previous, float current){ 
             // Update the Windows minimize prevention state
             std::ostringstream oss;
-            oss << "Windows minimize prevention changed from " << (previous >= 0.5f ? "enabled" : "disabled") 
-                << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            oss << "Windows minimize prevention changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
             LogInfo(oss.str().c_str());
             
-            // Install/uninstall the hook based on the setting
+            // Install or uninstall the hook based on the new setting
             if (current >= 0.5f) {
                 InstallMinimizeHook();
             } else {
@@ -573,6 +572,30 @@ renodx::utils::settings::Settings settings = {
             LogInfo("Test RemoveWindowBorderLocal completed");
           }).detach();
           return false; // do not save on button click
+        },
+    },
+    // Log Window State Changes
+    new renodx::utils::settings::Setting{
+        .key = "LogWindowStateChanges",
+        .binding = &s_log_window_state_changes,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Log Window State Changes",
+        .section = "Debug",
+        .tooltip = "Log every window state change (move, resize, minimize, maximize, style changes, etc.) for debugging and monitoring.",
+        .labels = {"Disabled", "Enabled"},
+        .on_change_value = [](float previous, float current){ 
+            // Update the window state logging state
+            std::ostringstream oss;
+            oss << "Window state change logging changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            LogInfo(oss.str().c_str());
+            
+            // Install or uninstall the hook based on the new setting
+            if (current >= 0.5f) {
+                InstallWindowStateLoggingHook();
+            } else {
+                UninstallWindowStateLoggingHook();
+            }
         },
     },
 };

@@ -30,6 +30,11 @@
 #include <mmdeviceapi.h>
 #include <audiopolicy.h>
 
+// Audio management functions
+bool SetMuteForCurrentProcess(bool mute);
+bool SetVolumeForCurrentProcess(float volume_0_100);
+void RunBackgroundAudioMonitor();
+
 // Forward declarations
 void ComputeDesiredSize(int& out_w, int& out_h);
 int ComputeHeightFromWidth(int width);
@@ -51,9 +56,13 @@ DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain);
 bool InstallAltTabHook();
 void UninstallAltTabHook();
 
-// Windows minimize prevention functions
+// Windows minimize prevention functions (using window subclassing)
 bool InstallMinimizeHook();
 void UninstallMinimizeHook();
+
+// Window state change logging functions
+bool InstallWindowStateLoggingHook();
+void UninstallWindowStateLoggingHook();
 
 // Structs
 struct IndependentFlipFailures {
@@ -102,6 +111,7 @@ extern float s_try_independent_flip;
 extern float s_suppress_alt_tab;
 extern float s_prevent_windows_minimize;
 extern float s_spoof_window_focus;
+extern float s_log_window_state_changes;
 
 extern std::atomic<int> g_comp_query_counter;
 extern std::atomic<int> g_comp_last_logged;
@@ -125,9 +135,10 @@ bool SetIndependentFlipState(reshade::api::swapchain* swapchain);
 void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode);
 bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h);
 void ScheduleAutoApplyOnInit(HWND hwnd);
-bool SetMuteForCurrentProcess(bool mute);
-bool SetVolumeForCurrentProcess(float volume_0_100);
-void RunBackgroundAudioMonitor();
 void LogIndependentFlipConditions(reshade::api::swapchain* swapchain);
+
+// Swapchain event handlers
+void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize);
+void OnPresentUpdate(reshade::api::command_queue* queue, reshade::api::swapchain* swapchain, const reshade::api::rect* source_rect, const reshade::api::rect* dest_rect, uint32_t dirty_rect_count, const reshade::api::rect* dirty_rects);
 
 // Note: GetIndependentFlipState is implemented in the .cpp file as it's complex

@@ -56,6 +56,9 @@ float s_prevent_windows_minimize = 0.f; // 0 = Off, 1 = On
 // Spoof Window Focus (for applications that query focus status)
 float s_spoof_window_focus = 0.f; // 0 = Off, 1 = On (spoof as focused), 2 = On (spoof as unfocused)
 
+// Log Window State Changes (for debugging and monitoring)
+float s_log_window_state_changes = 0.f; // 0 = Off, 1 = On
+
 // Last known swapchain pointer (for composition state queries)
 std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr{nullptr};
 

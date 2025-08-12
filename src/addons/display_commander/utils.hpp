@@ -6,10 +6,6 @@
 
 #include <windows.h>
 #include <windef.h>
-#include <dxgi1_3.h>
-#include <dxgi1_6.h>
-#include <wrl/client.h>
-#include <deps/imgui/imgui.h>
 #include <include/reshade.hpp>
 
 #include <sstream>
