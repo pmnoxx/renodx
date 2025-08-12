@@ -127,6 +127,11 @@ extern std::atomic<float> g_default_fps_limit;
 
 extern std::vector<MonitorInfo> g_monitors;
 
+// Swapchain format mode: 0 = Off (no upgrade), 1 = HDR10, 2 = scRGB
+extern float s_enable_scrgb_swapchain;
+// Fix HDR10 color space when backbuffer is RGB10A2
+extern float s_fix_hdr10_colorspace;
+
 
 
 // Function declarations
@@ -140,5 +145,17 @@ void LogIndependentFlipConditions(reshade::api::swapchain* swapchain);
 // Swapchain event handlers
 void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize);
 void OnPresentUpdate(reshade::api::command_queue* queue, reshade::api::swapchain* swapchain, const reshade::api::rect* source_rect, const reshade::api::rect* dest_rect, uint32_t dirty_rect_count, const reshade::api::rect* dirty_rects);
+
+// HDR10 colorspace fixing
+void FixHDR10Colorspace(reshade::api::swapchain* swapchain);
+
+// Current swapchain colorspace for UI display
+extern reshade::api::color_space g_current_colorspace;
+
+// HDR10 colorspace override status for UI display
+extern std::string g_hdr10_override_status;
+
+// HDR10 colorspace override timestamp for UI display
+extern std::string g_hdr10_override_timestamp;
 
 // Note: GetIndependentFlipState is implemented in the .cpp file as it's complex

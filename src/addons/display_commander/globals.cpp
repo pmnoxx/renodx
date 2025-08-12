@@ -59,6 +59,18 @@ float s_spoof_window_focus = 0.f; // 0 = Off, 1 = On (spoof as focused), 2 = On 
 // Log Window State Changes (for debugging and monitoring)
 float s_log_window_state_changes = 0.f; // 0 = Off, 1 = On
 
+// Display: Fix HDR10 color space via DXGI SetColorSpace1 when using RGB10A2
+float s_fix_hdr10_colorspace = 1.f; // 0 = Off, 1 = On
+
+// Current swapchain colorspace for UI display
+reshade::api::color_space g_current_colorspace = reshade::api::color_space::unknown;
+
+// HDR10 colorspace override status for UI display
+std::string g_hdr10_override_status = "Not attempted";
+
+// HDR10 colorspace override timestamp for UI display
+std::string g_hdr10_override_timestamp = "Never";
+
 // Last known swapchain pointer (for composition state queries)
 std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr{nullptr};
 

@@ -459,12 +459,27 @@ renodx::utils::settings::Settings settings = {
             }
           }
           
+          // Get colorspace string
+          std::string colorspace_str = "Unknown";
+          switch (g_current_colorspace) {
+            case reshade::api::color_space::unknown: colorspace_str = "Unknown"; break;
+            case reshade::api::color_space::srgb_nonlinear: colorspace_str = "sRGB"; break;
+            case reshade::api::color_space::extended_srgb_linear: colorspace_str = "Extended sRGB Linear"; break;
+            case reshade::api::color_space::hdr10_st2084: colorspace_str = "HDR10 ST2084"; break;
+            case reshade::api::color_space::hdr10_hlg: colorspace_str = "HDR10 HLG"; break;
+            default: colorspace_str = "ColorSpace_" + std::to_string(static_cast<int>(g_current_colorspace)); break;
+          }
+          
           ImGui::Separator();
-          ImGui::Text("DXGI Composition: %s | Backbuffer: %dx%d | Format: %s",
+          ImGui::Text("DXGI Composition: %s | Backbuffer: %dx%d | Format: %s | Colorspace: %s",
                       mode_str,
                       g_last_backbuffer_width.load(),
                       g_last_backbuffer_height.load(),
-                      format_str.c_str());
+                      format_str.c_str(),
+                      colorspace_str.c_str());
+          
+          // Display HDR10 override status
+          ImGui::Text("HDR10 Colorspace Override: %s (Last: %s)", g_hdr10_override_status.c_str(), g_hdr10_override_timestamp.c_str());
           
           // Display current window position and size
           if (hwnd != nullptr) {
@@ -597,5 +612,16 @@ renodx::utils::settings::Settings settings = {
                 UninstallWindowStateLoggingHook();
             }
         },
+    },
+    // Fix HDR10 Colorspace
+    new renodx::utils::settings::Setting{
+        .key = "FixHDR10Colorspace",
+        .binding = &s_fix_hdr10_colorspace,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 1.f,
+        .label = "Fix HDR10 Colorspace",
+        .section = "Display",
+        .tooltip = "Automatically fix HDR10 colorspace when swapchain format is RGB10A2 and colorspace is currently sRGB. Only works when the game is using sRGB colorspace.",
+        .labels = {"Off", "On"},
     },
 };
