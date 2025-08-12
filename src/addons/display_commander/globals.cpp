@@ -53,6 +53,9 @@ float s_prevent_minimize = 0.f;
 // Suppress Alt-Tab (by installing Windows hook)
 float s_suppress_alt_tab = 0.f; // 0 = Off, 1 = On
 
+// Prevent Windows Minimize (by installing Windows hook)
+float s_prevent_windows_minimize = 0.f; // 0 = Off, 1 = On
+
 // Track frames since last minimize restore to prevent excessive calls
 std::atomic<int> g_frames_since_last_restore{0};
 

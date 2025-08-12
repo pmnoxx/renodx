@@ -39,6 +39,9 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       // Clean up Alt-Tab hook if it's installed
       UninstallAltTabHook();
       
+      // Clean up minimize hook if it's installed
+      UninstallMinimizeHook();
+      
       reshade::unregister_event<reshade::addon_event::present>(OnPresentUpdate);
       reshade::unregister_event<reshade::addon_event::set_fullscreen_state>(
           [](reshade::api::swapchain*, bool, void*) { return false; });

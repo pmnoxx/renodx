@@ -313,6 +313,31 @@ renodx::utils::settings::Settings settings = {
             }
         },
     },
+    // Prevent Windows Minimize
+    new renodx::utils::settings::Setting{
+        .key = "PreventWindowsMinimize",
+        .binding = &s_prevent_windows_minimize,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Prevent Windows Minimize",
+        .section = "Display",
+        .tooltip = "Prevent windows from being minimized by installing Windows hook. Suppresses minimize window messages.",
+        .labels = {"Disabled", "Enabled"},
+        .on_change_value = [](float previous, float current){ 
+            // Update the Windows minimize prevention state
+            std::ostringstream oss;
+            oss << "Windows minimize prevention changed from " << (previous >= 0.5f ? "enabled" : "disabled") 
+                << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            LogInfo(oss.str().c_str());
+            
+            // Install/uninstall the hook based on the setting
+            if (current >= 0.5f) {
+                InstallMinimizeHook();
+            } else {
+                UninstallMinimizeHook();
+            }
+        },
+    },
     // Force Windowed (Experimental)
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,

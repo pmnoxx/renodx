@@ -51,6 +51,10 @@ DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain);
 bool InstallAltTabHook();
 void UninstallAltTabHook();
 
+// Windows minimize prevention functions
+bool InstallMinimizeHook();
+void UninstallMinimizeHook();
+
 // Structs
 struct IndependentFlipFailures {
   std::atomic<bool> swapchain_null{false};
@@ -97,6 +101,7 @@ extern float s_dxgi_composition_state;
 extern float s_try_independent_flip;
 extern float s_prevent_minimize;
 extern float s_suppress_alt_tab;
+extern float s_prevent_windows_minimize;
 
 extern std::atomic<int> g_comp_query_counter;
 extern std::atomic<int> g_comp_last_logged;
