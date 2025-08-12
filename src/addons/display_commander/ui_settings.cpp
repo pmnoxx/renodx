@@ -277,16 +277,29 @@ renodx::utils::settings::Settings settings = {
             LogInfo(oss.str().c_str());
         },
     },
-    // Prevent Minimize (workaround)
+    // Spoof Window Focus
     new renodx::utils::settings::Setting{
-        .key = "PreventMinimize",
-        .binding = &s_prevent_minimize,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .key = "SpoofWindowFocus",
+        .binding = &s_spoof_window_focus,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 0.f,
-        .label = "Prevent Minimize (workaround)",
+        .label = "Spoof Window Focus",
         .section = "Display",
-        .tooltip = "Prevent window from being minimized by checking every 1 second and restoring if needed. This is a workaround for a full solution.",
-        .labels = {"Disabled", "Enabled"},
+        .tooltip = "Spoof window focus state for applications that query focus status. Useful for games that change behavior based on focus state.",
+        .labels = {"Disabled", "Spoof as Focused", "Spoof as Unfocused"},
+        .on_change_value = [](float previous, float current){ 
+            // Update the global focus spoofing state
+            std::ostringstream oss;
+            oss << "Window focus spoofing changed from " << previous << " to " << current;
+            if (current < 0.5f) {
+                oss << " (Disabled)";
+            } else if (current < 1.5f) {
+                oss << " (Spoof as Focused)";
+            } else {
+                oss << " (Spoof as Unfocused)";
+            }
+            LogInfo(oss.str().c_str());
+        },
     },
     // Suppress Alt-Tab
     new renodx::utils::settings::Setting{

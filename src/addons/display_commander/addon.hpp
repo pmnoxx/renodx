@@ -99,15 +99,15 @@ extern float s_fps_limit_background;
 extern float s_target_monitor_index;
 extern float s_dxgi_composition_state;
 extern float s_try_independent_flip;
-extern float s_prevent_minimize;
 extern float s_suppress_alt_tab;
 extern float s_prevent_windows_minimize;
+extern float s_spoof_window_focus;
 
 extern std::atomic<int> g_comp_query_counter;
 extern std::atomic<int> g_comp_last_logged;
+// Last known swapchain pointer (for composition state queries)
 extern std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr;
 extern std::atomic<IndependentFlipFailures*> g_if_failures;
-extern std::atomic<int> g_frames_since_last_restore;
 extern std::atomic<uint64_t> g_init_apply_generation;
 extern std::chrono::steady_clock::time_point g_attach_time;
 extern std::atomic<HWND> g_last_swapchain_hwnd;

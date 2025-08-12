@@ -106,6 +106,33 @@ int GetFullscreenSpoofingMode() {
     return 2;
 }
 
+// Spoof window focus state detection based on user settings
+bool GetSpoofedWindowFocus(HWND hwnd) {
+    // Import the global variable
+    extern float s_spoof_window_focus;
+    
+    // If spoofing is disabled, return actual state
+    if (s_spoof_window_focus < 0.5f) {
+        return (GetForegroundWindow() == hwnd);
+    }
+    
+    // Spoof as focused (value 1)
+    if (s_spoof_window_focus < 1.5f) {
+        return true;
+    }
+    
+    // Spoof as unfocused (value 2)
+    return false;
+}
+
+// Get the current focus spoofing setting value (0=disabled, 1=spoof as focused, 2=spoof as unfocused)
+int GetWindowFocusSpoofingMode() {
+    extern float s_spoof_window_focus;
+    if (s_spoof_window_focus < 0.5f) return 0;
+    if (s_spoof_window_focus < 1.5f) return 1;
+    return 2;
+}
+
 UINT ComputeSWPFlags(HWND hwnd, bool style_changed) {
     UINT flags = SWP_NOZORDER | SWP_NOACTIVATE;
     if (style_changed) flags |= SWP_FRAMECHANGED;

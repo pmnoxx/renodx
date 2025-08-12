@@ -49,25 +49,7 @@ static void OnPresentUpdate(
     uint32_t /*dirty_rect_count*/, const reshade::api::rect* /*dirty_rects*/) {
   // Throttle queries to ~every 30 presents
   int c = ++g_comp_query_counter;
-  // Check for minimized window and restore if needed (prevent minimize feature)
-  if (s_prevent_minimize >= 0.5f) {
-    // Only restore if we haven't restored in the last 30 frames
-      HWND hwnd = g_last_swapchain_hwnd.load();
-      if (hwnd != nullptr && IsIconic(hwnd) && g_frames_since_last_restore.load() >= 1) {
-        // Window is minimized, restore it in a separate thread to avoid blocking render thread
-        std::thread([hwnd]() {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Small delay to ensure UI thread is not blocked
-          ShowWindow(hwnd, SW_SHOWNOACTIVATE); // should restore but not bring focus back
-          LogDebug("Prevent Minimize: restored minimized window (bg thread)");
-        }).detach();
-        
-        // Reset the counter after initiating restore
-        g_frames_since_last_restore.store(0);
-      }
-  }
   
-  // Increment frame counter for prevent minimize feature
-  g_frames_since_last_restore.fetch_add(1);
   if ((c % 30) != 0) return;
   
   

@@ -1,4 +1,5 @@
 #include "addon.hpp"
+#include "utils.hpp"
 
 bool SetMuteForCurrentProcess(bool mute) {
   const DWORD target_pid = GetCurrentProcessId();
@@ -120,8 +121,8 @@ void RunBackgroundAudioMonitor() {
     if (s_mute_in_background >= 0.5f) {
       HWND hwnd = g_last_swapchain_hwnd.load();
       if (hwnd == nullptr) hwnd = GetForegroundWindow();
-      HWND fg = GetForegroundWindow();
-      want_mute = (hwnd != nullptr && fg != hwnd);
+      // Use spoofed focus state instead of actual focus state
+      want_mute = (hwnd != nullptr && !GetSpoofedWindowFocus(hwnd));
     }
 
     const bool applied = g_muted_applied.load();
@@ -135,8 +136,8 @@ void RunBackgroundAudioMonitor() {
     if (s_fps_limit_background >= 0.f) {
       HWND hwnd = g_last_swapchain_hwnd.load();
       if (hwnd == nullptr) hwnd = GetForegroundWindow();
-      HWND fg = GetForegroundWindow();
-      const bool is_background = (hwnd != nullptr && fg != hwnd);
+      // Use spoofed focus state instead of actual focus state
+      const bool is_background = (hwnd != nullptr && !GetSpoofedWindowFocus(hwnd));
       if (is_background) {
         const float desired_limit = s_fps_limit_background;
         if (renodx::utils::swapchain::fps_limit != desired_limit) {

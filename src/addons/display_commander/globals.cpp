@@ -47,18 +47,16 @@ std::atomic<int> g_comp_last_logged{-1};
 // Try to configure swapchain for Independent Flip using DXGI-only changes
 float s_try_independent_flip = 0.f;
 
-// Prevent minimize (workaround for full solution)
-float s_prevent_minimize = 0.f;
-
 // Suppress Alt-Tab (by installing Windows hook)
 float s_suppress_alt_tab = 0.f; // 0 = Off, 1 = On
 
 // Prevent Windows Minimize (by installing Windows hook)
 float s_prevent_windows_minimize = 0.f; // 0 = Off, 1 = On
 
-// Track frames since last minimize restore to prevent excessive calls
-std::atomic<int> g_frames_since_last_restore{0};
+// Spoof Window Focus (for applications that query focus status)
+float s_spoof_window_focus = 0.f; // 0 = Off, 1 = On (spoof as focused), 2 = On (spoof as unfocused)
 
+// Last known swapchain pointer (for composition state queries)
 std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr{nullptr};
 
 // No persistent window handle; resolve on demand
