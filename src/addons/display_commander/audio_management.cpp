@@ -118,7 +118,13 @@ bool SetVolumeForCurrentProcess(float volume_0_100) {
 void RunBackgroundAudioMonitor() {
   while (!g_shutdown.load()) {
     bool want_mute = false;
-    if (s_mute_in_background >= 0.5f) {
+    
+    // Check if manual mute is enabled - if so, always mute regardless of background state
+    if (s_audio_mute >= 0.5f) {
+      want_mute = true;
+    }
+    // Only apply background mute logic if manual mute is OFF
+    else if (s_mute_in_background >= 0.5f) {
       HWND hwnd = g_last_swapchain_hwnd.load();
       if (hwnd == nullptr) hwnd = GetForegroundWindow();
       // Use spoofed focus state instead of actual focus state

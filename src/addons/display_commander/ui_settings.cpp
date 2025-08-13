@@ -140,7 +140,11 @@ renodx::utils::settings::Settings settings = {
         .label = "Mute",
         .section = "Audio",
         .labels = {"Off", "On"},
-        .on_change_value = [](float previous, float current){ SetMuteForCurrentProcess(current >= 0.5f); },
+        .on_change_value = [](float previous, float current){ 
+          SetMuteForCurrentProcess(current >= 0.5f);
+          // Reset applied flag so the monitor thread immediately respects the manual mute change
+          g_muted_applied.store(false);
+        },
     },
     // Mute in Background (placed after Mute; disabled if Mute is ON)
     new renodx::utils::settings::Setting{
