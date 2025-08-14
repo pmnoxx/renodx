@@ -31,6 +31,8 @@ float s_nvapi_fullscreen_prevention = 1.f; // enabled by default
 // NVAPI HDR logging
 float s_nvapi_hdr_logging = 0.f;
 float s_nvapi_hdr_interval_sec = 5.f;
+// NVAPI Force HDR10
+float s_nvapi_force_hdr10 = 0.f;
 
 // Spoof Fullscreen State (for applications that query fullscreen status)
 float s_spoof_fullscreen_state = 0.f;

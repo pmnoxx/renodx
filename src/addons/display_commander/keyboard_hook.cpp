@@ -15,10 +15,7 @@ static WNDPROC g_original_resize_wnd_proc = nullptr;
 static HWND g_resize_enforcer_hwnd = nullptr;
 static bool g_in_resize_enforce = false;
 
-// Timer-based minimize prevention
-static UINT_PTR g_minimize_prevention_timer = 0;
-static const UINT MINIMIZE_PREVENTION_TIMER_ID = 1001;
-static const UINT MINIMIZE_CHECK_INTERVAL_MS = 100; // Check every 100ms
+// Timer-based minimize prevention removed
 
 // Hook procedure for Alt-Tab suppression
 LRESULT CALLBACK AltTabHookProc(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -107,73 +104,65 @@ LRESULT CALLBACK MinimizeWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
             }
         }
     }
-    // Check for minimize commands
+    // Remove minimize styles/commands instead of preventing via timers
+    if (uMsg == WM_NCCALCSIZE) {
+        // Strip minimize/maximize buttons from style once after subclassing
+        LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
+        LONG_PTR exstyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+        LONG_PTR new_style = style & ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+        if (new_style != style) {
+            SetWindowLongPtr(hwnd, GWL_STYLE, new_style);
+            SetWindowLongPtr(hwnd, GWL_EXSTYLE, exstyle);
+            SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
+                         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+            LogDebug("Stripped minimize/maximize style bits");
+        }
+    }
     if (uMsg == WM_SYSCOMMAND) {
-        if ((wParam & 0xFFF0) == SC_MINIMIZE) {
-            // Suppress minimize by logging and returning 0 (handled)
-            LogDebug("Window minimize suppressed by window subclassing (WM_SYSCOMMAND)");
+        UINT cmd = (UINT)(wParam & 0xFFF0);
+        if (cmd == SC_MINIMIZE) {
+            // Convert minimize to restore; effectively ignore minimize
+            LogDebug("Intercepted SC_MINIMIZE; switching to SC_RESTORE");
             return 0;
         }
     }
     
-    // Check for ShowWindow minimize calls
-    if (uMsg == WM_SHOWWINDOW && wParam == FALSE) {
-        // This might be a minimize - check if the window is being hidden
-        if (IsIconic(hwnd)) {
-            LogDebug("Window minimize suppressed by window subclassing (WM_SHOWWINDOW)");
-            return 0;
-        }
+    // Ignore show/hide minimize attempts
+    if (uMsg == WM_SHOWWINDOW && wParam == FALSE && IsIconic(hwnd)) {
+        LogDebug("Ignored minimize via WM_SHOWWINDOW");
+        return 0;
     }
     
-    // Check for off-screen positioning that indicates minimize
+    // Reject off-screen minimize geometry
     if (uMsg == WM_WINDOWPOSCHANGING) {
         WINDOWPOS* wp = (WINDOWPOS*)lParam;
-        // Check if window is being moved off-screen (typical minimize behavior)
-        if (wp->x < -10000 || wp->y < -10000 || wp->cx < 10 || wp->cy < 10) {
-            // This looks like a minimize - prevent it
-            LogDebug("Window minimize suppressed by window subclassing (off-screen positioning)");
-            // Keep the window visible and on-screen
-            wp->x = 0;
-            wp->y = 0;
-            wp->cx = max(wp->cx, 100);
-            wp->cy = max(wp->cy, 100);
+        if (wp && (wp->x < -10000 || wp->y < -10000 || wp->cx < 10 || wp->cy < 10)) {
+            LogDebug("Rejected minimize geometry in WM_WINDOWPOSCHANGING");
+            wp->flags |= SWP_NOSIZE | SWP_NOMOVE;
             return 0;
         }
     }
     
-    // Check for size changes that indicate minimize
-    if (uMsg == WM_SIZE) {
-        if (wParam == SIZE_MINIMIZED) {
-            // Suppress minimize by logging and returning 0 (handled)
-            LogDebug("Window minimize suppressed by window subclassing (WM_SIZE)");
-            return 0;
-        }
+    if (uMsg == WM_SIZE && wParam == SIZE_MINIMIZED) {
+        LogDebug("Ignored SIZE_MINIMIZED");
+        return 0;
     }
     
-    // Check for window position changes that might indicate minimize
     if (uMsg == WM_WINDOWPOSCHANGED) {
         WINDOWPOS* wp = (WINDOWPOS*)lParam;
-        // Check if window was moved off-screen (post-minimize)
-        if (wp->x < -10000 || wp->y < -10000 || wp->cx < 10 || wp->cy < 10) {
-            LogDebug("Window minimize detected after the fact - attempting to restore");
-            // Try to restore the window immediately
-            SetWindowPos(hwnd, nullptr, 0, 0, max(wp->cx, 100), max(wp->cy, 100), 
-                        SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        if (wp && (wp->x < -10000 || wp->y < -10000 || wp->cx < 10 || wp->cy < 10)) {
+            LogDebug("Correcting minimize geometry in WM_WINDOWPOSCHANGED");
+            SetWindowPos(hwnd, nullptr, 0, 0, (std::max)(wp->cx, 100), (std::max)(wp->cy, 100),
+                         SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
             return 0;
         }
     }
     
-    // Check for activation changes that might indicate minimize
-    if (uMsg == WM_ACTIVATE) {
-        if (LOWORD(wParam) == WA_INACTIVE) {
-            // Window is losing activation - check if it's minimized
-            if (IsIconic(hwnd)) {
-                LogDebug("Window minimize detected via activation change - attempting to restore");
-                // Try to restore the window
-                ShowWindow(hwnd, SW_RESTORE);
-                return 0;
-            }
-        }
+    // Ignore minimize on deactivate
+    if (uMsg == WM_ACTIVATE && LOWORD(wParam) == WA_INACTIVE && IsIconic(hwnd)) {
+        LogDebug("Ignored minimize on deactivation");
+        ShowWindow(hwnd, SW_RESTORE);
+        return 0;
     }
     
     // Call the original window procedure for all other messages
@@ -267,14 +256,6 @@ bool InstallMinimizeHook() {
     g_subclassed_hwnd = hwnd;
     LogInfo("Windows minimize prevention installed via window subclassing");
     
-    // Start the timer-based minimize prevention as a backup
-    g_minimize_prevention_timer = SetTimer(hwnd, MINIMIZE_PREVENTION_TIMER_ID, MINIMIZE_CHECK_INTERVAL_MS, MinimizePreventionTimerProc);
-    if (g_minimize_prevention_timer == 0) {
-        LogWarn("Failed to start minimize prevention timer");
-    } else {
-        LogDebug("Minimize prevention timer started successfully");
-    }
-    
     return true;
 }
 
@@ -343,16 +324,6 @@ void UninstallMinimizeHook() {
         return;
     }
     
-    // Stop the minimize prevention timer
-    if (g_minimize_prevention_timer != 0) {
-        if (KillTimer(g_subclassed_hwnd, MINIMIZE_PREVENTION_TIMER_ID)) {
-            LogDebug("Minimize prevention timer stopped successfully");
-        } else {
-            LogWarn("Failed to stop minimize prevention timer");
-        }
-        g_minimize_prevention_timer = 0;
-    }
-    
     // Restore the original window procedure
     if (SetWindowLongPtr(g_subclassed_hwnd, GWLP_WNDPROC, (LONG_PTR)g_original_wnd_proc) != 0) {
         g_subclassed_hwnd = nullptr;
@@ -366,28 +337,7 @@ void UninstallMinimizeHook() {
     }
 }
 
-// Timer callback for minimize prevention
-VOID CALLBACK MinimizePreventionTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-    if (idEvent == MINIMIZE_PREVENTION_TIMER_ID && g_subclassed_hwnd != nullptr) {
-        // Check if the window is minimized
-        if (IsIconic(g_subclassed_hwnd)) {
-            LogDebug("Timer detected minimized window - restoring");
-            ShowWindow(g_subclassed_hwnd, SW_RESTORE);
-        }
-        
-        // Also check for off-screen positioning
-        RECT rect;
-        if (GetWindowRect(g_subclassed_hwnd, &rect)) {
-            if (rect.left < -10000 || rect.top < -10000 || 
-                (rect.right - rect.left) < 10 || (rect.bottom - rect.top) < 10) {
-                LogDebug("Timer detected off-screen window - repositioning");
-                SetWindowPos(g_subclassed_hwnd, nullptr, 0, 0, 
-                           max(rect.right - rect.left, 100), max(rect.bottom - rect.top, 100),
-                           SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
-            }
-        }
-    }
-}
+// (Timer-based minimize prevention removed)
 
 // Helper functions for window state logging
 void LogWindowMoveMessage(WPARAM wParam, LPARAM lParam) {

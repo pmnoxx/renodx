@@ -727,6 +727,35 @@ renodx::utils::settings::Settings settings = {
         },
         .is_visible = []() { return s_ui_mode >= 0.5f; },
     },
+    // Force NVAPI HDR10 (UHDA)
+    new renodx::utils::settings::Setting{
+        .key = "NvapiForceHDR10",
+        .binding = &s_nvapi_force_hdr10,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Force HDR10 Output (NVAPI)",
+        .section = "Display",
+        .tooltip = "Enable HDR10 (UHDA) output via NVAPI for all connected displays (driver-level).",
+        .labels = {"Off", "On"},
+        .on_change_value = [](float previous, float current){
+            std::thread([](){
+                extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
+                if (!g_nvapiFullscreenPrevention.IsAvailable()) {
+                    if (!g_nvapiFullscreenPrevention.Initialize()) {
+                        LogWarn("NVAPI Force HDR10: failed to initialize NVAPI");
+                        return;
+                    }
+                }
+                bool enable = (s_nvapi_force_hdr10 >= 0.5f);
+                if (g_nvapiFullscreenPrevention.SetHdr10OnAll(enable)) {
+                    LogInfo(enable ? "NVAPI Force HDR10: enabled" : "NVAPI Force HDR10: disabled");
+                } else {
+                    LogWarn("NVAPI Force HDR10: failed to apply");
+                }
+            }).detach();
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f; },
+    },
     // Single-shot NVAPI HDR log (button)
     new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,

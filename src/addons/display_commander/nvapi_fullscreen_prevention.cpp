@@ -472,3 +472,51 @@ bool NVAPIFullscreenPrevention::QueryHdrDetails(std::string& out_details) const 
     out_details = oss.str();
     return true;
 }
+
+// Enable/disable HDR10 (UHDA) on all connected displays for this GPU set
+bool NVAPIFullscreenPrevention::SetHdr10OnAll(bool enable) {
+    if (!initialized) return false;
+
+    NvU32 gpuCount = 0;
+    NvPhysicalGpuHandle gpus[64] = {0};
+    if (NvAPI_EnumPhysicalGPUs(gpus, &gpuCount) != NVAPI_OK || gpuCount == 0) {
+        return false;
+    }
+
+    bool any_ok = false;
+    for (NvU32 g = 0; g < gpuCount; ++g) {
+        NvU32 count = 0;
+        if (NvAPI_GPU_GetAllDisplayIds(gpus[g], nullptr, &count) != NVAPI_OK || count == 0) continue;
+        std::vector<NV_GPU_DISPLAYIDS> displayIds(count);
+        for (NvU32 i = 0; i < count; ++i) displayIds[i].version = NV_GPU_DISPLAYIDS_VER;
+        if (NvAPI_GPU_GetAllDisplayIds(gpus[g], displayIds.data(), &count) != NVAPI_OK || count == 0) continue;
+
+        for (NvU32 i = 0; i < count; ++i) {
+            const auto& did = displayIds[i];
+            if (did.isConnected == 0) continue;
+
+            NV_HDR_COLOR_DATA color = {};
+            color.version = NV_HDR_COLOR_DATA_VER;
+            color.cmd = NV_HDR_CMD_SET;
+            color.hdrMode = enable ? NV_HDR_MODE_UHDA : NV_HDR_MODE_OFF;
+
+            // Fill minimal valid static metadata. Using conservative BT.2020 primaries and sane luminance if needed.
+            color.static_metadata_descriptor_id = NV_STATIC_METADATA_TYPE_1;
+            auto& md = color.mastering_display_data;
+            // Defaults based on typical HDR10 metadata (values in NVAPI units)
+            md.displayPrimary_x0 = 34000; md.displayPrimary_y0 = 16000; // R
+            md.displayPrimary_x1 = 13250; md.displayPrimary_y1 = 34500; // G
+            md.displayPrimary_x2 = 7500;  md.displayPrimary_y2 = 3000;  // B
+            md.displayWhitePoint_x = 15635; md.displayWhitePoint_y = 16450; // D65 approx
+            md.max_display_mastering_luminance = 1000; // nits
+            md.min_display_mastering_luminance = 1;    // 0.0001 cd/m^2 in units? NVAPI uses direct integers; device will clamp
+            md.max_content_light_level = 1000;         // MaxCLL
+            md.max_frame_average_light_level = 400;    // MaxFALL
+
+            NvAPI_Status sc = NvAPI_Disp_HdrColorControl(did.displayId, &color);
+            if (sc == NVAPI_OK) any_ok = true;
+        }
+    }
+
+    return any_ok;
+}

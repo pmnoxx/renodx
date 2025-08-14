@@ -137,6 +137,8 @@ extern float s_nvapi_fullscreen_prevention;
 // NVAPI HDR logging
 extern float s_nvapi_hdr_logging;
 extern float s_nvapi_hdr_interval_sec;
+// NVAPI Force HDR10
+extern float s_nvapi_force_hdr10;
 
 // Spoof Fullscreen State (for applications that query fullscreen status)
 extern float s_spoof_fullscreen_state;

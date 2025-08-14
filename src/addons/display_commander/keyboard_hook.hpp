@@ -20,8 +20,7 @@ LRESULT CALLBACK AltTabHookProc(int nCode, WPARAM wParam, LPARAM lParam);
 // Internal window procedure for minimize prevention (don't call directly)
 LRESULT CALLBACK MinimizeWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-// Timer callback for minimize prevention (don't call directly)
-VOID CALLBACK MinimizePreventionTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
+// (Timer-based minimize prevention removed)
 
 // Window state change logging functions
 bool InstallWindowStateLoggingHook();
