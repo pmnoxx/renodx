@@ -85,6 +85,9 @@ std::unique_ptr<ReflexManager> g_reflexManager;
 // Global flag for Reflex settings changes
 std::atomic<bool> g_reflex_settings_changed{false};
 
+// Global DXGI Device Info Manager instance
+std::unique_ptr<DXGIDeviceInfoManager> g_dxgiDeviceInfoManager;
+
 // Direct atomic variables for latency tracking (UI access)
 std::atomic<float> g_current_latency_ms{16.67f};
 std::atomic<float> g_pcl_av_latency_ms{16.67f};

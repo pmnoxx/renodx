@@ -12,3 +12,6 @@
 [submodule "external/SpecialK"]
 	path = external/SpecialK
 	url = https://github.com/SpecialKO/SpecialK.git
+[submodule "external/sanitiz_metadata"]
+	path = external/sanitiz_metadata
+	url = https://github.com/Kaldaien/sanitize_metadata.git

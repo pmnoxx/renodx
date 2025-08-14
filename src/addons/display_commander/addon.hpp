@@ -27,6 +27,7 @@
 #include "utils.hpp"
 #include "nvapi_fullscreen_prevention.hpp"
 #include "reflex_management.hpp"
+#include "dxgi_device_info.hpp"
 
 // WASAPI per-app volume control
 #include <mmdeviceapi.h>
