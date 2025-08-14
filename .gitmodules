@@ -9,3 +9,6 @@
 [submodule "external/gtl"]
 	path = external/gtl
 	url = https://github.com/greg7mdp/gtl.git
+[submodule "external/SpecialK"]
+	path = external/SpecialK
+	url = https://github.com/SpecialKO/SpecialK.git
