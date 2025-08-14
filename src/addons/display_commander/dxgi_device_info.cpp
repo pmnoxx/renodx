@@ -112,18 +112,12 @@ bool DXGIDeviceInfoManager::Initialize() {
         return true;
     }
 
-    // Get adapter information from ReShade's existing device
-    if (!GetAdapterFromReShadeDevice()) {
-        LogWarn("Failed to get adapter information from ReShade device");
-        return false;
-    }
-
     initialized_ = true;
     LogInfo("DXGI Device Info Manager initialized successfully");
     return true;
 }
 
-void DXGIDeviceInfoManager::Refresh() {
+void DXGIDeviceInfoManager::RefreshDeviceInfo() {
     if (!initialized_) {
         return;
     }
@@ -131,6 +125,18 @@ void DXGIDeviceInfoManager::Refresh() {
     adapters_.clear();
     GetAdapterFromReShadeDevice();
     LogDebug("DXGI device information refreshed");
+}
+
+void DXGIDeviceInfoManager::EnumerateDevicesOnPresent() {
+    if (!initialized_) {
+        return;
+    }
+
+    // Only enumerate if we don't have adapter information yet
+    if (adapters_.empty()) {
+        GetAdapterFromReShadeDevice();
+        LogDebug("Device information enumerated during present");
+    }
 }
 
 void DXGIDeviceInfoManager::Cleanup() {
@@ -322,7 +328,7 @@ bool DXGIDeviceInfoManager::EnumerateOutputs(IDXGIAdapter* adapter, DXGIAdapterI
     }
 }
 
-bool DXGIDeviceInfoManager::ResetHDRMetadata(const std::string& output_device_name, float max_cll) {
+bool DXGIDeviceInfoManager::ResetHDRMetadataOnPresent(const std::string& output_device_name, float max_cll) {
     try {
         if (!initialized_) {
             return false;

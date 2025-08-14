@@ -896,7 +896,7 @@ renodx::utils::settings::Settings settings = {
 
           // Add refresh button
           if (ImGui::Button("Refresh Device Info")) {
-            g_dxgiDeviceInfoManager->Refresh();
+            g_dxgiDeviceInfoManager->RefreshDeviceInfo();
           }
           ImGui::SameLine();
           ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Click to refresh device information");
@@ -909,11 +909,11 @@ renodx::utils::settings::Settings settings = {
             for (const auto& adapter : adapters) {
               for (const auto& output : adapter.outputs) {
                 if (output.supports_hdr10) {
-                  if (g_dxgiDeviceInfoManager->ResetHDRMetadata(output.device_name)) {
-                    LogInfo(("HDR metadata reset initiated for: " + output.device_name).c_str());
-                  } else {
-                    LogWarn(("HDR metadata reset failed for: " + output.device_name).c_str());
-                  }
+                                      if (g_dxgiDeviceInfoManager->ResetHDRMetadataOnPresent(output.device_name)) {
+                        LogInfo(("HDR metadata reset initiated for: " + output.device_name).c_str());
+                    } else {
+                        LogWarn(("HDR metadata reset failed for: " + output.device_name).c_str());
+                    }
                   break; // Only reset the first HDR10 output found
                 }
               }

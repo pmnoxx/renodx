@@ -20,20 +20,22 @@ public:
     DXGIDeviceInfoManager();
     ~DXGIDeviceInfoManager();
 
-    // Initialize and refresh device information
+    // Initialize and cleanup
     bool Initialize();
-    void Refresh();
     void Cleanup();
 
+    // Device enumeration and refresh (called during present)
+    void EnumerateDevicesOnPresent();
+    void RefreshDeviceInfo();
+    
     // Get device information
     const std::vector<DXGIAdapterInfo>& GetAdapters() const { return adapters_; }
     bool IsInitialized() const { return initialized_; }
     
-    // HDR metadata reset functionality
-    bool ResetHDRMetadata(const std::string& output_device_name, float max_cll = 0.0f);
+    // HDR metadata reset functionality (called during present)
+    bool ResetHDRMetadataOnPresent(const std::string& output_device_name, float max_cll = 0.0f);
 
 private:
-    bool EnumerateAdapters();
     bool EnumerateOutputs(IDXGIAdapter* adapter, DXGIAdapterInfo& adapter_info);
     bool ResetHDRMetadataForOutput(const DXGIOutputInfo& output, float max_cll);
     bool GetAdapterFromReShadeDevice();

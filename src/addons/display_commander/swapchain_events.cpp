@@ -1,5 +1,6 @@
 #include "addon.hpp"
 #include "reflex_management.hpp"
+#include "dxgi_device_info.hpp"
 #include <dxgi1_4.h>
 #include "../../utils/swapchain.hpp"
 #include <chrono>
@@ -125,6 +126,12 @@ static void OnPresentUpdate(
   // Update colorspace info (throttled to avoid excessive calls)
   if ((c % 30) == 0) {
     g_current_colorspace = swapchain->get_color_space();
+    
+    // Enumerate DXGI devices during present (throttled to avoid excessive calls)
+    extern std::unique_ptr<DXGIDeviceInfoManager> g_dxgiDeviceInfoManager;
+    if (g_dxgiDeviceInfoManager && g_dxgiDeviceInfoManager->IsInitialized()) {
+      g_dxgiDeviceInfoManager->EnumerateDevicesOnPresent();
+    }
   }
   
   int last = g_comp_last_logged.load();
