@@ -35,7 +35,7 @@ public:
 private:
     bool EnumerateAdapters();
     bool EnumerateOutputs(IDXGIAdapter* adapter, DXGIAdapterInfo& adapter_info);
-    bool ResetHDRMetadataForOutput(const DXGIOutputInfo& output, float max_cll, IDXGIAdapter* adapter);
+    bool ResetHDRMetadataForOutput(const DXGIOutputInfo& output, float max_cll);
     bool GetAdapterFromReShadeDevice();
     
     // Stack trace functionality for crash debugging
