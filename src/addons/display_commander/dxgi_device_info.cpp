@@ -2,17 +2,105 @@
 #include "addon.hpp"
 #include <dxgi1_6.h>
 #include <d3d11.h>
+#include <dbghelp.h>
 
 // External declarations
 extern std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr;
 
 #pragma comment (lib, "dxgi.lib")
 #pragma comment (lib, "d3d11.lib")
+#pragma comment (lib, "dbghelp.lib")
+
+// Stack trace functionality
+void DXGIDeviceInfoManager::LogStackTrace(const char* context) {
+    LogWarn(("Stack trace requested for context: " + std::string(context)).c_str());
+    
+    // Capture stack trace
+    void* stack[64];
+    WORD frames = CaptureStackBackTrace(0, 64, stack, nullptr);
+    
+    if (frames == 0) {
+        LogWarn("Failed to capture stack trace");
+        return;
+    }
+    
+    LogWarn(("Stack trace captured " + std::to_string(frames) + " frames:").c_str());
+    
+    // Get symbol information
+    HANDLE process = GetCurrentProcess();
+    SymInitialize(process, nullptr, TRUE);
+    
+    SYMBOL_INFO* symbol = (SYMBOL_INFO*)malloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char));
+    symbol->MaxNameLen = 255;
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+    
+    for (WORD i = 0; i < frames; i++) {
+        DWORD64 address = (DWORD64)stack[i];
+        
+        if (SymFromAddr(process, address, nullptr, symbol)) {
+            std::string frame_info = "  [" + std::to_string(i) + "] " + symbol->Name + 
+                                   " at 0x" + std::format("{:016X}", address);
+            LogWarn(frame_info.c_str());
+        } else {
+            std::string frame_info = "  [" + std::to_string(i) + "] Unknown at 0x" + 
+                                   std::format("{:016X}", address);
+            LogWarn(frame_info.c_str());
+        }
+    }
+    
+    free(symbol);
+    SymCleanup(process);
+}
+
+LONG WINAPI DXGIDeviceInfoManager::UnhandledExceptionFilter(PEXCEPTION_POINTERS exception_info) {
+    LogWarn("=== UNHANDLED EXCEPTION IN DXGI DEVICE INFO MANAGER ===");
+    LogWarn(("Exception code: 0x" + std::format("{:08X}", exception_info->ExceptionRecord->ExceptionCode)).c_str());
+    LogWarn(("Exception address: 0x" + std::format("{:016X}", (DWORD64)exception_info->ExceptionRecord->ExceptionAddress)).c_str());
+    
+    // Log stack trace
+    void* stack[64];
+    WORD frames = CaptureStackBackTrace(0, 64, stack, nullptr);
+    
+    if (frames > 0) {
+        LogWarn("Stack trace at crash:");
+        
+        HANDLE process = GetCurrentProcess();
+        SymInitialize(process, nullptr, TRUE);
+        
+        SYMBOL_INFO* symbol = (SYMBOL_INFO*)malloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char));
+        symbol->MaxNameLen = 255;
+        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+        
+        for (WORD i = 0; i < frames; i++) {
+            DWORD64 address = (DWORD64)stack[i];
+            
+            if (SymFromAddr(process, address, nullptr, symbol)) {
+                std::string frame_info = "  [" + std::to_string(i) + "] " + symbol->Name + 
+                                       " at 0x" + std::format("{:016X}", address);
+                LogWarn(frame_info.c_str());
+            } else {
+                std::string frame_info = " " + std::to_string(i) + "] Unknown at 0x" + 
+                                       std::format("{:016X}", address);
+                LogWarn(frame_info.c_str());
+            }
+        }
+        
+        free(symbol);
+        SymCleanup(process);
+    }
+    
+    LogWarn("=== END EXCEPTION REPORT ===");
+    
+    // Continue execution (don't crash the application)
+    return EXCEPTION_CONTINUE_EXECUTION;
+}
 
 // Global instance declaration (defined in globals.cpp)
 extern std::unique_ptr<DXGIDeviceInfoManager> g_dxgiDeviceInfoManager;
 
 DXGIDeviceInfoManager::DXGIDeviceInfoManager() : initialized_(false) {
+    // Install exception handler for crash debugging
+    SetUnhandledExceptionFilter(UnhandledExceptionFilter);
 }
 
 DXGIDeviceInfoManager::~DXGIDeviceInfoManager() {
@@ -51,12 +139,13 @@ void DXGIDeviceInfoManager::Cleanup() {
 }
 
 bool DXGIDeviceInfoManager::GetAdapterFromReShadeDevice() {
-    // Get the current swapchain from ReShade
-    auto* swapchain = g_last_swapchain_ptr.load();
-    if (!swapchain) {
-        LogWarn("No ReShade swapchain available");
-        return false;
-    }
+    try {
+        // Get the current swapchain from ReShade
+        auto* swapchain = g_last_swapchain_ptr.load();
+        if (!swapchain) {
+            LogWarn("No ReShade swapchain available");
+            return false;
+        }
 
     // Get the device from the swapchain
     auto* device = swapchain->get_device();
@@ -130,12 +219,18 @@ bool DXGIDeviceInfoManager::GetAdapterFromReShadeDevice() {
     }
 
     return !adapters_.empty();
+    } catch (...) {
+        LogWarn("Exception occurred in GetAdapterFromReShadeDevice");
+        LogStackTrace("GetAdapterFromReShadeDevice");
+        return false;
+    }
 }
 
 bool DXGIDeviceInfoManager::EnumerateOutputs(IDXGIAdapter* adapter, DXGIAdapterInfo& adapter_info) {
-    if (!adapter) {
-        return false;
-    }
+    try {
+        if (!adapter) {
+            return false;
+        }
 
     int output_idx = 0;
     Microsoft::WRL::ComPtr<IDXGIOutput> output;
@@ -220,12 +315,18 @@ bool DXGIDeviceInfoManager::EnumerateOutputs(IDXGIAdapter* adapter, DXGIAdapterI
     }
 
     return true;
+    } catch (...) {
+        LogWarn("Exception occurred in EnumerateOutputs");
+        LogStackTrace("EnumerateOutputs");
+        return false;
+    }
 }
 
 bool DXGIDeviceInfoManager::ResetHDRMetadata(const std::string& output_device_name, float max_cll) {
-    if (!initialized_) {
-        return false;
-    }
+    try {
+        if (!initialized_) {
+            return false;
+        }
 
     // Find the output with the specified device name
     for (const auto& adapter_info : adapters_) {
@@ -252,6 +353,11 @@ bool DXGIDeviceInfoManager::ResetHDRMetadata(const std::string& output_device_na
     
     LogWarn("HDR metadata reset: Output not found or doesn't support HDR10");
     return false;
+    } catch (...) {
+        LogWarn("Exception occurred in ResetHDRMetadata");
+        LogStackTrace("ResetHDRMetadata");
+        return false;
+    }
 }
 
 bool DXGIDeviceInfoManager::ResetHDRMetadataForOutput(const DXGIOutputInfo& output, float max_cll, IDXGIAdapter* adapter) {
@@ -376,6 +482,7 @@ bool DXGIDeviceInfoManager::ResetHDRMetadataForOutput(const DXGIOutputInfo& outp
         }
     } catch (...) {
         LogWarn("HDR metadata reset: Exception occurred during reset");
+        LogStackTrace("ResetHDRMetadataForOutput");
     }
     
     // Clean up

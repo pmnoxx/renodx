@@ -37,6 +37,10 @@ private:
     bool EnumerateOutputs(IDXGIAdapter* adapter, DXGIAdapterInfo& adapter_info);
     bool ResetHDRMetadataForOutput(const DXGIOutputInfo& output, float max_cll, IDXGIAdapter* adapter);
     bool GetAdapterFromReShadeDevice();
+    
+    // Stack trace functionality for crash debugging
+    void LogStackTrace(const char* context);
+    static LONG WINAPI UnhandledExceptionFilter(PEXCEPTION_POINTERS exception_info);
 
 private:
     std::vector<DXGIAdapterInfo> adapters_;
