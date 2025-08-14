@@ -18,8 +18,8 @@ float s_remove_top_bar = 1.f; // 0 keep title bar, 1 remove (borderless)
 float s_resize_mode = 0.f;
 // Aspect selection index when in aspect mode
 float s_aspect_index = 3.f; // default to 16:9 (now at index 3 after sorting)
-// Window alignment when repositioning is needed
-float s_move_to_zero_if_out = 1.f; // 0 = None, 1 = Center, 2 = Top Left, 3 = Top Right, 4 = Bottom Left, 5 = Bottom Right
+// Window alignment when repositioning is needed (0 = None, 1 = Top Left, 2 = Top Right, 3 = Bottom Left, 4 = Bottom Right)
+float s_move_to_zero_if_out = 2.f; // default to top right
 // Global swapchain behaviors
 float s_force_borderless = 0.f;
 // Force Windowed (Experimental)

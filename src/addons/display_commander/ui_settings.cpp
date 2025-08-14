@@ -227,11 +227,11 @@ renodx::utils::settings::Settings settings = {
         .key = "Alignment",
         .binding = &s_move_to_zero_if_out,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f, // default to center
+        .default_value = 2.f, // default to top right
         .label = "Alignment",
         .section = "Display",
-        .tooltip = "Choose how to align the window when repositioning is needed. TL=Top Left, TR=Top Right, BL=Bottom Left, BR=Bottom Right.",
-        .labels = {"None", "Center", "Top Left", "Top Right", "Bottom Left", "Bottom Right"},
+        .tooltip = "Choose how to align the window when repositioning is needed. 1=Top Left, 2=Top Right, 3=Bottom Left, 4=Bottom Right.",
+        .labels = {"None", "Top Left", "Top Right", "Bottom Left", "Bottom Right"},
     },
     // Force Borderless (global)
     new renodx::utils::settings::Setting{

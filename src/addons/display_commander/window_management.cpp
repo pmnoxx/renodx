@@ -108,23 +108,19 @@ void ApplyWindowChange(HWND hwnd,
     if (out_of_bounds) {
       // Apply alignment based on setting value
       switch (static_cast<int>(s_move_to_zero_if_out)) {
-        case 1: // Center
-          target_x = mr.left + (mr.right - mr.left - target_w) / 2;
-          target_y = mr.top + (mr.bottom - mr.top - target_h) / 2;
-          break;
-        case 2: // Top Left
+        case 1: // Top Left
           target_x = mr.left;
           target_y = mr.top;
           break;
-        case 3: // Top Right
+        case 2: // Top Right
           target_x = mr.right - target_w;
           target_y = mr.top;
           break;
-        case 4: // Bottom Left
+        case 3: // Bottom Left
           target_x = mr.left;
           target_y = mr.bottom - target_h;
           break;
-        case 5: // Bottom Right
+        case 4: // Bottom Right
           target_x = mr.right - target_w;
           target_y = mr.bottom - target_h;
           break;
@@ -146,23 +142,19 @@ void ApplyWindowChange(HWND hwnd,
     if (out_of_bounds) {
       // Apply same alignment logic to virtual screen
       switch (static_cast<int>(s_move_to_zero_if_out)) {
-        case 1: // Center
-          target_x = vx + (vw - target_w) / 2;
-          target_y = vy + (vh - target_h) / 2;
-          break;
-        case 2: // Top Left
+        case 1: // Top Left
           target_x = vx;
           target_y = vy;
           break;
-        case 3: // Top Right
+        case 2: // Top Right
           target_x = vx + vw - target_w;
           target_y = vy;
           break;
-        case 4: // Bottom Left
+        case 3: // Bottom Left
           target_x = vx;
           target_y = vy + vh - target_h;
           break;
-        case 5: // Bottom Right
+        case 4: // Bottom Right
           target_x = vx + vw - target_w;
           target_y = vy + vh - target_h;
           break;
