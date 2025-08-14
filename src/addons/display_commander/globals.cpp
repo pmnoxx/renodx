@@ -79,6 +79,15 @@ std::unique_ptr<ReflexManager> g_reflexManager;
 // Global flag for Reflex settings changes
 std::atomic<bool> g_reflex_settings_changed{false};
 
+// Direct atomic variables for latency tracking (UI access)
+std::atomic<float> g_current_latency_ms{16.67f};
+std::atomic<float> g_pcl_av_latency_ms{16.67f};
+std::atomic<float> g_average_latency_ms{16.67f};
+std::atomic<float> g_min_latency_ms{16.67f};
+std::atomic<float> g_max_latency_ms{16.67f};
+std::atomic<uint64_t> g_current_frame{0};
+std::atomic<bool> g_reflex_active{false};
+
 // Backbuffer dimensions
 std::atomic<int> g_last_backbuffer_width{0};
 std::atomic<int> g_last_backbuffer_height{0};

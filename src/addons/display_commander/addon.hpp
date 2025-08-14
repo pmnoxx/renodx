@@ -161,6 +161,19 @@ extern std::vector<MonitorInfo> g_monitors;
 // Fix HDR10 color space when backbuffer is RGB10A2
 extern float s_fix_hdr10_colorspace;
 
+// Global Reflex manager instance
+extern std::unique_ptr<ReflexManager> g_reflexManager;
+// Global flag for Reflex settings changes
+extern std::atomic<bool> g_reflex_settings_changed;
+
+// Direct atomic variables for latency tracking (UI access)
+extern std::atomic<float> g_current_latency_ms;
+extern std::atomic<float> g_pcl_av_latency_ms;
+extern std::atomic<float> g_average_latency_ms;
+extern std::atomic<float> g_min_latency_ms;
+extern std::atomic<float> g_max_latency_ms;
+extern std::atomic<uint64_t> g_current_frame;
+extern std::atomic<bool> g_reflex_active;
 
 
 // Function declarations

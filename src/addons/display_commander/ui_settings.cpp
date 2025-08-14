@@ -3,6 +3,8 @@
 #include "reflex_management.hpp"
 #include "utils.hpp"
 #include "ui_settings.hpp"
+#include <sstream>
+#include <iomanip>
 
 // UI/settings
 renodx::utils::settings::Settings settings = {
@@ -1045,19 +1047,20 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "CurrentLatency",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "Current Latency: ",
         .section = "Performance",
         .tooltip = "Current frame latency in milliseconds",
         .on_draw = []() -> bool {
-            extern std::unique_ptr<ReflexManager> g_reflexManager;
-            if (g_reflexManager) {
-                float latency = g_reflexManager->GetCurrentLatencyMs();
-                ImGui::Text("Current Latency: %.2f ms", latency);
-            } else {
-                ImGui::Text("Current Latency: N/A");
-            }
+            extern std::atomic<float> g_current_latency_ms;
+            float latency = g_current_latency_ms.load();
+            
+            // Use TextUnformatted for most reliable display
+            std::ostringstream oss;
+            oss << "Current Latency: " << std::fixed << std::setprecision(2) << latency << " ms";
+            ImGui::TextUnformatted(oss.str().c_str());
+            
             return false; // No value change
         },
         .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
@@ -1067,21 +1070,22 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "PCLLatency",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "PCL AV Latency: ",
         .section = "Performance",
         .tooltip = "PCL Average Latency (30-frame average) - This is what the NVIDIA overlay should show",
         .on_draw = []() -> bool {
-            extern std::unique_ptr<ReflexManager> g_reflexManager;
-            if (g_reflexManager) {
-                float pcl_latency = g_reflexManager->GetPCLLatencyMs();
-                ImGui::Text("PCL AV Latency: %.2f ms", pcl_latency);
-                ImGui::SameLine();
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "(30-frame avg)");
-            } else {
-                ImGui::Text("PCL AV Latency: N/A");
-            }
+            extern std::atomic<float> g_pcl_av_latency_ms;
+            float pcl_latency = g_pcl_av_latency_ms.load();
+            
+            // Use TextUnformatted for most reliable display
+            std::ostringstream oss;
+            oss << "PCL AV Latency: " << std::fixed << std::setprecision(2) << pcl_latency << " ms";
+            ImGui::TextUnformatted(oss.str().c_str());
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "(30-frame avg)");
+            
             return false; // No value change
         },
         .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
@@ -1091,21 +1095,120 @@ renodx::utils::settings::Settings settings = {
     new renodx::utils::settings::Setting{
         .key = "ReflexStatus",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "Reflex Status: ",
         .section = "Performance",
         .tooltip = "Current Reflex status and configuration",
         .on_draw = []() -> bool {
-            extern std::unique_ptr<ReflexManager> g_reflexManager;
-            if (g_reflexManager) {
-                std::string status = g_reflexManager->GetReflexStatus();
-                ImGui::Text("Reflex Status: %s", status.c_str());
+            extern std::atomic<bool> g_reflex_active;
+            extern std::atomic<uint64_t> g_current_frame;
+            bool is_active = g_reflex_active.load();
+            uint64_t frame = g_current_frame.load();
+            
+            // Use TextUnformatted for most reliable display
+            std::ostringstream oss;
+            if (is_active) {
+                oss << "Reflex Status: Active (Frame " << frame << ")";
             } else {
-                ImGui::Text("Reflex Status: Not Available");
+                oss << "Reflex Status: Inactive";
             }
+            ImGui::TextUnformatted(oss.str().c_str());
+            
             return false; // No value change
         },
         .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+    
+    // Debug Button to show atomic variable values
+    new renodx::utils::settings::Setting{
+        .key = "DebugLatency",
+        .binding = nullptr,
+        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .default_value = 0.f,
+        .label = "Debug: Show All Latency Values",
+        .section = "Performance",
+        .tooltip = "Click to log all current latency values for debugging",
+        .on_click = []() -> bool {
+            extern std::atomic<float> g_current_latency_ms;
+            extern std::atomic<float> g_pcl_av_latency_ms;
+            extern std::atomic<float> g_average_latency_ms;
+            extern std::atomic<float> g_min_latency_ms;
+            extern std::atomic<float> g_max_latency_ms;
+            extern std::atomic<uint64_t> g_current_frame;
+            extern std::atomic<bool> g_reflex_active;
+            
+            extern void LogDebug(const std::string& message);
+            LogDebug("=== DEBUG: All Latency Values ===");
+            LogDebug("Current Latency: " + std::to_string(g_current_latency_ms.load()) + " ms");
+            LogDebug("PCL AV Latency: " + std::to_string(g_pcl_av_latency_ms.load()) + " ms");
+            LogDebug("Average Latency: " + std::to_string(g_average_latency_ms.load()) + " ms");
+            LogDebug("Min Latency: " + std::to_string(g_min_latency_ms.load()) + " ms");
+            LogDebug("Max Latency: " + std::to_string(g_max_latency_ms.load()) + " ms");
+            LogDebug("Current Frame: " + std::to_string(g_current_frame.load()));
+            LogDebug("Is Active: " + std::string(g_reflex_active.load() ? "true" : "false"));
+            LogDebug("=== END DEBUG ===");
+            return true; // Save settings
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+    
+    // Simple always-visible debug element to test UI rendering
+    new renodx::utils::settings::Setting{
+        .key = "UIRenderTest",
+        .binding = nullptr,
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .default_value = 0.f,
+        .label = "UI Test - If you see this, UI is working",
+        .section = "Debug",
+        .tooltip = "This element should always be visible to test UI rendering",
+        .is_visible = []() { return true; }, // Always visible
+    },
+    
+    // Simple test of atomic variables (always visible)
+    new renodx::utils::settings::Setting{
+        .key = "AtomicTest",
+        .binding = nullptr,
+        .value_type = renodx::utils::settings::SettingValueType::CUSTOM, // only custom supports ImGui::Text
+        .default_value = 0.f,
+        .label = "Atomic Test - Direct Value Display",
+        .section = "Debug2",
+        .tooltip = "Test direct atomic variable access",
+        .on_draw = []() -> bool {
+            extern std::atomic<float> g_current_latency_ms;
+            extern std::atomic<uint64_t> g_current_frame;
+            float latency = g_current_latency_ms.load();
+            uint64_t frame = g_current_frame.load();
+            
+            // Test different ImGui text methods
+            ImGui::Text("Method 1 - Direct: %f ms", latency);
+            ImGui::Text("Method 2 - Fixed: %.2f ms", latency);
+            
+            // Method 3 - Convert to string first
+            std::string latency_str = std::to_string(latency);
+            ImGui::Text("Method 3 - String: %s ms", latency_str.c_str());
+            
+            // Method 4 - Use TextUnformatted (no formatting)
+            std::ostringstream oss;
+            oss << "Method 4 - OStream: " << std::fixed << std::setprecision(2) << latency << " ms";
+            ImGui::TextUnformatted(oss.str().c_str());
+            
+            // Method 5 - Simple concatenation
+            ImGui::Text("Method 5 - Simple: %s", ("Value: " + std::to_string(latency) + " ms").c_str());
+            
+            // Test with integer (frame counter)
+            ImGui::Text("Frame Test - Integer: %llu", frame);
+            ImGui::Text("Frame Test - String: %s", std::to_string(frame).c_str());
+            
+            // Show update frequency info
+            ImGui::Separator();
+            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.0f, 1.0f), "Update Info:");
+            ImGui::Text("Values update every 10 frames");
+            ImGui::Text("Current frame: %llu", frame);
+            ImGui::Text("Last update: %llu frames ago", frame % 10);
+            
+            return false;
+        },
+        .is_visible = []() { return true; }, // Always visible
     },
 };
