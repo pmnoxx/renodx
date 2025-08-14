@@ -331,3 +331,144 @@ std::string NVAPIFullscreenPrevention::GetDllVersionInfo() const {
 
 // Global instance
 NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
+
+bool NVAPIFullscreenPrevention::QueryHdrStatus(bool& out_hdr_enabled, std::string& out_colorspace, std::string& out_output_name) const {
+    out_hdr_enabled = false;
+    out_colorspace.clear();
+    out_output_name.clear();
+    if (!initialized) {
+        return false;
+    }
+
+    NvU32 gpuCount = 0;
+    NvPhysicalGpuHandle gpus[64] = {0};
+    NvAPI_Status status = NvAPI_EnumPhysicalGPUs(gpus, &gpuCount);
+    if (status != NVAPI_OK || gpuCount == 0) {
+        return false;
+    }
+
+    for (NvU32 g = 0; g < gpuCount; ++g) {
+        // First query how many display IDs exist
+        NvU32 count = 0;
+        status = NvAPI_GPU_GetAllDisplayIds(gpus[g], nullptr, &count);
+        if (status != NVAPI_OK || count == 0) {
+            continue;
+        }
+        std::vector<NV_GPU_DISPLAYIDS> displayIds(count);
+        for (NvU32 i = 0; i < count; ++i) displayIds[i].version = NV_GPU_DISPLAYIDS_VER;
+        status = NvAPI_GPU_GetAllDisplayIds(gpus[g], displayIds.data(), &count);
+        if (status != NVAPI_OK || count == 0) {
+            continue;
+        }
+
+        for (NvU32 i = 0; i < count; ++i) {
+            const NV_GPU_DISPLAYIDS& did = displayIds[i];
+            if (did.isConnected == 0) continue;
+
+            // Read current HDR mode
+            NV_HDR_COLOR_DATA color = {};
+            color.version = NV_HDR_COLOR_DATA_VER;
+            color.cmd = NV_HDR_CMD_GET;
+            status = NvAPI_Disp_HdrColorControl(did.displayId, &color);
+            if (status != NVAPI_OK) {
+                continue;
+            }
+
+            bool hdr_enabled = (color.hdrMode != NV_HDR_MODE_OFF);
+
+            // Read HDR capabilities to report color space tastefully
+            NV_HDR_CAPABILITIES caps = {};
+            caps.version = NV_HDR_CAPABILITIES_VER;
+            if (NvAPI_Disp_GetHdrCapabilities(did.displayId, &caps) == NVAPI_OK) {
+                if (caps.isST2084EotfSupported) out_colorspace = "HDR10 ST2084";
+                else if (caps.isTraditionalHdrGammaSupported) out_colorspace = "HDR (Traditional)";
+                else if (caps.isHdr10PlusSupported) out_colorspace = "HDR10+";
+                else if (caps.isHdr10PlusGamingSupported) out_colorspace = "HDR10+ Gaming";
+                else out_colorspace = "SDR/sRGB";
+            } else {
+                out_colorspace = hdr_enabled ? "HDR" : "SDR";
+            }
+
+            out_hdr_enabled = hdr_enabled;
+            out_output_name = std::string("DisplayId=") + std::to_string(did.displayId);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool NVAPIFullscreenPrevention::QueryHdrDetails(std::string& out_details) const {
+    out_details.clear();
+    if (!initialized) return false;
+
+    NvU32 gpuCount = 0;
+    NvPhysicalGpuHandle gpus[64] = {0};
+    if (NvAPI_EnumPhysicalGPUs(gpus, &gpuCount) != NVAPI_OK || gpuCount == 0) {
+        return false;
+    }
+
+    std::ostringstream oss;
+    oss << "=== NVAPI HDR Details ===\n";
+
+    for (NvU32 g = 0; g < gpuCount; ++g) {
+        NvU32 count = 0;
+        if (NvAPI_GPU_GetAllDisplayIds(gpus[g], nullptr, &count) != NVAPI_OK || count == 0) continue;
+        std::vector<NV_GPU_DISPLAYIDS> displayIds(count);
+        for (NvU32 i = 0; i < count; ++i) displayIds[i].version = NV_GPU_DISPLAYIDS_VER;
+        if (NvAPI_GPU_GetAllDisplayIds(gpus[g], displayIds.data(), &count) != NVAPI_OK || count == 0) continue;
+
+        for (NvU32 i = 0; i < count; ++i) {
+            const auto& did = displayIds[i];
+            if (did.isConnected == 0) continue;
+
+            NV_HDR_COLOR_DATA color = {};
+            color.version = NV_HDR_COLOR_DATA_VER;
+            color.cmd = NV_HDR_CMD_GET;
+            NvAPI_Status sc = NvAPI_Disp_HdrColorControl(did.displayId, &color);
+
+            NV_HDR_CAPABILITIES caps = {};
+            caps.version = NV_HDR_CAPABILITIES_VER;
+            NvAPI_Status sc2 = NvAPI_Disp_GetHdrCapabilities(did.displayId, &caps);
+
+            oss << "DisplayId=" << did.displayId << "\n";
+            if (sc == NVAPI_OK) {
+                oss << "  HdrMode=" << (int)color.hdrMode << " (0=OFF,2=UHDA)\n";
+                oss << "  StaticMetadataId=" << (int)color.static_metadata_descriptor_id << "\n";
+                const auto& md = color.mastering_display_data;
+                oss << "  MasteringPrimaries: R(" << md.displayPrimary_x0 << "," << md.displayPrimary_y0
+                    << ") G(" << md.displayPrimary_x1 << "," << md.displayPrimary_y1
+                    << ") B(" << md.displayPrimary_x2 << "," << md.displayPrimary_y2 << ")\n";
+                oss << "  MasteringWhite: (" << md.displayWhitePoint_x << "," << md.displayWhitePoint_y << ")\n";
+                oss << "  MaxMasteringLuminance=" << md.max_display_mastering_luminance
+                    << "  MinMasteringLuminance=" << md.min_display_mastering_luminance << "\n";
+                oss << "  MaxCLL=" << md.max_content_light_level
+                    << "  MaxFALL=" << md.max_frame_average_light_level << "\n";
+            } else {
+                oss << "  HdrColorControl: FAILED (" << sc << ")\n";
+            }
+
+            if (sc2 == NVAPI_OK) {
+                oss << "  Caps: ST2084Supported=" << (caps.isST2084EotfSupported ? 1 : 0)
+                    << " TraditionalHdrGamma=" << (caps.isTraditionalHdrGammaSupported ? 1 : 0)
+                    << " SDRGamma=" << (caps.isTraditionalSdrGammaSupported ? 1 : 0)
+                    << " DolbyVision=" << (caps.isDolbyVisionSupported ? 1 : 0)
+                    << " HDR10+=" << (caps.isHdr10PlusSupported ? 1 : 0)
+                    << " HDR10+Gaming=" << (caps.isHdr10PlusGamingSupported ? 1 : 0) << "\n";
+                const auto& sd = caps.display_data;
+                oss << "  StaticMetadata(ST2086): R(" << sd.displayPrimary_x0 << "," << sd.displayPrimary_y0
+                    << ") G(" << sd.displayPrimary_x1 << "," << sd.displayPrimary_y1
+                    << ") B(" << sd.displayPrimary_x2 << "," << sd.displayPrimary_y2 << ")\n";
+                oss << "  WhitePoint(" << sd.displayWhitePoint_x << "," << sd.displayWhitePoint_y << ")\n";
+                oss << "  DesiredContent: MaxLum=" << sd.desired_content_max_luminance
+                    << " MinLum=" << sd.desired_content_min_luminance
+                    << " MaxFALL=" << sd.desired_content_max_frame_average_luminance << "\n";
+            } else {
+                oss << "  GetHdrCapabilities: FAILED (" << sc2 << ")\n";
+            }
+        }
+    }
+
+    out_details = oss.str();
+    return true;
+}

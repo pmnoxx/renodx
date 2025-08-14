@@ -28,6 +28,9 @@ float s_prevent_fullscreen = 0.f;
 
 // NVAPI Fullscreen Prevention
 float s_nvapi_fullscreen_prevention = 1.f; // enabled by default
+// NVAPI HDR logging
+float s_nvapi_hdr_logging = 0.f;
+float s_nvapi_hdr_interval_sec = 5.f;
 
 // Spoof Fullscreen State (for applications that query fullscreen status)
 float s_spoof_fullscreen_state = 0.f;
@@ -47,6 +50,7 @@ float s_dxgi_composition_state = 0.f;
 float s_suppress_alt_tab = 0.f;
 float s_prevent_windows_minimize = 0.f;
 float s_spoof_window_focus = 0.f;
+float s_enforce_desired_window = 0.f;
 
 // Fix HDR10 color space when backbuffer is RGB10A2
 float s_fix_hdr10_colorspace = 0.f;

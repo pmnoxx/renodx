@@ -212,8 +212,8 @@ renodx::utils::settings::Settings settings = {
                     
                     // Apply the change
                     extern void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode);
-                    extern WindowStyleMode WindowStyleMode;
-                    ApplyWindowChange(hwnd, true, want_w, want_h, true, static_cast<int>(s_windowed_pos_x), static_cast<int>(s_windowed_pos_y), WindowStyleMode::KEEP);
+                    WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
+                    ApplyWindowChange(hwnd, true, want_w, want_h, true, static_cast<int>(s_windowed_pos_x), static_cast<int>(s_windowed_pos_y), mode);
                     
                     LogInfo("Manual apply executed");
                 }
@@ -381,6 +381,30 @@ renodx::utils::settings::Settings settings = {
             }
         },
         .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+
+    // Enforce Desired Window (resize hook)
+    new renodx::utils::settings::Setting{
+        .key = "EnforceDesiredWindow",
+        .binding = &s_enforce_desired_window,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Enforce Desired Window Size/Pos",
+        .section = "Display",
+        .tooltip = "Install a hook to enforce desired size/position whenever the window is resized or moved.",
+        .labels = {"Disabled", "Enabled"},
+        .on_change_value = [](float previous, float current){
+            std::ostringstream oss;
+            oss << "Resize enforcement changed from " << (previous >= 0.5f ? "enabled" : "disabled")
+                << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            LogInfo(oss.str().c_str());
+            if (current >= 0.5f) {
+                InstallResizeEnforcerHook();
+            } else {
+                UninstallResizeEnforcerHook();
+            }
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f; },
     },
 
     // Minimize Window
@@ -684,6 +708,75 @@ renodx::utils::settings::Settings settings = {
             return false;
         },
         .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+
+    // NVAPI HDR periodic logging (Developer)
+    new renodx::utils::settings::Setting{
+        .key = "NvapiHdrLogging",
+        .binding = &s_nvapi_hdr_logging,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Log HDR Status Periodically (NVAPI)",
+        .section = "Display",
+        .tooltip = "Periodically query NVAPI for HDR status and log it.",
+        .labels = {"Off", "On"},
+        .on_change_value = [](float previous, float current){
+            if (current >= 0.5f) {
+                std::thread(RunBackgroundNvapiHdrMonitor).detach();
+            }
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f; },
+    },
+    // Single-shot NVAPI HDR log (button)
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Log HDR Status Now (NVAPI)",
+        .section = "Display",
+        .tooltip = "Immediately query NVAPI HDR status and log a single line.",
+        .on_click = [](){
+            std::thread([](){ LogNvapiHdrOnce(); }).detach();
+            return false;
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f; },
+    },
+    // Dump full NVAPI HDR details
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Dump Full HDR Details (NVAPI)",
+        .section = "Display",
+        .tooltip = "Print full HDR parameters (caps, ST2086) for connected displays.",
+        .on_click = [](){
+            std::thread([](){
+                extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
+                if (!g_nvapiFullscreenPrevention.IsAvailable()) {
+                    if (!g_nvapiFullscreenPrevention.Initialize()) {
+                        LogWarn("NVAPI HDR dump: failed to initialize NVAPI");
+                        return;
+                    }
+                }
+                std::string details;
+                if (g_nvapiFullscreenPrevention.QueryHdrDetails(details)) {
+                    LogInfo(details.c_str());
+                } else {
+                    LogWarn("NVAPI HDR dump: failed to get details");
+                }
+            }).detach();
+            return false;
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f; },
+    },
+    new renodx::utils::settings::Setting{
+        .key = "NvapiHdrIntervalSec",
+        .binding = &s_nvapi_hdr_interval_sec,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 5.f,
+        .label = "HDR Log Interval (s)",
+        .section = "Display",
+        .tooltip = "How often to query/log HDR status via NVAPI.",
+        .min = 1.f,
+        .max = 120.f,
+        .format = "%d s",
+        .is_visible = []() { return s_ui_mode >= 0.5f && s_nvapi_hdr_logging >= 0.5f; },
     },
 
     // NVAPI Debug Button

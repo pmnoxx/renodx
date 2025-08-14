@@ -71,6 +71,10 @@ void UpdateAltSuppressionMethods();
 bool InstallMinimizeHook();
 void UninstallMinimizeHook();
 
+// Window resize enforcement (using window subclassing)
+bool InstallResizeEnforcerHook();
+void UninstallResizeEnforcerHook();
+
 // Reflex management functions
 bool InstallReflexHooks();
 void UninstallReflexHooks();
@@ -130,6 +134,9 @@ extern float s_prevent_fullscreen;
 
 // NVAPI Fullscreen Prevention
 extern float s_nvapi_fullscreen_prevention;
+// NVAPI HDR logging
+extern float s_nvapi_hdr_logging;
+extern float s_nvapi_hdr_interval_sec;
 
 // Spoof Fullscreen State (for applications that query fullscreen status)
 extern float s_spoof_fullscreen_state;
@@ -143,6 +150,7 @@ extern float s_dxgi_composition_state;
 extern float s_suppress_alt_tab;
 extern float s_prevent_windows_minimize;
 extern float s_spoof_window_focus;
+extern float s_enforce_desired_window;
 
 extern std::atomic<int> g_comp_query_counter;
 extern std::atomic<int> g_comp_last_logged;
@@ -190,6 +198,9 @@ void OnPresentUpdate(reshade::api::command_queue* queue, reshade::api::swapchain
 
 // HDR10 colorspace fixing
 void FixHDR10Colorspace(reshade::api::swapchain* swapchain);
+// Background NVAPI HDR monitor
+void RunBackgroundNvapiHdrMonitor();
+void LogNvapiHdrOnce();
 
 // Current swapchain colorspace for UI display
 extern reshade::api::color_space g_current_colorspace;

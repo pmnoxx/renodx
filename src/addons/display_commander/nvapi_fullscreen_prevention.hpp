@@ -44,6 +44,10 @@ public:
     std::string GetDetailedStatus() const;
     std::string GetDllVersionInfo() const;
 
+    // HDR related helpers
+    bool QueryHdrStatus(bool& out_hdr_enabled, std::string& out_colorspace, std::string& out_output_name) const;
+    bool QueryHdrDetails(std::string& out_details) const;
+
 private:
     bool initialized = false;
     bool fullscreen_prevention_enabled = false;

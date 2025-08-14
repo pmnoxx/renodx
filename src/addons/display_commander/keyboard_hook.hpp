@@ -10,6 +10,10 @@ void UninstallAltTabHook();
 bool InstallMinimizeHook();
 void UninstallMinimizeHook();
 
+// Window resize enforcement (using window subclassing)
+bool InstallResizeEnforcerHook();
+void UninstallResizeEnforcerHook();
+
 // Internal hook procedure (don't call directly)
 LRESULT CALLBACK AltTabHookProc(int nCode, WPARAM wParam, LPARAM lParam);
 
