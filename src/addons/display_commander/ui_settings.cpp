@@ -7,6 +7,11 @@
 #include <sstream>
 #include <iomanip>
 
+// Helper functions for tab visibility
+inline bool is_basic_tab(float ui_mode) { return ui_mode < 0.5f; }
+inline bool is_developer_tab(float ui_mode) { return ui_mode >= 0.5f && ui_mode < 2.0f; }
+inline bool is_device_tab(float ui_mode) { return ui_mode >= 2.0f; }
+
 // UI/settings
 renodx::utils::settings::Settings settings = {
     // Basic/Developer/Device Info mode toggle
@@ -888,18 +893,27 @@ renodx::utils::settings::Settings settings = {
             return false;
           }
 
-          const auto& adapters = g_dxgiDeviceInfoManager->GetAdapters();
-          if (adapters.empty()) {
-            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "No DXGI adapters found");
-            return false;
-          }
+                     const auto& adapters = g_dxgiDeviceInfoManager->GetAdapters();
+           if (adapters.empty()) {
+             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "No DXGI adapters found yet. Device enumeration happens automatically during present operations.");
+             ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "If you're still not seeing adapters, try refreshing or check if a game/application is running.");
+             return false;
+           }
 
-          // Add refresh button
-          if (ImGui::Button("Refresh Device Info")) {
-            g_dxgiDeviceInfoManager->RefreshDeviceInfo();
-          }
-          ImGui::SameLine();
-          ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Click to refresh device information");
+                     // Add refresh button
+           if (ImGui::Button("Refresh Device Info")) {
+             g_dxgiDeviceInfoManager->RefreshDeviceInfo();
+           }
+           ImGui::SameLine();
+           ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Click to refresh device information");
+           
+           // Add force re-enumeration button
+           ImGui::SameLine();
+           if (ImGui::Button("Force Re-enumeration")) {
+             g_dxgiDeviceInfoManager->RefreshDeviceInfo();
+           }
+           ImGui::SameLine();
+           ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Force re-enumeration of all devices");
           
           // Add HDR metadata reset button
           ImGui::SameLine();
@@ -1008,7 +1022,7 @@ renodx::utils::settings::Settings settings = {
 
           return false;
         },
-                 .is_visible = []() { return s_ui_mode >= 2.0f; }, // Show only in Device Info mode (2.0f)
+                 .is_visible = []() { return is_device_tab(s_ui_mode); }, // Show only in Device Info mode
     },
 
     // DXGI composition/backbuffer info (text only) — placed at bottom

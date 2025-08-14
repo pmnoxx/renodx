@@ -132,10 +132,14 @@ void DXGIDeviceInfoManager::EnumerateDevicesOnPresent() {
         return;
     }
 
-    // Only enumerate if we don't have adapter information yet
+    // Always try to enumerate if we don't have adapter information
+    // This ensures we retry if previous attempts failed
     if (adapters_.empty()) {
-        GetAdapterFromReShadeDevice();
-        LogDebug("Device information enumerated during present");
+        if (GetAdapterFromReShadeDevice()) {
+            LogDebug("Device information enumerated during present");
+        } else {
+            LogDebug("Device enumeration attempted during present but failed");
+        }
     }
 }
 
