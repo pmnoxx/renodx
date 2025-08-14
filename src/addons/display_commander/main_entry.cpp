@@ -8,6 +8,22 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
     case DLL_PROCESS_ATTACH:
       if (!reshade::register_addon(h_module)) return FALSE;
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
+      
+      // Initialize NVAPI proactively if the setting is enabled
+      extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
+      if (s_nvapi_fullscreen_prevention >= 0.5f) {
+        if (g_nvapiFullscreenPrevention.Initialize()) {
+          LogInfo("NVAPI initialized proactively for fullscreen prevention");
+          if (g_nvapiFullscreenPrevention.SetFullscreenPrevention(true)) {
+            LogInfo("NVAPI fullscreen prevention applied proactively");
+          } else {
+            LogWarn("Failed to apply NVAPI fullscreen prevention proactively");
+          }
+        } else {
+          LogWarn("Failed to initialize NVAPI proactively");
+        }
+      }
+      
       // Intercept SetFullscreenState; return true to skip original call
       reshade::register_event<reshade::addon_event::set_fullscreen_state>(
           [](reshade::api::swapchain* swapchain, bool fullscreen, void* hmonitor) -> bool {
@@ -17,6 +33,33 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
               oss << "[Resolution Override] SetFullscreenState: fullscreen=" << (fullscreen ? 1 : 0)
                   << ", hmonitor=" << hmonitor;
               reshade::log::message(reshade::log::level::info, oss.str().c_str());
+            }
+
+            // If fullscreen prevention is enabled, block fullscreen attempts
+            if (s_nvapi_fullscreen_prevention >= 0.5f && fullscreen) {
+              LogInfo("Blocking fullscreen attempt - NVAPI fullscreen prevention is enabled");
+              
+              // Ensure NVAPI is initialized and prevention is active
+              extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
+              if (!g_nvapiFullscreenPrevention.IsAvailable()) {
+                if (g_nvapiFullscreenPrevention.Initialize()) {
+                  LogInfo("NVAPI initialized on-demand for fullscreen prevention");
+                } else {
+                  LogWarn("Failed to initialize NVAPI on-demand");
+                }
+              }
+              
+              // Apply fullscreen prevention if not already active
+              if (g_nvapiFullscreenPrevention.IsAvailable() && !g_nvapiFullscreenPrevention.IsFullscreenPreventionEnabled()) {
+                if (g_nvapiFullscreenPrevention.SetFullscreenPrevention(true)) {
+                  LogInfo("NVAPI fullscreen prevention applied on-demand");
+                } else {
+                  LogWarn("Failed to apply NVAPI fullscreen prevention on-demand");
+                }
+              }
+              
+              // Return true to prevent the original SetFullscreenState call
+              return true;
             }
 
             return false; // not handled; call original

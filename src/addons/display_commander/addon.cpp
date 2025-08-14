@@ -33,6 +33,9 @@ void ComputeDesiredSize(int& out_w, int& out_h);
 // Keyboard hook functions moved to keyboard_hook.cpp
 #include "keyboard_hook.cpp"
 
+// NVAPI fullscreen prevention implementation
+#include "nvapi_fullscreen_prevention.cpp"
+
 // UI settings moved to ui_settings.cpp (now included in main_entry.cpp)
 // #include "ui_settings.cpp"
 

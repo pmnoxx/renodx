@@ -104,7 +104,13 @@ extern float s_resize_mode;
 extern float s_aspect_index;
 extern float s_move_to_zero_if_out;
 extern float s_force_borderless;
+// Prevent Fullscreen
 extern float s_prevent_fullscreen;
+
+// NVAPI Fullscreen Prevention
+extern float s_nvapi_fullscreen_prevention;
+
+// Spoof Fullscreen State (for applications that query fullscreen status)
 extern float s_spoof_fullscreen_state;
 extern float s_mute_in_background;
 extern float s_audio_volume_percent;

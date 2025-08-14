@@ -28,6 +28,9 @@ float s_force_windowed = 0.f; // 0 = Off, 1 = On
 // Prevent Fullscreen
 float s_prevent_fullscreen = 0.f; // 0 = Off, 1 = On
 
+// NVAPI Fullscreen Prevention
+float s_nvapi_fullscreen_prevention = 1.f; // 0 = Off, 1 = On (enabled by default)
+
 // Spoof Fullscreen State (for applications that query fullscreen status)
 float s_spoof_fullscreen_state = 0.f; // 0 = Off, 1 = On (spoof as fullscreen), 2 = On (spoof as windowed)
 
