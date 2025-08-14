@@ -9,7 +9,7 @@
 
 // UI/settings
 renodx::utils::settings::Settings settings = {
-    // Basic/Developer mode toggle
+    // Basic/Developer/Device Info mode toggle
     new renodx::utils::settings::Setting{
         .key = "UIMode",
         .binding = &s_ui_mode,
@@ -17,8 +17,8 @@ renodx::utils::settings::Settings settings = {
         .default_value = 0.f, // Basic mode by default
         .label = "UI Mode",
         .section = "General",
-        .tooltip = "Choose between Basic (minimal features) and Developer (all features) modes. Basic mode hides advanced settings.",
-        .labels = {"Basic", "Developer"},
+        .tooltip = "Choose between Basic (minimal features), Developer (all features), and Device Info (DXGI device information) modes.",
+        .labels = {"Basic", "Developer", "Device Info"},
     },
     // Auto-apply toggle and delay (seconds)
     new renodx::utils::settings::Setting{
@@ -1008,7 +1008,7 @@ renodx::utils::settings::Settings settings = {
 
           return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Show in Developer mode (1.0f) and Device Info mode (2.0f)
     },
 
     // DXGI composition/backbuffer info (text only) — placed at bottom
