@@ -4,6 +4,7 @@
 #include <d3d11.h>
 
 #pragma comment (lib, "dxgi.lib")
+#pragma comment (lib, "d3d11.lib")
 
 // Global instance declaration (defined in globals.cpp)
 extern std::unique_ptr<DXGIDeviceInfoManager> g_dxgiDeviceInfoManager;
@@ -183,4 +184,150 @@ bool DXGIDeviceInfoManager::EnumerateOutputs(IDXGIAdapter* adapter, DXGIAdapterI
     }
 
     return true;
+}
+
+bool DXGIDeviceInfoManager::ResetHDRMetadata(const std::string& output_device_name, float max_cll) {
+    if (!initialized_ || !factory_) {
+        return false;
+    }
+
+    // Find the output with the specified device name
+    for (const auto& adapter : adapters_) {
+        for (const auto& output : adapter.outputs) {
+            if (output.device_name == output_device_name && output.supports_hdr10) {
+                // Create a temporary swapchain to reset HDR metadata
+                return ResetHDRMetadataForOutput(output, max_cll);
+            }
+        }
+    }
+    
+    LogWarn("HDR metadata reset: Output not found or doesn't support HDR10");
+    return false;
+}
+
+bool DXGIDeviceInfoManager::ResetHDRMetadataForOutput(const DXGIOutputInfo& output, float max_cll) {
+    // Create a temporary window for the swapchain
+    int width = output.desktop_coordinates.right - output.desktop_coordinates.left;
+    int height = output.desktop_coordinates.bottom - output.desktop_coordinates.top;
+    
+    // Create a temporary window
+    HWND hwnd = CreateWindowW(
+        L"static", L"HDR Metadata Reset", 
+        WS_VISIBLE | WS_POPUP | WS_MINIMIZEBOX | WS_SYSMENU | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+        output.desktop_coordinates.left, output.desktop_coordinates.top,
+        width, height, 0, 0, 0, 0
+    );
+    
+    if (!hwnd) {
+        LogWarn("HDR metadata reset: Failed to create temporary window");
+        return false;
+    }
+
+    bool success = false;
+    
+    try {
+        // Create D3D11 device and swapchain
+        Microsoft::WRL::ComPtr<ID3D11Device> device;
+        Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
+        Microsoft::WRL::ComPtr<IDXGISwapChain> swapchain;
+        
+        D3D_FEATURE_LEVEL feature_levels[] = { D3D_FEATURE_LEVEL_11_0 };
+        D3D_FEATURE_LEVEL feature_level;
+        
+        HRESULT hr = D3D11CreateDevice(
+            nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
+            feature_levels, 1, D3D11_SDK_VERSION,
+            &device, &feature_level, &context
+        );
+        
+        if (SUCCEEDED(hr)) {
+            // Create swapchain
+            DXGI_SWAP_CHAIN_DESC swap_desc = {};
+            swap_desc.BufferDesc.Width = width;
+            swap_desc.BufferDesc.Height = height;
+            swap_desc.BufferDesc.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
+            swap_desc.BufferDesc.RefreshRate = { 0, 0 };
+            swap_desc.BufferCount = 3;
+            swap_desc.Windowed = TRUE;
+            swap_desc.OutputWindow = hwnd;
+            swap_desc.SampleDesc = { 1, 0 };
+            swap_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+            swap_desc.BufferUsage = DXGI_USAGE_BACK_BUFFER;
+            swap_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+            
+            hr = factory_->CreateSwapChain(device.Get(), &swap_desc, &swapchain);
+            
+            if (SUCCEEDED(hr)) {
+                // Get IDXGISwapChain4 for HDR metadata
+                Microsoft::WRL::ComPtr<IDXGISwapChain4> swapchain4;
+                hr = swapchain.As(&swapchain4);
+                
+                if (SUCCEEDED(hr)) {
+                    // Set HDR10 colorspace
+                    hr = swapchain4->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+                    
+                    if (SUCCEEDED(hr)) {
+                        // Create HDR metadata
+                        DXGI_HDR_METADATA_HDR10 metadata = {};
+                        
+                        // Use provided max_cll or get from output info
+                        float max_luminance = (max_cll > 0.0f) ? max_cll : output.max_luminance;
+                        
+                        metadata.MinMasteringLuminance = 0;
+                        metadata.MaxMasteringLuminance = static_cast<UINT>(max_luminance * 10000);
+                        metadata.MaxFrameAverageLightLevel = static_cast<UINT16>(max_luminance * 10000);
+                        metadata.MaxContentLightLevel = static_cast<UINT16>(max_luminance * 10000);
+                        
+                        // Set color primaries (using standard HDR10 values if not available)
+                        metadata.WhitePoint[0] = 3127;   // 0.3127 * 10000
+                        metadata.WhitePoint[1] = 3290;   // 0.3290 * 10000
+                        metadata.RedPrimary[0] = 6800;    // 0.68 * 10000
+                        metadata.RedPrimary[1] = 3200;    // 0.32 * 10000
+                        metadata.GreenPrimary[0] = 2650;  // 0.265 * 10000
+                        metadata.GreenPrimary[1] = 6900;  // 0.69 * 10000
+                        metadata.BluePrimary[0] = 1500;   // 0.15 * 10000
+                        metadata.BluePrimary[1] = 600;    // 0.06 * 10000
+                        
+                        // Set HDR metadata
+                        hr = swapchain4->SetHDRMetaData(
+                            DXGI_HDR_METADATA_TYPE_HDR10, 
+                            sizeof(metadata), 
+                            &metadata
+                        );
+                        
+                        if (SUCCEEDED(hr)) {
+                            // Present a few frames to ensure metadata is applied
+                            swapchain4->Present(1, 0);
+                            Sleep(100);
+                            swapchain4->Present(1, 0);
+                            Sleep(100);
+                            swapchain4->Present(1, 0);
+                            
+                            LogInfo(("HDR metadata reset successful for output: " + output.device_name).c_str());
+                            success = true;
+                        } else {
+                            LogWarn("HDR metadata reset: Failed to set HDR metadata");
+                        }
+                    } else {
+                        LogWarn("HDR metadata reset: Failed to set HDR10 colorspace");
+                    }
+                } else {
+                    LogWarn("HDR metadata reset: Failed to get IDXGISwapChain4");
+                }
+            } else {
+                LogWarn("HDR metadata reset: Failed to create swapchain");
+            }
+        } else {
+            LogWarn("HDR metadata reset: Failed to create D3D11 device");
+        }
+    } catch (...) {
+        LogWarn("HDR metadata reset: Exception occurred during reset");
+    }
+    
+    // Clean up
+    if (hwnd) {
+        DestroyWindow(hwnd);
+    }
+    
+    return success;
 }

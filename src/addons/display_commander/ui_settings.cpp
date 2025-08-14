@@ -900,6 +900,27 @@ renodx::utils::settings::Settings settings = {
           }
           ImGui::SameLine();
           ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Click to refresh device information");
+          
+          // Add HDR metadata reset button
+          ImGui::SameLine();
+          if (ImGui::Button("Reset HDR Metadata")) {
+            // Find first HDR10-capable output and reset its metadata
+            const auto& adapters = g_dxgiDeviceInfoManager->GetAdapters();
+            for (const auto& adapter : adapters) {
+              for (const auto& output : adapter.outputs) {
+                if (output.supports_hdr10) {
+                  if (g_dxgiDeviceInfoManager->ResetHDRMetadata(output.device_name)) {
+                    LogInfo(("HDR metadata reset initiated for: " + output.device_name).c_str());
+                  } else {
+                    LogWarn(("HDR metadata reset failed for: " + output.device_name).c_str());
+                  }
+                  break; // Only reset the first HDR10 output found
+                }
+              }
+            }
+          }
+          ImGui::SameLine();
+          ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "Reset HDR metadata for HDR10 displays");
 
           ImGui::Separator();
 
