@@ -56,13 +56,18 @@ DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain);
 bool InstallAltTabHook();
 void UninstallAltTabHook();
 
+// Additional Alt suppression methods
+bool InstallAltSuppressionWindowSubclass();
+void UninstallAltSuppressionWindowSubclass();
+bool InstallAltSuppressionDllInjection();
+void UninstallAltSuppressionDllInjection();
+bool InstallAltSuppressionRawInput();
+void UninstallAltSuppressionRawInput();
+void UpdateAltSuppressionMethods();
+
 // Windows minimize prevention functions (using window subclassing)
 bool InstallMinimizeHook();
 void UninstallMinimizeHook();
-
-// Window state change logging functions
-bool InstallWindowStateLoggingHook();
-void UninstallWindowStateLoggingHook();
 
 // Structs
 struct IndependentFlipFailures {
@@ -107,11 +112,9 @@ extern float s_audio_mute;
 extern float s_fps_limit_background;
 extern float s_target_monitor_index;
 extern float s_dxgi_composition_state;
-extern float s_try_independent_flip;
 extern float s_suppress_alt_tab;
 extern float s_prevent_windows_minimize;
 extern float s_spoof_window_focus;
-extern float s_log_window_state_changes;
 
 extern std::atomic<int> g_comp_query_counter;
 extern std::atomic<int> g_comp_last_logged;
@@ -127,8 +130,6 @@ extern std::atomic<float> g_default_fps_limit;
 
 extern std::vector<MonitorInfo> g_monitors;
 
-// Swapchain format mode: 0 = Off (no upgrade), 1 = HDR10, 2 = scRGB
-extern float s_enable_scrgb_swapchain;
 // Fix HDR10 color space when backbuffer is RGB10A2
 extern float s_fix_hdr10_colorspace;
 

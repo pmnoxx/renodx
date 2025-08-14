@@ -102,4 +102,36 @@ extern "C" __declspec(dllexport) constexpr const char* DESCRIPTION =
 
 // DllMain function moved to main_entry.cpp
 
+// Comprehensive Alt suppression management
+void UpdateAltSuppressionMethods() {
+    // Always install/uninstall the main hook based on the main setting
+    if (s_suppress_alt_tab >= 0.5f) {
+        InstallAltTabHook();
+        
+        // Install additional methods based on the method setting
+        if (s_alt_suppression_method >= 1.5f || s_alt_suppression_window_subclass >= 0.5f) {
+            // Window subclassing not implemented yet
+            LogDebug("Window subclassing not yet implemented");
+        }
+        
+        if (s_alt_suppression_method >= 2.5f || s_alt_suppression_dll_injection >= 0.5f) {
+            // DLL injection not implemented yet
+            LogDebug("DLL injection not yet implemented");
+        }
+        
+        if (s_alt_suppression_method >= 3.5f || s_alt_suppression_raw_input >= 0.5f) {
+            // Raw Input not implemented yet
+            LogDebug("Raw Input not yet implemented");
+        }
+        
+        // "All Methods" (value 4.0) enables everything
+        if (s_alt_suppression_method >= 4.0f) {
+            LogDebug("All methods selected but not yet implemented");
+        }
+    } else {
+        // Uninstall all methods when main setting is disabled
+        UninstallAltTabHook();
+    }
+}
+
 

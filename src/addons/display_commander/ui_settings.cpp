@@ -322,12 +322,8 @@ renodx::utils::settings::Settings settings = {
             oss << "Alt-Tab suppression changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
             LogInfo(oss.str().c_str());
             
-            // Install or uninstall the hook based on the new setting
-            if (current >= 0.5f) {
-                InstallAltTabHook();
-            } else {
-                UninstallAltTabHook();
-            }
+            // Update all Alt suppression methods
+            UpdateAltSuppressionMethods();
         },
     },
     // Prevent Windows Minimize
@@ -354,68 +350,7 @@ renodx::utils::settings::Settings settings = {
             }
         },
     },
-    // Force Windowed (Experimental)
-    new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "Force Windowed (Experimental)",
-        .section = "Display",
-        .tooltip = "Attempt to force overlapped window styles and then apply size.",
-        .on_click = [](){
-          std::thread([](){
-            HWND hwnd = g_last_swapchain_hwnd.load();
-            if (hwnd == nullptr) hwnd = GetForegroundWindow();
-            if (hwnd == nullptr) return;
-            LogDebug("Force Windowed button pressed (bg thread)");
-            // Only one call: change style per setting, keep current size/pos
-            WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
-            ApplyWindowChange(
-                hwnd,
-                /*do_resize=*/false, 0, 0,
-                /*do_move=*/false, 0, 0,
-                mode);
-          }).detach();
-          return false; // do not save on button click
-        },
-    },
 
-    // Try Independent Flip (Experimental)
-    new renodx::utils::settings::Setting{
-        .key = "TryIndependentFlip",
-        .binding = &s_try_independent_flip,
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .default_value = 0.f,
-        .label = "Experimental: Try Fixing Independent Flip",
-        .section = "Performance",
-        .tooltip = "Attempt to configure swapchain for Independent Flip using DXGI-only changes (no window ops).",
-        .on_click = [](){
-            auto* sc = g_last_swapchain_ptr.load();
-            if (sc != nullptr) {
-              SetIndependentFlipState(sc);
-              LogIndependentFlipConditions(sc);
-            } else {
-              LogWarn("Try Independent Flip: no swapchain yet");
-            }
-            return false;
-          },
-    },
-    new renodx::utils::settings::Setting{
-        .key = "ForceWindowToOrigin",
-        .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .default_value = 0.f,
-        .label = "Force Window to Monitor Origin (experimental)",
-        .section = "Performance",
-        .tooltip = "Force the window to be positioned so its client area starts at monitor origin (0,0). Required for Independent Flip.",
-        .on_click = [](){
-            HWND hwnd = g_last_swapchain_hwnd.load();
-            if (hwnd != nullptr) {
-              ForceWindowToMonitorOriginThreaded(hwnd);
-            } else {
-              LogWarn("Force Window to Origin: no window handle yet");
-            }
-            return false;
-          },
-    },
     // DXGI composition/backbuffer info (text only) — placed at bottom
     new renodx::utils::settings::Setting{
         .key = "DxgiInfo",
@@ -570,51 +505,6 @@ renodx::utils::settings::Settings settings = {
           }
           
           return false;
-        },
-    },
-    // Test button for RemoveWindowBorder
-    new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "Test RemoveWindowBorderLocal",
-        .section = "Display",
-        .tooltip = "Test button that calls RemoveWindowBorderLocal in another thread.",
-        .on_click = []() {
-          std::thread([](){
-            HWND hwnd = g_last_swapchain_hwnd.load();
-            if (hwnd == nullptr) hwnd = GetForegroundWindow();
-            if (hwnd == nullptr) {
-              LogWarn("Test RemoveWindowBorder: no window handle available");
-              return;
-            }
-            LogDebug("Test RemoveWindowBorder button pressed (bg thread)");
-            RemoveWindowBorderLocal(hwnd);
-            LogInfo("Test RemoveWindowBorderLocal completed");
-          }).detach();
-          return false; // do not save on button click
-        },
-    },
-    // Log Window State Changes
-    new renodx::utils::settings::Setting{
-        .key = "LogWindowStateChanges",
-        .binding = &s_log_window_state_changes,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Log Window State Changes",
-        .section = "Debug",
-        .tooltip = "Log every window state change (move, resize, minimize, maximize, style changes, etc.) for debugging and monitoring.",
-        .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current){ 
-            // Update the window state logging state
-            std::ostringstream oss;
-            oss << "Window state change logging changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
-            LogInfo(oss.str().c_str());
-            
-            // Install or uninstall the hook based on the new setting
-            if (current >= 0.5f) {
-                InstallWindowStateLoggingHook();
-            } else {
-                UninstallWindowStateLoggingHook();
-            }
         },
     },
     // Fix HDR10 Colorspace

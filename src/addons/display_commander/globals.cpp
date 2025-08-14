@@ -45,19 +45,37 @@ float s_dxgi_composition_state = 0.f;
 std::atomic<int> g_comp_query_counter{0};
 std::atomic<int> g_comp_last_logged{-1};
 // Try to configure swapchain for Independent Flip using DXGI-only changes
-float s_try_independent_flip = 0.f;
+// float s_try_independent_flip = 0.f; // Removed - no longer used
 
 // Suppress Alt-Tab (by installing Windows hook)
 float s_suppress_alt_tab = 0.f; // 0 = Off, 1 = On
+
+// Suppress Alt modifier keys (when Alt is used with other keys)
+float s_suppress_alt_modifier = 0.f; // 0 = Off, 1 = On
+
+// Suppress Tab key (standalone Tab key presses)
+float s_suppress_tab = 0.f; // 0 = Off, 1 = On
+
+// Alt suppression methods
+float s_alt_suppression_method = 0.f; // 0 = Hook only, 1 = Hook + Window subclass, 2 = Hook + DLL injection, 3 = Hook + Raw Input, 4 = All methods
+
+// Additional Alt suppression via window subclassing
+float s_alt_suppression_window_subclass = 0.f; // 0 = Off, 1 = On
+
+// Additional Alt suppression via DLL injection (experimental)
+float s_alt_suppression_dll_injection = 0.f; // 0 = Off, 1 = On
+
+// Intercept Raw Input for Alt suppression (for games that bypass Windows hooks)
+float s_alt_suppression_raw_input = 0.f; // 0 = Off, 1 = On
+
+// Alt-Tab suppression counter
+std::atomic<uint64_t> g_alt_tab_suppressed_count{0};
 
 // Prevent Windows Minimize (by installing Windows hook)
 float s_prevent_windows_minimize = 0.f; // 0 = Off, 1 = On
 
 // Spoof Window Focus (for applications that query focus status)
 float s_spoof_window_focus = 0.f; // 0 = Off, 1 = On (spoof as focused), 2 = On (spoof as unfocused)
-
-// Log Window State Changes (for debugging and monitoring)
-float s_log_window_state_changes = 0.f; // 0 = Off, 1 = On
 
 // Display: Fix HDR10 color space via DXGI SetColorSpace1 when using RGB10A2
 float s_fix_hdr10_colorspace = 1.f; // 0 = Off, 1 = On
