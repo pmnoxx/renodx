@@ -1,5 +1,6 @@
 #include "addon.hpp"
 #include "nvapi_fullscreen_prevention.hpp"
+#include "reflex_management.hpp"
 #include "utils.hpp"
 #include "ui_settings.hpp"
 
@@ -943,6 +944,168 @@ renodx::utils::settings::Settings settings = {
         .min = -10000.f,
         .max = 10000.f,
         .format = "%d px",
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+
+    // Reflex Settings
+    new renodx::utils::settings::Setting{
+        .key = "ReflexEnabled",
+        .binding = &s_reflex_enabled,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 1.f, // Enabled by default
+        .label = "Enable NVIDIA Reflex",
+        .section = "Performance",
+        .tooltip = "Enable NVIDIA Reflex for reduced latency. Requires NVIDIA GPU and drivers.",
+        .labels = {"Disabled", "Enabled"},
+        .on_change_value = [](float previous, float current) {
+            if (current >= 0.5f) {
+                InstallReflexHooks();
+            } else {
+                UninstallReflexHooks();
+            }
+            // Mark that Reflex settings have changed to force sleep mode update
+            extern std::atomic<bool> g_reflex_settings_changed;
+            g_reflex_settings_changed.store(true);
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+    new renodx::utils::settings::Setting{
+        .key = "ReflexLowLatencyMode",
+        .binding = &s_reflex_low_latency_mode,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 1.f,
+        .label = "Reflex Low Latency Mode",
+        .section = "Performance",
+        .tooltip = "Enable low latency mode for reduced input lag.",
+        .labels = {"Disabled", "Enabled"},
+        .on_change_value = [](float previous, float current) {
+            // Mark that Reflex settings have changed to force sleep mode update
+            extern std::atomic<bool> g_reflex_settings_changed;
+            g_reflex_settings_changed.store(true);
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
+    },
+    new renodx::utils::settings::Setting{
+        .key = "ReflexLowLatencyBoost",
+        .binding = &s_reflex_low_latency_boost,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Reflex Low Latency Boost",
+        .section = "Performance",
+        .tooltip = "Request maximum GPU clock frequency for lower latency in CPU-limited scenarios.",
+        .labels = {"Disabled", "Enabled"},
+        .on_change_value = [](float previous, float current) {
+            // Mark that Reflex settings have changed to force sleep mode update
+            extern std::atomic<bool> g_reflex_settings_changed;
+            g_reflex_settings_changed.store(true);
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
+    },
+    new renodx::utils::settings::Setting{
+        .key = "ReflexUseMarkers",
+        .binding = &s_reflex_use_markers,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 1.f,
+        .label = "Reflex Use Markers",
+        .section = "Performance",
+        .tooltip = "Allow latency markers to be used for runtime optimizations.",
+        .labels = {"Disabled", "Enabled"},
+        .on_change_value = [](float previous, float current) {
+            // Mark that Reflex settings have changed to force sleep mode update
+            extern std::atomic<bool> g_reflex_settings_changed;
+            g_reflex_settings_changed.store(true);
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
+    },
+    // Reflex settings section
+    new renodx::utils::settings::Setting{
+        .key = "ReflexSection",
+        .binding = nullptr,
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .default_value = 0.f,
+        .label = "=== NVIDIA Reflex Settings ===",
+        .section = "Performance",
+        .tooltip = "NVIDIA Reflex latency reduction settings",
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+    
+    // Latency Display Section
+    new renodx::utils::settings::Setting{
+        .key = "LatencyDisplaySection",
+        .binding = nullptr,
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .default_value = 0.f,
+        .label = "=== Latency Information ===",
+        .section = "Performance",
+        .tooltip = "Real-time latency and Reflex status information",
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+    
+    // Current Latency Display
+    new renodx::utils::settings::Setting{
+        .key = "CurrentLatency",
+        .binding = nullptr,
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .default_value = 0.f,
+        .label = "Current Latency: ",
+        .section = "Performance",
+        .tooltip = "Current frame latency in milliseconds",
+        .on_draw = []() -> bool {
+            extern std::unique_ptr<ReflexManager> g_reflexManager;
+            if (g_reflexManager) {
+                float latency = g_reflexManager->GetCurrentLatencyMs();
+                ImGui::Text("Current Latency: %.2f ms", latency);
+            } else {
+                ImGui::Text("Current Latency: N/A");
+            }
+            return false; // No value change
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+    
+    // PCL AV Latency Display (Most Important)
+    new renodx::utils::settings::Setting{
+        .key = "PCLLatency",
+        .binding = nullptr,
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .default_value = 0.f,
+        .label = "PCL AV Latency: ",
+        .section = "Performance",
+        .tooltip = "PCL Average Latency (30-frame average) - This is what the NVIDIA overlay should show",
+        .on_draw = []() -> bool {
+            extern std::unique_ptr<ReflexManager> g_reflexManager;
+            if (g_reflexManager) {
+                float pcl_latency = g_reflexManager->GetPCLLatencyMs();
+                ImGui::Text("PCL AV Latency: %.2f ms", pcl_latency);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "(30-frame avg)");
+            } else {
+                ImGui::Text("PCL AV Latency: N/A");
+            }
+            return false; // No value change
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+    
+    // Reflex Status Display
+    new renodx::utils::settings::Setting{
+        .key = "ReflexStatus",
+        .binding = nullptr,
+        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .default_value = 0.f,
+        .label = "Reflex Status: ",
+        .section = "Performance",
+        .tooltip = "Current Reflex status and configuration",
+        .on_draw = []() -> bool {
+            extern std::unique_ptr<ReflexManager> g_reflexManager;
+            if (g_reflexManager) {
+                std::string status = g_reflexManager->GetReflexStatus();
+                ImGui::Text("Reflex Status: %s", status.c_str());
+            } else {
+                ImGui::Text("Reflex Status: Not Available");
+            }
+            return false; // No value change
+        },
         .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 };

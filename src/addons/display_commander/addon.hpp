@@ -26,6 +26,7 @@
 #include "../../mods/swapchain.hpp"
 #include "utils.hpp"
 #include "nvapi_fullscreen_prevention.hpp"
+#include "reflex_management.hpp"
 
 // WASAPI per-app volume control
 #include <mmdeviceapi.h>
@@ -70,6 +71,15 @@ void UpdateAltSuppressionMethods();
 bool InstallMinimizeHook();
 void UninstallMinimizeHook();
 
+// Reflex management functions
+bool InstallReflexHooks();
+void UninstallReflexHooks();
+void SetReflexLatencyMarkers(reshade::api::swapchain* swapchain);
+void SetReflexSleepMode(reshade::api::swapchain* swapchain);
+
+// Global flags for Reflex management
+extern std::atomic<bool> g_reflex_settings_changed;
+
 // Structs
 struct IndependentFlipFailures {
   std::atomic<bool> swapchain_null{false};
@@ -95,6 +105,12 @@ struct IndependentFlipFailures {
 // Global variables (extern declarations)
 // UI mode (0 = Basic, 1 = Developer)
 extern float s_ui_mode;
+
+// Reflex settings
+extern float s_reflex_enabled;
+extern float s_reflex_low_latency_mode;
+extern float s_reflex_low_latency_boost;
+extern float s_reflex_use_markers;
 
 extern float s_auto_apply_enabled;
 extern float s_auto_apply_delay_sec;

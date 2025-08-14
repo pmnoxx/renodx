@@ -1,4 +1,5 @@
 #include "addon.hpp"
+#include "reflex_management.hpp"
 
 // Global variables
 // UI mode (0 = Basic, 1 = Developer)
@@ -50,6 +51,12 @@ float s_spoof_window_focus = 0.f;
 // Fix HDR10 color space when backbuffer is RGB10A2
 float s_fix_hdr10_colorspace = 0.f;
 
+// Reflex settings
+float s_reflex_enabled = 1.f; // Enabled by default
+float s_reflex_low_latency_mode = 1.f; // Low latency mode enabled by default
+float s_reflex_low_latency_boost = 0.f; // Boost disabled by default
+float s_reflex_use_markers = 1.f; // Use markers enabled by default
+
 // Atomic variables
 std::atomic<int> g_comp_query_counter{0};
 std::atomic<int> g_comp_last_logged{0};
@@ -61,6 +68,16 @@ std::atomic<HWND> g_last_swapchain_hwnd{nullptr};
 std::atomic<bool> g_shutdown{false};
 std::atomic<bool> g_muted_applied{false};
 std::atomic<float> g_default_fps_limit{0.f};
+
+// Reflex-related atomic variables
+std::atomic<uint64_t> g_reflex_frame_id{0};
+std::atomic<bool> g_reflex_hooks_installed{false};
+
+// Global Reflex manager instance
+std::unique_ptr<ReflexManager> g_reflexManager;
+
+// Global flag for Reflex settings changes
+std::atomic<bool> g_reflex_settings_changed{false};
 
 // Backbuffer dimensions
 std::atomic<int> g_last_backbuffer_width{0};

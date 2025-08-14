@@ -23,6 +23,15 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
           LogWarn("Failed to initialize NVAPI proactively");
         }
       }
+
+      // Initialize Reflex hooks if the setting is enabled
+      if (s_reflex_enabled >= 0.5f) {
+        if (InstallReflexHooks()) {
+          LogInfo("Reflex hooks initialized proactively");
+        } else {
+          LogWarn("Failed to initialize Reflex hooks proactively");
+        }
+      }
       
       // Intercept SetFullscreenState; return true to skip original call
       reshade::register_event<reshade::addon_event::set_fullscreen_state>(
@@ -87,6 +96,9 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       
       // Clean up minimize hook if it's installed
       UninstallMinimizeHook();
+      
+      // Clean up Reflex hooks if they're installed
+      UninstallReflexHooks();
       
       reshade::unregister_event<reshade::addon_event::present>(OnPresentUpdate);
       reshade::unregister_event<reshade::addon_event::set_fullscreen_state>(

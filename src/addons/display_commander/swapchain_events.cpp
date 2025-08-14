@@ -1,4 +1,5 @@
 #include "addon.hpp"
+#include "reflex_management.hpp"
 #include <dxgi1_4.h>
 #include "../../utils/swapchain.hpp"
 #include <chrono>
@@ -61,6 +62,17 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
     extern bool InstallMinimizeHook();
     InstallMinimizeHook();
   }
+
+  // Set Reflex sleep mode and latency markers if enabled
+  if (s_reflex_enabled >= 0.5f) {
+    SetReflexSleepMode(swapchain);
+    SetReflexLatencyMarkers(swapchain);
+    // Also call sleep to start the frame properly
+    extern std::unique_ptr<ReflexManager> g_reflexManager;
+    if (g_reflexManager && g_reflexManager->IsAvailable()) {
+      g_reflexManager->CallSleep(swapchain);
+    }
+  }
 }
 
 // Update composition state after presents (required for valid stats)
@@ -70,6 +82,31 @@ static void OnPresentUpdate(
     uint32_t /*dirty_rect_count*/, const reshade::api::rect* /*dirty_rects*/) {
   // Throttle queries to ~every 30 presents
   int c = ++g_comp_query_counter;
+  
+  // Call Reflex functions on EVERY frame (not throttled)
+  if (s_reflex_enabled >= 0.5f) {
+    extern std::unique_ptr<ReflexManager> g_reflexManager;
+    extern std::atomic<bool> g_reflex_settings_changed;
+    
+    if (g_reflexManager && g_reflexManager->IsAvailable()) {
+      // Force sleep mode update if settings have changed (required for NVIDIA overlay detection)
+      if (g_reflex_settings_changed.load()) {
+        SetReflexSleepMode(swapchain);
+        g_reflex_settings_changed.store(false);
+        LogDebug("Reflex: Sleep mode updated due to settings change");
+      } else if ((c % 60) == 0) { // Added periodic refresh
+        // Refresh sleep mode every 60 frames to maintain Reflex state
+        SetReflexSleepMode(swapchain);
+      }
+      // Call sleep at frame start (this is crucial for Reflex to work)
+      g_reflexManager->CallSleep(swapchain);
+      // Set full latency markers (SIMULATION, RENDERSUBMIT, INPUT) as PCLStats ETW events
+      // PRESENT markers are sent separately to NVAPI only
+      SetReflexLatencyMarkers(swapchain);
+      // Set PRESENT markers to wrap the Present call (NVAPI only, no ETW)
+      SetReflexPresentMarkers(swapchain);
+    }
+  }
   
   if ((c % 30) != 0) return;
   
@@ -97,6 +134,8 @@ static void OnPresentUpdate(
     oss << "DXGI Composition State (present): " << DxgiBypassModeToString(mode) << " (" << state << ")";
     LogInfo(oss.str().c_str());
   }
+
+
 }
 
 // Fix HDR10 colorspace when swapchain format is RGB10A2 and colorspace is not already HDR10
