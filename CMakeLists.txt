@@ -549,6 +549,13 @@ foreach(FILE ${ADDON_FILES})
     list(APPEND ADDON_SOURCES ${ADDON_PATH}/utils.cpp)
   endif()
   
+  # For display_commander, include all source files
+  if(${ADDON} STREQUAL "display_commander")
+    file(GLOB ADDON_SOURCE_FILES CONFIGURE_DEPENDS ${ADDON_PATH}/*.cpp)
+    list(REMOVE_ITEM ADDON_SOURCE_FILES ${FILE}) # Remove addon.cpp from the list
+    list(APPEND ADDON_SOURCES ${ADDON_SOURCE_FILES})
+  endif()
+  
   add_library(${ADDON} MODULE ${ADDON_SOURCES})
   build_shader_target(${ADDON} ${ADDON_PATH})
   generate_resource_rc(${ADDON})

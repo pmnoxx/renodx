@@ -180,7 +180,7 @@ static thread_local std::optional<reshade::api::resource_view_desc> local_origin
 
 // Methods
 
-bool LoadDirectXLibraries() {
+inline bool LoadDirectXLibraries() {
 #ifndef RENODX_PROXY_DEVICE_D3D12
   if (pD3D11CreateDevice == nullptr) {
     HMODULE d3d11_module = LoadLibraryW(L"d3d11.dll");
@@ -933,7 +933,7 @@ inline reshade::api::resource_view GetResourceViewClone(const reshade::api::reso
   return GetResourceViewClone(utils::resource::GetResourceViewInfo(view));
 }
 
-reshade::api::resource_view* ApplyRenderTargetClones(
+inline reshade::api::resource_view* ApplyRenderTargetClones(
     const reshade::api::resource_view* rtvs,
     const uint32_t& count) {
   reshade::api::resource_view* new_rtvs = nullptr;
@@ -973,7 +973,7 @@ reshade::api::resource_view* ApplyRenderTargetClones(
   return new_rtvs;
 }
 
-reshade::api::render_pass_render_target_desc* ApplyRenderTargetClones(
+inline reshade::api::render_pass_render_target_desc* ApplyRenderTargetClones(
     const reshade::api::render_pass_render_target_desc* rts,
     const uint32_t& count) {
   reshade::api::render_pass_render_target_desc* new_rts = nullptr;

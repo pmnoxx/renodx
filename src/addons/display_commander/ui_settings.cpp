@@ -1,9 +1,21 @@
 #include "addon.hpp"
 #include "nvapi_fullscreen_prevention.hpp"
 #include "utils.hpp"
+#include "ui_settings.hpp"
 
 // UI/settings
 renodx::utils::settings::Settings settings = {
+    // Basic/Developer mode toggle
+    new renodx::utils::settings::Setting{
+        .key = "UIMode",
+        .binding = &s_ui_mode,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f, // Basic mode by default
+        .label = "UI Mode",
+        .section = "General",
+        .tooltip = "Choose between Basic (minimal features) and Developer (all features) modes. Basic mode hides advanced settings.",
+        .labels = {"Basic", "Developer"},
+    },
     // Auto-apply toggle and delay (seconds)
     new renodx::utils::settings::Setting{
         .key = "AutoApply",
@@ -12,7 +24,9 @@ renodx::utils::settings::Settings settings = {
         .default_value = 0.f,
         .label = "Auto Apply",
         .section = "Display",
+        .tooltip = "Automatically apply window changes after swapchain initialization.",
         .labels = {"Off", "On"},
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     new renodx::utils::settings::Setting{
         .key = "AutoApplyDelay",
@@ -21,10 +35,11 @@ renodx::utils::settings::Settings settings = {
         .default_value = 10.f,
         .label = "App Start Delay (s)",
         .section = "Display",
+        .tooltip = "Delay after application start before applying window changes.",
         .min = 1.f,
         .max = 60.f,
         .format = "%d s",
-        .is_enabled = [](){ return s_auto_apply_enabled >= 0.5f; },
+        .is_visible = [](){ return s_ui_mode >= 0.5f; },
     },
     new renodx::utils::settings::Setting{
         .key = "InitApplyDelay",
@@ -33,10 +48,11 @@ renodx::utils::settings::Settings settings = {
         .default_value = 1.f,
         .label = "SwapChain Init Delay (s)",
         .section = "Display",
+        .tooltip = "Delay after swapchain initialization before applying window changes.",
         .min = 1.f,
         .max = 60.f,
         .format = "%d s",
-        .is_enabled = [](){ return s_auto_apply_enabled >= 0.5f; },
+        .is_visible = [](){ return s_ui_mode >= 0.5f; },
     },
     // Window width preset slider with labels
     new renodx::utils::settings::Setting{
@@ -73,39 +89,50 @@ renodx::utils::settings::Settings settings = {
           return static_cast<float>(HEIGHT_OPTIONS[i]);
         },
     },
-    // Resize Mode
+    // Resize mode: width/height vs aspect ratio
     new renodx::utils::settings::Setting{
         .key = "ResizeMode",
         .binding = &s_resize_mode,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 0.f,
         .label = "Resize Mode",
         .section = "Display",
-        .labels = {"Width/Height", "Aspect"},
+        .tooltip = "Choose between manual width/height or aspect ratio-based resizing.",
+        .labels = {"Width/Height", "Aspect Ratio"},
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Aspect Ratio (only when in Aspect mode)
     new renodx::utils::settings::Setting{
         .key = "AspectRatio",
         .binding = &s_aspect_index,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 3.f, // 16:9 (now at index 3 after sorting)
+        .default_value = 3.f,
         .label = "Aspect Ratio",
         .section = "Display",
-        .labels = MakeAspectLabels(),
-        .is_enabled = [](){ return s_resize_mode >= 0.5f; },
+        .tooltip = "Choose the aspect ratio for window resizing. Only applies when Resize Mode is set to Aspect Ratio.",
+        .labels = {"4:3", "5:4", "16:10", "16:9", "21:9", "32:9"},
+        .is_visible = []() { return s_ui_mode >= 0.5f; },
     },
 
-    // FPS Limit (foreground default)
+    // FPS Limit
     new renodx::utils::settings::Setting{
         .key = "FPSLimit",
-        .binding = &renodx::utils::swapchain::fps_limit,
+        .binding = &s_fps_limit,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 0.f,
         .label = "FPS Limit",
         .section = "Performance",
+        .tooltip = "Set FPS limit for the game (0 = no limit).",
         .min = 0.f,
-        .max = 480.f,
-        .format = "%.0f FPS",
+        .max = 300.f,
+        .format = "%d FPS",
         .on_change_value = [](float previous, float current){ g_default_fps_limit.store(current); },
+        .on_draw = []() -> bool {
+            // Sync with current atomic value
+            s_fps_limit = g_default_fps_limit.load();
+            return false;
+        },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Background FPS Limit
     new renodx::utils::settings::Setting{
@@ -118,34 +145,37 @@ renodx::utils::settings::Settings settings = {
         .min = 0.f,
         .max = 240.f,
         .format = "%.0f FPS",
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Volume (0-100)
     new renodx::utils::settings::Setting{
-        .key = "Volume",
+        .key = "AudioVolume",
         .binding = &s_audio_volume_percent,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 100.f,
-        .label = "Volume",
+        .label = "Audio Volume (%)",
         .section = "Audio",
+        .tooltip = "Master audio volume control (0-100%).",
         .min = 0.f,
         .max = 100.f,
         .format = "%d%%",
-        .on_change_value = [](float previous, float current){ SetVolumeForCurrentProcess(current); },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Mute (manual)
     new renodx::utils::settings::Setting{
-        .key = "Mute",
+        .key = "AudioMute",
         .binding = &s_audio_mute,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
         .default_value = 0.f,
-        .label = "Mute",
+        .label = "Audio Mute",
         .section = "Audio",
-        .labels = {"Off", "On"},
-        .on_change_value = [](float previous, float current){ 
-          SetMuteForCurrentProcess(current >= 0.5f);
-          // Reset applied flag so the monitor thread immediately respects the manual mute change
-          g_muted_applied.store(false);
+        .tooltip = "Manually mute/unmute audio.",
+        .labels = {"Unmuted", "Muted"},
+        .on_change_value = [](float previous, float current){
+            // Reset applied flag so the monitor thread reapplies desired state
+            g_muted_applied.store(false);
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Mute in Background (placed after Mute; disabled if Mute is ON)
     new renodx::utils::settings::Setting{
@@ -157,59 +187,49 @@ renodx::utils::settings::Settings settings = {
         .section = "Audio",
         .tooltip = "Mute the game's audio when it is not the foreground window.",
         .labels = {"Off", "On"},
-        .is_enabled = [](){ return s_audio_mute < 0.5f; },
         .on_change_value = [](float previous, float current){
           // Reset applied flag so the monitor thread reapplies desired state
           g_muted_applied.store(false);
         },
+        .is_visible = [](){ return s_ui_mode >= 0.5f; },
     },
     // Apply button executes windowed resize
     new renodx::utils::settings::Setting{
+        .key = "Apply",
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "Apply",
-        .section = "Display",
-        .tooltip = "Apply the selected window width and height (respects Remove Top Bar).",
-        .on_click = []() {
-          std::thread([](){
-            HWND hwnd = g_last_swapchain_hwnd.load();
-            if (hwnd == nullptr) hwnd = GetForegroundWindow();
-            if (hwnd == nullptr) return;
-            DWORD owner_tid = GetWindowThreadProcessId(hwnd, nullptr);
-            DWORD this_tid = GetCurrentThreadId();
-            RECT wr{};
-            int pos_x = 100;
-            int pos_y = 100;
-            if (GetWindowRect(hwnd, &wr) != FALSE) {
-              pos_x = wr.left;
-              pos_y = wr.top;
-            }
-            WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
-            int want_w = 0; int want_h = 0; ComputeDesiredSize(want_w, want_h);
-            
-            std::ostringstream oss; oss << "Apply (bg) clicked hwnd=" << hwnd
-                                        << " owner_tid=" << owner_tid
-                                        << " this_tid=" << this_tid
-                                        << " size=" << want_w << "x" << want_h;
-            LogDebug(oss.str());
-            ApplyWindowChange(
-                hwnd,
-                /*do_resize=*/true, want_w, want_h,
-                /*do_move=*/true, pos_x, pos_y,
-                mode);
-          }).detach();
-          return false; // do not trigger settings save
+        .label = "Apply Changes",
+        .section = "Actions",
+        .tooltip = "Apply the current window size and position settings to the game window.",
+        .on_click = []() -> bool {
+            std::thread([](){
+                HWND hwnd = GetForegroundWindow();
+                if (hwnd != nullptr) {
+                    // Get current desired size
+                    int want_w = 0; int want_h = 0; ComputeDesiredSize(want_w, want_h);
+                    
+                    // Apply the change
+                    extern void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode);
+                    extern WindowStyleMode WindowStyleMode;
+                    ApplyWindowChange(hwnd, true, want_w, want_h, true, static_cast<int>(s_windowed_pos_x), static_cast<int>(s_windowed_pos_y), WindowStyleMode::KEEP);
+                    
+                    LogInfo("Manual apply executed");
+                }
+            }).detach();
+            return false;
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
-    // Remove Top Bar (for Force Windowed)
+    // Remove top bar (title bar, borders)
     new renodx::utils::settings::Setting{
         .key = "RemoveTopBar",
         .binding = &s_remove_top_bar,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
         .label = "Remove Top Bar",
         .section = "Display",
-        .tooltip = "When forcing windowed mode, choose whether to remove the title bar (borderless).",
+        .tooltip = "Remove the window title bar and borders for a cleaner look.",
         .labels = {"Keep", "Remove"},
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Target Monitor
     new renodx::utils::settings::Setting{
@@ -221,6 +241,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Choose which monitor to apply size/pos to. 'Auto' uses the current window monitor.",
         .labels = MakeMonitorLabels(),
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Window alignment when repositioning is needed
     new renodx::utils::settings::Setting{
@@ -232,6 +253,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Choose how to align the window when repositioning is needed. 1=Top Left, 2=Top Right, 3=Bottom Left, 4=Bottom Right.",
         .labels = {"None", "Top Left", "Top Right", "Bottom Left", "Bottom Right"},
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Force Borderless (global)
     new renodx::utils::settings::Setting{
@@ -244,6 +266,7 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "Force window to be borderless. Useful for games that don't support borderless mode.",
         .labels = {"Off", "On"},
         .on_change_value = [](float previous, float current){ renodx::mods::swapchain::force_borderless = (current >= 0.5f); },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Prevent Fullscreen (global)
     new renodx::utils::settings::Setting{
@@ -256,6 +279,7 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "Prevent exclusive fullscreen; keep borderless/windowed for stability and HDR.",
         .labels = {"Disabled", "Enabled"},
         .on_change_value = [](float previous, float current){ renodx::mods::swapchain::prevent_full_screen = (current >= 0.5f); },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Spoof Fullscreen State
     new renodx::utils::settings::Setting{
@@ -281,6 +305,7 @@ renodx::utils::settings::Settings settings = {
             }
             LogInfo(oss.str().c_str());
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Spoof Window Focus
     new renodx::utils::settings::Setting{
@@ -305,6 +330,7 @@ renodx::utils::settings::Settings settings = {
             }
             LogInfo(oss.str().c_str());
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 
     // Suppress Alt-Tab
@@ -326,6 +352,7 @@ renodx::utils::settings::Settings settings = {
             // Update all Alt suppression methods
             UpdateAltSuppressionMethods();
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Prevent Windows Minimize
     new renodx::utils::settings::Setting{
@@ -350,6 +377,7 @@ renodx::utils::settings::Settings settings = {
                 UninstallMinimizeHook();
             }
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 
     // Minimize Window
@@ -378,6 +406,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 
     // Maximize Window
@@ -406,6 +435,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 
     // Restore Window
@@ -434,6 +464,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 
     // Make 720p Window
@@ -477,6 +508,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 
     // Make 1080p Window
@@ -520,11 +552,13 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 
     // NVAPI Fullscreen Prevention
     new renodx::utils::settings::Setting{
         .key = "nvapi_fullscreen_prevention",
+        .binding = &s_nvapi_fullscreen_prevention,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "NVAPI Fullscreen Prevention",
@@ -646,6 +680,7 @@ renodx::utils::settings::Settings settings = {
             
             return false;
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 
     // NVAPI Debug Button
@@ -710,6 +745,7 @@ renodx::utils::settings::Settings settings = {
             
             return false;
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 
     // DXGI composition/backbuffer info (text only) — placed at bottom
@@ -816,6 +852,7 @@ renodx::utils::settings::Settings settings = {
           
           return false;
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Independent Flip failure reasons (text only)
     new renodx::utils::settings::Setting{
@@ -867,16 +904,45 @@ renodx::utils::settings::Settings settings = {
           
           return false;
         },
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
     // Fix HDR10 Colorspace
     new renodx::utils::settings::Setting{
         .key = "FixHDR10Colorspace",
         .binding = &s_fix_hdr10_colorspace,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Fix HDR10 Colorspace",
         .section = "Display",
         .tooltip = "Automatically fix HDR10 colorspace when swapchain format is RGB10A2 and colorspace is currently sRGB. Only works when the game is using sRGB colorspace.",
         .labels = {"Off", "On"},
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+    // Window position (X, Y coordinates)
+    new renodx::utils::settings::Setting{
+        .key = "WindowPosX",
+        .binding = &s_windowed_pos_x,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Window Position X",
+        .section = "Display",
+        .tooltip = "X coordinate for window positioning (relative to target monitor).",
+        .min = -10000.f,
+        .max = 10000.f,
+        .format = "%d px",
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+    },
+    new renodx::utils::settings::Setting{
+        .key = "WindowPosY",
+        .binding = &s_windowed_pos_y,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Window Position Y",
+        .section = "Display",
+        .tooltip = "Y coordinate for window positioning (relative to target monitor).",
+        .min = -10000.f,
+        .max = 10000.f,
+        .format = "%d px",
+        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
     },
 };

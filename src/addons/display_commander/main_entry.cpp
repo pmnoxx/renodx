@@ -1,7 +1,7 @@
 #include "addon.hpp"
 
-// Include the UI settings to get the settings vector
-#include "ui_settings.cpp"
+// Include the UI settings header to get the settings vector declaration
+#include "ui_settings.hpp"
 
 BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   switch (fdw_reason) {
@@ -114,4 +114,17 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   }
 
   return TRUE;
+}
+
+// Comprehensive Alt suppression management
+void UpdateAltSuppressionMethods() {
+    // Always install/uninstall the main hook based on the main setting
+    if (s_suppress_alt_tab >= 0.5f) {
+        InstallAltTabHook();
+        LogInfo("Alt-Tab suppression hook installed");
+    } else {
+        // Uninstall all methods when main setting is disabled
+        UninstallAltTabHook();
+        LogInfo("Alt-Tab suppression hook uninstalled");
+    }
 }

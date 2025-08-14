@@ -99,7 +99,7 @@ static std::filesystem::path GetCurrentWorkingPath() {
   return std::filesystem::current_path();
 }
 
-std::map<std::string, std::string> GetEnvironmentVariables() {
+inline std::map<std::string, std::string> GetEnvironmentVariables() {
   std::map<std::string, std::string> env_map;
 
 #ifdef WIN32

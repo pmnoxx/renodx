@@ -25,6 +25,7 @@
 #include "../../utils/swapchain.hpp"
 #include "../../mods/swapchain.hpp"
 #include "utils.hpp"
+#include "nvapi_fullscreen_prevention.hpp"
 
 // WASAPI per-app volume control
 #include <mmdeviceapi.h>
@@ -92,6 +93,9 @@ struct IndependentFlipFailures {
 // Note: AspectRatio and MonitorInfo structs are defined in utils.hpp
 
 // Global variables (extern declarations)
+// UI mode (0 = Basic, 1 = Developer)
+extern float s_ui_mode;
+
 extern float s_auto_apply_enabled;
 extern float s_auto_apply_delay_sec;
 extern float s_auto_apply_init_delay_sec;
@@ -117,6 +121,7 @@ extern float s_mute_in_background;
 extern float s_audio_volume_percent;
 extern float s_audio_mute;
 extern float s_fps_limit_background;
+extern float s_fps_limit;
 extern float s_target_monitor_index;
 extern float s_dxgi_composition_state;
 extern float s_suppress_alt_tab;
