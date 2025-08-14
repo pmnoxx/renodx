@@ -351,6 +351,176 @@ renodx::utils::settings::Settings settings = {
         },
     },
 
+    // Minimize Window
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Minimize Window",
+        .section = "Display",
+        .tooltip = "Minimize the current game window. Useful for testing window management.",
+        .on_click = []() {
+            std::thread([](){
+                HWND hwnd = g_last_swapchain_hwnd.load();
+                if (hwnd == nullptr) hwnd = GetForegroundWindow();
+                if (hwnd == nullptr) {
+                    LogWarn("Minimize Window: no window handle available");
+                    return;
+                }
+                LogDebug("Minimize Window button pressed (bg thread)");
+                if (ShowWindow(hwnd, SW_MINIMIZE)) {
+                    LogInfo("Window minimized successfully");
+                } else {
+                    DWORD error = GetLastError();
+                    std::ostringstream oss;
+                    oss << "Failed to minimize window. Error: " << error;
+                    LogWarn(oss.str().c_str());
+                }
+            }).detach();
+            return false;
+        },
+    },
+
+    // Maximize Window
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Maximize Window",
+        .section = "Display",
+        .tooltip = "Maximize the current game window. Useful for testing window management.",
+        .on_click = []() {
+            std::thread([](){
+                HWND hwnd = g_last_swapchain_hwnd.load();
+                if (hwnd == nullptr) hwnd = GetForegroundWindow();
+                if (hwnd == nullptr) {
+                    LogWarn("Maximize Window: no window handle available");
+                    return;
+                }
+                LogDebug("Maximize Window button pressed (bg thread)");
+                if (ShowWindow(hwnd, SW_MAXIMIZE)) {
+                    LogInfo("Window maximized successfully");
+                } else {
+                    DWORD error = GetLastError();
+                    std::ostringstream oss;
+                    oss << "Failed to maximize window. Error: " << error;
+                    LogWarn(oss.str().c_str());
+                }
+            }).detach();
+            return false;
+        },
+    },
+
+    // Restore Window
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Restore Window",
+        .section = "Display",
+        .tooltip = "Restore the current game window to normal size. Useful for testing window management.",
+        .on_click = []() {
+            std::thread([](){
+                HWND hwnd = g_last_swapchain_hwnd.load();
+                if (hwnd == nullptr) hwnd = GetForegroundWindow();
+                if (hwnd == nullptr) {
+                    LogWarn("Restore Window: no window handle available");
+                    return;
+                }
+                LogDebug("Restore Window button pressed (bg thread)");
+                if (ShowWindow(hwnd, SW_RESTORE)) {
+                    LogInfo("Window restored successfully");
+                } else {
+                    DWORD error = GetLastError();
+                    std::ostringstream oss;
+                    oss << "Failed to restore window. Error: " << error;
+                    LogWarn(oss.str().c_str());
+                }
+            }).detach();
+            return false;
+        },
+    },
+
+    // Make 720p Window
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Make 720p Window",
+        .section = "Display",
+        .tooltip = "Quickly set window to 1280x720 (720p) resolution.",
+        .on_click = []() {
+            std::thread([](){
+                HWND hwnd = g_last_swapchain_hwnd.load();
+                if (hwnd == nullptr) hwnd = GetForegroundWindow();
+                if (hwnd == nullptr) {
+                    LogWarn("Make 720p Window: no window handle available");
+                    return;
+                }
+                LogDebug("Make 720p Window button pressed (bg thread)");
+                
+                // Set the desired size to 720p
+                int want_w = 1280;
+                int want_h = 720;
+                
+                // Get current window position
+                RECT wr{};
+                int pos_x = 100;
+                int pos_y = 100;
+                if (GetWindowRect(hwnd, &wr) != FALSE) {
+                    pos_x = wr.left;
+                    pos_y = wr.top;
+                }
+                
+                // Apply 720p window with current style preference
+                WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
+                ApplyWindowChange(
+                    hwnd,
+                    /*do_resize=*/true, want_w, want_h,
+                    /*do_move=*/true, pos_x, pos_y,
+                    mode);
+                
+                LogInfo("720p window applied successfully");
+            }).detach();
+            return false;
+        },
+    },
+
+    // Make 1080p Window
+    new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Make 1080p Window",
+        .section = "Display",
+        .tooltip = "Quickly set window to 1920x1080 (1080p) resolution.",
+        .on_click = []() {
+            std::thread([](){
+                HWND hwnd = g_last_swapchain_hwnd.load();
+                if (hwnd == nullptr) hwnd = GetForegroundWindow();
+                if (hwnd == nullptr) {
+                    LogWarn("Make 1080p Window: no window handle available");
+                    return;
+                }
+                LogDebug("Make 1080p Window button pressed (bg thread)");
+                
+                // Set the desired size to 1080p
+                int want_w = 1920;
+                int want_h = 1080;
+                
+                // Get current window position
+                RECT wr{};
+                int pos_x = 100;
+                int pos_y = 100;
+                if (GetWindowRect(hwnd, &wr) != FALSE) {
+                    pos_x = wr.left;
+                    pos_y = wr.top;
+                }
+                
+                // Apply 1080p window with current style preference
+                WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
+                ApplyWindowChange(
+                    hwnd,
+                    /*do_resize=*/true, want_w, want_h,
+                    /*do_move=*/true, pos_x, pos_y,
+                    mode);
+                
+                LogInfo("1080p window applied successfully");
+            }).detach();
+            return false;
+        },
+    },
+
     // DXGI composition/backbuffer info (text only) — placed at bottom
     new renodx::utils::settings::Setting{
         .key = "DxgiInfo",
