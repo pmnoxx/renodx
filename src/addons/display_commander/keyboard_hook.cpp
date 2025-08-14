@@ -104,19 +104,26 @@ LRESULT CALLBACK MinimizeWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
             }
         }
     }
-    // Remove minimize styles/commands instead of preventing via timers
+    // Remove minimize styles/commands with argument modification
     if (uMsg == WM_NCCALCSIZE) {
-        // Strip minimize/maximize buttons from style once after subclassing
-        LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
-        LONG_PTR exstyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-        LONG_PTR new_style = style & ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
-        if (new_style != style) {
-            SetWindowLongPtr(hwnd, GWL_STYLE, new_style);
-            SetWindowLongPtr(hwnd, GWL_EXSTYLE, exstyle);
-            SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
-                         SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOACTIVATE);
-            LogDebug("Stripped minimize/maximize style bits");
+        // No direct RemoveWindowBorderLocal here; prefer argument/flag modification elsewhere
+    }
+    if (uMsg == WM_STYLECHANGING) {
+        // Modify style arguments before they are applied
+        STYLESTRUCT* ss = reinterpret_cast<STYLESTRUCT*>(lParam);
+        if (wParam == GWL_STYLE && ss != nullptr) {
+            // Always strip minimize to avoid minimize action; also strip maximize
+            ss->styleNew &= ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+            // Respect Remove Top Bar: strip caption/thickframe/sysmenu when enabled
+            if (s_remove_top_bar >= 0.5f) {
+                ss->styleNew &= ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU);
+            }
+        } else if (wParam == GWL_EXSTYLE && ss != nullptr) {
+            if (s_remove_top_bar >= 0.5f) {
+                ss->styleNew &= ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
+            }
         }
+        return 0;
     }
     if (uMsg == WM_SYSCOMMAND) {
         UINT cmd = (UINT)(wParam & 0xFFF0);
@@ -133,13 +140,18 @@ LRESULT CALLBACK MinimizeWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         return 0;
     }
     
-    // Reject off-screen minimize geometry
+    // Reject off-screen minimize geometry; ensure frame changed when removing top bar
     if (uMsg == WM_WINDOWPOSCHANGING) {
-        WINDOWPOS* wp = (WINDOWPOS*)lParam;
-        if (wp && (wp->x < -10000 || wp->y < -10000 || wp->cx < 10 || wp->cy < 10)) {
-            LogDebug("Rejected minimize geometry in WM_WINDOWPOSCHANGING");
-            wp->flags |= SWP_NOSIZE | SWP_NOMOVE;
-            return 0;
+        WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
+        if (wp != nullptr) {
+            if (wp->x < -10000 || wp->y < -10000 || wp->cx < 10 || wp->cy < 10) {
+                LogDebug("Rejected minimize geometry in WM_WINDOWPOSCHANGING");
+                wp->flags |= (SWP_NOSIZE | SWP_NOMOVE);
+                return 0;
+            }
+            if (s_remove_top_bar >= 0.5f) {
+                wp->flags |= SWP_FRAMECHANGED;
+            }
         }
     }
     
