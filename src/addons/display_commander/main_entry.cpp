@@ -81,9 +81,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       // Clean up Reflex hooks if they're installed
       UninstallReflexHooks();
       
-      // TEMPORARILY DISABLED: DXGI Device Info Manager to debug silent crash
       // Clean up DXGI Device Info Manager
-      // g_dxgiDeviceInfoManager.reset();
+      g_dxgiDeviceInfoManager.reset();
       
       reshade::unregister_event<reshade::addon_event::present>(OnPresentUpdate);
       reshade::unregister_event<reshade::addon_event::set_fullscreen_state>(
@@ -141,14 +140,13 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       std::thread(RunBackgroundNvapiHdrMonitor).detach();
     }
 
-    // TEMPORARILY DISABLED: DXGI Device Info Manager to debug silent crash
     // Initialize DXGI Device Info Manager
-    // g_dxgiDeviceInfoManager = std::make_unique<DXGIDeviceInfoManager>();
-    // if (g_dxgiDeviceInfoManager->Initialize()) {
-    //   LogInfo("DXGI Device Info Manager initialized successfully");
-    // } else {
-    //   LogWarn("Failed to initialize DXGI Device Info Manager");
-    // }
+    g_dxgiDeviceInfoManager = std::make_unique<DXGIDeviceInfoManager>();
+    if (g_dxgiDeviceInfoManager->Initialize()) {
+      LogInfo("DXGI Device Info Manager initialized successfully");
+    } else {
+      LogWarn("Failed to initialize DXGI Device Info Manager");
+    }
   }
 
   return TRUE;
