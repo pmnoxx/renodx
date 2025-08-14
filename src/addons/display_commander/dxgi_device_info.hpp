@@ -35,10 +35,10 @@ public:
 private:
     bool EnumerateAdapters();
     bool EnumerateOutputs(IDXGIAdapter* adapter, DXGIAdapterInfo& adapter_info);
-    bool ResetHDRMetadataForOutput(const DXGIOutputInfo& output, float max_cll);
+    bool ResetHDRMetadataForOutput(const DXGIOutputInfo& output, float max_cll, IDXGIAdapter* adapter);
+    bool GetAdapterFromReShadeDevice();
 
 private:
-    Microsoft::WRL::ComPtr<IDXGIFactory> factory_;
     std::vector<DXGIAdapterInfo> adapters_;
     bool initialized_;
 };

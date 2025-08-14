@@ -3,6 +3,9 @@
 #include <dxgi1_6.h>
 #include <d3d11.h>
 
+// External declarations
+extern std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr;
+
 #pragma comment (lib, "dxgi.lib")
 #pragma comment (lib, "d3d11.lib")
 
@@ -21,16 +24,9 @@ bool DXGIDeviceInfoManager::Initialize() {
         return true;
     }
 
-    // Create DXGI factory
-    HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&factory_));
-    if (FAILED(hr)) {
-        LogWarn("Failed to create DXGI factory");
-        return false;
-    }
-
-    // Enumerate adapters
-    if (!EnumerateAdapters()) {
-        LogWarn("Failed to enumerate DXGI adapters");
+    // Get adapter information from ReShade's existing device
+    if (!GetAdapterFromReShadeDevice()) {
+        LogWarn("Failed to get adapter information from ReShade device");
         return false;
     }
 
@@ -45,52 +41,92 @@ void DXGIDeviceInfoManager::Refresh() {
     }
 
     adapters_.clear();
-    EnumerateAdapters();
+    GetAdapterFromReShadeDevice();
     LogDebug("DXGI device information refreshed");
 }
 
 void DXGIDeviceInfoManager::Cleanup() {
     adapters_.clear();
-    factory_.Reset();
     initialized_ = false;
 }
 
-bool DXGIDeviceInfoManager::EnumerateAdapters() {
-    if (!factory_) {
+bool DXGIDeviceInfoManager::GetAdapterFromReShadeDevice() {
+    // Get the current swapchain from ReShade
+    auto* swapchain = g_last_swapchain_ptr.load();
+    if (!swapchain) {
+        LogWarn("No ReShade swapchain available");
         return false;
     }
 
-    int adapter_idx = 0;
-    Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+    // Get the device from the swapchain
+    auto* device = swapchain->get_device();
+    if (!device) {
+        LogWarn("No ReShade device available");
+        return false;
+    }
 
-    while (SUCCEEDED(factory_->EnumAdapters(adapter_idx++, &adapter))) {
+    // Get the native DXGI device interface
+    ID3D11Device* d3d11_device = reinterpret_cast<ID3D11Device*>(device->get_native());
+    if (!d3d11_device) {
+        LogWarn("Failed to get native D3D11 device");
+        return false;
+    }
+
+    // Get the DXGI adapter from the D3D11 device
+    Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+    HRESULT hr = d3d11_device->QueryInterface(IID_PPV_ARGS(&adapter));
+    if (FAILED(hr)) {
+        LogWarn("Failed to get DXGI adapter from D3D11 device");
+        return false;
+    }
+
+    // Get adapter description
+    DXGI_ADAPTER_DESC desc = {};
+    if (SUCCEEDED(adapter->GetDesc(&desc))) {
         DXGIAdapterInfo adapter_info = {};
         
-        // Get adapter description
-        DXGI_ADAPTER_DESC desc = {};
-        if (SUCCEEDED(adapter->GetDesc(&desc))) {
-            // Convert wide string to UTF-8
-            int size_needed = WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1, nullptr, 0, nullptr, nullptr);
-            if (size_needed > 0) {
-                std::string description(size_needed - 1, 0);
-                WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1, &description[0], size_needed, nullptr, nullptr);
-                adapter_info.description = description;
+        // Convert wide string to UTF-8
+        int size_needed = WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1, nullptr, 0, nullptr, nullptr);
+        if (size_needed > 0) {
+            std::string description(size_needed - 1, 0);
+            WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1, &description[0], size_needed, nullptr, nullptr);
+            adapter_info.description = description;
+        }
+        
+        adapter_info.name = "Primary Adapter";
+        adapter_info.dedicated_video_memory = desc.DedicatedVideoMemory;
+        adapter_info.dedicated_system_memory = desc.DedicatedSystemMemory;
+        adapter_info.shared_system_memory = desc.SharedSystemMemory;
+        adapter_info.adapter_luid = desc.AdapterLuid;
+        adapter_info.is_software = (desc.DedicatedVideoMemory == 0);
+
+        // Get additional device properties from ReShade
+        uint32_t vendor_id = 0, device_id = 0, api_version = 0, driver_version = 0;
+        char description_buffer[256] = {};
+        
+        if (device->get_property(reshade::api::device_properties::vendor_id, &vendor_id)) {
+            // Store vendor ID if needed
+        }
+        if (device->get_property(reshade::api::device_properties::device_id, &device_id)) {
+            // Store device ID if needed
+        }
+        if (device->get_property(reshade::api::device_properties::api_version, &api_version)) {
+            // Store API version if needed
+        }
+        if (device->get_property(reshade::api::device_properties::driver_version, &driver_version)) {
+            // Store driver version if needed
+        }
+        if (device->get_property(reshade::api::device_properties::description, description_buffer)) {
+            // Use ReShade's description if available
+            if (strlen(description_buffer) > 0) {
+                adapter_info.description = description_buffer;
             }
-            
-            adapter_info.name = "Adapter " + std::to_string(adapter_idx - 1);
-            adapter_info.dedicated_video_memory = desc.DedicatedVideoMemory;
-            adapter_info.dedicated_system_memory = desc.DedicatedSystemMemory;
-            adapter_info.shared_system_memory = desc.SharedSystemMemory;
-            adapter_info.adapter_luid = desc.AdapterLuid;
-            // Note: DXGI_ADAPTER_DESC doesn't have Flags member, so we'll set this based on other criteria
-            adapter_info.is_software = (desc.DedicatedVideoMemory == 0);
         }
 
         // Enumerate outputs for this adapter
         EnumerateOutputs(adapter.Get(), adapter_info);
         
         adapters_.push_back(std::move(adapter_info));
-        adapter = nullptr; // Reset for next iteration
     }
 
     return !adapters_.empty();
@@ -187,16 +223,29 @@ bool DXGIDeviceInfoManager::EnumerateOutputs(IDXGIAdapter* adapter, DXGIAdapterI
 }
 
 bool DXGIDeviceInfoManager::ResetHDRMetadata(const std::string& output_device_name, float max_cll) {
-    if (!initialized_ || !factory_) {
+    if (!initialized_) {
         return false;
     }
 
     // Find the output with the specified device name
-    for (const auto& adapter : adapters_) {
-        for (const auto& output : adapter.outputs) {
+    for (const auto& adapter_info : adapters_) {
+        for (const auto& output : adapter_info.outputs) {
             if (output.device_name == output_device_name && output.supports_hdr10) {
-                // Create a temporary swapchain to reset HDR metadata
-                return ResetHDRMetadataForOutput(output, max_cll);
+                // Get the DXGI adapter from ReShade device for HDR reset
+                auto* swapchain = g_last_swapchain_ptr.load();
+                if (swapchain) {
+                    auto* device = swapchain->get_device();
+                    if (device) {
+                        ID3D11Device* d3d11_device = reinterpret_cast<ID3D11Device*>(device->get_native());
+                        if (d3d11_device) {
+                            Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+                            if (SUCCEEDED(d3d11_device->QueryInterface(IID_PPV_ARGS(&adapter)))) {
+                                return ResetHDRMetadataForOutput(output, max_cll, adapter.Get());
+                            }
+                        }
+                    }
+                }
+                return false;
             }
         }
     }
@@ -205,7 +254,7 @@ bool DXGIDeviceInfoManager::ResetHDRMetadata(const std::string& output_device_na
     return false;
 }
 
-bool DXGIDeviceInfoManager::ResetHDRMetadataForOutput(const DXGIOutputInfo& output, float max_cll) {
+bool DXGIDeviceInfoManager::ResetHDRMetadataForOutput(const DXGIOutputInfo& output, float max_cll, IDXGIAdapter* adapter) {
     // Create a temporary window for the swapchain
     int width = output.desktop_coordinates.right - output.desktop_coordinates.left;
     int height = output.desktop_coordinates.bottom - output.desktop_coordinates.top;
@@ -255,7 +304,12 @@ bool DXGIDeviceInfoManager::ResetHDRMetadataForOutput(const DXGIOutputInfo& outp
             swap_desc.BufferUsage = DXGI_USAGE_BACK_BUFFER;
             swap_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
             
-            hr = factory_->CreateSwapChain(device.Get(), &swap_desc, &swapchain);
+            // Get the native DXGI factory from the adapter
+            Microsoft::WRL::ComPtr<IDXGIFactory> factory;
+            hr = adapter->GetParent(IID_PPV_ARGS(&factory));
+            if (SUCCEEDED(hr)) {
+                hr = factory->CreateSwapChain(device.Get(), &swap_desc, &swapchain);
+            }
             
             if (SUCCEEDED(hr)) {
                 // Get IDXGISwapChain4 for HDR metadata
