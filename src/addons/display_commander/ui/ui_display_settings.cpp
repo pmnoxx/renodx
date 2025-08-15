@@ -21,6 +21,11 @@ extern float s_move_to_zero_if_out;
 extern float s_staggered_resolution_notifications;
 extern float s_suppress_maximize;
 
+// Continuous monitoring
+extern float s_continuous_monitoring_enabled;
+extern void StartContinuousMonitoring();
+extern void StopContinuousMonitoring();
+
 // External declarations for global functions
 extern void StartBorderlessStyleTimer();
 extern void StopBorderlessStyleTimer();
@@ -265,6 +270,28 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
             } else {
                 // TODO: Fix namespace issues - UninstallResizeEnforcerHook();
                 LogInfo("Resize enforcer hook stopped due to setting change");
+            }
+        },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+    });
+
+    // Continuous Monitoring
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "ContinuousMonitoring",
+        .binding = &s_continuous_monitoring_enabled,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Continuous Monitoring",
+        .section = "Display",
+        .tooltip = "Continuously monitor and automatically fix window position, size, and style every second.",
+        .labels = {"Disabled", "Enabled"},
+        .on_change_value = [](float previous, float current) {
+            if (current >= 0.5f) {
+                StartContinuousMonitoring();
+                LogInfo("Continuous monitoring started due to setting change");
+            } else {
+                StopContinuousMonitoring();
+                LogInfo("Continuous monitoring stopped due to setting change");
             }
         },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode

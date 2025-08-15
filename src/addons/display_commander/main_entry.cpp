@@ -6,6 +6,10 @@
 // Include keyboard hook functions
 #include "keyboard_hook.hpp"
 
+// Forward declarations for continuous monitoring functions
+void StartContinuousMonitoring();
+void StopContinuousMonitoring();
+
 // External declarations for settings
 extern float s_remove_top_bar;
 
@@ -83,6 +87,9 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       // Clean up resize enforcer if it's installed
       UninstallResizeEnforcerHook();
       
+      // Clean up continuous monitoring if it's running
+      StopContinuousMonitoring();
+      
       // Clean up window message hook if it's installed
       UninstallWindowMessageHook();
       
@@ -118,6 +125,12 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
     // Check if resize enforcement should be enabled
     if (s_enforce_desired_window >= 0.5f) {
       InstallResizeEnforcerHook();
+    }
+    
+    // Check if continuous monitoring should be enabled
+    if (s_continuous_monitoring_enabled >= 0.5f) {
+      StartContinuousMonitoring();
+      LogInfo("Continuous monitoring started proactively");
     }
     
     // Install window message hook for window creation and lifecycle monitoring

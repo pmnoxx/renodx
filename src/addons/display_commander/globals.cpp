@@ -92,6 +92,11 @@ std::unique_ptr<ReflexManager> g_reflexManager;
 // Global flag for Reflex settings changes
 std::atomic<bool> g_reflex_settings_changed{false};
 
+// Continuous monitoring system
+float s_continuous_monitoring_enabled = 0.f;
+std::atomic<bool> g_monitoring_thread_running{false};
+std::thread g_monitoring_thread;
+
 // Global DXGI Device Info Manager instance
 std::unique_ptr<DXGIDeviceInfoManager> g_dxgiDeviceInfoManager;
 

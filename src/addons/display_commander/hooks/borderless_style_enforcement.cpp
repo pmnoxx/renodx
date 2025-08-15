@@ -45,7 +45,7 @@ void ApplyBorderlessStylesDelayed() {
         SetWindowLongPtr(hwnd, GWL_EXSTYLE, new_ex_style);
         
         // Force the window to update with new styles
-        SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+   //     SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
         
         // Verify the styles were applied
         LONG_PTR verify_style = GetWindowLongPtr(hwnd, GWL_STYLE);
@@ -166,7 +166,7 @@ void ApplyBorderlessStylesToAllWindows() {
                     SetWindowLongPtr(hwnd, GWL_EXSTYLE, new_ex_style);
                     
                     // Force the window to update with new styles
-                    SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+                  //  SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
                     
                     LogDebug("Reflex: Applied borderless styles to top-level window (delayed)");
                 }).detach();

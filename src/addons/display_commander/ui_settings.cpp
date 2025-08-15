@@ -12,6 +12,10 @@ extern float s_staggered_resolution_notifications;
 extern float s_suppress_maximize;
 extern float s_reflex_debug_output;
 
+// Continuous monitoring function declarations
+extern void StartContinuousMonitoring();
+extern void StopContinuousMonitoring();
+
 // Helper functions for tab visibility
 inline bool is_basic_tab(float ui_mode) { return ui_mode < 0.5f; }
 inline bool is_developer_tab(float ui_mode) { return ui_mode >= 0.5f && ui_mode < 2.0f; }
@@ -67,6 +71,25 @@ renodx::utils::settings::Settings settings = {
         .max = 60.f,
         .format = "%d s",
         .is_visible = [](){ return is_developer_tab(s_ui_mode); },
+    },
+    // Continuous monitoring toggle
+    new renodx::utils::settings::Setting{
+        .key = "ContinuousMonitoring",
+        .binding = &s_continuous_monitoring_enabled,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Continuous Monitoring",
+        .section = "Display",
+        .tooltip = "Continuously monitor and automatically fix window position, size, and style every second.",
+        .labels = {"Off", "On"},
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .on_change_value = [](float previous, float current) {
+            if (current >= 0.5f) {
+                StartContinuousMonitoring();
+            } else {
+                StopContinuousMonitoring();
+            }
+        },
     },
     // Window width preset slider with labels
     new renodx::utils::settings::Setting{

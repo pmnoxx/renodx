@@ -83,6 +83,11 @@ void SetReflexSleepMode(reshade::api::swapchain* swapchain);
 // Global flags for Reflex management
 extern std::atomic<bool> g_reflex_settings_changed;
 
+// Continuous monitoring system
+extern float s_continuous_monitoring_enabled;
+extern std::atomic<bool> g_monitoring_thread_running;
+extern std::thread g_monitoring_thread;
+
 // Structs
 struct IndependentFlipFailures {
   std::atomic<bool> swapchain_null{false};
@@ -192,6 +197,12 @@ void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_h
 bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h);
 void ScheduleAutoApplyOnInit(HWND hwnd);
 void LogIndependentFlipConditions(reshade::api::swapchain* swapchain);
+
+// Continuous monitoring functions
+void StartContinuousMonitoring();
+void StopContinuousMonitoring();
+void ContinuousMonitoringThread();
+bool NeedsWindowAdjustment(HWND hwnd, int& out_width, int& out_height, int& out_pos_x, int& out_pos_y, WindowStyleMode& out_style_mode);
 
 // Swapchain event handlers
 void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize);

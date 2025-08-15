@@ -40,7 +40,7 @@ LRESULT CALLBACK MinimizeWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
                 if (need_resize) {
                     g_in_resize_enforce = true;
                     WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
-                    ApplyWindowChange(hwnd, /*do_resize=*/true, want_w, want_h, /*do_move=*/true, pos_x, pos_y, mode, "window_subclassing_hook_resize_enforce");
+           //         ApplyWindowChange(hwnd, /*do_resize=*/true, want_w, want_h, /*do_move=*/true, pos_x, pos_y, mode, "window_subclassing_hook_resize_enforce");
                     g_in_resize_enforce = false;
                 }
             }).detach();
@@ -130,7 +130,7 @@ LRESULT CALLBACK ResizeEnforcerWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
                 // Map target pos to monitor origin handled in ApplyWindowChange
 
                 if (need_resize || need_move) {
-                    ApplyWindowChange(hwnd, /*do_resize=*/true, want_w, want_h, /*do_move=*/true, pos_x, pos_y, mode, "resize_enforcer_wndproc_delayed");
+            //        ApplyWindowChange(hwnd, /*do_resize=*/true, want_w, want_h, /*do_move=*/true, pos_x, pos_y, mode, "resize_enforcer_wndproc_delayed");
                 }
             }).detach();
             
