@@ -255,7 +255,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     // Remove top bar (title bar, borders)
     new renodx::utils::settings::Setting{
