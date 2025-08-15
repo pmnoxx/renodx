@@ -1,5 +1,5 @@
 #include "addon.hpp"
-#include "reflex_management.hpp"
+#include "reflex/reflex_management.hpp"
 
 // Global variables
 // UI mode (0 = Basic, 1 = Developer)

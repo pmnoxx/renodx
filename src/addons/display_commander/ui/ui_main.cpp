@@ -9,7 +9,7 @@
 #include "ui_nvapi_settings.hpp"
 #include "ui_device_info.hpp"
 #include "ui_window_info.hpp"
-#include "ui_reflex_settings.hpp"
+#include "../reflex/ui_reflex_settings.hpp"
 #include "ui_latency_display.hpp"
 #include "ui_debug_settings.hpp"
 #include "ui_swapchain_info.hpp"

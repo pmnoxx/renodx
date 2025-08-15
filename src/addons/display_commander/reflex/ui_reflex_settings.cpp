@@ -1,4 +1,4 @@
-#include "ui_common.hpp"
+#include "../ui/ui_common.hpp"
 #include "../addon.hpp"
 
 // External declarations for Reflex settings
