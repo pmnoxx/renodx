@@ -37,7 +37,7 @@ renodx::utils::settings::Settings settings = {
         .key = "AutoApply",
         .binding = &s_auto_apply_enabled,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
+        .default_value = 1.f,
         .label = "Auto Apply",
         .section = "Display",
         .tooltip = "Automatically apply window changes after swapchain initialization.",
@@ -262,7 +262,7 @@ renodx::utils::settings::Settings settings = {
         .key = "RemoveTopBar",
         .binding = &s_remove_top_bar,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
+        .default_value = 1.f,
         .label = "Remove Top Bar",
         .section = "Display",
         .tooltip = "Remove the window title bar and borders for a cleaner look.",
@@ -273,7 +273,7 @@ renodx::utils::settings::Settings settings = {
             oss << "Remove top bar setting changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
             LogInfo(oss.str().c_str());
         },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     // Target Monitor
     new renodx::utils::settings::Setting{
@@ -285,7 +285,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Choose which monitor to apply size/pos to. 'Auto' uses the current window monitor.",
         .labels = MakeMonitorLabels(),
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     // Window alignment when repositioning is needed
     new renodx::utils::settings::Setting{
@@ -297,7 +297,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Choose how to align the window when repositioning is needed. 1=Top Left, 2=Top Right, 3=Bottom Left, 4=Bottom Right, 5=Center.",
         .labels = {"None", "Top Left", "Top Right", "Bottom Left", "Bottom Right", "Center"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     // Force Borderless (global)
     new renodx::utils::settings::Setting{
