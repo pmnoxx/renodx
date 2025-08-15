@@ -1,4 +1,6 @@
+#include "ui_general_settings.hpp"
 #include "ui_common.hpp"
+#include "../../../utils/settings.hpp"
 
 // External declarations for general settings
 extern float s_ui_mode;
@@ -31,7 +33,7 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .section = "Display",
         .tooltip = "Automatically apply window changes after swapchain initialization.",
         .labels = {"Off", "On"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     });
 
     settings.push_back(new renodx::utils::settings::Setting{
@@ -45,7 +47,7 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .min = 1.f,
         .max = 60.f,
         .format = "%d s",
-        .is_visible = [](){ return is_developer_tab(s_ui_mode); },
+        .is_visible = [](){ return is_basic_tab(s_ui_mode); },
     });
 
     settings.push_back(new renodx::utils::settings::Setting{
@@ -62,24 +64,24 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .is_visible = [](){ return is_developer_tab(s_ui_mode); },
     });
 
-    // Single-time window initialization setting
+    // Continuous monitoring toggle
     settings.push_back(new renodx::utils::settings::Setting{
-        .key = "SingleTimeInit",
-        .binding = nullptr,
+        .key = "ContinuousMonitoring",
+        .binding = &s_continuous_monitoring_enabled,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f, // Enabled by default
-        .label = "Single-Time Window Init",
+        .default_value = 0.f,
+        .label = "Continuous Monitoring",
         .section = "Display",
-        .tooltip = "Apply window styles and size once after application starts. This ensures proper window appearance even if hooks fail.",
+        .tooltip = "Continuously monitor and automatically fix window position, size, and style every second.",
         .labels = {"Off", "On"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
         .on_change_value = [](float previous, float current) {
             if (current >= 0.5f) {
-                LogInfo("Single-time window initialization enabled");
+                StartContinuousMonitoring();
             } else {
-                LogInfo("Single-time window initialization disabled");
+                StopContinuousMonitoring();
             }
-        }
+        },
     });
 }
 
