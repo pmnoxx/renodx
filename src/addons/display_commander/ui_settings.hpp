@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../utils/settings.hpp"
-
-// Function to add UI settings to an existing settings vector
-void AddUISettings(renodx::utils::settings::Settings& settings);
+namespace renodx::ui {
+    // All UI sections have been migrated to dedicated components
+    // This header is kept for compatibility but is no longer used
+} // namespace renodx::ui
