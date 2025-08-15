@@ -19,7 +19,7 @@ float s_remove_top_bar = 0.f;
 float s_resize_mode = 0.f;
 float s_aspect_index = 3.f; // 16:9
 
-// Window alignment when repositioning is needed (0 = None, 1 = Top Left, 2 = Top Right, 3 = Bottom Left, 4 = Bottom Right)
+// Window alignment when repositioning is needed (0 = None, 1 = Top Left, 2 = Top Right, 3 = Bottom Left, 4 = Bottom Right, 5 = Center)
 float s_move_to_zero_if_out = 2.f; // default to top right
 float s_force_borderless = 0.f;
 

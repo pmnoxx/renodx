@@ -268,8 +268,8 @@ renodx::utils::settings::Settings settings = {
         .default_value = 2.f, // default to top right
         .label = "Alignment",
         .section = "Display",
-        .tooltip = "Choose how to align the window when repositioning is needed. 1=Top Left, 2=Top Right, 3=Bottom Left, 4=Bottom Right.",
-        .labels = {"None", "Top Left", "Top Right", "Bottom Left", "Bottom Right"},
+        .tooltip = "Choose how to align the window when repositioning is needed. 1=Top Left, 2=Top Right, 3=Bottom Left, 4=Bottom Right, 5=Center.",
+        .labels = {"None", "Top Left", "Top Right", "Bottom Left", "Bottom Right", "Center"},
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Force Borderless (global)

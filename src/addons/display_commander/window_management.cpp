@@ -1,6 +1,7 @@
 #include "addon.hpp"
 #include "utils.hpp"
 #include <thread>
+#include <algorithm>
 
 // Forward declaration
 void ComputeDesiredSize(int& out_w, int& out_h);
@@ -166,38 +167,51 @@ void ApplyWindowChange(HWND hwnd,
 
   bool repositioned = false;
   bool effective_do_move = do_move;
+  // Always apply alignment when enabled, not just when out of bounds
   if (s_move_to_zero_if_out > 0) { // 0 = None, 1+ = different alignment options
-    // First check against chosen monitor
+    // Get monitor bounds
     const RECT& mr = mi.rcMonitor;
-    bool out_of_bounds = (target_x < mr.left) || (target_y < mr.top) ||
-                         (target_x + target_w > mr.right) || (target_y + target_h > mr.bottom);
-    if (out_of_bounds) {
-      // Apply alignment based on setting value
-      switch (static_cast<int>(s_move_to_zero_if_out)) {
-        case 1: // Top Left
-          target_x = mr.left;
-          target_y = mr.top;
-          break;
-        case 2: // Top Right
-          target_x = mr.right - target_w;
-          target_y = mr.top;
-          break;
-        case 3: // Bottom Left
-          target_x = mr.left;
-          target_y = mr.bottom - target_h;
-          break;
-        case 4: // Bottom Right
-          target_x = mr.right - target_w;
-          target_y = mr.bottom - target_h;
-          break;
-        default: // Fallback to top left
-          target_x = mr.left;
-          target_y = mr.top;
-          break;
-      }
-      repositioned = true;
-      effective_do_move = true;
+    
+    // Apply alignment based on setting value
+    switch (static_cast<int>(s_move_to_zero_if_out)) {
+      case 1: // Top Left
+        target_x = mr.left;
+        target_y = mr.top;
+        break;
+      case 2: // Top Right
+        target_x = mr.right - target_w;
+        target_y = mr.top;
+        break;
+      case 3: // Bottom Left
+        target_x = mr.left;
+        target_y = mr.bottom - target_h;
+        break;
+      case 4: // Bottom Right
+        target_x = mr.right - target_w;
+        target_y = mr.bottom - target_h;
+        break;
+      case 5: // Center
+        target_x = mr.left + (mr.right - mr.left - target_w) / 2;
+        target_y = mr.top + (mr.bottom - mr.top - target_h) / 2;
+        break;
+      default: // Fallback to top left
+        target_x = mr.left;
+        target_y = mr.top;
+        break;
     }
+    repositioned = true;
+    effective_do_move = true;
+    
+          // Check if the aligned position is still out of bounds and clamp if needed
+      bool out_of_bounds = (target_x < mr.left) || (target_y < mr.top) ||
+                           (target_x + target_w > mr.right) || (target_y + target_h > mr.bottom);
+      if (out_of_bounds) {
+        // Clamp to monitor bounds
+        if (target_x < mr.left) target_x = mr.left;
+        if (target_x + target_w > mr.right) target_x = mr.right - target_w;
+        if (target_y < mr.top) target_y = mr.top;
+        if (target_y + target_h > mr.bottom) target_y = mr.bottom - target_h;
+      }
     // As a fallback, clamp to virtual screen if still invalid
     const int vx = GetSystemMetrics(SM_XVIRTUALSCREEN);
     const int vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
@@ -223,6 +237,10 @@ void ApplyWindowChange(HWND hwnd,
         case 4: // Bottom Right
           target_x = vx + vw - target_w;
           target_y = vy + vh - target_h;
+          break;
+        case 5: // Center
+          target_x = vx + (vw - target_w) / 2;
+          target_y = vy + (vh - target_h) / 2;
           break;
         default: // Fallback to top left
           target_x = vx;
