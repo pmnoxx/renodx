@@ -10,6 +10,7 @@
 #include "ui_latency_display.hpp"
 #include "ui_debug_settings.hpp"
 #include "ui_swapchain_info.hpp"
+#include "ui_dxgi_device_info.hpp"
 #include "../ui_settings.hpp"
 #include "../settings.hpp"
 
@@ -41,6 +42,9 @@ void InitializeUISettings() {
     renodx::ui::AddLatencyDisplaySettings(settings);
     renodx::ui::AddDebugSettings(settings);
     renodx::ui::AddSwapchainInfoSettings(settings);
+    
+    // Add DXGI device info settings
+    renodx::ui::AddDxgiDeviceInfoSettings(settings);
     
     // Add UI settings
     AddUISettings(settings);

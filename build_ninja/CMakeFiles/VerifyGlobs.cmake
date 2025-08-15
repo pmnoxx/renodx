@@ -32,6 +32,7 @@ set(OLD_GLOB
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_debug_settings.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_device_info.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_display_settings.cpp"
+  "D:/repos/renodx2/src/addons/display_commander/ui/ui_dxgi_device_info.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_general_settings.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_latency_display.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_main.cpp"
