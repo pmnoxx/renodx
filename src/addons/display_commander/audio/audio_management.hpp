@@ -1,0 +1,8 @@
+#pragma once
+
+#include <windows.h>
+
+// Audio management functions
+bool SetMuteForCurrentProcess(bool mute);
+bool SetVolumeForCurrentProcess(float volume_0_100);
+void RunBackgroundAudioMonitor();

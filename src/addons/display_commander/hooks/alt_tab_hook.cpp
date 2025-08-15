@@ -1,0 +1,66 @@
+#include "alt_tab_hook.hpp"
+#include "../addon.hpp"
+#include "../utils.hpp"
+#include <sstream>
+
+// Global variables for Alt-Tab suppression
+static HHOOK g_alt_tab_hook = nullptr;
+
+// Hook procedure for Alt-Tab suppression
+LRESULT CALLBACK AltTabHookProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    if (nCode >= 0) {
+        if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
+            KBDLLHOOKSTRUCT* kbStruct = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
+            
+            // Check if Alt+Tab is pressed (Alt = VK_MENU, Tab = VK_TAB)
+            if (kbStruct->vkCode == VK_TAB && (GetAsyncKeyState(VK_MENU) & 0x8000)) {
+                // Suppress Alt+Tab by returning 1 (indicating we handled the message)
+                LogDebug("Alt+Tab suppressed by hook");
+                return 1;
+            }
+        }
+    }
+    
+    // Call the next hook in the chain
+    return CallNextHookEx(g_alt_tab_hook, nCode, wParam, lParam);
+}
+
+// Install the Alt-Tab suppression hook
+bool InstallAltTabHook() {
+    if (g_alt_tab_hook != nullptr) {
+        LogWarn("Alt-Tab hook already installed");
+        return true;
+    }
+    
+    // Install a low-level keyboard hook
+    g_alt_tab_hook = SetWindowsHookEx(WH_KEYBOARD_LL, AltTabHookProc, nullptr, 0);
+    
+    if (g_alt_tab_hook == nullptr) {
+        DWORD error = GetLastError();
+        std::ostringstream oss;
+        oss << "Failed to install Alt-Tab hook. Error: " << error;
+        LogWarn(oss.str().c_str());
+        return false;
+    }
+    
+    LogInfo("Alt-Tab suppression hook installed successfully");
+    return true;
+}
+
+// Uninstall the Alt-Tab suppression hook
+void UninstallAltTabHook() {
+    if (g_alt_tab_hook == nullptr) {
+        LogDebug("Alt-Tab hook not installed");
+        return;
+    }
+    
+    if (UnhookWindowsHookEx(g_alt_tab_hook)) {
+        g_alt_tab_hook = nullptr;
+        LogInfo("Alt-Tab suppression hook uninstalled successfully");
+    } else {
+        DWORD error = GetLastError();
+        std::ostringstream oss;
+        oss << "Failed to uninstall Alt-Tab hook. Error: " << error;
+        LogWarn(oss.str().c_str());
+    }
+}
