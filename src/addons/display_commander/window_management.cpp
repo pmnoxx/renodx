@@ -75,7 +75,7 @@ void SendStaggeredResolutionNotifications(HWND hwnd, int client_width, int clien
 void ApplyWindowChange(HWND hwnd,
                        bool do_resize, int client_width, int client_height,
                        bool do_move, int pos_x, int pos_y,
-                       WindowStyleMode style_mode) {
+                       WindowStyleMode style_mode, const char* reason) {
   if (hwnd == nullptr) return;
 
   // If window is maximized, restore it so size/style changes take effect
@@ -306,6 +306,7 @@ void ApplyWindowChange(HWND hwnd,
       style_mode_str = "OverlappedWindow";
     }
     log_oss << "ApplyWindowChange hwnd=" << hwnd
+            << " reason=" << reason
             << " style_mode=" << style_mode_str
             << " do_resize=" << (do_resize ? "1" : "0")
             << " client=" << client_width << "x" << client_height
@@ -384,6 +385,6 @@ void ScheduleAutoApplyOnInit(HWND hwnd) {
     ApplyWindowChange(hwnd,
                       /*do_resize=*/true, want_w, want_h,
                       /*do_move=*/true, target_pos_x, target_pos_y,
-                      mode);
+                      mode, "schedule_auto_apply_on_init");
   }).detach();
 }

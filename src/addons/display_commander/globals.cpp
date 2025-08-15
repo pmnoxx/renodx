@@ -49,7 +49,7 @@ float s_fps_limit = 0.f;
 // Monitor and display settings
 float s_target_monitor_index = 0.f;
 float s_dxgi_composition_state = 0.f;
-float s_suppress_alt_tab = 0.f;
+
 float s_prevent_windows_minimize = 0.f;
 float s_spoof_window_focus = 0.f;
 float s_enforce_desired_window = 0.f;

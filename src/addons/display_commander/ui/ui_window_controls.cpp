@@ -15,7 +15,7 @@ void AddWindowControls(std::vector<renodx::utils::settings::Setting*>& settings)
         .on_click = []() -> bool {
             // Get the current swapchain window and apply changes on another thread
             extern std::atomic<HWND> g_last_swapchain_hwnd;
-            extern void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode);
+            extern void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode, const char* reason = "unknown");
             extern float s_windowed_width, s_windowed_height, s_windowed_pos_x, s_windowed_pos_y, s_remove_top_bar;
             
             HWND hwnd = ::g_last_swapchain_hwnd.load();
@@ -41,7 +41,7 @@ void AddWindowControls(std::vector<renodx::utils::settings::Setting*>& settings)
                             << ", move to (" << pos_x << "," << pos_y << "), style mode " << static_cast<int>(style_mode);
                         LogInfo(oss.str().c_str());
                         
-                        ::ApplyWindowChange(hwnd, true, want_w, want_h, true, pos_x, pos_y, style_mode);
+                        ::ApplyWindowChange(hwnd, true, want_w, want_h, true, pos_x, pos_y, style_mode, "ui_window_controls_apply_now");
                         
                         LogInfo("Apply Now: Window change completed successfully");
                     } catch (const std::exception& e) {

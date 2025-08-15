@@ -76,8 +76,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
         g_if_failures.store(nullptr);
       }
       
-      // Clean up Alt-Tab hook if it's installed
-      UninstallAltTabHook();
+
       
       // Clean up minimize hook if it's installed
       UninstallMinimizeHook();
@@ -110,10 +109,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
 
   // Initialize hooks if settings are enabled on startup (after settings are loaded)
   if (fdw_reason == DLL_PROCESS_ATTACH) {
-    // Check if Alt-Tab suppression should be enabled
-    if (s_suppress_alt_tab >= 0.5f) {
-      InstallAltTabHook();
-    }
+
     
     // Check if Windows minimize prevention should be enabled
     if (s_prevent_windows_minimize >= 0.5f) {
@@ -174,15 +170,4 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   return TRUE;
 }
 
-// Comprehensive Alt suppression management
-void UpdateAltSuppressionMethods() {
-    // Always install/uninstall the main hook based on the main setting
-    if (s_suppress_alt_tab >= 0.5f) {
-        InstallAltTabHook();
-        LogInfo("Alt-Tab suppression hook installed");
-    } else {
-        // Uninstall all methods when main setting is disabled
-        UninstallAltTabHook();
-        LogInfo("Alt-Tab suppression hook uninstalled");
-    }
-}
+

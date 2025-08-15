@@ -13,7 +13,7 @@ extern float s_force_borderless;
 extern float s_prevent_fullscreen;
 extern float s_spoof_fullscreen_state;
 extern float s_spoof_window_focus;
-extern float s_suppress_alt_tab;
+
 extern float s_prevent_windows_minimize;
 extern float s_enforce_desired_window;
 extern float s_target_monitor_index;
@@ -222,27 +222,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
 
-    // Suppress Alt-Tab
-    settings.push_back(new renodx::utils::settings::Setting{
-        .key = "SuppressAltTab",
-        .binding = &s_suppress_alt_tab,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Suppress Alt-Tab",
-        .section = "Display",
-        .tooltip = "Suppress Alt-Tab functionality by installing Windows hook. Some games don't get informed about Alt-Tab but it still works and allows switching back.",
-        .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current){ 
-            // Update the Alt-Tab suppression state
-            std::ostringstream oss;
-            oss << "Alt-Tab suppression changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
-            LogInfo(oss.str().c_str());
-            
-            // Update all Alt suppression methods
-            UpdateAltSuppressionMethods();
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    });
+
 
     // Prevent Windows Minimize
     settings.push_back(new renodx::utils::settings::Setting{

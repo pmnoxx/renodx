@@ -48,7 +48,7 @@ void ComputeDesiredSize(int& width, int& height);
 
 // Window management functions
 enum class WindowStyleMode;
-void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode);
+void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode, const char* reason = "unknown");
 
 // Audio debugging functions
 void DebugAudioSessions();

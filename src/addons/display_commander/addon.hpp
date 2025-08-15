@@ -55,9 +55,7 @@ enum class WindowStyleMode : std::uint8_t { KEEP, BORDERLESS, OVERLAPPED_WINDOW 
 // Forward declarations that depend on enums
 DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain);
 
-// Alt-Tab suppression functions
-bool InstallAltTabHook();
-void UninstallAltTabHook();
+
 
 // Additional Alt suppression methods
 bool InstallAltSuppressionWindowSubclass();
@@ -66,7 +64,7 @@ bool InstallAltSuppressionDllInjection();
 void UninstallAltSuppressionDllInjection();
 bool InstallAltSuppressionRawInput();
 void UninstallAltSuppressionRawInput();
-void UpdateAltSuppressionMethods();
+
 
 // Windows minimize prevention functions (using window subclassing)
 bool InstallMinimizeHook();
@@ -150,7 +148,7 @@ extern float s_fps_limit_background;
 extern float s_fps_limit;
 extern float s_target_monitor_index;
 extern float s_dxgi_composition_state;
-extern float s_suppress_alt_tab;
+
 extern float s_prevent_windows_minimize;
 extern float s_spoof_window_focus;
 extern float s_enforce_desired_window;
@@ -190,7 +188,7 @@ extern std::atomic<bool> g_reflex_active;
 // Function declarations
 const char* DxgiBypassModeToString(DxgiBypassMode mode);
 bool SetIndependentFlipState(reshade::api::swapchain* swapchain);
-void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode);
+void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode, const char* reason = "unknown");
 bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h);
 void ScheduleAutoApplyOnInit(HWND hwnd);
 void LogIndependentFlipConditions(reshade::api::swapchain* swapchain);

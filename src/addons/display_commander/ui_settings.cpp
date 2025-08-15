@@ -226,9 +226,9 @@ renodx::utils::settings::Settings settings = {
                     int want_w = 0; int want_h = 0; ComputeDesiredSize(want_w, want_h);
                     
                     // Apply the change
-                    extern void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode);
+                    extern void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode, const char* reason = "unknown");
                     WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
-                    ApplyWindowChange(hwnd, true, want_w, want_h, true, static_cast<int>(s_windowed_pos_x), static_cast<int>(s_windowed_pos_y), mode);
+                    ApplyWindowChange(hwnd, true, want_w, want_h, true, static_cast<int>(s_windowed_pos_x), static_cast<int>(s_windowed_pos_y), mode, "ui_settings_manual_apply");
                     
                     LogInfo("Manual apply executed");
                 }
@@ -363,27 +363,7 @@ renodx::utils::settings::Settings settings = {
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
-    // Suppress Alt-Tab
-    new renodx::utils::settings::Setting{
-        .key = "SuppressAltTab",
-        .binding = &s_suppress_alt_tab,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Suppress Alt-Tab",
-        .section = "Display",
-        .tooltip = "Suppress Alt-Tab functionality by installing Windows hook. Some games don't get informed about Alt-Tab but it still works and allows switching back.",
-        .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current){ 
-            // Update the Alt-Tab suppression state
-            std::ostringstream oss;
-            oss << "Alt-Tab suppression changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
-            LogInfo(oss.str().c_str());
-            
-            // Update all Alt suppression methods
-            UpdateAltSuppressionMethods();
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    },
+
     // Prevent Windows Minimize
     new renodx::utils::settings::Setting{
         .key = "PreventWindowsMinimize",
@@ -582,7 +562,7 @@ renodx::utils::settings::Settings settings = {
                     hwnd,
                     /*do_resize=*/true, want_w, want_h,
                     /*do_move=*/true, pos_x, pos_y,
-                    mode);
+                    mode, "ui_settings_720p_button");
                 
                 LogInfo("720p window applied successfully");
             }).detach();
@@ -626,7 +606,7 @@ renodx::utils::settings::Settings settings = {
                     hwnd,
                     /*do_resize=*/true, want_w, want_h,
                     /*do_move=*/true, pos_x, pos_y,
-                    mode);
+                    mode, "ui_settings_1080p_button");
                 
                 LogInfo("1080p window applied successfully");
             }).detach();

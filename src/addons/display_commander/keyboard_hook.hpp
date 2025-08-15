@@ -2,9 +2,7 @@
 
 #include <windows.h>
 
-// Alt-Tab suppression functions
-bool InstallAltTabHook();
-void UninstallAltTabHook();
+
 
 // Windows minimize prevention functions (using window subclassing)
 bool InstallMinimizeHook();
@@ -14,8 +12,7 @@ void UninstallMinimizeHook();
 bool InstallResizeEnforcerHook();
 void UninstallResizeEnforcerHook();
 
-// Internal hook procedure (don't call directly)
-LRESULT CALLBACK AltTabHookProc(int nCode, WPARAM wParam, LPARAM lParam);
+
 
 // Internal window procedure for minimize prevention (don't call directly)
 LRESULT CALLBACK MinimizeWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
