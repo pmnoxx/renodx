@@ -141,30 +141,7 @@ void RunBackgroundAudioMonitor() {
       }
     }
 
-    // Background FPS limit handling (foreground uses the default FPSLimit)
-    if (s_fps_limit_background >= 0.f) {
-      HWND hwnd = g_last_swapchain_hwnd.load();
-      if (hwnd == nullptr) hwnd = GetForegroundWindow();
-      // Use spoofed focus state instead of actual focus state
-      const bool is_background = (hwnd != nullptr && !GetSpoofedWindowFocus(hwnd));
-      if (is_background) {
-        const float desired_limit = s_fps_limit_background;
-        if (renodx::utils::swapchain::fps_limit != desired_limit) {
-          renodx::utils::swapchain::fps_limit = desired_limit;
-        }
-      } else {
-        // Foreground: if the default is zero, ensure no FPS limit
-        if (g_default_fps_limit.load() == 0.0f) {
-          if (renodx::utils::swapchain::fps_limit != 0.0f) {
-            renodx::utils::swapchain::fps_limit = 0.0f;
-          }
-        } else {
-          if (renodx::utils::swapchain::fps_limit != g_default_fps_limit.load()) {
-            renodx::utils::swapchain::fps_limit = g_default_fps_limit.load();
-          }
-        }
-      }
-    }
+    // Background FPS limit handling moved to fps_limiter module
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
   }
 }

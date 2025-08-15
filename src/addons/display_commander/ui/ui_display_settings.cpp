@@ -93,6 +93,21 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     });
 
+    // Background FPS Limit
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "FPSLimitBackground",
+        .binding = &s_fps_limit_background,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 30.f,
+        .label = "Background FPS Limit",
+        .section = "Performance",
+        .tooltip = "FPS cap when the game window is not in the foreground.",
+        .min = 0.f,
+        .max = 240.f,
+        .format = "%d FPS",
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
+    });
+
     // Remove top bar (title bar, borders)
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "RemoveTopBar",

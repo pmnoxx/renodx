@@ -54,19 +54,7 @@ void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
         .is_visible = [](){ return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     });
 
-    // FPS Limit in Background
-    settings.push_back(new renodx::utils::settings::Setting{
-        .key = "FPSLimitBackground",
-        .binding = &s_fps_limit_background,
-        .default_value = 30.f,
-        .label = "Background FPS Limit",
-        .section = "Performance",
-        .tooltip = "FPS cap when the game window is not in the foreground.",
-        .min = 0.f,
-        .max = 240.f,
-        .format = "%.0f FPS",
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
-    });
+
 }
 
 } // namespace renodx::ui
