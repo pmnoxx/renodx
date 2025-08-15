@@ -137,6 +137,24 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .labels = {"None", "Top Left", "Top Right", "Bottom Left", "Bottom Right", "Center"},
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     });
+
+    // Apply Changes button
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "ApplyChanges",
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .default_value = 0.f,
+        .label = "Apply Changes",
+        .section = "Display",
+        .tooltip = "Apply the current window size and position settings immediately.",
+        .on_click = []() -> bool {
+            // Force immediate application of window changes
+            extern std::atomic<uint64_t> g_init_apply_generation;
+            ::g_init_apply_generation.fetch_add(1);
+            LogInfo("Apply Changes button clicked - forcing immediate window update");
+            return true;
+        },
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
+    });
 }
 
 } // namespace renodx::ui
