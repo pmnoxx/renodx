@@ -136,7 +136,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Choose between manual width/height or aspect ratio-based resizing.",
         .labels = {"Width/Height", "Aspect Ratio"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     // Aspect Ratio (only when in Aspect mode)
     new renodx::utils::settings::Setting{
@@ -150,7 +150,7 @@ renodx::utils::settings::Settings settings = {
         .labels = {"3:2", "4:3", "16:10", "16:9", "19:9", "19.5:9", "21:9", "32:9"},
         .min = 0.f,
         .max = 7.f,
-        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
 
     // FPS Limit
@@ -171,7 +171,7 @@ renodx::utils::settings::Settings settings = {
             s_fps_limit = g_default_fps_limit.load();
             return false;
         },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     // Background FPS Limit
     new renodx::utils::settings::Setting{
@@ -184,7 +184,7 @@ renodx::utils::settings::Settings settings = {
         .min = 0.f,
         .max = 240.f,
         .format = "%.0f FPS",
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     // Volume (0-100)
     new renodx::utils::settings::Setting{
@@ -198,7 +198,7 @@ renodx::utils::settings::Settings settings = {
         .min = 0.f,
         .max = 100.f,
         .format = "%d%%",
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     // Mute (manual)
     new renodx::utils::settings::Setting{
@@ -214,7 +214,7 @@ renodx::utils::settings::Settings settings = {
             // Reset applied flag so the monitor thread reapplies desired state
             g_muted_applied.store(false);
         },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     // Mute in Background (placed after Mute; disabled if Mute is ON)
     new renodx::utils::settings::Setting{
@@ -230,7 +230,7 @@ renodx::utils::settings::Settings settings = {
           // Reset applied flag so the monitor thread reapplies desired state
           g_muted_applied.store(false);
         },
-        .is_visible = [](){ return is_developer_tab(s_ui_mode); },
+        .is_visible = [](){ return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     // Apply button executes windowed resize
     new renodx::utils::settings::Setting{
@@ -467,86 +467,6 @@ renodx::utils::settings::Settings settings = {
                     oss << "Failed to restore window. Error: " << error;
                     LogWarn(oss.str().c_str());
                 }
-            }).detach();
-            return false;
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    },
-
-    // Make 720p Window
-    new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "Make 720p Window",
-        .section = "Display",
-        .tooltip = "Quickly set window to 1280x720 (720p) resolution.",
-        .on_click = []() {
-            std::thread([](){
-                HWND hwnd = g_last_swapchain_hwnd.load();
-                if (hwnd == nullptr) hwnd = GetForegroundWindow();
-                if (hwnd == nullptr) {
-                    LogWarn("Make 720p Window: no window handle available");
-                    return;
-                }
-                LogDebug("Make 720p Window button pressed (bg thread)");
-                
-                // Set the desired size to 720p
-                int want_w = 1280;
-                int want_h = 720;
-                
-                // Get current window position
-                RECT wr{};
-                int pos_x = 100;
-                int pos_y = 100;
-                if (GetWindowRect(hwnd, &wr) != FALSE) {
-                    pos_x = wr.left;
-                    pos_y = wr.top;
-                }
-                
-                // Apply 720p window with current style preference
-                ApplyWindowChange(
-                    hwnd, "ui_settings_720p_button");
-                
-                LogInfo("720p window applied successfully");
-            }).detach();
-            return false;
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    },
-
-    // Make 1080p Window
-    new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "Make 1080p Window",
-        .section = "Display",
-        .tooltip = "Quickly set window to 1920x1080 (1080p) resolution.",
-        .on_click = []() {
-            std::thread([](){
-                HWND hwnd = g_last_swapchain_hwnd.load();
-                if (hwnd == nullptr) hwnd = GetForegroundWindow();
-                if (hwnd == nullptr) {
-                    LogWarn("Make 1080p Window: no window handle available");
-                    return;
-                }
-                LogDebug("Make 1080p Window button pressed (bg thread)");
-                
-                // Set the desired size to 1080p
-                int want_w = 1920;
-                int want_h = 1080;
-                
-                // Get current window position
-                RECT wr{};
-                int pos_x = 100;
-                int pos_y = 100;
-                if (GetWindowRect(hwnd, &wr) != FALSE) {
-                    pos_x = wr.left;
-                    pos_y = wr.top;
-                }
-                
-                // Apply 1080p window with current style preference
-                ApplyWindowChange(
-                    hwnd, "ui_settings_1080p_button");
-                
-                LogInfo("1080p window applied successfully");
             }).detach();
             return false;
         },
