@@ -1,5 +1,5 @@
-#include "ui_common.hpp"
-#include "../nvapi_fullscreen_prevention.hpp"
+#include "../ui/ui_common.hpp"
+#include "nvapi_fullscreen_prevention.hpp"
 
 // External declarations for NVAPI settings
 extern float s_nvapi_fullscreen_prevention;

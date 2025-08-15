@@ -1,5 +1,5 @@
 #include "nvapi_fullscreen_prevention.hpp"
-#include "utils.hpp"
+#include "../utils.hpp"
 #include "../../external/SpecialK/depends/include/nvapi/NvApiDriverSettings.h"
 #include <sstream>
 

@@ -6,7 +6,7 @@
 #include "ui_developer_settings.hpp"
 #include "ui_window_position_settings.hpp"
 #include "ui_hdr_colorspace_settings.hpp"
-#include "ui_nvapi_settings.hpp"
+#include "../nvapi/ui_nvapi_settings.hpp"
 #include "ui_device_info.hpp"
 #include "ui_window_info.hpp"
 #include "../reflex/ui_reflex_settings.hpp"

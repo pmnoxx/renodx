@@ -31,4 +31,5 @@ namespace renodx::ui {
     void AddDxgiCompositionInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings);
     void AddIndependentFlipFailuresSettings(std::vector<renodx::utils::settings::Setting*>& settings);
     void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings);
+    void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings);
 }

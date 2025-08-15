@@ -25,7 +25,7 @@
 #include "../../utils/swapchain.hpp"
 #include "../../mods/swapchain.hpp"
 #include "utils.hpp"
-#include "nvapi_fullscreen_prevention.hpp"
+#include "nvapi/nvapi_fullscreen_prevention.hpp"
 #include "reflex/reflex_management.hpp"
 #include "dxgi_device_info.hpp"
 

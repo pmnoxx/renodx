@@ -1,5 +1,5 @@
 #include "utils.hpp"
-#include "nvapi_fullscreen_prevention.hpp"
+#include "nvapi/nvapi_fullscreen_prevention.hpp"
 
 // External declarations needed by utility functions
 extern float s_windowed_width;
