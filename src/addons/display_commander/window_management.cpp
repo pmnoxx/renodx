@@ -110,7 +110,7 @@ void ApplyWindowChange(HWND hwnd,
       
       if (style_changed) {
         std::ostringstream oss;
-        oss << "Reflex: Applying borderless styles - Current style: 0x" << std::hex << current_style 
+        oss << "Applying borderless styles - Current style: 0x" << std::hex << current_style 
             << ", New style: 0x" << new_style 
             << ", Current ex_style: 0x" << current_ex_style 
             << ", New ex_style: 0x" << new_ex_style;
@@ -125,16 +125,16 @@ void ApplyWindowChange(HWND hwnd,
         
         if (verify_style != new_style || verify_ex_style != new_ex_style) {
           std::ostringstream oss;
-          oss << "Reflex: Failed to set window styles - Expected style: 0x" << std::hex << new_style 
+          oss << "Failed to set window styles - Expected style: 0x" << std::hex << new_style 
               << ", Got: 0x" << verify_style 
               << ", Expected ex_style: 0x" << new_ex_style 
               << ", Got: 0x" << verify_ex_style;
           LogWarn(oss.str().c_str());
         } else {
-          LogDebug("Reflex: Window styles set successfully");
+          LogDebug("Window styles set successfully");
         }
       } else {
-        LogDebug("Reflex: Window styles already match desired borderless state");
+        LogDebug("Window styles already match desired borderless state");
       }
       break;
     }

@@ -94,7 +94,7 @@ static void OnPresentUpdate(
       if (g_reflex_settings_changed.load()) {
         SetReflexSleepMode(swapchain);
         g_reflex_settings_changed.store(false);
-        LogDebug("Reflex: Sleep mode updated due to settings change");
+        LogDebug("Sleep mode updated due to settings change");
       } else if ((c % 60) == 0) { // Added periodic refresh
         // Refresh sleep mode every 60 frames to maintain Reflex state
         SetReflexSleepMode(swapchain);

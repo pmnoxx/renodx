@@ -52,9 +52,9 @@ void ApplyBorderlessStylesDelayed() {
         LONG_PTR verify_ex_style = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
         
         if (verify_style == new_style && verify_ex_style == new_ex_style) {
-            LogDebug("Reflex: Successfully applied borderless styles to existing window");
+            LogDebug("Successfully applied borderless styles to existing window");
         } else {
-            LogWarn("Reflex: Failed to apply borderless styles - styles not properly set");
+            LogWarn("Failed to apply borderless styles - styles not properly set");
         }
     }
     
@@ -102,7 +102,7 @@ VOID CALLBACK BorderlessStyleTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, D
         KillTimer(nullptr, g_borderless_timer_id);
         g_borderless_timer_id = SetTimer(nullptr, 0, 200, BorderlessStyleTimerProc); // 200ms interval
         if (g_borderless_timer_id != 0) {
-            LogDebug("Reflex: Slowed down borderless style enforcement timer to 200ms interval");
+            LogDebug("Slowed down borderless style enforcement timer to 200ms interval");
         }
     }
 }
@@ -168,7 +168,7 @@ void ApplyBorderlessStylesToAllWindows() {
                     // Force the window to update with new styles
                   //  SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
                     
-                    LogDebug("Reflex: Applied borderless styles to top-level window (delayed)");
+                    LogDebug("Applied borderless styles to top-level window (delayed)");
                 }).detach();
             }
             
@@ -195,9 +195,9 @@ void StartBorderlessStyleTimer() {
     g_borderless_timer_id = SetTimer(nullptr, 0, 50, BorderlessStyleTimerProc);
     if (g_borderless_timer_id != 0) {
         g_borderless_timer_active = true;
-        LogDebug("Reflex: Started borderless style enforcement timer (50ms initial interval, delayed execution)");
+        LogDebug("Started borderless style enforcement timer (50ms initial interval, delayed execution)");
     } else {
-        LogWarn("Reflex: Failed to start borderless style enforcement timer");
+        LogWarn("Failed to start borderless style enforcement timer");
     }
 }
 
@@ -207,6 +207,6 @@ void StopBorderlessStyleTimer() {
         KillTimer(nullptr, g_borderless_timer_id);
         g_borderless_timer_id = 0;
         g_borderless_timer_active = false;
-        LogDebug("Reflex: Stopped borderless style enforcement timer");
+        LogDebug("Stopped borderless style enforcement timer");
     }
 }

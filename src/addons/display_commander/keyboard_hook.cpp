@@ -34,7 +34,7 @@ HWND WINAPI CreateWindowExW_Hook(DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR l
         dwStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
         dwExStyle &= ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
         
-        LogDebug("Reflex: Modified CreateWindowExW call to use borderless styles");
+        LogDebug("Modified CreateWindowExW call to use borderless styles");
     }
     
     // Call the original function with modified styles
@@ -108,7 +108,7 @@ LRESULT CALLBACK CreateWindowHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
             // Force the window to update with new styles
             SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
             
-            LogDebug("Reflex: Applied borderless styles during window creation");
+            LogDebug("Applied borderless styles during window creation");
         }
     }
     
@@ -973,9 +973,9 @@ void ApplyBorderlessStylesAggressively() {
         LONG_PTR verify_ex_style = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
         
         if (verify_style == new_style && verify_ex_style == new_ex_style) {
-            LogDebug("Reflex: Successfully applied borderless styles to existing window");
+            LogDebug("Successfully applied borderless styles to existing window");
         } else {
-            LogWarn("Reflex: Failed to apply borderless styles - styles not properly set");
+            LogWarn("Failed to apply borderless styles - styles not properly set");
         }
     }
 }
@@ -1019,7 +1019,7 @@ void ApplyBorderlessStylesToAllWindows() {
             // Force the window to update with new styles
             SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
             
-            LogDebug("Reflex: Applied borderless styles to top-level window");
+            LogDebug("Applied borderless styles to top-level window");
         }
         
         return TRUE;
@@ -1050,7 +1050,7 @@ VOID CALLBACK BorderlessStyleTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, D
         extern std::atomic<HWND> g_last_swapchain_hwnd;
         HWND current_hwnd = g_last_swapchain_hwnd.load();
         if (current_hwnd != nullptr && !g_window_creation_hooks_installed) {
-            LogDebug("Reflex: Retrying to install window creation hooks");
+            LogDebug("Retrying to install window creation hooks");
             InstallWindowCreationHooks();
         }
     }
@@ -1062,7 +1062,7 @@ VOID CALLBACK BorderlessStyleTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, D
         KillTimer(nullptr, g_borderless_timer_id);
         g_borderless_timer_id = SetTimer(nullptr, 0, 200, BorderlessStyleTimerProc); // 200ms interval
         if (g_borderless_timer_id != 0) {
-            LogDebug("Reflex: Slowed down borderless style enforcement timer to 200ms interval");
+            LogDebug("Slowed down borderless style enforcement timer to 200ms interval");
         }
     }
 }
@@ -1082,9 +1082,9 @@ void StartBorderlessStyleTimer() {
     g_borderless_timer_id = SetTimer(nullptr, 0, 50, BorderlessStyleTimerProc);
     if (g_borderless_timer_id != 0) {
         g_borderless_timer_active = true;
-        LogDebug("Reflex: Started borderless style enforcement timer (50ms initial interval)");
+        LogDebug("Started borderless style enforcement timer (50ms initial interval)");
     } else {
-        LogWarn("Reflex: Failed to start borderless style enforcement timer");
+        LogWarn("Failed to start borderless style enforcement timer");
     }
 }
 
@@ -1094,6 +1094,6 @@ void StopBorderlessStyleTimer() {
         KillTimer(nullptr, g_borderless_timer_id);
         g_borderless_timer_id = 0;
         g_borderless_timer_active = false;
-        LogDebug("Reflex: Stopped borderless style enforcement timer");
+        LogDebug("Stopped borderless style enforcement timer");
     }
 }

@@ -20,7 +20,7 @@ HWND WINAPI CreateWindowExW_Hook(DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR l
         dwStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
         dwExStyle &= ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
         
-        LogDebug("Reflex: Modified CreateWindowExW call to use borderless styles");
+        LogDebug("Modified CreateWindowExW call to use borderless styles");
     }
     
     // Call the original function with modified styles
@@ -91,7 +91,7 @@ LRESULT CALLBACK CreateWindowHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
                 // Force the window to update with new styles
                 SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
                 
-                LogDebug("Reflex: Applied borderless styles during window creation (delayed)");
+                LogDebug("Applied borderless styles during window creation (delayed)");
             }).detach();
         }
     }
