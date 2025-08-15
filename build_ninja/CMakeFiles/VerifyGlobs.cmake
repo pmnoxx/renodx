@@ -33,8 +33,12 @@ set(OLD_GLOB
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_developer_settings.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_device_info.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_display_settings.cpp"
+  "D:/repos/renodx2/src/addons/display_commander/ui/ui_dxgi_composition_info.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_dxgi_device_info.cpp"
+  "D:/repos/renodx2/src/addons/display_commander/ui/ui_dxgi_device_info_detailed.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_general_settings.cpp"
+  "D:/repos/renodx2/src/addons/display_commander/ui/ui_hdr_colorspace_settings.cpp"
+  "D:/repos/renodx2/src/addons/display_commander/ui/ui_independent_flip_failures.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_latency_display.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_main.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_nvapi_settings.cpp"
@@ -42,6 +46,7 @@ set(OLD_GLOB
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_swapchain_info.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_window_controls.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_window_info.cpp"
+  "D:/repos/renodx2/src/addons/display_commander/ui/ui_window_position_settings.cpp"
   )
 if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   message("-- GLOB mismatch!")

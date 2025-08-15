@@ -4,6 +4,8 @@
 #include "ui_audio_settings.hpp"
 #include "ui_window_controls.hpp"
 #include "ui_developer_settings.hpp"
+#include "ui_window_position_settings.hpp"
+#include "ui_hdr_colorspace_settings.hpp"
 #include "ui_nvapi_settings.hpp"
 #include "ui_device_info.hpp"
 #include "ui_window_info.hpp"
@@ -12,7 +14,9 @@
 #include "ui_debug_settings.hpp"
 #include "ui_swapchain_info.hpp"
 #include "ui_dxgi_device_info.hpp"
-#include "../ui_settings.hpp"
+#include "ui_dxgi_device_info_detailed.hpp"
+#include "ui_dxgi_composition_info.hpp"
+#include "ui_independent_flip_failures.hpp"
 #include "../settings.hpp"
 
 // UI/settings - main vector that includes all sections
@@ -37,6 +41,8 @@ void InitializeUISettings() {
     renodx::ui::AddAudioSettings(settings);
     renodx::ui::AddWindowControls(settings);
     renodx::ui::AddDeveloperSettings(settings);
+    renodx::ui::AddWindowPositionSettings(settings);
+    renodx::ui::AddHdrColorspaceSettings(settings);
     renodx::ui::AddNvapiSettings(settings);
     renodx::ui::AddDeviceInfoSettings(settings);
     renodx::ui::AddWindowInfoSettings(settings);
@@ -48,8 +54,14 @@ void InitializeUISettings() {
     // Add DXGI device info settings
     renodx::ui::AddDxgiDeviceInfoSettings(settings);
     
-    // Add UI settings
-    AddUISettings(settings);
+    // Add detailed DXGI device info settings
+    renodx::ui::AddDxgiDeviceInfoDetailedSettings(settings);
+    
+    // Add DXGI composition info settings
+    renodx::ui::AddDxgiCompositionInfoSettings(settings);
+    
+    // Add Independent Flip failures settings
+    renodx::ui::AddIndependentFlipFailuresSettings(settings);
     
     // Mark as initialized
     ui_settings_initialized = true;
