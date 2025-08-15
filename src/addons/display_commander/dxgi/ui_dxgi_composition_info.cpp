@@ -1,5 +1,5 @@
 #include "ui_dxgi_composition_info.hpp"
-#include "ui_common.hpp"
+#include "../ui/ui_common.hpp"
 #include "../../../utils/settings.hpp"
 #include "../utils.hpp"
 #include <windows.h>

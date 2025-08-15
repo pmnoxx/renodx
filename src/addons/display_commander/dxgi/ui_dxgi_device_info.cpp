@@ -1,5 +1,5 @@
-#include "ui_common.hpp"
-#include "../dxgi_device_info.hpp"
+#include "../ui/ui_common.hpp"
+#include "dxgi_device_info.hpp"
 #include <sstream>
 #include <iomanip>
 

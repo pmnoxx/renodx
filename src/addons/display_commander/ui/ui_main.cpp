@@ -13,9 +13,9 @@
 #include "ui_latency_display.hpp"
 #include "ui_debug_settings.hpp"
 #include "ui_swapchain_info.hpp"
-#include "ui_dxgi_device_info.hpp"
-#include "ui_dxgi_device_info_detailed.hpp"
-#include "ui_dxgi_composition_info.hpp"
+#include "../dxgi/ui_dxgi_device_info.hpp"
+#include "../dxgi/ui_dxgi_device_info_detailed.hpp"
+#include "../dxgi/ui_dxgi_composition_info.hpp"
 #include "ui_independent_flip_failures.hpp"
 #include "../settings.hpp"
 

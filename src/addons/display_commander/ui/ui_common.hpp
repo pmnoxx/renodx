@@ -32,4 +32,5 @@ namespace renodx::ui {
     void AddIndependentFlipFailuresSettings(std::vector<renodx::utils::settings::Setting*>& settings);
     void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings);
     void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings);
+    void AddDxgiDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings);
 }

@@ -1,4 +1,4 @@
-#include "addon.hpp"
+#include "../addon.hpp"
 
 inline DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain) {
   // Get or create the failure tracking structure

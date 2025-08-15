@@ -1,5 +1,5 @@
 #include "ui_common.hpp"
-#include "../dxgi_device_info.hpp"
+#include "../dxgi/dxgi_device_info.hpp"
 
 namespace renodx::ui {
 

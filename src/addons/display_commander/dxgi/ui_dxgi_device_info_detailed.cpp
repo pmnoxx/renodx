@@ -1,7 +1,7 @@
 #include "ui_dxgi_device_info_detailed.hpp"
-#include "ui_common.hpp"
+#include "../ui/ui_common.hpp"
 #include "../../../utils/settings.hpp"
-#include "../dxgi_device_info.hpp"
+#include "dxgi_device_info.hpp"
 #include "../utils.hpp"
 
 namespace renodx::ui {
