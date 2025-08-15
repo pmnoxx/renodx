@@ -93,8 +93,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       // Clean up window message hook if it's installed
       UninstallWindowMessageHook();
       
-      // Clean up borderless style enforcement
-      StopBorderlessStyleTimer();
+
       
       // Clean up Reflex hooks if they're installed
       UninstallReflexHooks();
