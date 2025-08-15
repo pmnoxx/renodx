@@ -4,6 +4,8 @@
 // External declarations for NVAPI settings
 extern float s_nvapi_fullscreen_prevention;
 extern float s_nvapi_hdr_logging;
+extern float s_nvapi_force_hdr10;
+extern float s_nvapi_hdr_interval_sec;
 
 namespace renodx::ui {
 
@@ -127,6 +129,156 @@ void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
                     ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "DLL not loaded - cannot get version info");
                 }
             }
+            
+            return false;
+        },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+    });
+
+    // Force NVAPI HDR10 (UHDA)
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "NvapiForceHDR10",
+        .binding = &s_nvapi_force_hdr10,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Force HDR10 Output (NVAPI)",
+        .section = "NVAPI",
+        .tooltip = "Enable HDR10 (UHDA) output via NVAPI for all connected displays (driver-level).",
+        .labels = {"Off", "On"},
+        .on_change_value = [](float previous, float current){
+            std::thread([](){
+                extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
+                if (!::g_nvapiFullscreenPrevention.IsAvailable()) {
+                    if (!::g_nvapiFullscreenPrevention.Initialize()) {
+                        LogWarn("NVAPI Force HDR10: failed to initialize NVAPI");
+                        return;
+                    }
+                }
+                bool enable = (s_nvapi_force_hdr10 >= 0.5f);
+                if (::g_nvapiFullscreenPrevention.SetHdr10OnAll(enable)) {
+                    LogInfo(enable ? "NVAPI Force HDR10: enabled" : "NVAPI Force HDR10: disabled");
+                } else {
+                    LogWarn("NVAPI Force HDR10: failed to apply");
+                }
+            }).detach();
+        },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+    });
+
+    // Single-shot NVAPI HDR log (button)
+    settings.push_back(new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Log HDR Status Now (NVAPI)",
+        .section = "NVAPI",
+        .tooltip = "Immediately query NVAPI HDR status and log a single line.",
+        .on_click = [](){
+            std::thread([](){ LogNvapiHdrOnce(); }).detach();
+            return false;
+        },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+    });
+
+    // Dump full NVAPI HDR details
+    settings.push_back(new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Dump Full HDR Details (NVAPI)",
+        .section = "NVAPI",
+        .tooltip = "Print full HDR parameters (caps, ST2086) for connected displays.",
+        .on_click = [](){
+            std::thread([](){
+                extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
+                if (!::g_nvapiFullscreenPrevention.IsAvailable()) {
+                    if (!::g_nvapiFullscreenPrevention.Initialize()) {
+                        LogWarn("NVAPI HDR dump: failed to initialize NVAPI");
+                        return;
+                    }
+                }
+                std::string details;
+                if (::g_nvapiFullscreenPrevention.QueryHdrDetails(details)) {
+                    LogInfo(details.c_str());
+                } else {
+                    LogWarn("NVAPI HDR dump: failed to get details");
+                }
+            }).detach();
+            return false;
+        },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+    });
+
+    // HDR Log Interval
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "NvapiHdrIntervalSec",
+        .binding = &s_nvapi_hdr_interval_sec,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 5.f,
+        .label = "HDR Log Interval (s)",
+        .section = "NVAPI",
+        .tooltip = "How often to query/log HDR status via NVAPI.",
+        .min = 1.f,
+        .max = 120.f,
+        .format = "%d s",
+        .is_visible = []() { return is_developer_tab(s_ui_mode) && s_nvapi_hdr_logging >= 0.5f; },
+    });
+
+    // NVAPI Debug Button
+    settings.push_back(new renodx::utils::settings::Setting{
+        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .label = "Test NVAPI Functions",
+        .section = "NVAPI",
+        .tooltip = "Manually test NVAPI initialization and show detailed function status. Useful for debugging.",
+        .on_click = []() {
+            extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
+            
+            std::thread([](){
+                LogDebug("NVAPI Debug Test button pressed (bg thread)");
+                
+                // Test initialization
+                if (::g_nvapiFullscreenPrevention.Initialize()) {
+                    LogInfo("NVAPI Debug Test: Initialization successful");
+                    
+                    // Test hardware detection
+                    if (::g_nvapiFullscreenPrevention.HasNVIDIAHardware()) {
+                        LogInfo("NVAPI Debug Test: NVIDIA hardware detected");
+                    } else {
+                        LogWarn("NVAPI Debug Test: No NVIDIA hardware found");
+                    }
+                    
+                    // Test driver version
+                    std::string driverVersion = ::g_nvapiFullscreenPrevention.GetDriverVersion();
+                    if (driverVersion != "Failed to get driver version") {
+                        std::ostringstream oss;
+                        oss << "NVAPI Debug Test: Driver version: " << driverVersion;
+                        LogInfo(oss.str().c_str());
+                    } else {
+                        LogWarn("NVAPI Debug Test: Failed to get driver version");
+                    }
+                    
+                    // Test fullscreen prevention (toggle on then off)
+                    if (::g_nvapiFullscreenPrevention.SetFullscreenPrevention(true)) {
+                        LogInfo("NVAPI Debug Test: Fullscreen prevention enabled successfully");
+                        
+                        // Wait a moment then disable
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        
+                        if (::g_nvapiFullscreenPrevention.SetFullscreenPrevention(false)) {
+                            LogInfo("NVAPI Debug Test: Fullscreen prevention disabled successfully");
+                        } else {
+                            std::ostringstream oss;
+                            oss << "NVAPI Debug Test: Failed to disable fullscreen prevention: " << ::g_nvapiFullscreenPrevention.GetLastError();
+                            LogWarn(oss.str().c_str());
+                        }
+                    } else {
+                        std::ostringstream oss;
+                        oss << "NVAPI Debug Test: Failed to enable fullscreen prevention: " << ::g_nvapiFullscreenPrevention.GetLastError();
+                        LogWarn(oss.str().c_str());
+                    }
+                    
+                } else {
+                    std::ostringstream oss;
+                    oss << "NVAPI Debug Test: Initialization failed: " << ::g_nvapiFullscreenPrevention.GetLastError();
+                    LogWarn(oss.str().c_str());
+                }
+            }).detach();
             
             return false;
         },

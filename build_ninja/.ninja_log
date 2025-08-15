@@ -76,3 +76,10 @@
 129	2647	7769932703947284	CMakeFiles/display_commander.dir/src/addons/display_commander/ui_settings.cpp.obj	336984dd640d55a2
 125	2656	7769932703903521	CMakeFiles/display_commander.dir/src/addons/display_commander/ui/ui_window_controls.cpp.obj	6cafc6c28c36f281
 2656	2786	7769932729218692	renodx-display_commander.addon64	f7082fd809b927f1
+54	74	7769934914921769	D:/repos/renodx2/build_ninja/CMakeFiles/cmake.verify_globs	d546f856aeed2425
+80	2126	7769934915199927	CMakeFiles/display_commander.dir/src/addons/display_commander/ui_settings.cpp.obj	336984dd640d55a2
+78	2147	7769934915199927	CMakeFiles/display_commander.dir/src/addons/display_commander/ui/ui_nvapi_settings.cpp.obj	f46f7a072d470657
+46	68	7769935541732289	D:/repos/renodx2/build_ninja/CMakeFiles/cmake.verify_globs	d546f856aeed2425
+74	2119	7769935541979106	CMakeFiles/display_commander.dir/src/addons/display_commander/ui_settings.cpp.obj	336984dd640d55a2
+72	2137	7769935541979106	CMakeFiles/display_commander.dir/src/addons/display_commander/ui/ui_nvapi_settings.cpp.obj	f46f7a072d470657
+2137	2257	7769935562615073	renodx-display_commander.addon64	f7082fd809b927f1
