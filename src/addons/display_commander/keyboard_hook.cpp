@@ -112,8 +112,15 @@ LRESULT CALLBACK MinimizeWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         // Modify style arguments before they are applied
         STYLESTRUCT* ss = reinterpret_cast<STYLESTRUCT*>(lParam);
         if (wParam == GWL_STYLE && ss != nullptr) {
-            // Always strip minimize to avoid minimize action; also strip maximize
-            ss->styleNew &= ~(WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+            // Always strip minimize to avoid minimize action
+            ss->styleNew &= ~WS_MINIMIZEBOX;
+            
+            // Conditionally strip maximize based on setting
+            extern float s_suppress_maximize;
+            if (s_suppress_maximize >= 0.5f) {
+                ss->styleNew &= ~WS_MAXIMIZEBOX;
+            }
+            
             // Respect Remove Top Bar: strip caption/thickframe/sysmenu when enabled
             if (s_remove_top_bar >= 0.5f) {
                 ss->styleNew &= ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU);
@@ -130,6 +137,13 @@ LRESULT CALLBACK MinimizeWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         if (cmd == SC_MINIMIZE) {
             // Convert minimize to restore; effectively ignore minimize
             LogDebug("Intercepted SC_MINIMIZE; switching to SC_RESTORE");
+            return 0;
+        }
+        
+        // Conditionally intercept maximize based on setting
+        extern float s_suppress_maximize;
+        if (s_suppress_maximize >= 0.5f && cmd == SC_MAXIMIZE) {
+            LogDebug("Intercepted SC_MAXIMIZE; ignoring maximize command");
             return 0;
         }
     }
@@ -160,6 +174,13 @@ LRESULT CALLBACK MinimizeWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         return 0;
     }
     
+    // Conditionally intercept maximize size changes
+    extern float s_suppress_maximize;
+    if (s_suppress_maximize >= 0.5f && uMsg == WM_SIZE && wParam == SIZE_MAXIMIZED) {
+        LogDebug("Ignored SIZE_MAXIMIZED");
+        return 0;
+    }
+    
     if (uMsg == WM_WINDOWPOSCHANGED) {
         WINDOWPOS* wp = (WINDOWPOS*)lParam;
         if (wp && (wp->x < -10000 || wp->y < -10000 || wp->cx < 10 || wp->cy < 10)) {
@@ -175,6 +196,15 @@ LRESULT CALLBACK MinimizeWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         LogDebug("Ignored minimize on deactivation");
         ShowWindow(hwnd, SW_RESTORE);
         return 0;
+    }
+    
+    // Intercept double-click on title bar to prevent maximize
+    extern float s_suppress_maximize;
+    if (s_suppress_maximize >= 0.5f && uMsg == WM_NCLBUTTONDBLCLK) {
+        if (wParam == HTCAPTION) {
+            LogDebug("Intercepted double-click on title bar; preventing maximize");
+            return 0;
+        }
     }
     
     // Call the original window procedure for all other messages

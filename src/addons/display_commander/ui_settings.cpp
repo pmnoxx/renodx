@@ -7,6 +7,10 @@
 #include <sstream>
 #include <iomanip>
 
+// External declarations
+extern float s_staggered_resolution_notifications;
+extern float s_suppress_maximize;
+
 // Helper functions for tab visibility
 inline bool is_basic_tab(float ui_mode) { return ui_mode < 0.5f; }
 inline bool is_developer_tab(float ui_mode) { return ui_mode >= 0.5f && ui_mode < 2.0f; }
@@ -121,7 +125,9 @@ renodx::utils::settings::Settings settings = {
         .label = "Aspect Ratio",
         .section = "Display",
         .tooltip = "Choose the aspect ratio for window resizing. Only applies when Resize Mode is set to Aspect Ratio.",
-        .labels = {"4:3", "5:4", "16:10", "16:9", "21:9", "32:9"},
+        .labels = {"3:2", "4:3", "16:10", "16:9", "19:9", "19.5:9", "21:9", "32:9"},
+        .min = 0.f,
+        .max = 7.f,
         .is_visible = []() { return is_developer_tab(s_ui_mode); },
     },
 
@@ -412,6 +418,32 @@ renodx::utils::settings::Settings settings = {
                 UninstallResizeEnforcerHook();
             }
         },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+    },
+
+    // Staggered Resolution Notifications
+    new renodx::utils::settings::Setting{
+        .key = "StaggeredResolutionNotifications",
+        .binding = &s_staggered_resolution_notifications,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Staggered Resolution Notifications",
+        .section = "Display",
+        .tooltip = "Use staggered resolution change notifications for games that don't respond to immediate notifications. This sends multiple WM_SIZE messages over time to ensure the game updates its internal buffers.",
+        .labels = {"Disabled", "Enabled"},
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+    },
+
+    // Suppress Maximize
+    new renodx::utils::settings::Setting{
+        .key = "SuppressMaximize",
+        .binding = &s_suppress_maximize,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f,
+        .label = "Suppress Maximize",
+        .section = "Display",
+        .tooltip = "Prevent the game window from being maximized. Useful for maintaining consistent window sizing and preventing games from overriding your desired window dimensions.",
+        .labels = {"Disabled", "Enabled"},
         .is_visible = []() { return is_developer_tab(s_ui_mode); },
     },
 

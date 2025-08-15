@@ -1,8 +1,74 @@
 #include "addon.hpp"
 #include "utils.hpp"
+#include <thread>
 
 // Forward declaration
 void ComputeDesiredSize(int& out_w, int& out_h);
+
+// Helper function to send resolution change notifications from another thread
+void SendResolutionChangeNotifications(HWND hwnd, int client_width, int client_height, int target_x, int target_y, int target_w, int target_h, UINT flags) {
+    if (hwnd == nullptr) return;
+    
+    // Send messages from another thread to avoid potential deadlocks
+    std::thread([hwnd, client_width, client_height, target_x, target_y, target_w, target_h, flags]() {
+        // Small delay to ensure SetWindowPos has completed
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        
+        // Send WM_SIZE message to notify about client area size change
+        // This is the most important message for games to update their internal buffers
+        SendMessage(hwnd, WM_SIZE, SIZE_RESTORED, MAKELPARAM(client_width, client_height));
+        
+        // Send WM_WINDOWPOSCHANGED to notify about window position/size change
+        WINDOWPOS wp = {};
+        wp.hwnd = hwnd;
+        wp.x = target_x;
+        wp.y = target_y;
+        wp.cx = target_w;
+        wp.cy = target_h;
+        wp.flags = flags;
+        SendMessage(hwnd, WM_WINDOWPOSCHANGED, 0, reinterpret_cast<LPARAM>(&wp));
+        
+        // Send WM_PAINT to trigger a repaint
+        InvalidateRect(hwnd, nullptr, TRUE);
+        UpdateWindow(hwnd);
+        
+        // Additional messages that games might need for resolution changes
+        SendMessage(hwnd, WM_GETMINMAXINFO, 0, 0);
+        SendMessage(hwnd, WM_NCCALCSIZE, FALSE, 0);
+        
+        // For DirectX games, send additional messages that might be needed
+        // Some games listen for these messages to update their swapchain
+        SendMessage(hwnd, WM_DISPLAYCHANGE, 32, MAKELPARAM(client_width, client_height));
+        
+        // Force a redraw of the entire window
+        RedrawWindow(hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+        
+        LogInfo("Sent comprehensive resolution change notifications to game from separate thread");
+    }).detach();
+}
+
+// Additional function for games that need staggered resolution change notifications
+void SendStaggeredResolutionNotifications(HWND hwnd, int client_width, int client_height) {
+    if (hwnd == nullptr) return;
+    
+    // Some games need multiple notifications over time to properly update their buffers
+    std::thread([hwnd, client_width, client_height]() {
+        // First notification
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        SendMessage(hwnd, WM_SIZE, SIZE_RESTORED, MAKELPARAM(client_width, client_height));
+        
+        // Second notification after a longer delay
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        SendMessage(hwnd, WM_SIZE, SIZE_RESTORED, MAKELPARAM(client_width, client_height));
+        
+        // Final notification with additional messages
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        SendMessage(hwnd, WM_SIZE, SIZE_RESTORED, MAKELPARAM(client_width, client_height));
+        SendMessage(hwnd, WM_PAINT, 0, 0);
+        
+        LogInfo("Sent staggered resolution change notifications to game");
+    }).detach();
+}
 
 void ApplyWindowChange(HWND hwnd,
                        bool do_resize, int client_width, int client_height,
@@ -202,6 +268,18 @@ void ApplyWindowChange(HWND hwnd,
       do_resize ? target_w : 0,
       do_resize ? target_h : 0,
       flags);
+      
+  // Send proper window messages to notify the game about resolution change
+  // This ensures the game updates its internal buffers and rendering pipeline
+  if (do_resize) {
+    // Check if staggered notifications are enabled
+    extern float s_staggered_resolution_notifications;
+    if (s_staggered_resolution_notifications >= 0.5f) {
+      SendStaggeredResolutionNotifications(hwnd, client_width, client_height);
+    } else {
+      SendResolutionChangeNotifications(hwnd, client_width, client_height, target_x, target_y, target_w, target_h, flags);
+    }
+  }
 }
 
 bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h) {
