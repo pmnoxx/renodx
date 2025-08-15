@@ -35,7 +35,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Automatically apply window changes after swapchain initialization.",
         .labels = {"Off", "On"},
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     new renodx::utils::settings::Setting{
         .key = "AutoApplyDelay",
@@ -48,7 +48,7 @@ renodx::utils::settings::Settings settings = {
         .min = 1.f,
         .max = 60.f,
         .format = "%d s",
-        .is_visible = [](){ return s_ui_mode >= 0.5f; },
+        .is_visible = [](){ return is_developer_tab(s_ui_mode); },
     },
     new renodx::utils::settings::Setting{
         .key = "InitApplyDelay",
@@ -61,7 +61,7 @@ renodx::utils::settings::Settings settings = {
         .min = 1.f,
         .max = 60.f,
         .format = "%d s",
-        .is_visible = [](){ return s_ui_mode >= 0.5f; },
+        .is_visible = [](){ return is_developer_tab(s_ui_mode); },
     },
     // Window width preset slider with labels
     new renodx::utils::settings::Setting{
@@ -72,6 +72,7 @@ renodx::utils::settings::Settings settings = {
         .label = "Window Width",
         .section = "Display",
         .labels = MakeLabels(WIDTH_OPTIONS, 7),
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
         .parse = [](float index) {
           int i = static_cast<int>(index);
           i = (std::max)(i, 0);
@@ -89,6 +90,7 @@ renodx::utils::settings::Settings settings = {
         .label = "Window Height",
         .section = "Display",
         .labels = MakeLabels(HEIGHT_OPTIONS, 7),
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
         .is_enabled = [](){ return s_resize_mode < 0.5f; },
         .parse = [](float index) {
           int i = static_cast<int>(index);
@@ -108,7 +110,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Choose between manual width/height or aspect ratio-based resizing.",
         .labels = {"Width/Height", "Aspect Ratio"},
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Aspect Ratio (only when in Aspect mode)
     new renodx::utils::settings::Setting{
@@ -120,7 +122,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Choose the aspect ratio for window resizing. Only applies when Resize Mode is set to Aspect Ratio.",
         .labels = {"4:3", "5:4", "16:10", "16:9", "21:9", "32:9"},
-        .is_visible = []() { return s_ui_mode >= 0.5f; },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
     },
 
     // FPS Limit
@@ -141,7 +143,7 @@ renodx::utils::settings::Settings settings = {
             s_fps_limit = g_default_fps_limit.load();
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Background FPS Limit
     new renodx::utils::settings::Setting{
@@ -154,7 +156,7 @@ renodx::utils::settings::Settings settings = {
         .min = 0.f,
         .max = 240.f,
         .format = "%.0f FPS",
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Volume (0-100)
     new renodx::utils::settings::Setting{
@@ -168,7 +170,7 @@ renodx::utils::settings::Settings settings = {
         .min = 0.f,
         .max = 100.f,
         .format = "%d%%",
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Mute (manual)
     new renodx::utils::settings::Setting{
@@ -184,7 +186,7 @@ renodx::utils::settings::Settings settings = {
             // Reset applied flag so the monitor thread reapplies desired state
             g_muted_applied.store(false);
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Mute in Background (placed after Mute; disabled if Mute is ON)
     new renodx::utils::settings::Setting{
@@ -200,7 +202,7 @@ renodx::utils::settings::Settings settings = {
           // Reset applied flag so the monitor thread reapplies desired state
           g_muted_applied.store(false);
         },
-        .is_visible = [](){ return s_ui_mode >= 0.5f; },
+        .is_visible = [](){ return is_developer_tab(s_ui_mode); },
     },
     // Apply button executes windowed resize
     new renodx::utils::settings::Setting{
@@ -226,7 +228,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Remove top bar (title bar, borders)
     new renodx::utils::settings::Setting{
@@ -238,7 +240,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Remove the window title bar and borders for a cleaner look.",
         .labels = {"Keep", "Remove"},
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Target Monitor
     new renodx::utils::settings::Setting{
@@ -250,7 +252,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Choose which monitor to apply size/pos to. 'Auto' uses the current window monitor.",
         .labels = MakeMonitorLabels(),
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Window alignment when repositioning is needed
     new renodx::utils::settings::Setting{
@@ -262,7 +264,7 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Choose how to align the window when repositioning is needed. 1=Top Left, 2=Top Right, 3=Bottom Left, 4=Bottom Right.",
         .labels = {"None", "Top Left", "Top Right", "Bottom Left", "Bottom Right"},
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Force Borderless (global)
     new renodx::utils::settings::Setting{
@@ -275,7 +277,7 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "Force window to be borderless. Useful for games that don't support borderless mode.",
         .labels = {"Off", "On"},
         .on_change_value = [](float previous, float current){ renodx::mods::swapchain::force_borderless = (current >= 0.5f); },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Prevent Fullscreen (global)
     new renodx::utils::settings::Setting{
@@ -288,7 +290,7 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "Prevent exclusive fullscreen; keep borderless/windowed for stability and HDR.",
         .labels = {"Disabled", "Enabled"},
         .on_change_value = [](float previous, float current){ renodx::mods::swapchain::prevent_full_screen = (current >= 0.5f); },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Spoof Fullscreen State
     new renodx::utils::settings::Setting{
@@ -314,7 +316,7 @@ renodx::utils::settings::Settings settings = {
             }
             LogInfo(oss.str().c_str());
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Spoof Window Focus
     new renodx::utils::settings::Setting{
@@ -339,7 +341,7 @@ renodx::utils::settings::Settings settings = {
             }
             LogInfo(oss.str().c_str());
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
     // Suppress Alt-Tab
@@ -361,7 +363,7 @@ renodx::utils::settings::Settings settings = {
             // Update all Alt suppression methods
             UpdateAltSuppressionMethods();
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Prevent Windows Minimize
     new renodx::utils::settings::Setting{
@@ -386,7 +388,7 @@ renodx::utils::settings::Settings settings = {
                 UninstallMinimizeHook();
             }
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
     // Enforce Desired Window (resize hook)
@@ -410,7 +412,7 @@ renodx::utils::settings::Settings settings = {
                 UninstallResizeEnforcerHook();
             }
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
     },
 
     // Minimize Window
@@ -439,7 +441,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
     // Maximize Window
@@ -468,7 +470,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
     // Restore Window
@@ -497,7 +499,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
     // Make 720p Window
@@ -541,7 +543,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
     // Make 1080p Window
@@ -585,7 +587,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
     // NVAPI Fullscreen Prevention
@@ -713,7 +715,7 @@ renodx::utils::settings::Settings settings = {
             
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
     // NVAPI HDR periodic logging (Developer)
@@ -731,7 +733,7 @@ renodx::utils::settings::Settings settings = {
                 std::thread(RunBackgroundNvapiHdrMonitor).detach();
             }
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
     },
     // Force NVAPI HDR10 (UHDA)
     new renodx::utils::settings::Setting{
@@ -760,7 +762,7 @@ renodx::utils::settings::Settings settings = {
                 }
             }).detach();
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
     },
     // Single-shot NVAPI HDR log (button)
     new renodx::utils::settings::Setting{
@@ -772,7 +774,7 @@ renodx::utils::settings::Settings settings = {
             std::thread([](){ LogNvapiHdrOnce(); }).detach();
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
     },
     // Dump full NVAPI HDR details
     new renodx::utils::settings::Setting{
@@ -798,7 +800,7 @@ renodx::utils::settings::Settings settings = {
             }).detach();
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); },
     },
     new renodx::utils::settings::Setting{
         .key = "NvapiHdrIntervalSec",
@@ -811,7 +813,7 @@ renodx::utils::settings::Settings settings = {
         .min = 1.f,
         .max = 120.f,
         .format = "%d s",
-        .is_visible = []() { return s_ui_mode >= 0.5f && s_nvapi_hdr_logging >= 0.5f; },
+        .is_visible = []() { return is_developer_tab(s_ui_mode) && s_nvapi_hdr_logging >= 0.5f; },
     },
 
     // NVAPI Debug Button
@@ -876,7 +878,7 @@ renodx::utils::settings::Settings settings = {
             
             return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
     // DXGI Device Information Tab
@@ -888,12 +890,19 @@ renodx::utils::settings::Settings settings = {
         .section = "DXGI",
         .tooltip = "Detailed DXGI adapter and output information including HDR capabilities.",
         .on_draw = [](){
-          if (!g_dxgiDeviceInfoManager || !g_dxgiDeviceInfoManager->IsInitialized()) {
-            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "DXGI Device Info Manager not initialized");
-            return false;
-          }
+                     if (!g_dxgiDeviceInfoManager || !g_dxgiDeviceInfoManager->IsInitialized()) {
+             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "DXGI Device Info Manager not initialized");
+             return false;
+           }
 
-                     const auto& adapters = g_dxgiDeviceInfoManager->GetAdapters();
+           // Force device enumeration when this tab is first opened
+           static bool first_open = true;
+           if (first_open) {
+             g_dxgiDeviceInfoManager->RefreshDeviceInfo();
+             first_open = false;
+           }
+
+           const auto& adapters = g_dxgiDeviceInfoManager->GetAdapters();
            if (adapters.empty()) {
              ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "No DXGI adapters found yet. Device enumeration happens automatically during present operations.");
              ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "If you're still not seeing adapters, try refreshing or check if a game/application is running.");
@@ -907,17 +916,17 @@ renodx::utils::settings::Settings settings = {
            ImGui::SameLine();
            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Click to refresh device information");
            
-           // Add force re-enumeration button
+                      // Add force re-enumeration button
            ImGui::SameLine();
            if (ImGui::Button("Force Re-enumeration")) {
              g_dxgiDeviceInfoManager->RefreshDeviceInfo();
            }
            ImGui::SameLine();
-           ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Force re-enumeration of all devices");
-          
-          // Add HDR metadata reset button
-          ImGui::SameLine();
-          if (ImGui::Button("Reset HDR Metadata")) {
+           ImGui::TextColored(ImVec4(0.8f, 0.8f, 1.0f, 1.0f), "Force re-enumeration of all devices");
+           
+           // Add HDR metadata reset button
+           ImGui::SameLine();
+           if (ImGui::Button("Reset HDR Metadata")) {
             // Find first HDR10-capable output and reset its metadata
             const auto& adapters = g_dxgiDeviceInfoManager->GetAdapters();
             for (const auto& adapter : adapters) {
@@ -933,10 +942,124 @@ renodx::utils::settings::Settings settings = {
               }
             }
           }
-          ImGui::SameLine();
-          ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "Reset HDR metadata for HDR10 displays");
+                     ImGui::SameLine();
+           ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "Reset HDR metadata for HDR10 displays");
 
-          ImGui::Separator();
+           // Colorspace selector
+           ImGui::SameLine();
+           if (ImGui::Button("Set Colorspace")) {
+             // Colorspace selection will be handled in the dropdown below
+           }
+           ImGui::SameLine();
+           ImGui::TextColored(ImVec4(0.8f, 1.0f, 0.8f, 1.0f), "Set swapchain colorspace");
+           
+           // Colorspace dropdown
+           static int selected_colorspace = 0;
+           const char* colorspace_names[] = {
+               "sRGB (Non-Linear)",
+               "Extended sRGB (Linear)", 
+               "HDR10 (ST2084/PQ)",
+               "HDR10 (HLG)",
+               "scRGB (16-bit Linear)"
+           };
+           const reshade::api::color_space colorspace_values[] = {
+               reshade::api::color_space::srgb_nonlinear,
+               reshade::api::color_space::extended_srgb_linear,
+               reshade::api::color_space::hdr10_st2084,
+               reshade::api::color_space::hdr10_hlg,
+               reshade::api::color_space::extended_srgb_linear // Use extended_srgb_linear for scRGB
+           };
+           
+           if (ImGui::Combo("Colorspace", &selected_colorspace, colorspace_names, IM_ARRAYSIZE(colorspace_names))) {
+             // Apply the selected colorspace
+             if (g_dxgiDeviceInfoManager && g_dxgiDeviceInfoManager->IsInitialized()) {
+               bool success = false;
+               
+               if (selected_colorspace == 4) { // scRGB (16-bit Linear)
+                 // Use special scRGB method
+                 success = g_dxgiDeviceInfoManager->SetScRGBColorspace();
+               } else {
+                 // Use standard colorspace method
+                 success = g_dxgiDeviceInfoManager->SetColorspace(colorspace_values[selected_colorspace]);
+               }
+               
+               if (success) {
+                 LogInfo(("Colorspace changed to: " + std::string(colorspace_names[selected_colorspace])).c_str());
+               } else {
+                 LogWarn(("Failed to change colorspace to: " + std::string(colorspace_names[selected_colorspace])).c_str());
+               }
+             }
+           }
+
+           ImGui::Separator();
+
+           // Swapchain Information Section
+           if (ImGui::TreeNodeEx("Swapchain Information", ImGuiTreeNodeFlags_DefaultOpen)) {
+             // Get current swapchain info from ReShade
+             extern std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr;
+             extern reshade::api::color_space g_current_colorspace;
+             
+             auto* swapchain = g_last_swapchain_ptr.load();
+             if (swapchain) {
+               // Colorspace information
+               ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "Current Colorspace:");
+               switch (g_current_colorspace) {
+                 case reshade::api::color_space::srgb_nonlinear:
+                   ImGui::Text("  sRGB (Non-Linear)");
+                   break;
+                 case reshade::api::color_space::extended_srgb_linear:
+                   ImGui::Text("  Extended sRGB (Linear)");
+                   break;
+                 case reshade::api::color_space::hdr10_st2084:
+                   ImGui::Text("  HDR10 (ST2084/PQ)");
+                   break;
+                 case reshade::api::color_space::hdr10_hlg:
+                   ImGui::Text("  HDR10 (HLG)");
+                   break;
+                 default:
+                   ImGui::Text("  Unknown (%d)", static_cast<int>(g_current_colorspace));
+                   break;
+               }
+
+               // Backbuffer information
+               if (swapchain->get_back_buffer_count() > 0) {
+                 auto bb = swapchain->get_back_buffer(0);
+                 auto* device = swapchain->get_device();
+                 if (device) {
+                   auto desc = device->get_resource_desc(bb);
+                   ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "Backbuffer:");
+                   ImGui::Text("  Resolution: %dx%d", desc.texture.width, desc.texture.height);
+                   ImGui::Text("  Format: %s", 
+                     desc.texture.format == reshade::api::format::r8g8b8a8_unorm ? "R8G8B8A8_UNORM" :
+                     desc.texture.format == reshade::api::format::r10g10b10a2_unorm ? "R10G10B10A2_UNORM" :
+                     desc.texture.format == reshade::api::format::r16g16b16a16_float ? "R16G16B16A16_FLOAT" :
+                     "Other");
+                   ImGui::Text("  Backbuffer Count: %d", swapchain->get_back_buffer_count());
+                 }
+               }
+
+               // Window information
+               HWND hwnd = static_cast<HWND>(swapchain->get_hwnd());
+               if (hwnd) {
+                 ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "Window:");
+                 RECT rect;
+                 if (GetWindowRect(hwnd, &rect)) {
+                   ImGui::Text("  Position: (%d, %d) to (%d, %d)", rect.left, rect.top, rect.right, rect.bottom);
+                   ImGui::Text("  Size: %dx%d", rect.right - rect.left, rect.bottom - rect.top);
+                 }
+                 
+                 // Window state
+                 LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
+                 ImGui::Text("  Fullscreen: %s", (style & WS_POPUP) ? "Yes" : "No");
+                 ImGui::Text("  Borderless: %s", (style & WS_POPUP) && !(style & WS_CAPTION) ? "Yes" : "No");
+               }
+             } else {
+               ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "No active swapchain available");
+             }
+             ImGui::TreePop();
+           }
+
+           ImGui::Separator();
 
           for (size_t i = 0; i < adapters.size(); ++i) {
             const auto& adapter = adapters[i];
@@ -1129,7 +1252,7 @@ renodx::utils::settings::Settings settings = {
           
           return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Independent Flip failure reasons (text only)
     new renodx::utils::settings::Setting{
@@ -1181,20 +1304,9 @@ renodx::utils::settings::Settings settings = {
           
           return false;
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
-    // Fix HDR10 Colorspace
-    new renodx::utils::settings::Setting{
-        .key = "FixHDR10Colorspace",
-        .binding = &s_fix_hdr10_colorspace,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Fix HDR10 Colorspace",
-        .section = "Display",
-        .tooltip = "Automatically fix HDR10 colorspace when swapchain format is RGB10A2 and colorspace is currently sRGB. Only works when the game is using sRGB colorspace.",
-        .labels = {"Off", "On"},
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
-    },
+
     // Window position (X, Y coordinates)
     new renodx::utils::settings::Setting{
         .key = "WindowPosX",
@@ -1207,7 +1319,7 @@ renodx::utils::settings::Settings settings = {
         .min = -10000.f,
         .max = 10000.f,
         .format = "%d px",
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     new renodx::utils::settings::Setting{
         .key = "WindowPosY",
@@ -1220,7 +1332,7 @@ renodx::utils::settings::Settings settings = {
         .min = -10000.f,
         .max = 10000.f,
         .format = "%d px",
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
     // Reflex Settings
@@ -1243,7 +1355,7 @@ renodx::utils::settings::Settings settings = {
             extern std::atomic<bool> g_reflex_settings_changed;
             g_reflex_settings_changed.store(true);
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     new renodx::utils::settings::Setting{
         .key = "ReflexLowLatencyMode",
@@ -1259,7 +1371,7 @@ renodx::utils::settings::Settings settings = {
             extern std::atomic<bool> g_reflex_settings_changed;
             g_reflex_settings_changed.store(true);
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
+        .is_visible = []() { return is_developer_tab(s_ui_mode) && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
     },
     new renodx::utils::settings::Setting{
         .key = "ReflexLowLatencyBoost",
@@ -1275,7 +1387,7 @@ renodx::utils::settings::Settings settings = {
             extern std::atomic<bool> g_reflex_settings_changed;
             g_reflex_settings_changed.store(true);
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
+        .is_visible = []() { return is_developer_tab(s_ui_mode) && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
     },
     new renodx::utils::settings::Setting{
         .key = "ReflexUseMarkers",
@@ -1291,7 +1403,7 @@ renodx::utils::settings::Settings settings = {
             extern std::atomic<bool> g_reflex_settings_changed;
             g_reflex_settings_changed.store(true);
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
+        .is_visible = []() { return is_developer_tab(s_ui_mode) && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
     },
     // Reflex settings section
     new renodx::utils::settings::Setting{
@@ -1302,7 +1414,7 @@ renodx::utils::settings::Settings settings = {
         .label = "=== NVIDIA Reflex Settings ===",
         .section = "Performance",
         .tooltip = "NVIDIA Reflex latency reduction settings",
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     
     // Latency Display Section
@@ -1314,7 +1426,7 @@ renodx::utils::settings::Settings settings = {
         .label = "=== Latency Information ===",
         .section = "Performance",
         .tooltip = "Real-time latency and Reflex status information",
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     
     // Current Latency Display
@@ -1337,7 +1449,7 @@ renodx::utils::settings::Settings settings = {
             
             return false; // No value change
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     
     // PCL AV Latency Display (Most Important)
@@ -1362,7 +1474,7 @@ renodx::utils::settings::Settings settings = {
             
             return false; // No value change
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     
     // Reflex Status Display
@@ -1391,7 +1503,7 @@ renodx::utils::settings::Settings settings = {
             
             return false; // No value change
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     
     // Debug Button to show atomic variable values
@@ -1424,7 +1536,7 @@ renodx::utils::settings::Settings settings = {
             LogDebug("=== END DEBUG ===");
             return true; // Save settings
         },
-        .is_visible = []() { return s_ui_mode >= 0.5f; }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     
     // Simple always-visible debug element to test UI rendering
@@ -1484,5 +1596,38 @@ renodx::utils::settings::Settings settings = {
             return false;
         },
         .is_visible = []() { return true; }, // Always visible
+    },
+    
+    // NVAPI Tab - NVIDIA-specific features
+    new renodx::utils::settings::Setting{
+        .key = "NVAPITab",
+        .binding = nullptr,
+        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .default_value = 0.f,
+        .label = "",
+        .section = "NVAPI",
+        .tooltip = "NVIDIA-specific features and HDR management",
+        .on_draw = []() -> bool {
+            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "NVIDIA Features");
+            ImGui::Separator();
+            
+            // Fix HDR10 Colorspace option moved here
+            extern float s_fix_hdr10_colorspace;
+            bool fix_hdr = (s_fix_hdr10_colorspace >= 0.5f);
+            if (ImGui::Checkbox("Fix HDR10 Colorspace", &fix_hdr)) {
+                s_fix_hdr10_colorspace = fix_hdr ? 1.0f : 0.0f;
+            }
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "?");
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Automatically fix HDR10 colorspace when swapchain format is RGB10A2 and colorspace is currently sRGB. Only works when the game is using sRGB colorspace.");
+            }
+            
+            // Add more NVIDIA-specific features here in the future
+            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Additional NVIDIA features coming soon...");
+            
+            return false;
+        },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Show in Developer mode
     },
 };

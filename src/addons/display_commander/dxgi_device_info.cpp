@@ -122,9 +122,13 @@ void DXGIDeviceInfoManager::RefreshDeviceInfo() {
         return;
     }
 
+    // Always clear and re-enumerate to get fresh data
     adapters_.clear();
-    GetAdapterFromReShadeDevice();
-    LogDebug("DXGI device information refreshed");
+    if (GetAdapterFromReShadeDevice()) {
+        LogDebug("DXGI device information refreshed successfully");
+    } else {
+        LogDebug("DXGI device information refresh failed");
+    }
 }
 
 void DXGIDeviceInfoManager::EnumerateDevicesOnPresent() {
@@ -139,6 +143,15 @@ void DXGIDeviceInfoManager::EnumerateDevicesOnPresent() {
             LogDebug("Device information enumerated during present");
         } else {
             LogDebug("Device enumeration attempted during present but failed");
+        }
+    } else {
+        // Even if we have adapters, occasionally refresh to catch any changes
+        static int present_counter = 0;
+        present_counter++;
+        if (present_counter >= 300) { // Refresh every 300 presents (about 5 seconds at 60fps)
+            present_counter = 0;
+            LogDebug("Periodic device information refresh during present");
+            RefreshDeviceInfo();
         }
     }
 }
@@ -157,27 +170,34 @@ bool DXGIDeviceInfoManager::GetAdapterFromReShadeDevice() {
             return false;
         }
 
-    // Get the device from the swapchain
-    auto* device = swapchain->get_device();
-    if (!device) {
-        LogWarn("No ReShade device available");
-        return false;
-    }
+        // Get the device from the swapchain
+        auto* device = swapchain->get_device();
+        if (!device) {
+            LogWarn("No ReShade device available");
+            return false;
+        }
 
-    // Get the native DXGI device interface
-    ID3D11Device* d3d11_device = reinterpret_cast<ID3D11Device*>(device->get_native());
-    if (!d3d11_device) {
-        LogWarn("Failed to get native D3D11 device");
-        return false;
-    }
+        // Get the native D3D11 device interface
+        ID3D11Device* d3d11_device = reinterpret_cast<ID3D11Device*>(device->get_native());
+        if (!d3d11_device) {
+            LogWarn("Failed to get native D3D11 device");
+            return false;
+        }
 
-    // Get the DXGI adapter from the D3D11 device
-    Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
-    HRESULT hr = d3d11_device->QueryInterface(IID_PPV_ARGS(&adapter));
-    if (FAILED(hr)) {
-        LogWarn("Failed to get DXGI adapter from D3D11 device");
-        return false;
-    }
+        // Get the DXGI adapter using the correct method
+        Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
+        HRESULT hr = d3d11_device->QueryInterface(IID_PPV_ARGS(&dxgi_device));
+        if (FAILED(hr)) {
+            LogWarn("Failed to get DXGI device from D3D11 device");
+            return false;
+        }
+
+        Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+        hr = dxgi_device->GetAdapter(&adapter);
+        if (FAILED(hr)) {
+            LogWarn("Failed to get DXGI adapter from DXGI device");
+            return false;
+        }
 
     // Get adapter description
     DXGI_ADAPTER_DESC desc = {};
@@ -232,6 +252,67 @@ bool DXGIDeviceInfoManager::GetAdapterFromReShadeDevice() {
     } catch (...) {
         LogWarn("Exception occurred in GetAdapterFromReShadeDevice");
         LogStackTrace("GetAdapterFromReShadeDevice");
+        return false;
+    }
+}
+
+bool DXGIDeviceInfoManager::SetColorspace(reshade::api::color_space colorspace) {
+    try {
+        // Get ReShade's existing swapchain
+        auto* swapchain = g_last_swapchain_ptr.load();
+        if (!swapchain) {
+            LogWarn("Colorspace setting: No ReShade swapchain available");
+            return false;
+        }
+
+        // Get the native DXGI swapchain from ReShade
+        IDXGISwapChain* dxgi_swapchain = reinterpret_cast<IDXGISwapChain*>(swapchain->get_native());
+        if (!dxgi_swapchain) {
+            LogWarn("Colorspace setting: Failed to get native DXGI swapchain from ReShade");
+            return false;
+        }
+
+        // Get IDXGISwapChain4 for colorspace setting
+        Microsoft::WRL::ComPtr<IDXGISwapChain4> swapchain4;
+        HRESULT hr = dxgi_swapchain->QueryInterface(IID_PPV_ARGS(&swapchain4));
+        if (FAILED(hr)) {
+            LogWarn("Colorspace setting: Failed to get IDXGISwapChain4 from ReShade swapchain");
+            return false;
+        }
+
+        // Convert ReShade colorspace to DXGI colorspace
+        DXGI_COLOR_SPACE_TYPE dxgi_colorspace;
+        switch (colorspace) {
+            case reshade::api::color_space::srgb_nonlinear:
+                dxgi_colorspace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+                break;
+            case reshade::api::color_space::extended_srgb_linear:
+                dxgi_colorspace = DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709;
+                break;
+            case reshade::api::color_space::hdr10_st2084:
+                dxgi_colorspace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+                break;
+            case reshade::api::color_space::hdr10_hlg:
+                dxgi_colorspace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020; // HLG uses same primaries
+                break;
+            default:
+                LogWarn("Colorspace setting: Unsupported colorspace");
+                return false;
+        }
+
+        // Set the colorspace
+        hr = swapchain4->SetColorSpace1(dxgi_colorspace);
+        if (SUCCEEDED(hr)) {
+            LogInfo("Colorspace set successfully");
+            return true;
+        } else {
+            LogWarn("Colorspace setting: Failed to set colorspace");
+            return false;
+        }
+
+    } catch (...) {
+        LogWarn("Colorspace setting: Exception occurred during colorspace setting");
+        LogStackTrace("SetColorspace");
         return false;
     }
 }
@@ -391,12 +472,8 @@ bool DXGIDeviceInfoManager::ResetHDRMetadataForOutput(const DXGIOutputInfo& outp
             return false;
         }
 
-        // Set HDR10 colorspace
-        hr = swapchain4->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
-        if (FAILED(hr)) {
-            LogWarn("HDR metadata reset: Failed to set HDR10 colorspace");
-            return false;
-        }
+        // Note: We don't change colorspace during HDR metadata reset
+        // Colorspace should be set separately if needed
 
         // Create HDR metadata
         DXGI_HDR_METADATA_HDR10 metadata = {};
@@ -444,6 +521,47 @@ bool DXGIDeviceInfoManager::ResetHDRMetadataForOutput(const DXGIOutputInfo& outp
     } catch (...) {
         LogWarn("HDR metadata reset: Exception occurred during reset");
         LogStackTrace("ResetHDRMetadataForOutput");
+        return false;
+    }
+}
+
+bool DXGIDeviceInfoManager::SetScRGBColorspace() {
+    try {
+        // Get ReShade's existing swapchain
+        auto* swapchain = g_last_swapchain_ptr.load();
+        if (!swapchain) {
+            LogWarn("scRGB colorspace setting: No ReShade swapchain available");
+            return false;
+        }
+
+        // Get the native DXGI swapchain from ReShade
+        IDXGISwapChain* dxgi_swapchain = reinterpret_cast<IDXGISwapChain*>(swapchain->get_native());
+        if (!dxgi_swapchain) {
+            LogWarn("scRGB colorspace setting: Failed to get native DXGI swapchain from ReShade");
+            return false;
+        }
+
+        // Get IDXGISwapChain4 for colorspace setting
+        Microsoft::WRL::ComPtr<IDXGISwapChain4> swapchain4;
+        HRESULT hr = dxgi_swapchain->QueryInterface(IID_PPV_ARGS(&swapchain4));
+        if (FAILED(hr)) {
+            LogWarn("scRGB colorspace setting: Failed to get IDXGISwapChain4 from ReShade swapchain");
+            return false;
+        }
+
+        // Set scRGB colorspace (16-bit linear RGB with extended range)
+        hr = swapchain4->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
+        if (SUCCEEDED(hr)) {
+            LogInfo("scRGB colorspace set successfully");
+            return true;
+        } else {
+            LogWarn("scRGB colorspace setting: Failed to set scRGB colorspace");
+            return false;
+        }
+
+    } catch (...) {
+        LogWarn("scRGB colorspace setting: Exception occurred during colorspace setting");
+        LogStackTrace("SetScRGBColorspace");
         return false;
     }
 }

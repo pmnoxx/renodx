@@ -9,6 +9,7 @@
 #include <memory>
 #include <sstream>
 #include <iomanip>
+#include <include/reshade.hpp>
 
 // Forward declarations
 struct DXGIAdapterInfo;
@@ -34,6 +35,10 @@ public:
     
     // HDR metadata reset functionality (called during present)
     bool ResetHDRMetadataOnPresent(const std::string& output_device_name, float max_cll = 0.0f);
+    
+    // Colorspace setting functionality
+    bool SetColorspace(reshade::api::color_space colorspace);
+    bool SetScRGBColorspace(); // Special method for scRGB 16-bit
 
 private:
     bool EnumerateOutputs(IDXGIAdapter* adapter, DXGIAdapterInfo& adapter_info);
