@@ -85,3 +85,8 @@
 102	3946	7769912589198210	CMakeFiles/display_commander.dir/src/addons/display_commander/dxgi_device_info.cpp.obj	aff13c9b99db2e91
 154	3990	7769912589714827	CMakeFiles/display_commander.dir/src/addons/display_commander/ui_settings.cpp.obj	336984dd640d55a2
 3991	4130	7769912628093214	renodx-display_commander.addon64	e81dcd26c08cb859
+55	77	7769914500249181	D:/repos/renodx2/build_ninja/CMakeFiles/cmake.verify_globs	d546f856aeed2425
+83	2127	7769914500526797	CMakeFiles/display_commander.dir/src/addons/display_commander/ui/ui_main.cpp.obj	f009f5faf1c1aaad
+81	2178	7769914500507459	CMakeFiles/display_commander.dir/src/addons/display_commander/ui/ui_dxgi_device_info.cpp.obj	1d8ffb3e84e3bd27
+85	2409	7769914500548350	CMakeFiles/display_commander.dir/src/addons/display_commander/ui_settings.cpp.obj	336984dd640d55a2
+2410	2532	7769914523791731	renodx-display_commander.addon64	e81dcd26c08cb859
