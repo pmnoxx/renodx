@@ -30,6 +30,7 @@ set(OLD_GLOB
   "D:/repos/renodx2/src/addons/display_commander/triggers/background_fps_monitor.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_audio_settings.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_debug_settings.cpp"
+  "D:/repos/renodx2/src/addons/display_commander/ui/ui_developer_settings.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_device_info.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_display_settings.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_dxgi_device_info.cpp"

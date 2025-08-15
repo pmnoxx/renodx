@@ -3,6 +3,7 @@
 #include "ui_display_settings.hpp"
 #include "ui_audio_settings.hpp"
 #include "ui_window_controls.hpp"
+#include "ui_developer_settings.hpp"
 #include "ui_nvapi_settings.hpp"
 #include "ui_device_info.hpp"
 #include "ui_window_info.hpp"
@@ -35,6 +36,7 @@ void InitializeUISettings() {
     renodx::ui::AddDisplaySettings(settings);
     renodx::ui::AddAudioSettings(settings);
     renodx::ui::AddWindowControls(settings);
+    renodx::ui::AddDeveloperSettings(settings);
     renodx::ui::AddNvapiSettings(settings);
     renodx::ui::AddDeviceInfoSettings(settings);
     renodx::ui::AddWindowInfoSettings(settings);

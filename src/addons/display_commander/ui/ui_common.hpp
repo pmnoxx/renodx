@@ -21,6 +21,7 @@ namespace renodx::ui {
     void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings);
     void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings);
     void AddWindowControls(std::vector<renodx::utils::settings::Setting*>& settings);
+    void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settings);
     void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings);
     void AddDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings);
     void AddWindowInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings);
