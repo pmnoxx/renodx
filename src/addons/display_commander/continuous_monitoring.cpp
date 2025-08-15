@@ -18,89 +18,6 @@ extern float s_windowed_pos_x;
 extern float s_windowed_pos_y;
 extern float s_remove_top_bar;
 
-// Function to check if a window needs adjustment
-bool NeedsWindowAdjustment(HWND hwnd, int& out_width, int& out_height, int& out_pos_x, int& out_pos_y, WindowStyleMode& out_style_mode) {
-    if (hwnd == nullptr) return false;
-    
-    // Get current window state
-    RECT window_rect;
-    if (!GetWindowRect(hwnd, &window_rect)) return false;
-    
-    RECT client_rect;
-    if (!GetClientRect(hwnd, &client_rect)) return false;
-    
-    // Get current window styles
-    LONG_PTR current_style = GetWindowLongPtrW(hwnd, GWL_STYLE);
-    LONG_PTR current_ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
-    
-    // Compute desired size and position
-    int desired_width = 0, desired_height = 0;
-    ComputeDesiredSize(desired_width, desired_height);
-    
-    int desired_pos_x = static_cast<int>(s_windowed_pos_x);
-    int desired_pos_y = static_cast<int>(s_windowed_pos_y);
-    
-    // Determine desired style mode
-    WindowStyleMode desired_style_mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
-    
-    // Check if window is maximized or minimized
-    if (IsZoomed(hwnd) || IsIconic(hwnd)) {
-        return false; // Don't interfere with maximized/minimized windows
-    }
-    
-    // Check if size needs adjustment
-    bool needs_resize = false;
-    if (desired_width > 0 && desired_height > 0) {
-        int current_client_width = client_rect.right - client_rect.left;
-        int current_client_height = client_rect.bottom - client_rect.top;
-        
-        // Allow small tolerance (5 pixels)
-        if (abs(current_client_width - desired_width) > 5 || abs(current_client_height - desired_height) > 5) {
-            needs_resize = true;
-        }
-    }
-    
-    // Check if position needs adjustment
-    bool needs_move = false;
-    if (desired_pos_x != 0 || desired_pos_y != 0) {
-        int current_x = window_rect.left;
-        int current_y = window_rect.top;
-        
-        // Allow small tolerance (5 pixels)
-        if (abs(current_x - desired_pos_x) > 5 || abs(current_y - desired_pos_y) > 5) {
-            needs_move = true;
-        }
-    }
-    
-    // Check if style needs adjustment
-    bool needs_style_change = false;
-    if (desired_style_mode == WindowStyleMode::BORDERLESS) {
-        // Check if window has borderless styles
-        bool has_borderless_style = !(current_style & WS_CAPTION) && !(current_style & WS_THICKFRAME);
-        if (!has_borderless_style) {
-            needs_style_change = true;
-        }
-    } else if (desired_style_mode == WindowStyleMode::OVERLAPPED_WINDOW) {
-        // Check if window has overlapped window styles
-        bool has_overlapped_style = (current_style & WS_CAPTION) && (current_style & WS_THICKFRAME);
-        if (!has_overlapped_style) {
-            needs_style_change = true;
-        }
-    }
-    
-    // Set output parameters if adjustment is needed
-    if (needs_resize || needs_move || needs_style_change) {
-        out_width = desired_width;
-        out_height = desired_height;
-        out_pos_x = desired_pos_x;
-        out_pos_y = desired_pos_y;
-        out_style_mode = desired_style_mode;
-        return true;
-    }
-    
-    return false;
-}
-
 // Main monitoring thread function
 void ContinuousMonitoringThread() {
     LogInfo("Continuous monitoring thread started");
@@ -114,17 +31,8 @@ void ContinuousMonitoringThread() {
         // Get the current swapchain window
         HWND hwnd = g_last_swapchain_hwnd.load();
         if (hwnd != nullptr && IsWindow(hwnd)) {
-            // Check if window needs adjustment
-            int desired_width, desired_height, desired_pos_x, desired_pos_y;
-            WindowStyleMode desired_style_mode;
-            
-            if (NeedsWindowAdjustment(hwnd, desired_width, desired_height, desired_pos_x, desired_pos_y, desired_style_mode)) {
-                // Apply the necessary changes
-                ApplyWindowChange(hwnd, true, desired_width, desired_height, true, desired_pos_x, desired_pos_y, 
-                                desired_style_mode, "continuous_monitoring_auto_fix");
-                
-                LogDebug("Continuous monitoring: Applied window adjustments");
-            }
+            // Apply window changes - the function will automatically determine what needs to be changed
+            ApplyWindowChange(hwnd, "continuous_monitoring_auto_fix");
         }
         
         // Sleep for 1 second

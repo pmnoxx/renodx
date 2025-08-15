@@ -247,9 +247,8 @@ renodx::utils::settings::Settings settings = {
                     int want_w = 0; int want_h = 0; ComputeDesiredSize(want_w, want_h);
                     
                     // Apply the change
-                    extern void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode, const char* reason = "unknown");
-                    WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
-                    ApplyWindowChange(hwnd, true, want_w, want_h, true, static_cast<int>(s_windowed_pos_x), static_cast<int>(s_windowed_pos_y), mode, "ui_settings_manual_apply");
+                    extern void ApplyWindowChange(HWND hwnd, const char* reason = "unknown");
+                    ApplyWindowChange(hwnd, "ui_settings_manual_apply");
                     
                     LogInfo("Manual apply executed");
                 }
@@ -504,12 +503,8 @@ renodx::utils::settings::Settings settings = {
                 }
                 
                 // Apply 720p window with current style preference
-                WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
                 ApplyWindowChange(
-                    hwnd,
-                    /*do_resize=*/true, want_w, want_h,
-                    /*do_move=*/true, pos_x, pos_y,
-                    mode, "ui_settings_720p_button");
+                    hwnd, "ui_settings_720p_button");
                 
                 LogInfo("720p window applied successfully");
             }).detach();
@@ -548,12 +543,8 @@ renodx::utils::settings::Settings settings = {
                 }
                 
                 // Apply 1080p window with current style preference
-                WindowStyleMode mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
                 ApplyWindowChange(
-                    hwnd,
-                    /*do_resize=*/true, want_w, want_h,
-                    /*do_move=*/true, pos_x, pos_y,
-                    mode, "ui_settings_1080p_button");
+                    hwnd, "ui_settings_1080p_button");
                 
                 LogInfo("1080p window applied successfully");
             }).detach();
