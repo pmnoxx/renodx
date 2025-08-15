@@ -42,7 +42,7 @@ void AddUISettings(renodx::utils::settings::Settings& settings) {
         .section = "Display",
         .tooltip = "Automatically apply window changes after swapchain initialization.",
         .labels = {"Off", "On"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     },
     new renodx::utils::settings::Setting{
         .key = "AutoApplyDelay",
@@ -55,7 +55,7 @@ void AddUISettings(renodx::utils::settings::Settings& settings) {
         .min = 1.f,
         .max = 60.f,
         .format = "%d s",
-        .is_visible = [](){ return is_developer_tab(s_ui_mode); },
+        .is_visible = [](){ return is_basic_tab(s_ui_mode); },
     },
     new renodx::utils::settings::Setting{
         .key = "InitApplyDelay",
@@ -68,7 +68,7 @@ void AddUISettings(renodx::utils::settings::Settings& settings) {
         .min = 1.f,
         .max = 60.f,
         .format = "%d s",
-        .is_visible = [](){ return is_developer_tab(s_ui_mode); },
+        .is_visible = [](){ return is_basic_tab(s_ui_mode); },
     },
     // Continuous monitoring toggle
     new renodx::utils::settings::Setting{

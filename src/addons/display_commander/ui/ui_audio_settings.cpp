@@ -21,7 +21,7 @@ void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
         .min = 0.f,
         .max = 100.f,
         .format = "%d%%",
-        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+        .is_visible = []() { return is_basic_tab(s_ui_mode); },
     });
 
     // Audio Mute
@@ -34,7 +34,7 @@ void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
         .section = "Audio",
         .tooltip = "Mute/unmute audio.",
         .labels = {"Unmuted", "Muted"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+        .is_visible = []() { return is_basic_tab(s_ui_mode); },
     });
 
     // Mute in Background
@@ -47,7 +47,7 @@ void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
         .section = "Audio",
         .tooltip = "Mute audio when application loses focus.",
         .labels = {"Disabled", "Enabled"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+        .is_visible = []() { return is_basic_tab(s_ui_mode); },
     });
 
     // FPS Limit in Background
@@ -62,7 +62,7 @@ void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
         .min = 1.f,
         .max = 300.f,
         .format = "%d FPS",
-        .is_visible = []() { return is_developer_tab(s_ui_mode); },
+        .is_visible = []() { return is_basic_tab(s_ui_mode); },
     });
 }
 

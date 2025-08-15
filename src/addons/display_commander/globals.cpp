@@ -6,7 +6,7 @@
 float s_ui_mode = 0.f; // Basic mode by default
 
 // Auto-apply settings
-float s_auto_apply_enabled = 0.f;
+float s_auto_apply_enabled = 1.f; // Enabled by default
 float s_auto_apply_delay_sec = 10.f;
 float s_auto_apply_init_delay_sec = 1.f;
 
@@ -93,7 +93,7 @@ std::unique_ptr<ReflexManager> g_reflexManager;
 std::atomic<bool> g_reflex_settings_changed{false};
 
 // Continuous monitoring system
-float s_continuous_monitoring_enabled = 0.f;
+float s_continuous_monitoring_enabled = 1.f; // Enabled by default
 std::atomic<bool> g_monitoring_thread_running{false};
 std::thread g_monitoring_thread;
 
