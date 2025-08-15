@@ -57,12 +57,7 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
     FixHDR10Colorspace(swapchain);
   }
   
-  // Reinstall minimize prevention if it was enabled and the window handle changed
-  extern float s_prevent_windows_minimize;
-  if (s_prevent_windows_minimize >= 0.5f) {
-    extern bool InstallMinimizeHook();
-    InstallMinimizeHook();
-  }
+  // Note: Minimize hook removed - use continuous monitoring instead
 
   // Set Reflex sleep mode and latency markers if enabled
   if (s_reflex_enabled >= 0.5f) {

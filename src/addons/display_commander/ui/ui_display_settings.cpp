@@ -18,17 +18,15 @@ extern float s_prevent_windows_minimize;
 extern float s_enforce_desired_window;
 extern float s_target_monitor_index;
 extern float s_move_to_zero_if_out;
-extern float s_staggered_resolution_notifications;
-extern float s_suppress_maximize;
+
+
 
 // Continuous monitoring
 extern float s_continuous_monitoring_enabled;
 extern void StartContinuousMonitoring();
 extern void StopContinuousMonitoring();
 
-// External declarations for global functions
-extern void StartBorderlessStyleTimer();
-extern void StopBorderlessStyleTimer();
+
 
 namespace renodx::ui {
 
@@ -108,14 +106,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .tooltip = "Remove the window title bar and borders for a cleaner look.",
         .labels = {"Keep", "Remove"},
         .on_change_value = [](float previous, float current) {
-            // Start or stop borderless style enforcement based on setting
-            if (current >= 0.5f) {
-                // TODO: Fix namespace issues - StartBorderlessStyleTimer();
-                LogInfo("Borderless style enforcement started due to setting change");
-            } else {
-                // TODO: Fix namespace issues - StopBorderlessStyleTimer();
-                LogInfo("Borderless style enforcement stopped due to setting change");
-            }
+            // Note: Borderless style enforcement removed - use continuous monitoring instead
+            std::ostringstream oss;
+            oss << "Remove top bar setting changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            LogInfo(oss.str().c_str());
         },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
@@ -240,14 +234,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .tooltip = "Prevent windows from being minimized by installing Windows hook. Suppresses minimize window messages.",
         .labels = {"Disabled", "Enabled"},
         .on_change_value = [](float previous, float current) {
-            // Start or stop minimize prevention hook based on setting
-            if (current >= 0.5f) {
-                // TODO: Fix namespace issues - InstallMinimizeHook();
-                LogInfo("Minimize prevention hook started due to setting change");
-            } else {
-                // TODO: Fix namespace issues - UninstallMinimizeHook();
-                LogInfo("Minimize prevention hook stopped due to setting change");
-            }
+            // Note: Minimize hook removed - use continuous monitoring instead
+            std::ostringstream oss;
+            oss << "Prevent Windows minimize changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            LogInfo(oss.str().c_str());
         },
         .is_visible = []() { return is_main_tab(s_ui_mode); }, // Show in Basic and Developer modes since this is a common issue
     });
@@ -263,14 +253,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .tooltip = "Enforce desired window size and position using resize hook. Automatically resizes/moves window to desired dimensions.",
         .labels = {"Disabled", "Enabled"},
         .on_change_value = [](float previous, float current) {
-            // Start or stop resize enforcer hook based on setting
-            if (current >= 0.5f) {
-                // TODO: Fix namespace issues - InstallResizeEnforcerHook();
-                LogInfo("Resize enforcer hook started due to setting change");
-            } else {
-                // TODO: Fix namespace issues - UninstallResizeEnforcerHook();
-                LogInfo("Resize enforcer hook stopped due to setting change");
-            }
+            // Note: Resize enforcer hook removed - use continuous monitoring instead
+            std::ostringstream oss;
+            oss << "Resize enforcement changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            LogInfo(oss.str().c_str());
         },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
@@ -297,31 +283,9 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
 
-    // Staggered Resolution Notifications
-    settings.push_back(new renodx::utils::settings::Setting{
-        .key = "StaggeredResolutionNotifications",
-        .binding = &s_staggered_resolution_notifications,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Staggered Resolution Notifications",
-        .section = "Display",
-        .tooltip = "Stagger resolution change notifications to prevent overwhelming the system.",
-        .labels = {"Disabled", "Enabled"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    });
 
-    // Suppress Maximize
-    settings.push_back(new renodx::utils::settings::Setting{
-        .key = "SuppressMaximize",
-        .binding = &s_suppress_maximize,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Suppress Maximize",
-        .section = "Display",
-        .tooltip = "Suppress maximize functionality to prevent window from being maximized.",
-        .labels = {"Disabled", "Enabled"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    });
+
+
 }
 
 } // namespace renodx::ui

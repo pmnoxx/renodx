@@ -3,8 +3,7 @@
 // Include the UI settings header to get the settings vector declaration
 #include "ui_settings.hpp"
 
-// Include keyboard hook functions
-#include "keyboard_hook.hpp"
+
 
 // Forward declarations for continuous monitoring functions
 void StartContinuousMonitoring();
@@ -82,16 +81,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       
 
       
-      // Clean up minimize hook if it's installed
-      UninstallMinimizeHook();
-      // Clean up resize enforcer if it's installed
-      UninstallResizeEnforcerHook();
-      
       // Clean up continuous monitoring if it's running
       StopContinuousMonitoring();
-      
-      // Clean up window message hook if it's installed
-      UninstallWindowMessageHook();
       
 
       
@@ -117,28 +108,10 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   if (fdw_reason == DLL_PROCESS_ATTACH) {
 
     
-    // Check if Windows minimize prevention should be enabled
-    if (s_prevent_windows_minimize >= 0.5f) {
-      InstallMinimizeHook();
-    }
-    // Check if resize enforcement should be enabled
-    if (s_enforce_desired_window >= 0.5f) {
-      InstallResizeEnforcerHook();
-    }
-    
     // Check if continuous monitoring should be enabled
     if (s_continuous_monitoring_enabled >= 0.5f) {
       StartContinuousMonitoring();
       LogInfo("Continuous monitoring started proactively");
-    }
-    
-    // Install window message hook for window creation and lifecycle monitoring
-    InstallWindowMessageHook();
-    
-    // Install borderless style enforcement if enabled
-    if (s_remove_top_bar >= 0.5f) {
-      StartBorderlessStyleTimer();
-      LogInfo("Borderless style enforcement started proactively");
     }
     
     // Initialize NVAPI fullscreen prevention if enabled

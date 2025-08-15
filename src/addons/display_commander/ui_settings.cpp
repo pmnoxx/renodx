@@ -8,8 +8,6 @@
 #include <iomanip>
 
 // External declarations
-extern float s_staggered_resolution_notifications;
-extern float s_suppress_maximize;
 extern float s_reflex_debug_output;
 
 // Continuous monitoring function declarations
@@ -271,16 +269,10 @@ renodx::utils::settings::Settings settings = {
         .tooltip = "Remove the window title bar and borders for a cleaner look.",
         .labels = {"Keep", "Remove"},
         .on_change_value = [](float previous, float current) {
-            // Start or stop borderless style enforcement based on setting
-            if (current >= 0.5f) {
-                extern void StartBorderlessStyleTimer();
-                StartBorderlessStyleTimer();
-                LogInfo("Borderless style enforcement started due to setting change");
-            } else {
-                extern void StopBorderlessStyleTimer();
-                StopBorderlessStyleTimer();
-                LogInfo("Borderless style enforcement stopped due to setting change");
-            }
+            // Note: Borderless style enforcement removed - use continuous monitoring instead
+            std::ostringstream oss;
+            oss << "Remove top bar setting changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            LogInfo(oss.str().c_str());
         },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
@@ -387,81 +379,13 @@ renodx::utils::settings::Settings settings = {
     },
 
 
-    // Prevent Windows Minimize
-    new renodx::utils::settings::Setting{
-        .key = "PreventWindowsMinimize",
-        .binding = &s_prevent_windows_minimize,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Prevent Windows Minimize",
-        .section = "Display",
-        .tooltip = "Prevent windows from being minimized by installing Windows hook. Suppresses minimize window messages.",
-        .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current){ 
-            // Update the Windows minimize prevention state
-            std::ostringstream oss;
-            oss << "Windows minimize prevention changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
-            LogInfo(oss.str().c_str());
-            
-            // Install or uninstall the hook based on the new setting
-            if (current >= 0.5f) {
-                InstallMinimizeHook();
-            } else {
-                UninstallMinimizeHook();
-            }
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    },
 
-    // Enforce Desired Window (resize hook)
-    new renodx::utils::settings::Setting{
-        .key = "EnforceDesiredWindow",
-        .binding = &s_enforce_desired_window,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Enforce Desired Window Size/Pos",
-        .section = "Display",
-        .tooltip = "Install a hook to enforce desired size/position whenever the window is resized or moved.",
-        .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current){
-            std::ostringstream oss;
-            oss << "Resize enforcement changed from " << (previous >= 0.5f ? "enabled" : "disabled")
-                << " to " << (current >= 0.5f ? "enabled" : "disabled");
-            LogInfo(oss.str().c_str());
-            if (current >= 0.5f) {
-                InstallResizeEnforcerHook();
-            } else {
-                UninstallResizeEnforcerHook();
-            }
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); },
-    },
 
-    // Staggered Resolution Notifications
-    new renodx::utils::settings::Setting{
-        .key = "StaggeredResolutionNotifications",
-        .binding = &s_staggered_resolution_notifications,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Staggered Resolution Notifications",
-        .section = "Display",
-        .tooltip = "Use staggered resolution change notifications for games that don't respond to immediate notifications. This sends multiple WM_SIZE messages over time to ensure the game updates its internal buffers.",
-        .labels = {"Disabled", "Enabled"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); },
-    },
 
-    // Suppress Maximize
-    new renodx::utils::settings::Setting{
-        .key = "SuppressMaximize",
-        .binding = &s_suppress_maximize,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Suppress Maximize",
-        .section = "Display",
-        .tooltip = "Prevent the game window from being maximized. Useful for maintaining consistent window sizing and preventing games from overriding your desired window dimensions.",
-        .labels = {"Disabled", "Enabled"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode); },
-    },
+
+
+
+
 
     // Minimize Window
     new renodx::utils::settings::Setting{

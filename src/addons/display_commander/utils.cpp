@@ -6,8 +6,8 @@ extern float s_windowed_width;
 extern float s_windowed_height;
 extern float s_resize_mode;
 extern float s_aspect_index;
-extern float s_staggered_resolution_notifications;
-extern float s_suppress_maximize;
+
+
 extern std::vector<MonitorInfo> g_monitors;
 
 // Constant definitions

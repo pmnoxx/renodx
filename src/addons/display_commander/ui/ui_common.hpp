@@ -4,8 +4,8 @@
 #include <vector>
 
 // External declarations for settings
-extern float s_staggered_resolution_notifications;
-extern float s_suppress_maximize;
+
+
 extern float s_reflex_debug_output;
 
 // Helper functions for tab visibility

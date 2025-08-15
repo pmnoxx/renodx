@@ -66,13 +66,7 @@ bool InstallAltSuppressionRawInput();
 void UninstallAltSuppressionRawInput();
 
 
-// Windows minimize prevention functions (using window subclassing)
-bool InstallMinimizeHook();
-void UninstallMinimizeHook();
 
-// Window resize enforcement (using window subclassing)
-bool InstallResizeEnforcerHook();
-void UninstallResizeEnforcerHook();
 
 // Reflex management functions
 bool InstallReflexHooks();
@@ -154,9 +148,7 @@ extern float s_fps_limit;
 extern float s_target_monitor_index;
 extern float s_dxgi_composition_state;
 
-extern float s_prevent_windows_minimize;
 extern float s_spoof_window_focus;
-extern float s_enforce_desired_window;
 
 extern std::atomic<int> g_comp_query_counter;
 extern std::atomic<int> g_comp_last_logged;

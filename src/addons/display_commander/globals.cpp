@@ -50,18 +50,12 @@ float s_fps_limit = 0.f;
 float s_target_monitor_index = 0.f;
 float s_dxgi_composition_state = 0.f;
 
-float s_prevent_windows_minimize = 0.f;
 float s_spoof_window_focus = 0.f;
-float s_enforce_desired_window = 0.f;
 
 // Fix HDR10 color space when backbuffer is RGB10A2
 float s_fix_hdr10_colorspace = 0.f;
 
-// Resolution change notification settings
-float s_staggered_resolution_notifications = 0.f; // Use staggered notifications for stubborn games
 
-// Window behavior suppression settings
-float s_suppress_maximize = 0.f; // Suppress maximize functionality
 
 // Reflex settings
 float s_reflex_enabled = 1.f; // Enabled by default
