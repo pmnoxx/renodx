@@ -1,0 +1,92 @@
+#pragma once
+#include "./0x8E2521B8.h"
+#include "./0xA9F8ED91.h"
+#include "./0x066C98CB.h"
+#include "./0xB4EB8715.h"
+#include "./0x0EC3291B.h"
+#include "./0x1786ED25.h"
+#include "./0x35097DF4.h"
+#include "./0xFE185665.h"
+#include "./0xA1FBDC24.h"
+#include "./0x43207502.h"
+#include "./0x20133A8B.h"
+#include "./0x9E4CBF41.h"
+#include "./0xEA8CA6F6.h"
+#include "./0xF2218191.h"
+#include "./0xBC821AE4.h"
+#include "./0x55B0DCB7.h"
+#include "./0x4F036BB9.h"
+#include "./0x915C6643.h"
+#include "./0xEADD927D.h"
+#include "./swap_chain_proxy_pixel_shader_dx11.h"
+#include "./swap_chain_proxy_pixel_shader_dx12.h"
+#include "./swap_chain_proxy_vertex_shader_dx11.h"
+#include "./swap_chain_proxy_vertex_shader_dx12.h"
+#include "./0x29B13A00.h"
+#include "./0xC85DC52C.h"
+#include "./0xC39AD9C3.h"
+#include "./0xA833F91D.h"
+#include "./0xA8B64286.h"
+#include "./0x242BCAA5.h"
+#include "./0xF52A2A61.h"
+#include "./0x09BE2D97.h"
+#include "./0x97910609.h"
+#include "./0xB054E953.h"
+#include "./0x699FABE4.h"
+#include "./0x99F14892.h"
+#include "./0xE5E4F46C.h"
+#include "./0x25700979.h"
+#include "./0x2709A0E9.h"
+#include "./0x32766FD6.h"
+#include "./0x480751D6.h"
+#include "./0x9F979DF7.h"
+#include "./0xE1D5D54B.h"
+#include "./0xEB036504.h"
+#include "./0xFD02CCD4.h"
+#include "./0xFBCF41E6.h"
+#include "./0x97379D6B.h"
+#define __CUSTOM_SHADER_ENTRIES \
+  CustomShaderEntry(0x8E2521B8), \
+  CustomShaderEntry(0xA9F8ED91), \
+  CustomShaderEntry(0x066C98CB), \
+  CustomShaderEntry(0xB4EB8715), \
+  CustomShaderEntry(0x0EC3291B), \
+  CustomShaderEntry(0x1786ED25), \
+  CustomShaderEntry(0x35097DF4), \
+  CustomShaderEntry(0xFE185665), \
+  CustomShaderEntry(0xA1FBDC24), \
+  CustomShaderEntry(0x43207502), \
+  CustomShaderEntry(0x20133A8B), \
+  CustomShaderEntry(0x9E4CBF41), \
+  CustomShaderEntry(0xEA8CA6F6), \
+  CustomShaderEntry(0xF2218191), \
+  CustomShaderEntry(0xBC821AE4), \
+  CustomShaderEntry(0x55B0DCB7), \
+  CustomShaderEntry(0x4F036BB9), \
+  CustomShaderEntry(0x915C6643), \
+  CustomShaderEntry(0xEADD927D), \
+  CustomShaderEntry(0x29B13A00), \
+  CustomShaderEntry(0xC85DC52C), \
+  CustomShaderEntry(0xC39AD9C3), \
+  CustomShaderEntry(0xA833F91D), \
+  CustomShaderEntry(0xA8B64286), \
+  CustomShaderEntry(0x242BCAA5), \
+  CustomShaderEntry(0xF52A2A61), \
+  CustomShaderEntry(0x09BE2D97), \
+  CustomShaderEntry(0x97910609), \
+  CustomShaderEntry(0xB054E953), \
+  CustomShaderEntry(0x699FABE4), \
+  CustomShaderEntry(0x99F14892), \
+  CustomShaderEntry(0xE5E4F46C), \
+  CustomShaderEntry(0x25700979), \
+  CustomShaderEntry(0x2709A0E9), \
+  CustomShaderEntry(0x32766FD6), \
+  CustomShaderEntry(0x480751D6), \
+  CustomShaderEntry(0x9F979DF7), \
+  CustomShaderEntry(0xE1D5D54B), \
+  CustomShaderEntry(0xEB036504), \
+  CustomShaderEntry(0xFD02CCD4), \
+  CustomShaderEntry(0xFBCF41E6), \
+  CustomShaderEntry(0x97379D6B)
+#define __ALL_CUSTOM_SHADERS \
+  __CUSTOM_SHADER_ENTRIES

@@ -1,0 +1,480 @@
+#pragma once
+#include "./0x1564B757.h"
+#include "./0x7170613F.h"
+#include "./0x5011999C.h"
+#include "./0xAC791084.h"
+#include "./0xB864B3B8_dx11.h"
+#include "./0xB864B3B8_dx12.h"
+#include "./0x00E9C5FE_dx11.h"
+#include "./0x00E9C5FE_dx12.h"
+#include "./0xE9343033_dx11.h"
+#include "./0xE9343033_dx12.h"
+#include "./0x76E751B9.h"
+#include "./0xCB9976C8.h"
+#include "./0xBFE48347.h"
+#include "./0x388FF776_dx11.h"
+#include "./0x388FF776_dx12.h"
+#include "./0x8D5C5C52.h"
+#include "./0x7C1D6772.h"
+#include "./0xD658638D.h"
+#include "./0xBF5C676F_dx11.h"
+#include "./0xBF5C676F_dx12.h"
+#include "./0xE73B3FFD_dx11.h"
+#include "./0xE73B3FFD_dx12.h"
+#include "./0xEE1D0151_dx11.h"
+#include "./0xEE1D0151_dx12.h"
+#include "./0x1D1C27C0_dx11.h"
+#include "./0x1D1C27C0_dx12.h"
+#include "./0x271E2688_dx11.h"
+#include "./0x271E2688_dx12.h"
+#include "./0x3B22B2CC_dx11.h"
+#include "./0x3B22B2CC_dx12.h"
+#include "./0x7A453AD3_dx11.h"
+#include "./0x7A453AD3_dx12.h"
+#include "./0xB022C611_dx11.h"
+#include "./0xB022C611_dx12.h"
+#include "./0xF57838BC_dx11.h"
+#include "./0xF57838BC_dx12.h"
+#include "./0x03F2231B_dx11.h"
+#include "./0x03F2231B_dx12.h"
+#include "./0x0A9793C1_dx11.h"
+#include "./0x0A9793C1_dx12.h"
+#include "./0x0C26F82E_dx11.h"
+#include "./0x0C26F82E_dx12.h"
+#include "./0x0F17B0B3_dx11.h"
+#include "./0x0F17B0B3_dx12.h"
+#include "./0x11ACA4BD_dx11.h"
+#include "./0x11ACA4BD_dx12.h"
+#include "./0x18639D8F_dx11.h"
+#include "./0x18639D8F_dx12.h"
+#include "./0x1BA80C5E_dx11.h"
+#include "./0x1BA80C5E_dx12.h"
+#include "./0x1DF6036B_dx11.h"
+#include "./0x1DF6036B_dx12.h"
+#include "./0x1F1D6E66_dx11.h"
+#include "./0x1F1D6E66_dx12.h"
+#include "./0x20EAC9B6_dx11.h"
+#include "./0x20EAC9B6_dx12.h"
+#include "./0x2179DAD2_dx11.h"
+#include "./0x2179DAD2_dx12.h"
+#include "./0x22A4BD4E_dx11.h"
+#include "./0x22A4BD4E_dx12.h"
+#include "./0x2569985B_dx11.h"
+#include "./0x2569985B_dx12.h"
+#include "./0x2A94C68A_dx11.h"
+#include "./0x2A94C68A_dx12.h"
+#include "./0x2AFC7CD9_dx11.h"
+#include "./0x2AFC7CD9_dx12.h"
+#include "./0x2F460105_dx11.h"
+#include "./0x2F460105_dx12.h"
+#include "./0x3040FD90_dx11.h"
+#include "./0x3040FD90_dx12.h"
+#include "./0x30AD540E_dx11.h"
+#include "./0x30AD540E_dx12.h"
+#include "./0x31FE4421_dx11.h"
+#include "./0x31FE4421_dx12.h"
+#include "./0x32A7B369_dx11.h"
+#include "./0x32A7B369_dx12.h"
+#include "./0x36E3A438_dx11.h"
+#include "./0x36E3A438_dx12.h"
+#include "./0x3904DD94_dx11.h"
+#include "./0x3904DD94_dx12.h"
+#include "./0x3A88B087_dx11.h"
+#include "./0x3A88B087_dx12.h"
+#include "./0x40A581ED_dx11.h"
+#include "./0x40A581ED_dx12.h"
+#include "./0x425022C1_dx11.h"
+#include "./0x425022C1_dx12.h"
+#include "./0x427C7627_dx11.h"
+#include "./0x427C7627_dx12.h"
+#include "./0x45C3C09C_dx11.h"
+#include "./0x45C3C09C_dx12.h"
+#include "./0x472375F6_dx11.h"
+#include "./0x472375F6_dx12.h"
+#include "./0x4C452753_dx11.h"
+#include "./0x4C452753_dx12.h"
+#include "./0x4E0CDC69_dx11.h"
+#include "./0x4E0CDC69_dx12.h"
+#include "./0x4E6F963D_dx11.h"
+#include "./0x4E6F963D_dx12.h"
+#include "./0x4EB8A6FF_dx11.h"
+#include "./0x4EB8A6FF_dx12.h"
+#include "./0x4F43F0BB_dx11.h"
+#include "./0x4F43F0BB_dx12.h"
+#include "./0x557A2773_dx11.h"
+#include "./0x557A2773_dx12.h"
+#include "./0x55D043F9_dx11.h"
+#include "./0x55D043F9_dx12.h"
+#include "./0x5BD6A5C2_dx11.h"
+#include "./0x5BD6A5C2_dx12.h"
+#include "./0x5CAE0013_dx11.h"
+#include "./0x5CAE0013_dx12.h"
+#include "./0x5EBB94E2_dx11.h"
+#include "./0x5EBB94E2_dx12.h"
+#include "./0x60952A02_dx11.h"
+#include "./0x60952A02_dx12.h"
+#include "./0x61C2EA30_dx11.h"
+#include "./0x61C2EA30_dx12.h"
+#include "./0x61F067B4_dx11.h"
+#include "./0x61F067B4_dx12.h"
+#include "./0x6444285D_dx11.h"
+#include "./0x6444285D_dx12.h"
+#include "./0x6757E671_dx11.h"
+#include "./0x6757E671_dx12.h"
+#include "./0x6B0EC7A1_dx11.h"
+#include "./0x6B0EC7A1_dx12.h"
+#include "./0x6B280E0E_dx11.h"
+#include "./0x6B280E0E_dx12.h"
+#include "./0x6CA6068F_dx11.h"
+#include "./0x6CA6068F_dx12.h"
+#include "./0x6E6FC244_dx11.h"
+#include "./0x6E6FC244_dx12.h"
+#include "./0x6FE13A72_dx11.h"
+#include "./0x6FE13A72_dx12.h"
+#include "./0x73B2BA54_dx11.h"
+#include "./0x73B2BA54_dx12.h"
+#include "./0x73DE734D_dx11.h"
+#include "./0x73DE734D_dx12.h"
+#include "./0x7570E7B1_dx11.h"
+#include "./0x7570E7B1_dx12.h"
+#include "./0x80CD76B6_dx11.h"
+#include "./0x80CD76B6_dx12.h"
+#include "./0x85DEEF21_dx11.h"
+#include "./0x85DEEF21_dx12.h"
+#include "./0x8619B6A7_dx11.h"
+#include "./0x8619B6A7_dx12.h"
+#include "./0x86F9308B_dx11.h"
+#include "./0x86F9308B_dx12.h"
+#include "./0x876F0F03_dx11.h"
+#include "./0x876F0F03_dx12.h"
+#include "./0x8CD01256_dx11.h"
+#include "./0x8CD01256_dx12.h"
+#include "./0x8D3D2FA0_dx11.h"
+#include "./0x8D3D2FA0_dx12.h"
+#include "./0x9081A2D8_dx11.h"
+#include "./0x9081A2D8_dx12.h"
+#include "./0x94D68746_dx11.h"
+#include "./0x94D68746_dx12.h"
+#include "./0x95A3F50E_dx11.h"
+#include "./0x95A3F50E_dx12.h"
+#include "./0x97BAC8AF_dx11.h"
+#include "./0x97BAC8AF_dx12.h"
+#include "./0x9A219764_dx11.h"
+#include "./0x9A219764_dx12.h"
+#include "./0x9E045D70_dx11.h"
+#include "./0x9E045D70_dx12.h"
+#include "./0xA918F0C8_dx11.h"
+#include "./0xA918F0C8_dx12.h"
+#include "./0xB1614732_dx11.h"
+#include "./0xB1614732_dx12.h"
+#include "./0xB4F3140C_dx11.h"
+#include "./0xB4F3140C_dx12.h"
+#include "./0xB972BF8F_dx11.h"
+#include "./0xB972BF8F_dx12.h"
+#include "./0xBEB7EB31_dx11.h"
+#include "./0xBEB7EB31_dx12.h"
+#include "./0xC130BE2D_dx11.h"
+#include "./0xC130BE2D_dx12.h"
+#include "./0xC1BCC6B5_dx11.h"
+#include "./0xC1BCC6B5_dx12.h"
+#include "./0xC2A711CC_dx11.h"
+#include "./0xC2A711CC_dx12.h"
+#include "./0xC32C8BEA_dx11.h"
+#include "./0xC32C8BEA_dx12.h"
+#include "./0xC3405B64_dx11.h"
+#include "./0xC3405B64_dx12.h"
+#include "./0xC3532D38_dx11.h"
+#include "./0xC3532D38_dx12.h"
+#include "./0xCA383248_dx11.h"
+#include "./0xCA383248_dx12.h"
+#include "./0xCA80A1BE_dx11.h"
+#include "./0xCA80A1BE_dx12.h"
+#include "./0xCC8FD0FF_dx11.h"
+#include "./0xCC8FD0FF_dx12.h"
+#include "./0xCD2A823A_dx11.h"
+#include "./0xCD2A823A_dx12.h"
+#include "./0xCEDB33B2_dx11.h"
+#include "./0xCEDB33B2_dx12.h"
+#include "./0xD2748E73_dx11.h"
+#include "./0xD2748E73_dx12.h"
+#include "./0xD4A45A02_dx11.h"
+#include "./0xD4A45A02_dx12.h"
+#include "./0xDAEDC6EC_dx11.h"
+#include "./0xDAEDC6EC_dx12.h"
+#include "./0xDBC737C4_dx11.h"
+#include "./0xDBC737C4_dx12.h"
+#include "./0xE349C52A_dx11.h"
+#include "./0xE349C52A_dx12.h"
+#include "./0xE4EA48DC_dx11.h"
+#include "./0xE4EA48DC_dx12.h"
+#include "./0xE6B4B2E3_dx11.h"
+#include "./0xE6B4B2E3_dx12.h"
+#include "./0xE6EB2840_dx11.h"
+#include "./0xE6EB2840_dx12.h"
+#include "./0xEE3DEEBB_dx11.h"
+#include "./0xEE3DEEBB_dx12.h"
+#include "./0xF43A0C4A_dx11.h"
+#include "./0xF43A0C4A_dx12.h"
+#include "./0xF5AC79AB_dx11.h"
+#include "./0xF5AC79AB_dx12.h"
+#include "./0xF600620F_dx11.h"
+#include "./0xF600620F_dx12.h"
+#include "./0xF6AA7756_dx11.h"
+#include "./0xF6AA7756_dx12.h"
+#include "./0xFBB78F9F_dx11.h"
+#include "./0xFBB78F9F_dx12.h"
+#include "./0xFE7649D3_dx11.h"
+#include "./0xFE7649D3_dx12.h"
+#include "./0x0181A9C8.h"
+#include "./0x0649A5D1.h"
+#include "./0x06514B15.h"
+#include "./0x06F39D1E.h"
+#include "./0x08B5389E.h"
+#include "./0x13FBB787.h"
+#include "./0x1CBC853A.h"
+#include "./0x269E94C1.h"
+#include "./0x2B8E70DC.h"
+#include "./0x3028EBE7.h"
+#include "./0x31F9420F.h"
+#include "./0x33247499.h"
+#include "./0x3AD3CECF.h"
+#include "./0x484B4E2B.h"
+#include "./0x49D6D8F2.h"
+#include "./0x4A0DBF57.h"
+#include "./0x4CC68F73.h"
+#include "./0x4F3FCE76.h"
+#include "./0x507B8FB6.h"
+#include "./0x50F22BD6.h"
+#include "./0x5D760393.h"
+#include "./0x61DB7BD7.h"
+#include "./0x670070BD.h"
+#include "./0x68071FDD.h"
+#include "./0x6CFBD4C0.h"
+#include "./0x704E7934.h"
+#include "./0x74185C15.h"
+#include "./0x773A9497.h"
+#include "./0x8119F75A.h"
+#include "./0x8146D205.h"
+#include "./0x8736B011.h"
+#include "./0x8AE76612.h"
+#include "./0x8B93346E.h"
+#include "./0x90BBE81C.h"
+#include "./0x93470AC3.h"
+#include "./0x94D26E3A.h"
+#include "./0x95B1E481.h"
+#include "./0x96DE7098.h"
+#include "./0x9C812EE8.h"
+#include "./0x9DF2DDD4.h"
+#include "./0x9EB78561.h"
+#include "./0xA0A20D27.h"
+#include "./0xA7FC23A6.h"
+#include "./0xAB6082E4.h"
+#include "./0xAD0A58C0.h"
+#include "./0xB530B36A.h"
+#include "./0xB6CA5FD9.h"
+#include "./0xBAA27141.h"
+#include "./0xBBB5CA7B.h"
+#include "./0xC496B5C3.h"
+#include "./0xCC93AA43.h"
+#include "./0xD07B008F.h"
+#include "./0xDA10C03E.h"
+#include "./0xE1496ED1.h"
+#include "./0xE3BB0C03.h"
+#include "./0xE7F2797E.h"
+#include "./0xEBB3E98C.h"
+#include "./0xEC174252.h"
+#include "./0xF4962825.h"
+#include "./0xF6219091.h"
+#include "./0xF890095A.h"
+#include "./0xF9332C83.h"
+#include "./0xFB547C2F.h"
+#include "./swap_chain_proxy_pixel_shader_dx11.h"
+#include "./swap_chain_proxy_pixel_shader_dx12.h"
+#include "./swap_chain_proxy_vertex_shader_dx11.h"
+#include "./swap_chain_proxy_vertex_shader_dx12.h"
+#define __CUSTOM_SHADER_ENTRIES \
+  CustomShaderEntry(0x1564B757), \
+  CustomShaderEntry(0x7170613F), \
+  CustomShaderEntry(0x5011999C), \
+  CustomShaderEntry(0xAC791084), \
+  CustomShaderEntry(0x76E751B9), \
+  CustomShaderEntry(0xCB9976C8), \
+  CustomShaderEntry(0xBFE48347), \
+  CustomShaderEntry(0x8D5C5C52), \
+  CustomShaderEntry(0x7C1D6772), \
+  CustomShaderEntry(0xD658638D), \
+  CustomShaderEntry(0x0181A9C8), \
+  CustomShaderEntry(0x0649A5D1), \
+  CustomShaderEntry(0x06514B15), \
+  CustomShaderEntry(0x06F39D1E), \
+  CustomShaderEntry(0x08B5389E), \
+  CustomShaderEntry(0x13FBB787), \
+  CustomShaderEntry(0x1CBC853A), \
+  CustomShaderEntry(0x269E94C1), \
+  CustomShaderEntry(0x2B8E70DC), \
+  CustomShaderEntry(0x3028EBE7), \
+  CustomShaderEntry(0x31F9420F), \
+  CustomShaderEntry(0x33247499), \
+  CustomShaderEntry(0x3AD3CECF), \
+  CustomShaderEntry(0x484B4E2B), \
+  CustomShaderEntry(0x49D6D8F2), \
+  CustomShaderEntry(0x4A0DBF57), \
+  CustomShaderEntry(0x4CC68F73), \
+  CustomShaderEntry(0x4F3FCE76), \
+  CustomShaderEntry(0x507B8FB6), \
+  CustomShaderEntry(0x50F22BD6), \
+  CustomShaderEntry(0x5D760393), \
+  CustomShaderEntry(0x61DB7BD7), \
+  CustomShaderEntry(0x670070BD), \
+  CustomShaderEntry(0x68071FDD), \
+  CustomShaderEntry(0x6CFBD4C0), \
+  CustomShaderEntry(0x704E7934), \
+  CustomShaderEntry(0x74185C15), \
+  CustomShaderEntry(0x773A9497), \
+  CustomShaderEntry(0x8119F75A), \
+  CustomShaderEntry(0x8146D205), \
+  CustomShaderEntry(0x8736B011), \
+  CustomShaderEntry(0x8AE76612), \
+  CustomShaderEntry(0x8B93346E), \
+  CustomShaderEntry(0x90BBE81C), \
+  CustomShaderEntry(0x93470AC3), \
+  CustomShaderEntry(0x94D26E3A), \
+  CustomShaderEntry(0x95B1E481), \
+  CustomShaderEntry(0x96DE7098), \
+  CustomShaderEntry(0x9C812EE8), \
+  CustomShaderEntry(0x9DF2DDD4), \
+  CustomShaderEntry(0x9EB78561), \
+  CustomShaderEntry(0xA0A20D27), \
+  CustomShaderEntry(0xA7FC23A6), \
+  CustomShaderEntry(0xAB6082E4), \
+  CustomShaderEntry(0xAD0A58C0), \
+  CustomShaderEntry(0xB530B36A), \
+  CustomShaderEntry(0xB6CA5FD9), \
+  CustomShaderEntry(0xBAA27141), \
+  CustomShaderEntry(0xBBB5CA7B), \
+  CustomShaderEntry(0xC496B5C3), \
+  CustomShaderEntry(0xCC93AA43), \
+  CustomShaderEntry(0xD07B008F), \
+  CustomShaderEntry(0xDA10C03E), \
+  CustomShaderEntry(0xE1496ED1), \
+  CustomShaderEntry(0xE3BB0C03), \
+  CustomShaderEntry(0xE7F2797E), \
+  CustomShaderEntry(0xEBB3E98C), \
+  CustomShaderEntry(0xEC174252), \
+  CustomShaderEntry(0xF4962825), \
+  CustomShaderEntry(0xF6219091), \
+  CustomShaderEntry(0xF890095A), \
+  CustomShaderEntry(0xF9332C83), \
+  CustomShaderEntry(0xFB547C2F)
+#define __CUSTOM_DIRECTX_SHADERS \
+  CustomDirectXShaders(0xB864B3B8), \
+  CustomDirectXShaders(0x00E9C5FE), \
+  CustomDirectXShaders(0xE9343033), \
+  CustomDirectXShaders(0x388FF776), \
+  CustomDirectXShaders(0xBF5C676F), \
+  CustomDirectXShaders(0xE73B3FFD), \
+  CustomDirectXShaders(0xEE1D0151), \
+  CustomDirectXShaders(0x1D1C27C0), \
+  CustomDirectXShaders(0x271E2688), \
+  CustomDirectXShaders(0x3B22B2CC), \
+  CustomDirectXShaders(0x7A453AD3), \
+  CustomDirectXShaders(0xB022C611), \
+  CustomDirectXShaders(0xF57838BC), \
+  CustomDirectXShaders(0x03F2231B), \
+  CustomDirectXShaders(0x0A9793C1), \
+  CustomDirectXShaders(0x0C26F82E), \
+  CustomDirectXShaders(0x0F17B0B3), \
+  CustomDirectXShaders(0x11ACA4BD), \
+  CustomDirectXShaders(0x18639D8F), \
+  CustomDirectXShaders(0x1BA80C5E), \
+  CustomDirectXShaders(0x1DF6036B), \
+  CustomDirectXShaders(0x1F1D6E66), \
+  CustomDirectXShaders(0x20EAC9B6), \
+  CustomDirectXShaders(0x2179DAD2), \
+  CustomDirectXShaders(0x22A4BD4E), \
+  CustomDirectXShaders(0x2569985B), \
+  CustomDirectXShaders(0x2A94C68A), \
+  CustomDirectXShaders(0x2AFC7CD9), \
+  CustomDirectXShaders(0x2F460105), \
+  CustomDirectXShaders(0x3040FD90), \
+  CustomDirectXShaders(0x30AD540E), \
+  CustomDirectXShaders(0x31FE4421), \
+  CustomDirectXShaders(0x32A7B369), \
+  CustomDirectXShaders(0x36E3A438), \
+  CustomDirectXShaders(0x3904DD94), \
+  CustomDirectXShaders(0x3A88B087), \
+  CustomDirectXShaders(0x40A581ED), \
+  CustomDirectXShaders(0x425022C1), \
+  CustomDirectXShaders(0x427C7627), \
+  CustomDirectXShaders(0x45C3C09C), \
+  CustomDirectXShaders(0x472375F6), \
+  CustomDirectXShaders(0x4C452753), \
+  CustomDirectXShaders(0x4E0CDC69), \
+  CustomDirectXShaders(0x4E6F963D), \
+  CustomDirectXShaders(0x4EB8A6FF), \
+  CustomDirectXShaders(0x4F43F0BB), \
+  CustomDirectXShaders(0x557A2773), \
+  CustomDirectXShaders(0x55D043F9), \
+  CustomDirectXShaders(0x5BD6A5C2), \
+  CustomDirectXShaders(0x5CAE0013), \
+  CustomDirectXShaders(0x5EBB94E2), \
+  CustomDirectXShaders(0x60952A02), \
+  CustomDirectXShaders(0x61C2EA30), \
+  CustomDirectXShaders(0x61F067B4), \
+  CustomDirectXShaders(0x6444285D), \
+  CustomDirectXShaders(0x6757E671), \
+  CustomDirectXShaders(0x6B0EC7A1), \
+  CustomDirectXShaders(0x6B280E0E), \
+  CustomDirectXShaders(0x6CA6068F), \
+  CustomDirectXShaders(0x6E6FC244), \
+  CustomDirectXShaders(0x6FE13A72), \
+  CustomDirectXShaders(0x73B2BA54), \
+  CustomDirectXShaders(0x73DE734D), \
+  CustomDirectXShaders(0x7570E7B1), \
+  CustomDirectXShaders(0x80CD76B6), \
+  CustomDirectXShaders(0x85DEEF21), \
+  CustomDirectXShaders(0x8619B6A7), \
+  CustomDirectXShaders(0x86F9308B), \
+  CustomDirectXShaders(0x876F0F03), \
+  CustomDirectXShaders(0x8CD01256), \
+  CustomDirectXShaders(0x8D3D2FA0), \
+  CustomDirectXShaders(0x9081A2D8), \
+  CustomDirectXShaders(0x94D68746), \
+  CustomDirectXShaders(0x95A3F50E), \
+  CustomDirectXShaders(0x97BAC8AF), \
+  CustomDirectXShaders(0x9A219764), \
+  CustomDirectXShaders(0x9E045D70), \
+  CustomDirectXShaders(0xA918F0C8), \
+  CustomDirectXShaders(0xB1614732), \
+  CustomDirectXShaders(0xB4F3140C), \
+  CustomDirectXShaders(0xB972BF8F), \
+  CustomDirectXShaders(0xBEB7EB31), \
+  CustomDirectXShaders(0xC130BE2D), \
+  CustomDirectXShaders(0xC1BCC6B5), \
+  CustomDirectXShaders(0xC2A711CC), \
+  CustomDirectXShaders(0xC32C8BEA), \
+  CustomDirectXShaders(0xC3405B64), \
+  CustomDirectXShaders(0xC3532D38), \
+  CustomDirectXShaders(0xCA383248), \
+  CustomDirectXShaders(0xCA80A1BE), \
+  CustomDirectXShaders(0xCC8FD0FF), \
+  CustomDirectXShaders(0xCD2A823A), \
+  CustomDirectXShaders(0xCEDB33B2), \
+  CustomDirectXShaders(0xD2748E73), \
+  CustomDirectXShaders(0xD4A45A02), \
+  CustomDirectXShaders(0xDAEDC6EC), \
+  CustomDirectXShaders(0xDBC737C4), \
+  CustomDirectXShaders(0xE349C52A), \
+  CustomDirectXShaders(0xE4EA48DC), \
+  CustomDirectXShaders(0xE6B4B2E3), \
+  CustomDirectXShaders(0xE6EB2840), \
+  CustomDirectXShaders(0xEE3DEEBB), \
+  CustomDirectXShaders(0xF43A0C4A), \
+  CustomDirectXShaders(0xF5AC79AB), \
+  CustomDirectXShaders(0xF600620F), \
+  CustomDirectXShaders(0xF6AA7756), \
+  CustomDirectXShaders(0xFBB78F9F), \
+  CustomDirectXShaders(0xFE7649D3)
+#define __ALL_CUSTOM_SHADERS \
+  __CUSTOM_SHADER_ENTRIES, \
+  __CUSTOM_DIRECTX_SHADERS
