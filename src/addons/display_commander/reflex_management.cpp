@@ -16,6 +16,7 @@ extern float s_reflex_enabled;
 extern float s_reflex_low_latency_mode;
 extern float s_reflex_low_latency_boost;
 extern float s_reflex_use_markers;
+extern float s_reflex_debug_output;
 
 // ETW provider callback for proper registration
 void WINAPI PCLStatsComponentProviderCb(
@@ -158,7 +159,9 @@ bool ReflexManager::SetSleepMode(reshade::api::swapchain* swapchain)
         << ", Boost: " << (params.bLowLatencyBoost ? "true" : "false")
         << ", Markers: " << (params.bUseMarkersToOptimize ? "true" : "false")
         << ", MinInterval: " << params.minimumIntervalUs;
-    LogDebug(oss.str());
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug(oss.str());
+    }
 
     if (set_sleep_mode_) {
         NvAPI_Status status = set_sleep_mode_(reinterpret_cast<IUnknown*>(static_cast<uintptr_t>(device->get_native())), &params);
@@ -171,7 +174,9 @@ bool ReflexManager::SetSleepMode(reshade::api::swapchain* swapchain)
                         << ", MinInterval: " << params.minimumIntervalUs
                         << ", Status: " << status
                         << " - Reflex IS ACTUALLY WORKING and reducing latency!";
-            LogDebug(oss_success.str());
+            if (s_reflex_debug_output >= 0.5f) {
+                LogDebug(oss_success.str());
+            }
             
             // Set active flag when Reflex is successfully enabled
             is_active_.store(true);
@@ -181,8 +186,10 @@ bool ReflexManager::SetSleepMode(reshade::api::swapchain* swapchain)
             g_reflex_active.store(true);
             
             // Add a clear summary message
-            LogDebug("Reflex: IMPORTANT - Reflex is ACTUALLY WORKING and reducing latency!");
-            LogDebug("Reflex: The NVIDIA overlay showing 0ms is just a display issue - latency reduction is real!");
+            if (s_reflex_debug_output >= 0.5f) {
+                LogDebug("Reflex: IMPORTANT - Reflex is ACTUALLY WORKING and reducing latency!");
+                LogDebug("Reflex: The NVIDIA overlay showing 0ms is just a display issue - latency reduction is real!");
+            }
             return true;
         } else {
             std::ostringstream oss_error;
@@ -308,7 +315,9 @@ bool ReflexManager::SetLatencyMarkers(reshade::api::swapchain* swapchain) {
     PCLStatsMarkerV2(PCLSTATS_PRESENT_END, current_frame);
     PCLStatsMarkerV2(PCLSTATS_CONTROLLER_INPUT_SAMPLE, current_frame);
 
-    LogDebug("Reflex: Set latency markers for frame " + std::to_string(current_frame));
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: Set latency markers for frame " + std::to_string(current_frame));
+    }
     
     // Update our internal latency tracking
     UpdateLatencyTracking();
@@ -410,16 +419,20 @@ void ReflexManager::UpdateLatencyTracking() {
     // Log latency updates occasionally to avoid spam
     static int latency_log_counter = 0;
     if ((++latency_log_counter % 60) == 0) { // Log every 60th update
-        LogDebug("Reflex: Latency tracking updated - Current: " + std::to_string(reflex_latency_ms) + 
-                " ms, PCL AV: " + std::to_string(pcl_av_latency) + 
-                " ms, History size: " + std::to_string(latency_history_.size()));
+        if (s_reflex_debug_output >= 0.5f) {
+            LogDebug("Reflex: Latency tracking updated - Current: " + std::to_string(reflex_latency_ms) +
+                    " ms, PCL AV: " + std::to_string(pcl_av_latency) + 
+                    " ms, History size: " + std::to_string(latency_history_.size()));
+        }
     }
     
     // Always log the first few updates to debug the issue
     if (latency_log_counter <= 5) {
-        LogDebug("Reflex: DEBUG - Latency values set - Current: " + std::to_string(reflex_latency_ms) + 
-                " ms, PCL AV: " + std::to_string(pcl_av_latency) + 
-                " ms, Frame: " + std::to_string(g_current_frame.load()));
+        if (s_reflex_debug_output >= 0.5f) {
+            LogDebug("Reflex: DEBUG - Latency values set - Current: " + std::to_string(reflex_latency_ms) + 
+                    " ms, PCL AV: " + std::to_string(pcl_av_latency) + 
+                    " ms, Frame: " + std::to_string(g_current_frame.load()));
+        }
     }
     
     last_frame_time_ = now;
@@ -535,7 +548,9 @@ bool ReflexManager::SetPresentMarkers(reshade::api::swapchain* swapchain) {
     // Special-K only sends PCLStats ETW events for SIMULATION, RENDERSUBMIT, and INPUT markers
     // The NVIDIA overlay expects PRESENT markers to come through NVAPI, not ETW
     
-    LogDebug("Reflex: Set present markers for frame " + std::to_string(current_frame));
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: Set present markers for frame " + std::to_string(current_frame));
+    }
     return true;
 }
 
@@ -566,7 +581,9 @@ bool ReflexManager::CallSleep(reshade::api::swapchain* swapchain)
         // Log successful sleep calls less frequently to avoid spam
         static int sleep_log_counter = 0;
         if ((++sleep_log_counter % 60) == 0) { // Log every 60th call
-            LogDebug("Reflex: Sleep called successfully for frame " + std::to_string(frame_id_.load()) + " (status: " + std::to_string(status) + ")");
+            if (s_reflex_debug_output >= 0.5f) {
+                LogDebug("Reflex: Sleep called successfully for frame " + std::to_string(frame_id_.load()) + " (status: " + std::to_string(status) + ")");
+            }
         }
         return true;
     }
@@ -621,18 +638,28 @@ void ReflexManager::PCLStatsInit()
     // Register the PCLStats window message (same as Special-K)
     if (pcl_stats_window_message_ == 0) {
         pcl_stats_window_message_ = RegisterWindowMessageW(L"PC_Latency_Stats_Ping");
-        LogDebug("Reflex: Registered PCLStats window message: " + std::to_string(pcl_stats_window_message_));
+        if (s_reflex_debug_output >= 0.5f) {
+            LogDebug("Reflex: Registered PCLStats window message: " + std::to_string(pcl_stats_window_message_));
+        }
     }
 
     // Register the ETW provider with callback for proper NVIDIA overlay detection
-    LogDebug("Reflex: Attempting to register ETW provider with GUID: 1e216f06-82a6-4d49-bc4f-8f38ae56efac");
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: Attempting to register ETW provider with GUID: 1e216f06-82a6-4d49-bc4f-8f38ae56efac");
+    }
     TraceLoggingRegisterEx(g_hPCLStatsProvider, PCLStatsComponentProviderCb, nullptr);
-    LogDebug("Reflex: ETW provider registration completed");
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: ETW provider registration completed");
+    }
     
     // Send initialization event
-    LogDebug("Reflex: Sending PCLStatsInit ETW event");
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: Sending PCLStatsInit ETW event");
+    }
     TraceLoggingWrite(g_hPCLStatsProvider, "PCLStatsInit");
-    LogDebug("Reflex: PCLStatsInit ETW event sent");
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: PCLStatsInit ETW event sent");
+    }
     
     // Send flags event for better NVIDIA overlay compatibility
     uint32_t flags = 0;
@@ -641,9 +668,13 @@ void ReflexManager::PCLStatsInit()
     if (s_reflex_low_latency_boost >= 0.5f) flags |= 0x4;
     if (s_reflex_use_markers >= 0.5f) flags |= 0x8;
     
-    LogDebug("Reflex: Sending PCLStatsFlags ETW event with flags: " + std::to_string(flags));
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: Sending PCLStatsFlags ETW event with flags: " + std::to_string(flags));
+    }
     TraceLoggingWrite(g_hPCLStatsProvider, "PCLStatsFlags", TraceLoggingUInt32(flags, "Flags"));
-    LogDebug("Reflex: PCLStatsFlags ETW event sent");
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: PCLStatsFlags ETW event sent");
+    }
 
     pcl_stats_quit_event_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
     if (pcl_stats_quit_event_ == nullptr) {
@@ -657,16 +688,17 @@ void ReflexManager::PCLStatsInit()
 
     // Start the ping thread
     pcl_stats_ping_thread_ = CreateThread(
-        nullptr, 0, PCLStatsPingThreadProc, this, 0, nullptr);
+        nullptr, 0, PCLStatsPingThreadProc, this, 0, nullptr
+    );
     
     if (pcl_stats_ping_thread_ == nullptr) {
         LogWarn("Reflex: Failed to create PCLStats ping thread");
-        CloseHandle(pcl_stats_quit_event_);
-        pcl_stats_quit_event_ = nullptr;
         return;
     }
-
-    LogDebug("Reflex: PCLStats ETW tracing initialized with ETW provider registered");
+    
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: PCLStats ETW tracing initialized with ETW provider registered");
+    }
 }
 
 void ReflexManager::PCLStatsShutdown()
@@ -697,38 +729,46 @@ void ReflexManager::PCLStatsShutdown()
     // Send shutdown event and unregister ETW provider
     TraceLoggingWrite(g_hPCLStatsProvider, "PCLStatsShutdown");
     TraceLoggingUnregister(g_hPCLStatsProvider);
-
-    LogDebug("Reflex: PCLStats ETW tracing shutdown completed with ETW provider unregistered");
+    
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: PCLStats ETW tracing shutdown completed with ETW provider unregistered");
+    }
 }
 
 void ReflexManager::PCLStatsMarker(uint32_t marker_type, uint64_t frame_id)
 {
     if (!pcl_stats_enable_) {
-        LogDebug("Reflex: PCLStatsMarker called but pcl_stats_enable_ is false");
+        if (s_reflex_debug_output >= 0.5f) {
+            LogDebug("Reflex: PCLStatsMarker called but pcl_stats_enable_ is false");
+        }
         return;
     }
 
-    // Log the marker being sent for debugging
-    std::ostringstream oss;
-    oss << "Reflex: Sending ETW marker - Type: " << marker_type << " (";
-    
-    // Add human-readable marker type names
-    switch (marker_type) {
-        case PCLSTATS_SIMULATION_START: oss << "SIMULATION_START"; break;
-        case PCLSTATS_SIMULATION_END: oss << "SIMULATION_END"; break;
-        case PCLSTATS_RENDERSUBMIT_START: oss << "RENDERSUBMIT_START"; break;
-        case PCLSTATS_RENDERSUBMIT_END: oss << "RENDERSUBMIT_END"; break;
-        case PCLSTATS_PRESENT_START: oss << "PRESENT_START"; break;
-        case PCLSTATS_PRESENT_END: oss << "PRESENT_END"; break;
-        case PCLSTATS_CONTROLLER_INPUT_SAMPLE: oss << "CONTROLLER_INPUT_SAMPLE"; break;
-        default: oss << "UNKNOWN"; break;
+    // Log the marker being sent for debugging (only if debug output is enabled)
+    if (s_reflex_debug_output >= 0.5f) {
+        std::ostringstream oss;
+        oss << "Reflex: Sending ETW marker - Type: " << marker_type << " (";
+        
+        // Add human-readable marker type names
+        switch (marker_type) {
+            case PCLSTATS_SIMULATION_START: oss << "SIMULATION_START"; break;
+            case PCLSTATS_SIMULATION_END: oss << "SIMULATION_END"; break;
+            case PCLSTATS_RENDERSUBMIT_START: oss << "RENDERSUBMIT_START"; break;
+            case PCLSTATS_RENDERSUBMIT_END: oss << "RENDERSUBMIT_END"; break;
+            case PCLSTATS_PRESENT_START: oss << "PRESENT_START"; break;
+            case PCLSTATS_PRESENT_END: oss << "PRESENT_END"; break;
+            case PCLSTATS_CONTROLLER_INPUT_SAMPLE: oss << "CONTROLLER_INPUT_SAMPLE"; break;
+            default: oss << "UNKNOWN"; break;
+        }
+        oss << "), Frame: " << frame_id;
+        LogDebug(oss.str());
     }
-    oss << "), Frame: " << frame_id;
-    LogDebug(oss.str());
 
     // Check if ETW provider is valid
     if (g_hPCLStatsProvider == nullptr) {
-        LogWarn("Reflex: ETW provider is null, cannot send marker");
+        if (s_reflex_debug_output >= 0.5f) {
+            LogWarn("Reflex: ETW provider is null, cannot send marker");
+        }
         return;
     }
 
@@ -740,37 +780,45 @@ void ReflexManager::PCLStatsMarker(uint32_t marker_type, uint64_t frame_id)
         TraceLoggingUInt64(frame_id, "FrameID")
     );
 
-    LogDebug("Reflex: ETW marker sent successfully for type " + std::to_string(marker_type));
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: ETW marker sent successfully for type " + std::to_string(marker_type));
+    }
 }
 
 void ReflexManager::PCLStatsMarkerV2(uint32_t marker_type, uint64_t frame_id)
 {
     if (!pcl_stats_enable_) {
-        LogDebug("Reflex: PCLStatsMarkerV2 called but pcl_stats_enable_ is false");
+        if (s_reflex_debug_output >= 0.5f) {
+            LogDebug("Reflex: PCLStatsMarkerV2 called but pcl_stats_enable_ is false");
+        }
         return;
     }
 
-    // Log the V2 marker being sent for debugging
-    std::ostringstream oss;
-    oss << "Reflex: Sending ETW V2 marker - Type: " << marker_type << " (";
-    
-    // Add human-readable marker type names
-    switch (marker_type) {
-        case PCLSTATS_SIMULATION_START: oss << "SIMULATION_START"; break;
-        case PCLSTATS_SIMULATION_END: oss << "SIMULATION_END"; break;
-        case PCLSTATS_RENDERSUBMIT_START: oss << "RENDERSUBMIT_START"; break;
-        case PCLSTATS_RENDERSUBMIT_END: oss << "RENDERSUBMIT_END"; break;
-        case PCLSTATS_PRESENT_START: oss << "PRESENT_START"; break;
-        case PCLSTATS_PRESENT_END: oss << "PRESENT_END"; break;
-        case PCLSTATS_CONTROLLER_INPUT_SAMPLE: oss << "CONTROLLER_INPUT_SAMPLE"; break;
-        default: oss << "UNKNOWN"; break;
+    // Log the V2 marker being sent for debugging (only if debug output is enabled)
+    if (s_reflex_debug_output >= 0.5f) {
+        std::ostringstream oss;
+        oss << "Reflex: Sending ETW V2 marker - Type: " << marker_type << " (";
+        
+        // Add human-readable marker type names
+        switch (marker_type) {
+            case PCLSTATS_SIMULATION_START: oss << "SIMULATION_START"; break;
+            case PCLSTATS_SIMULATION_END: oss << "SIMULATION_END"; break;
+            case PCLSTATS_RENDERSUBMIT_START: oss << "RENDERSUBMIT_START"; break;
+            case PCLSTATS_RENDERSUBMIT_END: oss << "RENDERSUBMIT_END"; break;
+            case PCLSTATS_PRESENT_START: oss << "PRESENT_START"; break;
+            case PCLSTATS_PRESENT_END: oss << "PRESENT_END"; break;
+            case PCLSTATS_CONTROLLER_INPUT_SAMPLE: oss << "CONTROLLER_INPUT_SAMPLE"; break;
+            default: oss << "UNKNOWN"; break;
+        }
+        oss << "), Frame: " << frame_id;
+        LogDebug(oss.str());
     }
-    oss << "), Frame: " << frame_id;
-    LogDebug(oss.str());
 
     // Check if ETW provider is valid
     if (g_hPCLStatsProvider == nullptr) {
-        LogWarn("Reflex: ETW provider is null, cannot send V2 marker");
+        if (s_reflex_debug_output >= 0.5f) {
+            LogWarn("Reflex: ETW provider is null, cannot send V2 marker");
+        }
         return;
     }
 
@@ -790,7 +838,9 @@ void ReflexManager::PCLStatsMarkerV2(uint32_t marker_type, uint64_t frame_id)
         TraceLoggingUInt32(flags, "Flags")
     );
 
-    LogDebug("Reflex: ETW V2 marker sent successfully for type " + std::to_string(marker_type) + " with flags " + std::to_string(flags));
+    if (s_reflex_debug_output >= 0.5f) {
+        LogDebug("Reflex: ETW V2 marker sent successfully for type " + std::to_string(marker_type) + " with flags " + std::to_string(flags));
+    }
 }
 
 bool ReflexManager::PCLStatsIsSignaled() const
@@ -837,7 +887,9 @@ void ReflexManager::PCLStatsPingThread()
                 );
             }
             
-            LogDebug("Reflex: PCLStats ping event sent");
+            if (s_reflex_debug_output >= 0.5f) {
+                LogDebug("Reflex: PCLStats ping event sent");
+            }
             InterlockedExchange((LONG*)&pcl_stats_signal_, TRUE);
         }
     }

@@ -3,6 +3,12 @@
 // Include the UI settings header to get the settings vector declaration
 #include "ui_settings.hpp"
 
+// Include keyboard hook functions
+#include "keyboard_hook.hpp"
+
+// External declarations for settings
+extern float s_remove_top_bar;
+
 BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   switch (fdw_reason) {
     case DLL_PROCESS_ATTACH:
@@ -78,6 +84,12 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       // Clean up resize enforcer if it's installed
       UninstallResizeEnforcerHook();
       
+      // Clean up window message hook if it's installed
+      UninstallWindowMessageHook();
+      
+      // Clean up borderless style enforcement
+      StopBorderlessStyleTimer();
+      
       // Clean up Reflex hooks if they're installed
       UninstallReflexHooks();
       
@@ -111,6 +123,16 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
     if (s_enforce_desired_window >= 0.5f) {
       InstallResizeEnforcerHook();
     }
+    
+    // Install window message hook for window creation and lifecycle monitoring
+    InstallWindowMessageHook();
+    
+    // Install borderless style enforcement if enabled
+    if (s_remove_top_bar >= 0.5f) {
+      StartBorderlessStyleTimer();
+      LogInfo("Borderless style enforcement started proactively");
+    }
+    
     // Initialize NVAPI fullscreen prevention if enabled
     if (s_nvapi_fullscreen_prevention >= 0.5f) {
       extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;

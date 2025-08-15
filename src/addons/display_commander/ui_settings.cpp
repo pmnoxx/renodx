@@ -10,6 +10,7 @@
 // External declarations
 extern float s_staggered_resolution_notifications;
 extern float s_suppress_maximize;
+extern float s_reflex_debug_output;
 
 // Helper functions for tab visibility
 inline bool is_basic_tab(float ui_mode) { return ui_mode < 0.5f; }
@@ -246,6 +247,18 @@ renodx::utils::settings::Settings settings = {
         .section = "Display",
         .tooltip = "Remove the window title bar and borders for a cleaner look.",
         .labels = {"Keep", "Remove"},
+        .on_change_value = [](float previous, float current) {
+            // Start or stop borderless style enforcement based on setting
+            if (current >= 0.5f) {
+                extern void StartBorderlessStyleTimer();
+                StartBorderlessStyleTimer();
+                LogInfo("Borderless style enforcement started due to setting change");
+            } else {
+                extern void StopBorderlessStyleTimer();
+                StopBorderlessStyleTimer();
+                LogInfo("Borderless style enforcement stopped due to setting change");
+            }
+        },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
     // Target Monitor
@@ -1394,7 +1407,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &s_reflex_low_latency_mode,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
         .default_value = 1.f,
-        .label = "Reflex Low Latency Mode",
+        .label = "Reflex Low Latency Mode (NOT FUNCTIONAL)",
         .section = "Performance",
         .tooltip = "Enable low latency mode for reduced input lag.",
         .labels = {"Disabled", "Enabled"},
@@ -1410,7 +1423,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &s_reflex_low_latency_boost,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
         .default_value = 0.f,
-        .label = "Reflex Low Latency Boost",
+        .label = "Reflex Low Latency Boost (NOT FUNCTIONAL)",
         .section = "Performance",
         .tooltip = "Request maximum GPU clock frequency for lower latency in CPU-limited scenarios.",
         .labels = {"Disabled", "Enabled"},
@@ -1426,7 +1439,7 @@ renodx::utils::settings::Settings settings = {
         .binding = &s_reflex_use_markers,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
         .default_value = 1.f,
-        .label = "Reflex Use Markers",
+        .label = "Reflex Use Markers (NOT FUNCTIONAL)",
         .section = "Performance",
         .tooltip = "Allow latency markers to be used for runtime optimizations.",
         .labels = {"Disabled", "Enabled"},
@@ -1435,6 +1448,17 @@ renodx::utils::settings::Settings settings = {
             extern std::atomic<bool> g_reflex_settings_changed;
             g_reflex_settings_changed.store(true);
         },
+        .is_visible = []() { return is_developer_tab(s_ui_mode) && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
+    },
+    new renodx::utils::settings::Setting{
+        .key = "ReflexDebugOutput",
+        .binding = &s_reflex_debug_output,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 1.f,
+        .label = "Reflex Debug Output",
+        .section = "Performance",
+        .tooltip = "Enable or disable Reflex debug messages in the log.",
+        .labels = {"Disabled", "Enabled"},
         .is_visible = []() { return is_developer_tab(s_ui_mode) && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
     },
     // Reflex settings section

@@ -68,6 +68,7 @@ float s_reflex_enabled = 1.f; // Enabled by default
 float s_reflex_low_latency_mode = 1.f; // Low latency mode enabled by default
 float s_reflex_low_latency_boost = 0.f; // Boost disabled by default
 float s_reflex_use_markers = 1.f; // Use markers enabled by default
+float s_reflex_debug_output = 1.f; // Debug output enabled by default
 
 // Atomic variables
 std::atomic<int> g_comp_query_counter{0};

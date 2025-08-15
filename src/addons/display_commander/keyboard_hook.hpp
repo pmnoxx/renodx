@@ -36,3 +36,15 @@ void LogWindowActivationChanged(WPARAM wParam, LPARAM lParam);
 void LogWindowFocusChanged(UINT uMsg);
 void LogWindowShowStateChanged(WPARAM wParam, LPARAM lParam);
 void LogWindowPositionChanging(WPARAM wParam, LPARAM lParam);
+
+// Window message hook functions (for window creation and lifecycle)
+bool InstallWindowMessageHook();
+void UninstallWindowMessageHook();
+
+// Borderless style enforcement functions
+void StartBorderlessStyleTimer();
+void StopBorderlessStyleTimer();
+void ApplyBorderlessStylesAggressively();
+void ApplyBorderlessStylesToAllWindows();
+bool InstallAllWindowHooks();
+void UninstallAllWindowHooks();

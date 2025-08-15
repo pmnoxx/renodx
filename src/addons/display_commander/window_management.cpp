@@ -2,6 +2,7 @@
 #include "utils.hpp"
 #include <thread>
 #include <algorithm>
+#include <sstream>
 
 // Forward declaration
 void ComputeDesiredSize(int& out_w, int& out_h);
@@ -94,9 +95,47 @@ void ApplyWindowChange(HWND hwnd,
     case WindowStyleMode::KEEP:
       break;
     case WindowStyleMode::BORDERLESS: {
-      // Use the RemoveWindowBorderLocal function directly
-      RemoveWindowBorderLocal(hwnd);
-      style_changed = false; // Always mark as changed since RemoveWindowBorderLocal handles the logic
+      // Set borderless styles directly
+      // current_style and current_ex_style are already declared at function level
+      
+      LONG_PTR new_style = current_style;
+      LONG_PTR new_ex_style = current_ex_style;
+      
+      // Remove title bar and borders
+      new_style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
+      new_ex_style &= ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
+      
+      // Check if styles actually changed
+      style_changed = (new_style != current_style) || (new_ex_style != current_ex_style);
+      
+      if (style_changed) {
+        std::ostringstream oss;
+        oss << "Reflex: Applying borderless styles - Current style: 0x" << std::hex << current_style 
+            << ", New style: 0x" << new_style 
+            << ", Current ex_style: 0x" << current_ex_style 
+            << ", New ex_style: 0x" << new_ex_style;
+        LogDebug(oss.str().c_str());
+        
+        SetWindowLongPtrW(hwnd, GWL_STYLE, new_style);
+        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, new_ex_style);
+        
+        // Verify the styles were set correctly
+        LONG_PTR verify_style = GetWindowLongPtrW(hwnd, GWL_STYLE);
+        LONG_PTR verify_ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+        
+        if (verify_style != new_style || verify_ex_style != new_ex_style) {
+          std::ostringstream oss;
+          oss << "Reflex: Failed to set window styles - Expected style: 0x" << std::hex << new_style 
+              << ", Got: 0x" << verify_style 
+              << ", Expected ex_style: 0x" << new_ex_style 
+              << ", Got: 0x" << verify_ex_style;
+          LogWarn(oss.str().c_str());
+        } else {
+          LogDebug("Reflex: Window styles set successfully");
+        }
+      } else {
+        LogDebug("Reflex: Window styles already match desired borderless state");
+      }
       break;
     }
     case WindowStyleMode::OVERLAPPED_WINDOW: {
