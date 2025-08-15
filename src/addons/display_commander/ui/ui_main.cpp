@@ -6,6 +6,7 @@
 #include "ui_nvapi_settings.hpp"
 #include "ui_device_info.hpp"
 #include "ui_window_info.hpp"
+#include "ui_reflex_settings.hpp"
 #include "../ui_settings.hpp"
 #include "../settings.hpp"
 
@@ -33,6 +34,7 @@ void InitializeUISettings() {
     renodx::ui::AddNvapiSettings(settings);
     renodx::ui::AddDeviceInfoSettings(settings);
     renodx::ui::AddWindowInfoSettings(settings);
+    renodx::ui::AddReflexSettings(settings);
     
     // Add UI settings
     AddUISettings(settings);

@@ -1218,98 +1218,11 @@ void AddUISettings(renodx::utils::settings::Settings& settings) {
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     },
 
-    // Reflex Settings
-    new renodx::utils::settings::Setting{
-        .key = "ReflexEnabled",
-        .binding = &s_reflex_enabled,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f, // Enabled by default
-        .label = "Enable NVIDIA Reflex",
-        .section = "Performance",
-        .tooltip = "Enable NVIDIA Reflex for reduced latency. Requires NVIDIA GPU and drivers.",
-        .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current) {
-            if (current >= 0.5f) {
-                InstallReflexHooks();
-            } else {
-                UninstallReflexHooks();
-            }
-            // Mark that Reflex settings have changed to force sleep mode update
-            extern std::atomic<bool> g_reflex_settings_changed;
-            g_reflex_settings_changed.store(true);
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    },
-    new renodx::utils::settings::Setting{
-        .key = "ReflexLowLatencyMode",
-        .binding = &s_reflex_low_latency_mode,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f,
-        .label = "Reflex Low Latency Mode (NOT FUNCTIONAL)",
-        .section = "Performance",
-        .tooltip = "Enable low latency mode for reduced input lag.",
-        .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current) {
-            // Mark that Reflex settings have changed to force sleep mode update
-            extern std::atomic<bool> g_reflex_settings_changed;
-            g_reflex_settings_changed.store(true);
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode) && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
-    },
-    new renodx::utils::settings::Setting{
-        .key = "ReflexLowLatencyBoost",
-        .binding = &s_reflex_low_latency_boost,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Reflex Low Latency Boost (NOT FUNCTIONAL)",
-        .section = "Performance",
-        .tooltip = "Request maximum GPU clock frequency for lower latency in CPU-limited scenarios.",
-        .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current) {
-            // Mark that Reflex settings have changed to force sleep mode update
-            extern std::atomic<bool> g_reflex_settings_changed;
-            g_reflex_settings_changed.store(true);
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode) && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
-    },
-    new renodx::utils::settings::Setting{
-        .key = "ReflexUseMarkers",
-        .binding = &s_reflex_use_markers,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f,
-        .label = "Reflex Use Markers (NOT FUNCTIONAL)",
-        .section = "Performance",
-        .tooltip = "Allow latency markers to be used for runtime optimizations.",
-        .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current) {
-            // Mark that Reflex settings have changed to force sleep mode update
-            extern std::atomic<bool> g_reflex_settings_changed;
-            g_reflex_settings_changed.store(true);
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode) && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
-    },
-    new renodx::utils::settings::Setting{
-        .key = "ReflexDebugOutput",
-        .binding = &s_reflex_debug_output,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f,
-        .label = "Reflex Debug Output",
-        .section = "Performance",
-        .tooltip = "Enable or disable Reflex debug messages in the log.",
-        .labels = {"Disabled", "Enabled"},
-        .is_visible = []() { return is_developer_tab(s_ui_mode) && s_reflex_enabled >= 0.5f; }, // Only show when Reflex is enabled
-    },
-    // Reflex settings section
-    new renodx::utils::settings::Setting{
-        .key = "ReflexSection",
-        .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::TEXT,
-        .default_value = 0.f,
-        .label = "=== NVIDIA Reflex Settings ===",
-        .section = "Performance",
-        .tooltip = "NVIDIA Reflex latency reduction settings",
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    },
+
+
+
+
+
     
     // Latency Display Section
     new renodx::utils::settings::Setting{
