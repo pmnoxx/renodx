@@ -2,6 +2,8 @@
 
 // Include the UI settings header to get the settings vector declaration
 #include "ui_settings.hpp"
+#include "settings.hpp"
+#include "ui/ui_main.hpp"
 
 
 
@@ -101,6 +103,9 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       break;
   }
 
+  // Initialize UI settings before registering the overlay
+  InitializeUISettings();
+  
   renodx::utils::settings::Use(fdw_reason, &settings);
   renodx::utils::swapchain::Use(fdw_reason);
 

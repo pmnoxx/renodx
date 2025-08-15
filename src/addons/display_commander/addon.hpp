@@ -167,6 +167,12 @@ extern std::vector<MonitorInfo> g_monitors;
 // Fix HDR10 color space when backbuffer is RGB10A2
 extern float s_fix_hdr10_colorspace;
 
+// Window minimize prevention
+extern float s_prevent_windows_minimize;
+
+// Enforce desired window settings
+extern float s_enforce_desired_window;
+
 // Global Reflex manager instance
 extern std::unique_ptr<ReflexManager> g_reflexManager;
 // Global flag for Reflex settings changes

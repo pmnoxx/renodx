@@ -19,8 +19,8 @@ inline bool is_basic_tab(float ui_mode) { return ui_mode < 0.5f; }
 inline bool is_developer_tab(float ui_mode) { return ui_mode >= 0.5f && ui_mode < 2.0f; }
 inline bool is_device_tab(float ui_mode) { return ui_mode >= 2.0f; }
 
-// UI/settings
-renodx::utils::settings::Settings settings = {
+// Function to add UI settings to an existing settings vector
+void AddUISettings(renodx::utils::settings::Settings& settings) {
     // Basic/Developer/Device Info mode toggle
     new renodx::utils::settings::Setting{
         .key = "UIMode",
@@ -1523,5 +1523,5 @@ renodx::utils::settings::Settings settings = {
             return false;
         },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Show in Developer mode
-    },
-};
+    };
+}

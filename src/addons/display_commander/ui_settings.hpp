@@ -2,5 +2,5 @@
 
 #include "../../utils/settings.hpp"
 
-// Declare the settings vector as extern to avoid duplicate symbol errors
-extern renodx::utils::settings::Settings settings;
+// Function to add UI settings to an existing settings vector
+void AddUISettings(renodx::utils::settings::Settings& settings);

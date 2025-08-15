@@ -541,7 +541,10 @@ list(APPEND ADDON_FILES ${DEVKIT_FILES} ${UNREALENGINE_FILES} ${THEHUNDREDLINE_F
 foreach(FILE ${ADDON_FILES})
   cmake_path(GET FILE PARENT_PATH ADDON_PATH)
   cmake_path(GET ADDON_PATH FILENAME ADDON) # treat as filename
-  add_compile_options(/bigobj)
+  # Add /bigobj flag only for MSVC compiler
+  if(MSVC)
+    add_compile_options(/bigobj)
+  endif()
   
   # Check if utils.cpp exists in the same directory
   set(ADDON_SOURCES ${FILE})
@@ -551,7 +554,7 @@ foreach(FILE ${ADDON_FILES})
   
   # For display_commander, include all source files
   if(${ADDON} STREQUAL "display_commander")
-    file(GLOB ADDON_SOURCE_FILES CONFIGURE_DEPENDS ${ADDON_PATH}/*.cpp)
+    file(GLOB ADDON_SOURCE_FILES CONFIGURE_DEPENDS ${ADDON_PATH}/*.cpp ${ADDON_PATH}/**/*.cpp ${ADDON_PATH}/**/**/*.cpp)
     list(REMOVE_ITEM ADDON_SOURCE_FILES ${FILE}) # Remove addon.cpp from the list
     list(APPEND ADDON_SOURCES ${ADDON_SOURCE_FILES})
   endif()

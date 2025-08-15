@@ -6,7 +6,7 @@
 #include <shellapi.h>
 #include <windows.h>
 #include <winver.h>
-#if WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 #include <shlobj.h>
 #endif
 
@@ -70,17 +70,17 @@ static std::optional<DISPLAYCONFIG_PATH_INFO> GetPathInfo(HMONITOR monitor) {
 }
 
 static void Launch(const std::string& location) {
-#if WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
   ShellExecute(nullptr, "open", location.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 #else
-  std::system(location);
+  std::system(location.c_str());
 #endif
 }
 
 template <typename... Args>
 static void LaunchURL(Args... args) {
   std::string url = (std::string(args) + ...);
-#if WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
   SHELLEXECUTEINFO execute_info = {};
   execute_info.cbSize = sizeof(SHELLEXECUTEINFO);
   execute_info.fMask = SEE_MASK_DEFAULT;
@@ -267,7 +267,7 @@ static std::string GetFileVersion(const std::filesystem::path& path) {
 }
 
 static void OpenExplorerToFile(const std::filesystem::path& file_path) {
-#if WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
   PIDLIST_ABSOLUTE pidl = nullptr;
   HRESULT hr = SHParseDisplayName(file_path.wstring().c_str(), nullptr, &pidl, 0, nullptr);
   if (SUCCEEDED(hr) && (pidl != nullptr)) {
