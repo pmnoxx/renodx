@@ -15,6 +15,4 @@
 [submodule "external/sanitiz_metadata"]
 	path = external/sanitiz_metadata
 	url = https://github.com/Kaldaien/sanitize_metadata.git
-[submodule "display_commander"]
-	path = display_commander
-	url = git@github.com:pmnoxx/reshade-display-commander.git
+
