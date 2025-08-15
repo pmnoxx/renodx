@@ -1,6 +1,6 @@
 #include "window_state_calculator.hpp"
-#include "addon.hpp"
-#include "utils.hpp"
+#include "../addon.hpp"
+#include "../utils.hpp"
 #include <sstream>
 #include <algorithm>
 

@@ -2,7 +2,7 @@
 
 #include <windows.h>
 #include <string>
-#include "addon.hpp" // For WindowStyleMode enum
+#include "../addon.hpp" // For WindowStyleMode enum
 
 namespace renodx::window {
 

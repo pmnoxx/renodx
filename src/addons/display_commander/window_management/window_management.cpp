@@ -1,5 +1,5 @@
-#include "addon.hpp"
-#include "utils.hpp"
+#include "../addon.hpp"
+#include "../utils.hpp"
 #include <thread>
 #include <algorithm>
 #include <sstream>

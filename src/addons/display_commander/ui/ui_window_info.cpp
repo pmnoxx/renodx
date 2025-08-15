@@ -1,6 +1,6 @@
 #include "ui_window_info.hpp"
 #include "ui_common.hpp"
-#include "../window_state_calculator.hpp"
+#include "../window_management/window_state_calculator.hpp"
 
 // External declarations for window info
 extern std::atomic<HWND> g_last_swapchain_hwnd;

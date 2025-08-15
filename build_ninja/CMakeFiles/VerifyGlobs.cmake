@@ -51,6 +51,8 @@ set(OLD_GLOB
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_window_controls.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_window_info.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui/ui_window_position_settings.cpp"
+  "D:/repos/renodx2/src/addons/display_commander/window_management/window_management.cpp"
+  "D:/repos/renodx2/src/addons/display_commander/window_management/window_state_calculator.cpp"
   )
 if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   message("-- GLOB mismatch!")
@@ -67,8 +69,6 @@ set(OLD_GLOB
   "D:/repos/renodx2/src/addons/display_commander/swapchain_events.cpp"
   "D:/repos/renodx2/src/addons/display_commander/ui_settings.cpp"
   "D:/repos/renodx2/src/addons/display_commander/utils.cpp"
-  "D:/repos/renodx2/src/addons/display_commander/window_management.cpp"
-  "D:/repos/renodx2/src/addons/display_commander/window_state_calculator.cpp"
   )
 if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   message("-- GLOB mismatch!")
