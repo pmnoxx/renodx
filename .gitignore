@@ -44,3 +44,7 @@ bin/**
 
 # Temporary files and directories
 /tmp
+
+# Build directories
+build_ninja/
+build_ninja/**
