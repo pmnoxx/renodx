@@ -174,8 +174,21 @@ void ContinuousMonitoringThread() {
             ApplyWindowChange(hwnd, "continuous_monitoring_auto_fix");
             
             // BACKGROUND WINDOW MANAGEMENT: Update background window if feature is enabled
+            static int background_check_counter = 0;
+            if (++background_check_counter % 10 == 0) { // Log every 10 seconds
+                std::ostringstream oss;
+                oss << "Continuous monitoring: Background feature check - s_background_feature_enabled = " << s_background_feature_enabled 
+                    << ", has_background_window = " << g_backgroundWindowManager.HasBackgroundWindow();
+                LogInfo(oss.str().c_str());
+            }
+            
             if (s_background_feature_enabled >= 0.5f) {
+                LogInfo("Continuous monitoring: Calling UpdateBackgroundWindow for background window management");
                 g_backgroundWindowManager.UpdateBackgroundWindow(hwnd);
+            } else {
+                if (background_check_counter % 10 == 0) { // Log occasionally
+                    LogInfo("Continuous monitoring: Background feature disabled (s_background_feature_enabled < 0.5f)");
+                }
             }
         }
         

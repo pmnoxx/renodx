@@ -21,6 +21,9 @@ public:
     
     // Get background window handle
     HWND GetBackgroundWindow() const;
+    
+    // Check if message processing thread is alive and restart if needed
+    void CheckAndRestartMessageThread(HWND game_hwnd);
 
 private:
     // Create the background window
@@ -35,8 +38,19 @@ private:
     // Flag to track if background window exists
     std::atomic<bool> m_has_background_window;
     
-    // Message pump thread for window responsiveness
-    std::thread m_message_pump_thread;
+    // Color cycling for visual feedback
+    std::atomic<int> m_frame_counter;
+    static constexpr int COLOR_COUNT = 8;
+    static constexpr COLORREF COLORS[COLOR_COUNT] = {
+        RGB(255, 0, 0),      // Red
+        RGB(0, 255, 0),      // Green
+        RGB(0, 0, 255),      // Blue
+        RGB(255, 255, 0),    // Yellow
+        RGB(255, 0, 255),    // Magenta
+        RGB(0, 255, 255),    // Cyan
+        RGB(128, 128, 128),  // Gray
+        RGB(0, 0, 0)         // Black
+    };
     
     // Window class name for background window
     static constexpr const char* BACKGROUND_WINDOW_CLASS = "RenodxBackgroundWindow";

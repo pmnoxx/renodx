@@ -2,13 +2,7 @@
 #include "addon.hpp"
 #include "utils.hpp"
 #include <dwmapi.h>
-#include <windows.h>
-#include <iostream>
 #include <sstream>
-
-// Include for logging
-extern void LogInfo(const char* message);
-extern void LogDebug(const char* message);
 
 // Static instance for window procedure
 BackgroundWindowManager* BackgroundWindowManager::s_instance = nullptr;
@@ -18,25 +12,21 @@ extern BackgroundWindowManager g_backgroundWindowManager;
 
 BackgroundWindowManager::BackgroundWindowManager() 
     : m_background_hwnd(nullptr)
-    , m_has_background_window(false) {
+    , m_has_background_window(false)
+    , m_frame_counter(0) {
     s_instance = this;
-    // Register the window class
-    RegisterWindowClass();
 }
 
 BackgroundWindowManager::~BackgroundWindowManager() {
     DestroyBackgroundWindow();
     
-    // Ensure message pump thread is joined
-    if (m_message_pump_thread.joinable()) {
-        m_message_pump_thread.join();
-    }
+    // No more message pump thread to join
     
     s_instance = nullptr;
-    UnregisterWindowClass();
 }
 
 bool BackgroundWindowManager::RegisterWindowClass() {
+    // HYBRID APPROACH: Try custom class first, fallback to existing Windows class
     WNDCLASSEXA wc = {};
     wc.cbSize = sizeof(WNDCLASSEXA);
     wc.lpfnWndProc = BackgroundWindowProc;
@@ -46,16 +36,19 @@ bool BackgroundWindowManager::RegisterWindowClass() {
     wc.style = CS_HREDRAW | CS_VREDRAW;
     
     ATOM result = RegisterClassExA(&wc);
-    if (result == 0) {
-        DWORD error = GetLastError();
-        std::ostringstream oss;
-        oss << "Failed to register background window class - RegisterClassExA failed with error code: " << error;
-        LogInfo(oss.str().c_str());
-        return false;
+    if (result != 0) {
+        LogInfo("Custom background window class registered successfully");
+        return true;
     }
     
-    LogInfo("Background window class registered successfully");
-    return true;
+    // FALLBACK: Use existing Windows class if custom registration fails
+    DWORD error = GetLastError();
+    std::ostringstream oss;
+    oss << "Custom window class registration failed with error: " << error << " - Using fallback approach";
+    LogInfo(oss.str().c_str());
+    
+    // Don't return false - we'll use fallback in CreateBackgroundWindow
+    return false;
 }
 
 void BackgroundWindowManager::UnregisterWindowClass() {
@@ -63,129 +56,104 @@ void BackgroundWindowManager::UnregisterWindowClass() {
 }
 
 LRESULT CALLBACK BackgroundWindowManager::BackgroundWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    switch (msg) {
-        case WM_PAINT: {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
+    // Check if instance is valid
+    if (s_instance == nullptr) {
+        return DefWindowProc(hwnd, msg, wparam, lparam);
+    }
+    
+    // Only handle WM_PAINT, let Windows handle everything else
+    if (msg == WM_PAINT) {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        
+        if (hdc) {
+            // Get current color based on frame counter
+            int color_index = (s_instance->m_frame_counter / 10) % COLOR_COUNT;
+            COLORREF current_color = COLORS[color_index];
             
-            // Get the game window position and size for transparency
-            HWND game_hwnd = nullptr;
-            if (s_instance != nullptr) {
-                // Try to get the last known game window
-                extern std::atomic<HWND> g_last_swapchain_hwnd;
-                game_hwnd = g_last_swapchain_hwnd.load();
-            }
-            
-            // Fill with black, but make game area transparent
-            RECT rect;
-            GetClientRect(hwnd, &rect);
-            
-            if (game_hwnd != nullptr && IsWindow(game_hwnd)) {
-                // Get game window position relative to screen
-                RECT game_rect;
-                GetWindowRect(game_hwnd, &game_rect);
-                
-                // Get monitor info for the background window
-                HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-                MONITORINFO monitor_info;
-                monitor_info.cbSize = sizeof(MONITORINFO);
-                GetMonitorInfo(monitor, &monitor_info);
-                
-                // Calculate game area relative to monitor
-                RECT game_monitor_rect;
-                game_monitor_rect.left = game_rect.left - monitor_info.rcMonitor.left;
-                game_monitor_rect.top = game_rect.top - monitor_info.rcMonitor.top;
-                game_monitor_rect.right = game_rect.right - monitor_info.rcMonitor.left;
-                game_monitor_rect.bottom = game_rect.bottom - monitor_info.rcMonitor.top;
-                
-                // Fill entire area with black first
-                FillRect(hdc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
-                
-                // Create a transparent region for the game area
-                HRGN game_region = CreateRectRgn(
-                    game_monitor_rect.left,
-                    game_monitor_rect.top,
-                    game_monitor_rect.right,
-                    game_monitor_rect.bottom
-                );
-                
-                // Create a region for the entire background window
-                HRGN background_region = CreateRectRgn(0, 0, rect.right, rect.bottom);
-                
-                // Create a region that excludes the game area (background - game)
-                HRGN final_region = CreateRectRgn(0, 0, 0, 0);
-                CombineRgn(final_region, background_region, game_region, RGN_DIFF);
-                
-                // Fill only the non-game areas with black
-                FillRgn(hdc, final_region, (HBRUSH)GetStockObject(BLACK_BRUSH));
-                
-                // Clean up regions
-                DeleteObject(game_region);
-                DeleteObject(background_region);
-                DeleteObject(final_region);
-            } else {
-                // No game window info, just fill with black
-                FillRect(hdc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
-            }
-            
-            EndPaint(hwnd, &ps);
-            return 0;
+            // Create brush and fill the window
+            HBRUSH brush = CreateSolidBrush(current_color);
+            FillRect(hdc, &ps.rcPaint, brush);
+            DeleteObject(brush);
         }
         
-        case WM_ERASEBKGND:
-            return TRUE; // Prevent flickering
-            
-        case WM_NCHITTEST:
-            return HTTRANSPARENT; // Make window transparent to mouse input
-            
-        // Essential Windows messages that must be handled to prevent "unresponsive" status
-        case WM_GETMINMAXINFO:
-        case WM_WINDOWPOSCHANGING:
-        case WM_WINDOWPOSCHANGED:
-        case WM_SIZE:
-        case WM_MOVE:
-        case WM_STYLECHANGING:
-        case WM_STYLECHANGED:
-        case WM_SYSCOMMAND:
-        case WM_NCACTIVATE:
-        case WM_NCCALCSIZE:
-        // Block input and focus events
-        case WM_ACTIVATE:
-        case WM_SETFOCUS:
-        case WM_KILLFOCUS:
-        case WM_MOUSEACTIVATE:
-        case WM_LBUTTONDOWN:
-        case WM_LBUTTONUP:
-        case WM_RBUTTONDOWN:
-        case WM_RBUTTONUP:
-        case WM_MBUTTONDOWN:
-        case WM_MBUTTONUP:
-        case WM_MOUSEMOVE:
-        case WM_KEYDOWN:
-        case WM_KEYUP:
-        case WM_CHAR:
-            return 0; // Block all input and focus events
-            
-        // Additional messages to prevent unresponsiveness
-        case WM_QUERYNEWPALETTE:
-        case WM_PALETTECHANGED:
-        case WM_DISPLAYCHANGE:
-        case WM_THEMECHANGED:
-        case WM_SETTINGCHANGE:
-        // Keep window alive messages
-        case WM_TIMER:
-        case WM_USER:
-        case WM_APP:
-            return 0; // Handle but don't process
-            
-        default:
-            return DefWindowProc(hwnd, msg, wparam, lparam);
+        EndPaint(hwnd, &ps);
+        return 0;  // Message handled
     }
+    
+    // Handle timer for color cycling
+    if (msg == WM_TIMER) {
+        if (s_instance) {
+            // Increment frame counter for color cycling
+            s_instance->m_frame_counter.fetch_add(1);
+            
+            // Trigger a repaint to show new color
+            InvalidateRect(hwnd, nullptr, FALSE);
+            UpdateWindow(hwnd);
+        }
+        return 0;  // Message handled
+    }
+    
+    // Handle cursor to show "not allowed" when mouse is over background window
+    if (msg == WM_SETCURSOR) {
+        SetCursor(LoadCursor(nullptr, IDC_NO)); // Show "not allowed" cursor
+        return TRUE; // We handled it
+    }
+    
+    // Handle clicks to close background window
+    if (msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN) {
+        if (s_instance) {
+            LogInfo("[BG-WINDOW-THREAD] Background window clicked - closing");
+            s_instance->DestroyBackgroundWindow();
+        }
+        return 0; // Message handled
+    }
+    
+    // Handle focus to close background window
+    if (msg == WM_SETFOCUS || msg == WM_ACTIVATE) {
+        if (s_instance) {
+            LogInfo("[BG-WINDOW-THREAD] Background window gained focus - closing");
+            s_instance->DestroyBackgroundWindow();
+        }
+        return 0; // Message handled
+    }
+    
+    // Let Windows handle all other messages
+    return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
 bool BackgroundWindowManager::CreateBackgroundWindow(HWND game_hwnd) {
     if (m_background_hwnd != nullptr) {
         return true; // Already exists
+    }
+    
+    // HYBRID APPROACH: Try custom class first, fallback to existing Windows class
+    bool custom_class_registered = RegisterWindowClass();
+    const char* window_class_to_use;
+    
+    if (custom_class_registered) {
+        window_class_to_use = BACKGROUND_WINDOW_CLASS;
+        LogInfo("Using custom background window class");
+    } else {
+        // FALLBACK: Use existing Windows class that we know works
+        window_class_to_use = "Static"; // Windows built-in static control class
+        LogInfo("Using fallback Windows class: Static");
+    }
+    
+    // NUCLEAR FALLBACK: If Static class also fails, try the most basic Windows class
+    if (window_class_to_use == "Static") {
+        // Test if Static class works by trying to create a temporary window
+        HWND test_hwnd = CreateWindowExA(0, "Static", "Test", WS_POPUP, 0, 0, 1, 1, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
+        if (test_hwnd == nullptr) {
+            window_class_to_use = "#32770"; // Windows dialog class - guaranteed to exist
+            LogInfo("Static class failed, using nuclear fallback: Windows dialog class");
+            if (test_hwnd != nullptr) {
+                DestroyWindow(test_hwnd);
+            }
+        } else {
+            DestroyWindow(test_hwnd);
+            LogInfo("Static class test successful, proceeding with Static class");
+        }
     }
     
     // Get game window position and size
@@ -205,9 +173,9 @@ bool BackgroundWindowManager::CreateBackgroundWindow(HWND game_hwnd) {
     
     // Create background window covering the entire monitor
     m_background_hwnd = CreateWindowExA(
-        WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW, // Extended styles - added WS_EX_TOPMOST
-        BACKGROUND_WINDOW_CLASS,           // Window class
-        "Renodx Background",               // Window title
+        WS_EX_LAYERED | WS_EX_TOOLWINDOW, // Extended styles - removed WS_EX_TOPMOST to prevent issues
+        window_class_to_use,           // Window class
+        "RENODX BACKGROUND WINDOW - DEBUG MODE", // Window title - MADE VISIBLE FOR DEBUGGING
         WS_POPUP | WS_VISIBLE,             // Window style - added WS_VISIBLE
         monitor_info.rcMonitor.left,       // X position
         monitor_info.rcMonitor.top,        // Y position
@@ -220,57 +188,23 @@ bool BackgroundWindowManager::CreateBackgroundWindow(HWND game_hwnd) {
     );
     
     if (m_background_hwnd == nullptr) {
-        DWORD error = GetLastError();
-        std::ostringstream oss;
-        oss << "Failed to create background window - CreateWindowExA failed with error code: " << error;
-        LogInfo(oss.str().c_str());
+        LogInfo("Failed to create background window");
         return false;
     }
     
-    // Set window transparency (semi-transparent black)
-    SetLayeredWindowAttributes(m_background_hwnd, 0, 255, LWA_ALPHA);
+    // Set window transparency (BRIGHT RED FOR DEBUGGING - IMPOSSIBLE TO MISS)
+    SetLayeredWindowAttributes(m_background_hwnd, RGB(255, 0, 0), 255, LWA_COLORKEY | LWA_ALPHA);
+    
+    // Force the window to be visible and on top temporarily for debugging
+    SetWindowPos(m_background_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     
     // Ensure the background window cannot receive focus or input
     SetWindowLongPtr(m_background_hwnd, GWL_EXSTYLE, 
                      GetWindowLongPtr(m_background_hwnd, GWL_EXSTYLE) | WS_EX_NOACTIVATE);
     
-    // Show the background window
-    ShowWindow(m_background_hwnd, SW_SHOW);
-    
-    // Set a timer to keep the window responsive
-    SetTimer(m_background_hwnd, 1, 1000, nullptr); // 1 second timer
-    
-    // Ensure it's on top of everything
-    SetWindowPos(m_background_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    
-    // Start a message pump thread to keep the window responsive
-    if (m_message_pump_thread.joinable()) {
-        m_message_pump_thread.join();
-    }
-    
-    m_message_pump_thread = std::thread([this]() {
-        MSG msg;
-        while (m_has_background_window.load()) {
-            // Process Windows messages to keep the window responsive
-            while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-                // Only process messages for our background window or general system messages
-                if (msg.hwnd == m_background_hwnd || msg.hwnd == nullptr) {
-                    TranslateMessage(&msg);
-                    DispatchMessage(&msg);
-                }
-            }
-            
-            // Also process any pending messages for our specific window
-            if (m_background_hwnd != nullptr) {
-                while (PeekMessage(&msg, m_background_hwnd, 0, 0, PM_REMOVE)) {
-                    TranslateMessage(&msg);
-                    DispatchMessage(&msg);
-                }
-            }
-            
-            std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
-        }
-    });
+    // NO MORE DRAWING THREAD - Only draw in BackgroundWindowProc to prevent crashes
+    // Set a timer to trigger repaints for color cycling
+    SetTimer(m_background_hwnd, 1, 100, nullptr); // 100ms timer for color cycling
     
     m_has_background_window.store(true);
     LogInfo("Background window created successfully");
@@ -301,42 +235,44 @@ void BackgroundWindowManager::UpdateBackgroundWindowPosition(HWND game_hwnd) {
 }
 
 void BackgroundWindowManager::UpdateBackgroundWindow(HWND game_hwnd) {
-    if (game_hwnd == nullptr || !IsWindow(game_hwnd)) {
-        // No valid game window, destroy background window if it exists
+    if (game_hwnd == nullptr) {
+        return;
+    }
+    
+    // Check if background feature is enabled
+    extern float s_background_feature_enabled;
+    if (s_background_feature_enabled < 0.5f) {
+        // Feature disabled, destroy background window if it exists
         if (m_has_background_window.load()) {
             DestroyBackgroundWindow();
         }
         return;
     }
     
-    // If background window doesn't exist, create it
-    if (!m_has_background_window.load()) {
-        if (CreateBackgroundWindow(game_hwnd)) {
-            LogInfo("Background window created successfully");
-        } else {
-            LogInfo("Failed to create background window");
-        }
-    } else {
-        // Update position of existing background window
-        UpdateBackgroundWindowPosition(game_hwnd);
+    if (!m_has_background_window) {
+        // Create the background window directly (working approach)
+        CreateBackgroundWindow(game_hwnd);
+        return;
     }
+    
+    // Update position of existing window
+    UpdateBackgroundWindowPosition(game_hwnd);
+    
+    // No more message thread management needed
 }
 
 void BackgroundWindowManager::DestroyBackgroundWindow() {
     if (m_background_hwnd != nullptr) {
+        // Stop the background window
+        m_has_background_window.store(false);
+        
         // Kill the timer
         KillTimer(m_background_hwnd, 1);
         
-        // Ensure message pump thread is joined
-        if (m_message_pump_thread.joinable()) {
-            m_message_pump_thread.join();
-        }
+        // No more message pump thread to wait for
         
-        // Destroy the window
         DestroyWindow(m_background_hwnd);
         m_background_hwnd = nullptr;
-        m_has_background_window.store(false);
-        
         LogInfo("Background window destroyed");
     }
 }
