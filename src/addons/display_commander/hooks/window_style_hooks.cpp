@@ -126,6 +126,25 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                     style->styleNew &= ~remove_styles;
                     style->styleOld &= ~remove_styles;
                 }
+                
+                // PREVENT ALWAYS ON TOP: Block WS_EX_TOPMOST and WS_EX_TOOLWINDOW styles
+                if (s_prevent_always_on_top >= 0.5f) {
+                    // Check if always on top styles are being added
+                    DWORD remove_ex_styles = WS_EX_TOPMOST | WS_EX_TOOLWINDOW;
+                    DWORD old_ex_style = style->styleOld;
+                    DWORD new_ex_style = style->styleNew;
+                    
+                    DWORD unwanted_ex_added = (new_ex_style & remove_ex_styles) & ~(old_ex_style & remove_ex_styles);
+                    if (unwanted_ex_added) {
+                        std::ostringstream oss;
+                        oss << "Window style hook: PREVENTING ALWAYS ON TOP - Removing extended styles 0x" << std::hex << unwanted_ex_added;
+                        LogInfo(oss.str().c_str());
+                        
+                        // Remove always on top extended styles
+                        style->styleNew &= ~remove_ex_styles;
+                        style->styleOld &= ~remove_ex_styles;
+                    }
+                }
                 break;
             }
             

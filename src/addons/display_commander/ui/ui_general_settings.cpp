@@ -12,6 +12,7 @@ extern float s_continuous_monitoring_enabled;
 extern float s_continuous_rendering_enabled;
 extern float s_continuous_rendering_throttle;
 extern float s_force_continuous_rendering;
+extern float s_prevent_always_on_top;
 
     // CONTINUOUS RENDERING FUNCTIONS REMOVED - Focus spoofing is now handled by Win32 hooks
 
@@ -82,13 +83,19 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .tooltip = "Continuously monitor and automatically fix window position, size, and style every second.",
         .labels = {"Off", "On"},
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-        .on_change_value = [](float previous, float current) {
-            if (current >= 0.5f) {
-                StartContinuousMonitoring();
-            } else {
-                StopContinuousMonitoring();
-            }
-        },
+    });
+
+    // Prevent Always On Top toggle
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "PreventAlwaysOnTop",
+        .binding = &s_prevent_always_on_top,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 1.f, // Enabled by default to match globals.cpp
+        .label = "Prevent Always On Top",
+        .section = "Display",
+        .tooltip = "Prevents windows from becoming always on top, even if they are moved or resized.",
+        .labels = {"Off", "On"},
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
 
     // CONTINUOUS RENDERING UI SETTINGS REMOVED - Focus spoofing is now handled by Win32 hooks

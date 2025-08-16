@@ -217,6 +217,9 @@ extern float s_fix_hdr10_colorspace;
 // Window minimize prevention
 extern float s_prevent_windows_minimize;
 
+// Prevent always on top behavior
+extern float s_prevent_always_on_top;
+
 // Enforce desired window settings
 extern float s_enforce_desired_window;
 

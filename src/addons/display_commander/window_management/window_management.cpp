@@ -53,6 +53,19 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
   
   // Check if styles actually changed
   g_window_state.style_changed = (new_style != current_style) || (new_ex_style != current_ex_style);
+  
+  // PROACTIVE ALWAYS ON TOP DETECTION: Force style changes if always on top is detected
+  if (s_prevent_always_on_top >= 0.5f) {
+    if (current_ex_style & (WS_EX_TOPMOST | WS_EX_TOOLWINDOW)) {
+      std::ostringstream oss;
+      oss << "CalculateWindowState: ALWAYS ON TOP DETECTED - Forcing style change to remove extended styles 0x" << std::hex << (current_ex_style & (WS_EX_TOPMOST | WS_EX_TOOLWINDOW));
+      LogInfo(oss.str().c_str());
+      
+      // Force style change to remove always on top
+      g_window_state.style_changed = true;
+    }
+  }
+  
   g_window_state.style_mode = WindowStyleMode::BORDERLESS;
 
   // Get desired dimensions and position from global settings
@@ -240,6 +253,18 @@ void ApplyWindowChange(HWND hwnd, const char* reason) {
   // Calculate new borderless styles
   LONG_PTR new_style = current_style & ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
   LONG_PTR new_ex_style = current_ex_style & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
+  
+  // PREVENT ALWAYS ON TOP: Remove WS_EX_TOPMOST and WS_EX_TOOLWINDOW styles
+  if (s_prevent_always_on_top >= 0.5f) {
+    new_ex_style &= ~(WS_EX_TOPMOST | WS_EX_TOOLWINDOW);
+    
+    // Log if we're removing always on top styles
+    if (current_ex_style & (WS_EX_TOPMOST | WS_EX_TOOLWINDOW)) {
+      std::ostringstream oss;
+      oss << "ApplyWindowChange: PREVENTING ALWAYS ON TOP - Removing extended styles 0x" << std::hex << (current_ex_style & (WS_EX_TOPMOST | WS_EX_TOOLWINDOW));
+      LogInfo(oss.str().c_str());
+    }
+  }
   
   // Apply all changes in a single SetWindowPos call
   UINT flags = SWP_NOZORDER | SWP_NOACTIVATE;

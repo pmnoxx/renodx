@@ -58,6 +58,9 @@ float s_fix_hdr10_colorspace = 0.f;
 // Window minimize prevention
 float s_prevent_windows_minimize = 0.f;
 
+// Prevent always on top behavior
+float s_prevent_always_on_top = 1.f; // Prevent games from staying on top by default
+
 // Enforce desired window settings
 float s_enforce_desired_window = 1.f; // Enable window enforcement
 
