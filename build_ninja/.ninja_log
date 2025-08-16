@@ -90,3 +90,11 @@
 82	2077	7770108742851514	CMakeFiles/display_commander.dir/src/addons/display_commander/background_tasks/background_task_coordinator.cpp.obj	673078c0cf7840e
 86	2253	7770108742924210	CMakeFiles/display_commander.dir/src/addons/display_commander/main_entry.cpp.obj	433e764babd4bda
 2253	2381	7770108764591666	renodx-display_commander.addon64	b9075de7db7c9f4a
+49	71	7770115809061724	D:/repos/renodx2/build_ninja/CMakeFiles/cmake.verify_globs	d546f856aeed2425
+80	2132	7770115809381702	CMakeFiles/display_commander.dir/src/addons/display_commander/background_tasks/fps_limiter_task.cpp.obj	a3a9b750b28fd49d
+77	2145	7770115809351711	CMakeFiles/display_commander.dir/src/addons/display_commander/background_tasks/background_task_coordinator.cpp.obj	673078c0cf7840e
+75	2162	7770115809331732	CMakeFiles/display_commander.dir/src/addons/display_commander/background_tasks/audio_management_task.cpp.obj	f8a1280b8ef4bd72
+82	2163	7770115809401725	CMakeFiles/display_commander.dir/src/addons/display_commander/globals.cpp.obj	a2e0a5bec9381438
+87	2178	7770115809441749	CMakeFiles/display_commander.dir/src/addons/display_commander/ui/ui_audio_settings.cpp.obj	c5d019cfb41e76bb
+85	2322	7770115809421714	CMakeFiles/display_commander.dir/src/addons/display_commander/main_entry.cpp.obj	433e764babd4bda
+2322	2464	7770115831796141	renodx-display_commander.addon64	b9075de7db7c9f4a

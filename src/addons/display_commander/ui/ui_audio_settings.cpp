@@ -1,6 +1,7 @@
 #include "ui_audio_settings.hpp"
 #include "ui_common.hpp"
 #include "../../../utils/settings.hpp"
+#include <sstream>
 
 namespace renodx::ui {
 
@@ -17,6 +18,18 @@ void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
         .min = 0.f,
         .max = 100.f,
         .format = "%d%%",
+        .on_change_value = [](float previous, float current){
+            // Apply volume change immediately
+            if (::SetVolumeForCurrentProcess(current)) {
+                std::ostringstream oss;
+                oss << "Audio volume changed from " << static_cast<int>(previous) << "% to " << static_cast<int>(current) << "%";
+                LogInfo(oss.str().c_str());
+            } else {
+                std::ostringstream oss;
+                oss << "Failed to set audio volume to " << static_cast<int>(current) << "%";
+                LogWarn(oss.str().c_str());
+            }
+        },
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     });
 

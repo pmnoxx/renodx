@@ -80,6 +80,7 @@ std::chrono::steady_clock::time_point g_attach_time{std::chrono::steady_clock::n
 std::atomic<HWND> g_last_swapchain_hwnd{nullptr};
 std::atomic<bool> g_shutdown{false};
 std::atomic<bool> g_muted_applied{false};
+std::atomic<bool> g_volume_applied{false};
 std::atomic<float> g_default_fps_limit{0.f};
 
 // Reflex-related atomic variables

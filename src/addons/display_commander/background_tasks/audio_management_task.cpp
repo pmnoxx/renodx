@@ -5,7 +5,9 @@
 extern std::atomic<HWND> g_last_swapchain_hwnd;
 extern float s_audio_mute;
 extern float s_mute_in_background;
+extern float s_audio_volume_percent;
 extern std::atomic<bool> g_muted_applied;
+extern std::atomic<bool> g_volume_applied;
 
 // Audio management background task
 void RunAudioManagementTask() {
@@ -27,6 +29,17 @@ void RunAudioManagementTask() {
     if (want_mute != applied) {
         if (SetMuteForCurrentProcess(want_mute)) {
             g_muted_applied.store(want_mute);
+        }
+    }
+    
+    // Handle volume changes (only when not muted)
+    if (!want_mute) {
+        static float last_volume = -1.0f;
+        if (s_audio_volume_percent != last_volume) {
+            if (SetVolumeForCurrentProcess(s_audio_volume_percent)) {
+                last_volume = s_audio_volume_percent;
+                LogDebug("Background audio task: Applied volume setting");
+            }
         }
     }
 }
