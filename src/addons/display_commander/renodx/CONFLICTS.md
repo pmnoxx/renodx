@@ -4,49 +4,19 @@ This document tracks conflicts and issues that need resolution in the RenoDX pro
 
 ## 🚨 Critical Issues
 
-### 1. Fullscreen Prevention Duplication
+### 1. Fullscreen Prevention Implementation
 
-**Status**: ⚠️ **CONFLICT DETECTED** - Needs immediate resolution
+**Status**: ✅ **RESOLVED** - No conflict, just need to avoid setting RenoDX variable
 
-**Problem**: Display Commander has two fullscreen prevention systems:
-1. **Display Commander's event handler** in `reshade_events/fullscreen_prevention.cpp`
-2. **RenoDX's built-in prevention** via `renodx::mods::swapchain::prevent_full_screen`
+**Solution**: 
+- Keep Display Commander's fullscreen prevention event handler
+- **Do NOT set** `renodx::mods::swapchain::prevent_full_screen` variable
+- Let both systems work independently without interference
 
-**Impact**: 
-- Potential conflicts between two prevention systems
-- Confusing behavior for users
-- Code duplication and maintenance overhead
-
-**Current Behavior**:
-- User toggles "Prevent Fullscreen" in Display Commander UI
-- This calls `renodx::proxy::SetFullscreenPrevention(true)`
-- Which sets `renodx::mods::swapchain::prevent_full_screen = true`
-- RenoDX's `OnSetFullscreenState` event handler reads this variable and prevents fullscreen
-- Display Commander's event handler also runs and may prevent fullscreen
-
-**Solutions**:
-
-#### Option A: Use RenoDX's Built-in Prevention (Recommended)
-- Remove Display Commander's fullscreen prevention event handler
-- Keep the proxy call to `SetFullscreenPrevention()`
-- Let RenoDX handle all fullscreen prevention logic
-- **Pros**: Simpler, no duplication, RenoDX is well-tested
-- **Cons**: Less control over prevention behavior
-
-#### Option B: Use Display Commander's Event Handler
-- Remove the proxy call to `SetFullscreenPrevention()`
-- Keep Display Commander's event handler
-- RenoDX's prevention will be disabled
-- **Pros**: Full control over prevention logic
-- **Cons**: Duplicates RenoDX functionality, more maintenance
-
-#### Option C: Coordinate Both Systems
-- Keep both systems but ensure they don't conflict
-- Display Commander sets the flag, RenoDX uses it
-- **Pros**: Maintains current behavior
-- **Cons**: Complex, potential for conflicts
-
-**Recommended Action**: **Option A** - Remove Display Commander's event handler and rely on RenoDX's built-in prevention.
+**Why This Works**:
+- Display Commander's event handler prevents fullscreen through ReShade events
+- RenoDX's system remains in its default state (doesn't interfere)
+- No conflicts, no duplication, both systems can coexist
 
 ## 🔍 Other Issues
 
@@ -59,17 +29,31 @@ This document tracks conflicts and issues that need resolution in the RenoDX pro
 
 **Solution**: Use specific types instead of `void*` where possible, or provide type-safe alternatives.
 
+### 3. Suppress Top Bar/Border Messages Feature
+**Status**: ⚠️ **NEEDS MORE WORK** - Medium priority
+
+**Problem**: The "Suppress Top Bar/Border Messages" feature in the UI is marked as needing more work to be fully functional.
+
+**Impact**: Users may enable this feature expecting it to work properly, but it may not function as intended.
+
+**Solution**: Investigate what additional work is needed and implement the missing functionality.
+
 ## 📋 Resolution Checklist
 
-- [ ] **Resolve fullscreen prevention duplication** (Critical)
-  - [ ] Choose prevention approach (A, B, or C)
-  - [ ] Remove redundant code
+- [x] **Resolve fullscreen prevention duplication** (Critical)
+  - [x] Choose prevention approach (Display Commander event handler)
+  - [x] Avoid setting RenoDX variable to prevent conflicts
   - [ ] Test fullscreen prevention functionality
-  - [ ] Update documentation
+  - [x] Update documentation
 - [ ] **Fix template instantiation issues** (Low priority)
   - [ ] Review all template functions
   - [ ] Provide type-safe alternatives
   - [ ] Update documentation
+- [ ] **Complete Suppress Top Bar/Border Messages feature** (Medium priority)
+  - [ ] Investigate what additional work is needed
+  - [ ] Implement missing functionality
+  - [ ] Test the feature thoroughly
+  - [ ] Remove "Needs More Work" warning from UI
 
 ## 🧪 Testing Required
 

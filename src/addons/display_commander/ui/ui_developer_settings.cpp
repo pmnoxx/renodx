@@ -31,8 +31,8 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .tooltip = "Prevent exclusive fullscreen; keep borderless/windowed for stability and HDR.",
         .labels = {"Disabled", "Enabled"},
         .on_change_value = [](float previous, float current){ 
-            // Update the proxy setting for fullscreen prevention
-            renodx::proxy::SetFullscreenPrevention(current >= 0.5f);
+            // The setting is handled by our event handler in reshade_events/fullscreen_prevention.cpp
+            // We do NOT set the RenoDX variable to avoid conflicts
         },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
@@ -114,9 +114,9 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .binding = &s_remove_top_bar,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
         .default_value = 1.f,
-        .label = "Suppress Top Bar/Border Messages",
+        .label = "Suppress Top Bar/Border Messages (⚠️ Needs More Work)",
         .section = "Display",
-        .tooltip = "Suppress window messages that would add title bars and borders. Prevents games from restoring unwanted window decorations.",
+        .tooltip = "Suppress window messages that would add title bars and borders. Prevents games from restoring unwanted window decorations. ⚠️ WARNING: This feature needs more work to be fully functional.",
         .labels = {"Disabled", "Enabled"},
         .on_change_value = [](float previous, float current){ 
             std::ostringstream oss;

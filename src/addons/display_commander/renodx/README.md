@@ -51,14 +51,10 @@ renodx::mods::swapchain::prevent_full_screen = true;
 renodx::proxy::SetFullscreenPrevention(true);
 ```
 
-## Current Issues ⚠️
+## Current Status ✅
 
-### Fullscreen Prevention Conflict
-Display Commander currently has **two fullscreen prevention systems**:
-1. **Display Commander's event handler** (`reshade_events/fullscreen_prevention.cpp`)
-2. **RenoDX's built-in prevention** (via `renodx::mods::swapchain::prevent_full_screen`)
-
-This creates duplication and potential conflicts. We need to resolve this by choosing one approach.
+### Fullscreen Prevention Implementation
+Display Commander uses its own fullscreen prevention event handler (`reshade_events/fullscreen_prevention.cpp`) and **does not set** the RenoDX `prevent_full_screen` variable to avoid conflicts. Both systems work independently without interference.
 
 ## Future Separation
 

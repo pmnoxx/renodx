@@ -55,17 +55,14 @@ This document provides a comprehensive list of all RenoDX components and APIs th
 
 **Purpose**: Global swapchain state management and modification
 **Usage**:
-- `renodx::mods::swapchain::prevent_full_screen` - Global fullscreen prevention flag (⚠️ **CONFLICT: RenoDX has its own ReShade event handler that also prevents fullscreen**)
+- `renodx::mods::swapchain::prevent_full_screen` - Global fullscreen prevention flag (⚠️ **NOT USED: We avoid setting this to prevent conflicts with Display Commander's event handler**)
 - `renodx::mods::swapchain::force_borderless` - Global borderless mode flag
 - `renodx::mods::swapchain::force_screen_tearing` - Global screen tearing flag
 - `renodx::mods::swapchain::use_device_proxy` - Device proxy usage flag
 
 **Files**: `src/mods/swapchain.hpp`
 
-**⚠️ IMPORTANT NOTE**: The `prevent_full_screen` variable is used by RenoDX's own ReShade event handler `OnSetFullscreenState` to prevent fullscreen. This creates a **duplication** with Display Commander's fullscreen prevention event handler. We should either:
-1. Remove Display Commander's event handler and rely on RenoDX's
-2. Remove the RenoDX variable setting and rely on Display Commander's event handler
-3. Coordinate between both systems to avoid conflicts
+**⚠️ IMPORTANT NOTE**: The `prevent_full_screen` variable is used by RenoDX's own ReShade event handler `OnSetFullscreenState` to prevent fullscreen. To avoid conflicts with Display Commander's fullscreen prevention event handler, we **do not set this variable**. Both systems can work independently without interference.
 
 ## Direct API Calls
 
