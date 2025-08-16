@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include <atomic>
+#include <thread> // Added for std::thread
 
 // Background window management
 class BackgroundWindowManager {
@@ -33,6 +34,9 @@ private:
     
     // Flag to track if background window exists
     std::atomic<bool> m_has_background_window;
+    
+    // Message pump thread for window responsiveness
+    std::thread m_message_pump_thread;
     
     // Window class name for background window
     static constexpr const char* BACKGROUND_WINDOW_CLASS = "RenodxBackgroundWindow";
