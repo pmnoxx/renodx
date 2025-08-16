@@ -152,10 +152,27 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                     return 0; // Block the maximize command
                 }
                 
-                // Prevent system menu commands that could restore borders
+                // Smart restore: Allow restore only when window is minimized or maximized
                 if (wParam == SC_RESTORE) {
-                    LogDebug("Window style hook: Blocked restore command");
-                    return 0; // Block the command
+                    // Check current window state
+                    WINDOWPLACEMENT wp = { sizeof(WINDOWPLACEMENT) };
+                    if (GetWindowPlacement(hwnd, &wp)) {
+                        if (wp.showCmd == SW_SHOWMINIMIZED || wp.showCmd == SW_SHOWMAXIMIZED) {
+                            // Window is minimized or maximized - allow restore to normal state
+                            LogDebug("Window style hook: ALLOWED SC_RESTORE - Window is " + 
+                                   std::string(wp.showCmd == SW_SHOWMINIMIZED ? "minimized" : "maximized") + 
+                                   ", restoring to normal state");
+                            break; // Allow the restore command
+                        } else {
+                            // Window is already normal - block unnecessary restore
+                            LogDebug("Window style hook: Blocked SC_RESTORE - Window is already in normal state");
+                            return 0; // Block the command
+                        }
+                    } else {
+                        // Couldn't get window state - block to be safe
+                        LogDebug("Window style hook: Blocked SC_RESTORE - Couldn't determine window state");
+                        return 0; // Block the command
+                    }
                 }
                 break;
             }
