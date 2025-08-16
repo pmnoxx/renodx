@@ -1,5 +1,6 @@
 #include "addon.hpp"
 #include "utils.hpp"
+#include "background_window.hpp"
 #include <thread>
 #include <chrono>
 #include <sstream>
@@ -17,9 +18,13 @@ extern std::atomic<HWND> g_last_swapchain_hwnd;
 extern float s_remove_top_bar;
 extern float s_prevent_always_on_top;
 extern float s_block_input_in_background; // Added this line
+extern float s_background_feature_enabled; // Added this line
 
 // ReShade runtime for input blocking
 extern std::atomic<reshade::api::effect_runtime*> g_reshade_runtime;
+
+// Background window manager
+extern class BackgroundWindowManager g_backgroundWindowManager;
 
 // Input blocking state
 static std::atomic<bool> g_input_blocking_active = false;
@@ -167,6 +172,11 @@ void ContinuousMonitoringThread() {
             
             // Apply window changes - the function will automatically determine what needs to be changed
             ApplyWindowChange(hwnd, "continuous_monitoring_auto_fix");
+            
+            // BACKGROUND WINDOW MANAGEMENT: Update background window if feature is enabled
+            if (s_background_feature_enabled >= 0.5f) {
+                g_backgroundWindowManager.UpdateBackgroundWindow(hwnd);
+            }
         }
         
         // Sleep for 1 second

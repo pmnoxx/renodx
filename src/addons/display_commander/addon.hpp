@@ -56,6 +56,8 @@ enum class WindowStyleMode : std::uint8_t { KEEP, BORDERLESS, OVERLAPPED_WINDOW 
 // Forward declarations that depend on enums
 DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain);
 
+// Forward declaration for background window manager
+class BackgroundWindowManager;
 
 
 // Additional Alt suppression methods
@@ -226,6 +228,9 @@ extern float s_prevent_always_on_top;
 // Block input when in background
 extern float s_block_input_in_background;
 
+// Background feature - show black window behind game when not fullscreen
+extern float s_background_feature_enabled;
+
 // Enforce desired window settings
 extern float s_enforce_desired_window;
 
@@ -236,6 +241,12 @@ extern std::atomic<bool> g_reflex_settings_changed;
 
 // Global window state instance
 extern GlobalWindowState g_window_state;
+
+// Global background window manager instance
+extern BackgroundWindowManager g_backgroundWindowManager;
+
+// Global DXGI Device Info Manager instance
+extern std::unique_ptr<DXGIDeviceInfoManager> g_dxgiDeviceInfoManager;
 
 // Direct atomic variables for latency tracking (UI access)
 extern std::atomic<float> g_current_latency_ms;

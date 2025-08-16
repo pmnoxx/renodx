@@ -14,6 +14,7 @@ extern float s_continuous_rendering_throttle;
 extern float s_force_continuous_rendering;
 extern float s_prevent_always_on_top;
 extern float s_block_input_in_background;
+extern float s_background_feature_enabled; // Added this line
 
     // CONTINUOUS RENDERING FUNCTIONS REMOVED - Focus spoofing is now handled by Win32 hooks
 
@@ -109,6 +110,19 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .label = "Block Input When In Background",
         .section = "Display",
         .tooltip = "Uses ReShade's input blocking to prevent mouse confinement when the app is not focused.",
+        .labels = {"Off", "On"},
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+    });
+
+    // Background Feature toggle
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "BackgroundFeature",
+        .binding = &s_background_feature_enabled,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 0.f, // Disabled by default
+        .label = "Background Feature",
+        .section = "Display",
+        .tooltip = "Creates a black background window behind the game when it doesn't cover the full screen.",
         .labels = {"Off", "On"},
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });

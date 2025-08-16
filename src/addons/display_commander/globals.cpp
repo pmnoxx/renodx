@@ -1,5 +1,6 @@
 #include "addon.hpp"
 #include "reflex/reflex_management.hpp"
+#include "background_window.hpp" // Added this line
 
 // Global variables
 // UI mode (0 = Basic, 1 = Developer)
@@ -67,6 +68,9 @@ float s_prevent_always_on_top = 1.f; // Prevent games from staying on top by def
 // Block input when in background
 float s_block_input_in_background = 1.f; // Block input when in background by default
 
+// Background feature - show black window behind game when not fullscreen
+float s_background_feature_enabled = 0.f; // Disabled by default
+
 // Enforce desired window settings
 float s_enforce_desired_window = 1.f; // Enable window enforcement
 
@@ -117,6 +121,9 @@ float s_force_continuous_rendering = 1.f; // Force continuous rendering on every
 
 // Global window state instance
 GlobalWindowState g_window_state;
+
+// Global background window manager instance
+BackgroundWindowManager g_backgroundWindowManager;
 
 // Global DXGI Device Info Manager instance
 std::unique_ptr<DXGIDeviceInfoManager> g_dxgiDeviceInfoManager;
