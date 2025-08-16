@@ -5,6 +5,8 @@
 #include "settings.hpp"
 #include "ui/ui_main.hpp"
 #include "background_tasks/background_task_coordinator.hpp"
+#include "reshade_events/fullscreen_prevention.hpp"
+#include "renodx/proxy.hpp"
 
 
 
@@ -23,60 +25,23 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       
       // Defer NVAPI / Reflex init until after settings are loaded below
       
-      // Intercept SetFullscreenState; return true to skip original call
+      // Register our fullscreen prevention event handler
       reshade::register_event<reshade::addon_event::set_fullscreen_state>(
-          [](reshade::api::swapchain* swapchain, bool fullscreen, void* hmonitor) -> bool {
-            // log the event (reshade::log::message does not support printf-style formatting)
-            {
-              std::ostringstream oss;
-              oss << "[Resolution Override] SetFullscreenState: fullscreen=" << (fullscreen ? 1 : 0)
-                  << ", hmonitor=" << hmonitor;
-              reshade::log::message(reshade::log::level::info, oss.str().c_str());
-            }
+          renodx::display_commander::events::OnSetFullscreenState);
 
-            // If fullscreen prevention is enabled, block fullscreen attempts
-            if (s_nvapi_fullscreen_prevention >= 0.5f && fullscreen) {
-              LogInfo("Blocking fullscreen attempt - NVAPI fullscreen prevention is enabled");
-              
-              // Ensure NVAPI is initialized and prevention is active
-              extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
-              if (!g_nvapiFullscreenPrevention.IsAvailable()) {
-                if (g_nvapiFullscreenPrevention.Initialize()) {
-                  LogInfo("NVAPI initialized on-demand for fullscreen prevention");
-                } else {
-                  LogWarn("Failed to initialize NVAPI on-demand");
-                }
-              }
-              
-              // Apply fullscreen prevention if not already active
-              if (g_nvapiFullscreenPrevention.IsAvailable() && !g_nvapiFullscreenPrevention.IsFullscreenPreventionEnabled()) {
-                if (g_nvapiFullscreenPrevention.SetFullscreenPrevention(true)) {
-                  LogInfo("NVAPI fullscreen prevention applied on-demand");
-                } else {
-                  LogWarn("Failed to apply NVAPI fullscreen prevention on-demand");
-                }
-              }
-              
-              // Return true to prevent the original SetFullscreenState call
-              return true;
-            }
-
-            return false; // not handled; call original
-          });
-
-      renodx::utils::settings::use_presets = false;
-      renodx::utils::settings::global_name = "ResolutionOverride";
+      renodx::proxy::SetUsePresets(false);
+      renodx::proxy::SetGlobalName("ResolutionOverride");
       g_attach_time = std::chrono::steady_clock::now();
       g_shutdown.store(false);
       std::thread(RunBackgroundAudioMonitor).detach();
-      renodx::background::StartBackgroundTasks();
+      renodx::proxy::StartBackgroundTasks();
       
       // Install window hooks for style management
-      renodx::hooks::InstallAllHooks();
+      renodx::proxy::InstallAllHooks();
       
       // NVAPI HDR monitor will be started after settings load below if enabled
       // Seed default fps limit snapshot
-      g_default_fps_limit.store(renodx::utils::swapchain::fps_limit);
+      g_default_fps_limit.store(renodx::proxy::GetFpsLimit());
       reshade::register_event<reshade::addon_event::present>(OnPresentUpdate);
       break;
     case DLL_PROCESS_DETACH:
@@ -98,14 +63,14 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       UninstallReflexHooks();
       
       // Clean up window hooks
-      renodx::hooks::UninstallAllHooks();
+      renodx::proxy::UninstallAllHooks();
       
       // Clean up DXGI Device Info Manager
       g_dxgiDeviceInfoManager.reset();
       
       reshade::unregister_event<reshade::addon_event::present>(OnPresentUpdate);
       reshade::unregister_event<reshade::addon_event::set_fullscreen_state>(
-          [](reshade::api::swapchain*, bool, void*) { return false; });
+          renodx::display_commander::events::OnSetFullscreenState);
       reshade::unregister_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
       reshade::unregister_addon(h_module);
       g_shutdown.store(true);
@@ -115,8 +80,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   // Initialize UI settings before registering the overlay
   InitializeUISettings();
   
-  renodx::utils::settings::Use(fdw_reason, &settings);
-  renodx::utils::swapchain::Use(fdw_reason);
+  renodx::proxy::InitializeSettings(fdw_reason, &settings);
+  renodx::proxy::InitializeSwapchain(fdw_reason);
 
   // Initialize hooks if settings are enabled on startup (after settings are loaded)
   if (fdw_reason == DLL_PROCESS_ATTACH) {

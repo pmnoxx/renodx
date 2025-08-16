@@ -1,6 +1,7 @@
 #include "ui_developer_settings.hpp"
 #include "ui_common.hpp"
 #include "../../../utils/settings.hpp"
+#include "../renodx/proxy.hpp"
 
 namespace renodx::ui {
 
@@ -15,7 +16,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .section = "Display",
         .tooltip = "Force window to be borderless. Useful for games that don't support borderless mode.",
         .labels = {"Off", "On"},
-        .on_change_value = [](float previous, float current){ renodx::mods::swapchain::force_borderless = (current >= 0.5f); },
+        .on_change_value = [](float previous, float current){ renodx::proxy::SetForceBorderless(current >= 0.5f); },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
 
@@ -29,7 +30,10 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .section = "Display",
         .tooltip = "Prevent exclusive fullscreen; keep borderless/windowed for stability and HDR.",
         .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current){ renodx::mods::swapchain::prevent_full_screen = (current >= 0.5f); },
+        .on_change_value = [](float previous, float current){ 
+            // Update the proxy setting for fullscreen prevention
+            renodx::proxy::SetFullscreenPrevention(current >= 0.5f);
+        },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
 
