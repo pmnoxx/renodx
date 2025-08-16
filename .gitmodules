@@ -16,3 +16,6 @@
 	path = external/sanitiz_metadata
 	url = https://github.com/Kaldaien/sanitize_metadata.git
 
+[submodule "private_docs"]
+	path = private_docs
+	url = git@github.com:pmnoxx/reshade-display-commander.git

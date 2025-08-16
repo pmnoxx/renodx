@@ -19,3 +19,23 @@ RenoDX, short for "Renovation Engine for DirectX Games", is a toolset to mod gam
 * [renodx-devkit.addon64](https://clshortfuse.github.io/renodx/renodx-devkit.addon64) &ndash; Developer kit to help build addons
 * [decomp.exe](https://clshortfuse.github.io/renodx/decomp.exe) &ndash; Shader Model 6.0+ Decompiler
 
+# Development
+
+## Private Documentation
+
+This repository includes a `private_docs` submodule containing development documentation, AI prompts, research materials, and internal notes. To access this content:
+
+```bash
+# Clone with submodules
+git clone --recursive <repository-url>
+
+# Or update existing submodules
+git submodule update --init --recursive
+```
+
+The private documentation includes:
+- Development prompts and AI interactions
+- Technical specifications and implementation details
+- Performance analysis and compatibility research
+- Iterative development process documentation
+
