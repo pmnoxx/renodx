@@ -14,7 +14,8 @@ BackgroundWindowManager::BackgroundWindowManager()
     : m_background_hwnd(nullptr)
     , m_has_background_window(false)
     , m_frame_counter(0)
-    , m_ignore_focus_events(true) { // Start with focus events ignored
+   // , m_ignore_focus_events(true) { // Start with focus events ignored
+   {
 }
 
 BackgroundWindowManager::~BackgroundWindowManager() {
@@ -59,7 +60,7 @@ bool BackgroundWindowManager::CreateBackgroundWindow(HWND game_hwnd) {
     StartBackgroundThread(game_hwnd);
     
     // Enable focus events after thread is started
-    m_ignore_focus_events.store(false);
+  //  m_ignore_focus_events.store(false);
     
     m_has_background_window.store(true);
     LogInfo("Background window thread started successfully");
@@ -115,7 +116,7 @@ bool BackgroundWindowManager::CreateBackgroundWindowInThread(HWND game_hwnd) {
     }
     
     // Set window transparency
-    SetLayeredWindowAttributes(m_background_hwnd, RGB(0, 0, 0), 255, LWA_COLORKEY);
+    SetLayeredWindowAttributes(m_background_hwnd, RGB(255, 0, 255), 255, LWA_COLORKEY | LWA_ALPHA);
     
     // Ensure the background window cannot receive focus or input
     SetWindowLongPtr(m_background_hwnd, GWL_EXSTYLE, 
@@ -237,7 +238,8 @@ void BackgroundWindowManager::UpdateBackgroundWindow(HWND game_hwnd) {
     if (s_background_feature_enabled < 0.5f) {
         // Feature disabled, destroy background window if it exists
         if (m_has_background_window.load()) {
-         //   DestroyBackgroundWindow();
+        
+        //    DestroyBackgroundWindow();
         }
         return;
     }
@@ -253,7 +255,7 @@ void BackgroundWindowManager::UpdateBackgroundWindow(HWND game_hwnd) {
 }
 
 void BackgroundWindowManager::DestroyBackgroundWindow() {
-    if (m_background_hwnd != nullptr) {
+ /*  if (m_background_hwnd != nullptr) {
         // Stop the background thread
         m_has_background_window.store(false);
         
@@ -266,7 +268,7 @@ void BackgroundWindowManager::DestroyBackgroundWindow() {
         DestroyWindow(m_background_hwnd);
         m_background_hwnd = nullptr;
         LogInfo("Background window destroyed");
-    }
+    }*/
 }
 
 bool BackgroundWindowManager::HasBackgroundWindow() const {
