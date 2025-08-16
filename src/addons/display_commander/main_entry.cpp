@@ -70,6 +70,10 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       g_shutdown.store(false);
       std::thread(RunBackgroundAudioMonitor).detach();
       renodx::background::StartBackgroundTasks();
+      
+      // Install window hooks for style management
+      renodx::hooks::InstallAllHooks();
+      
       // NVAPI HDR monitor will be started after settings load below if enabled
       // Seed default fps limit snapshot
       g_default_fps_limit.store(renodx::utils::swapchain::fps_limit);
@@ -92,6 +96,9 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       
       // Clean up Reflex hooks if they're installed
       UninstallReflexHooks();
+      
+      // Clean up window hooks
+      renodx::hooks::UninstallAllHooks();
       
       // Clean up DXGI Device Info Manager
       g_dxgiDeviceInfoManager.reset();

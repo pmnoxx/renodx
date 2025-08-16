@@ -45,33 +45,29 @@ void RunFpsLimiterTask() {
                 LogInfo(oss.str().c_str());
             }
         } else {
-            // Log when background FPS limit is disabled
-            if (renodx::utils::swapchain::fps_limit != 0.0f) {
+            // Background limit disabled - apply foreground limit instead
+            const float desired_limit = s_fps_limit;
+            if (renodx::utils::swapchain::fps_limit != desired_limit) {
                 const float old_limit = renodx::utils::swapchain::fps_limit;
-                renodx::utils::swapchain::fps_limit = 0.0f;
+                renodx::utils::swapchain::fps_limit = desired_limit;
                 std::ostringstream oss;
-                oss << "FPS limiter: Background limit disabled, removed limit (was " << old_limit << ")";
+                oss << "FPS limiter: Background limit disabled, applied foreground limit " << desired_limit << " FPS (was " << old_limit << ")";
                 LogInfo(oss.str().c_str());
             }
         }
     } else {
-        // Foreground: restore default FPS limit
-        if (g_default_fps_limit.load() == 0.0f) {
-            if (renodx::utils::swapchain::fps_limit != 0.0f) {
-                const float old_limit = renodx::utils::swapchain::fps_limit;
-                renodx::utils::swapchain::fps_limit = 0.0f;
-                std::ostringstream oss;
-                oss << "FPS limiter: Removed FPS limit (foreground, was " << old_limit << ")";
-                LogInfo(oss.str().c_str());
+        // Foreground: apply foreground FPS limit
+        const float desired_limit = s_fps_limit;
+        if (renodx::utils::swapchain::fps_limit != desired_limit) {
+            const float old_limit = renodx::utils::swapchain::fps_limit;
+            renodx::utils::swapchain::fps_limit = desired_limit;
+            std::ostringstream oss;
+            if (desired_limit > 0.0f) {
+                oss << "FPS limiter: Applied foreground limit " << desired_limit << " FPS (was " << old_limit << ")";
+            } else {
+                oss << "FPS limiter: Removed foreground FPS limit (was " << old_limit << ")";
             }
-        } else {
-            if (renodx::utils::swapchain::fps_limit != g_default_fps_limit.load()) {
-                const float old_limit = renodx::utils::swapchain::fps_limit;
-                renodx::utils::swapchain::fps_limit = g_default_fps_limit.load();
-                std::ostringstream oss;
-                oss << "FPS limiter: Restored default FPS limit " << g_default_fps_limit.load() << " FPS (was " << old_limit << ")";
-                LogInfo(oss.str().c_str());
-            }
+            LogInfo(oss.str().c_str());
         }
     }
 }

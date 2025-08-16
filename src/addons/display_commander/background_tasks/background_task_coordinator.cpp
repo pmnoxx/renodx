@@ -10,6 +10,7 @@ std::thread renodx::background::g_background_tasks_thread;
 #include "fps_limiter_task.hpp"
 #include "audio_management_task.hpp"
 #include "window_position_task.hpp"
+#include "hooks_monitor_task.hpp"
 
 // Main background task coordinator thread function
 void BackgroundTasksThread() {
@@ -20,6 +21,7 @@ void BackgroundTasksThread() {
         RunFpsLimiterTask();
         RunAudioManagementTask();
         RunWindowPositionTask();
+        renodx::background::RunHooksMonitorTask();
         
         // Sleep for 300ms between task cycles
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
