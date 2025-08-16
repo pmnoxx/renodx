@@ -108,3 +108,7 @@
 62	86	7770139612143968	D:/repos/renodx2/build_ninja/CMakeFiles/cmake.verify_globs	d546f856aeed2425
 90	2185	7770139612429556	CMakeFiles/display_commander.dir/src/addons/display_commander/background_tasks/fps_limiter_task.cpp.obj	a3a9b750b28fd49d
 2186	2320	7770139633380780	renodx-display_commander.addon64	b9075de7db7c9f4a
+55	80	7770141935724529	D:/repos/renodx2/build_ninja/CMakeFiles/cmake.verify_globs	d546f856aeed2425
+84	2245	7770141936015522	CMakeFiles/display_commander.dir/src/addons/display_commander/background_tasks/fps_limiter_task.cpp.obj	a3a9b750b28fd49d
+87	2316	7770141936035478	CMakeFiles/display_commander.dir/src/addons/display_commander/ui/ui_display_settings.cpp.obj	960875606deed697
+2317	2461	7770141958337704	renodx-display_commander.addon64	b9075de7db7c9f4a
