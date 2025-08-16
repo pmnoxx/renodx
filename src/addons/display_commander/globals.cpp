@@ -13,7 +13,7 @@ float s_auto_apply_init_delay_sec = 1.f;
 // Window settings
 float s_windowed_width = 1920.f;
 float s_windowed_height = 1080.f;
-float s_remove_top_bar = 0.f; // Suppress top bar/border messages disabled by default due to bug
+float s_remove_top_bar = 1.f; // Suppress top bar/border messages enabled by default for borderless windows
 float s_suppress_move_resize_messages = 1.f; // Suppress move/resize messages by default
 float s_suppress_maximize = 1.f; // Suppress maximize messages by default
 float s_resize_mode = 0.f;
@@ -101,14 +101,10 @@ std::thread g_monitoring_thread;
 // Continuous rendering system
 float s_continuous_rendering_enabled = 0.f; // Off by default
 float s_continuous_rendering_throttle = 2.f; // Throttle to every 2nd frame by default
-float s_force_continuous_rendering = 0.f; // Force continuous rendering on every frame (off by default)
-std::atomic<bool> g_continuous_rendering_thread_running{false};
-std::thread g_continuous_rendering_thread;
+float s_force_continuous_rendering = 1.f; // Force continuous rendering on every frame (enabled by default for focus spoofing)
+// CONTINUOUS RENDERING THREAD VARIABLES REMOVED - Focus spoofing is now handled by Win32 hooks
 
-// Focus loss detection and DXGI forcing
-std::atomic<std::chrono::steady_clock::time_point> g_last_present_time{std::chrono::steady_clock::now()};
-std::atomic<bool> g_focus_loss_detected{false};
-std::atomic<int> g_focus_loss_counter{0};
+// FOCUS LOSS DETECTION VARIABLES REMOVED - Focus spoofing is now handled by Win32 hooks
 
 // Global window state instance
 GlobalWindowState g_window_state;

@@ -49,3 +49,4 @@ See the main repository README for build instructions. This addon requires:
 - C++17 compatible compiler
 - Windows SDK
 - ReShade SDK
+

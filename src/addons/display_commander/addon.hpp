@@ -87,13 +87,9 @@ extern std::thread g_monitoring_thread;
 extern float s_continuous_rendering_enabled;
 extern float s_force_continuous_rendering;
 extern float s_continuous_rendering_throttle;
-extern std::atomic<bool> g_continuous_rendering_thread_running;
-extern std::thread g_continuous_rendering_thread;
+// CONTINUOUS RENDERING THREAD VARIABLES REMOVED - Focus spoofing is now handled by Win32 hooks
 
-// Focus loss detection and DXGI forcing
-extern std::atomic<std::chrono::steady_clock::time_point> g_last_present_time;
-extern std::atomic<bool> g_focus_loss_detected;
-extern std::atomic<int> g_focus_loss_counter;
+// FOCUS LOSS DETECTION VARIABLES REMOVED - Focus spoofing is now handled by Win32 hooks
 
 // Structs
 struct GlobalWindowState {

@@ -77,10 +77,20 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
             case WM_WINDOWPOSCHANGING: {
                 // Intercept window position/style changes
                 WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
-                if (wp && (wp->flags & SWP_FRAMECHANGED)) {
-                    // Prevent frame changes that would add borders
-                    wp->flags &= ~SWP_FRAMECHANGED;
-                    LogDebug("Window style hook: Prevented frame change");
+                if (wp) {
+                    // ENHANCED LOGGING: Log all window position changes to debug top border issues
+                    std::ostringstream oss;
+                    oss << "Window style hook: WM_WINDOWPOSCHANGING - Flags: 0x" << std::hex << wp->flags 
+                        << ", Pos: (" << wp->x << "," << wp->y << "), Size: (" << wp->cx << "x" << wp->cy << ")";
+                    
+                    if (wp->flags & SWP_FRAMECHANGED) {
+                        oss << " [FRAME CHANGE DETECTED - Preventing borders!]";
+                        // Prevent frame changes that would add borders
+                        wp->flags &= ~SWP_FRAMECHANGED;
+                        LogInfo(oss.str().c_str());
+                    } else {
+                        LogDebug(oss.str().c_str());
+                    }
                 }
                 break;
             }
@@ -89,11 +99,27 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 // Intercept style change requests
                 STYLESTRUCT* style = reinterpret_cast<STYLESTRUCT*>(lParam);
                 if (style) {
-                    // Remove window styles that add borders
+                    // ENHANCED LOGGING: Log all style changes to debug top border issues
                     DWORD remove_styles = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
+                    DWORD old_style = style->styleOld;
+                    DWORD new_style = style->styleNew;
+                    
+                    std::ostringstream oss;
+                    oss << "Window style hook: WM_STYLECHANGING - Old: 0x" << std::hex << old_style 
+                        << ", New: 0x" << std::hex << new_style;
+                    
+                    // Check if any unwanted styles are being added
+                    DWORD unwanted_added = (new_style & remove_styles) & ~(old_style & remove_styles);
+                    if (unwanted_added) {
+                        oss << " [UNWANTED STYLES DETECTED: 0x" << std::hex << unwanted_added << " - Removing!]";
+                        LogInfo(oss.str().c_str());
+                    } else {
+                        LogDebug(oss.str().c_str());
+                    }
+                    
+                    // Remove window styles that add borders
                     style->styleNew &= ~remove_styles;
                     style->styleOld &= ~remove_styles;
-                    LogDebug("Window style hook: Modified style change request");
                 }
                 break;
             }
@@ -158,13 +184,31 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 if (s_remove_top_bar >= 0.5f && wParam == TRUE) {
                     NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
                     if (params) {
-                        // Set the client area to fill the entire window
-                        params->rgrc[0].left = 0;
-                        params->rgrc[0].top = 0;
-                        params->rgrc[0].right = params->rgrc[1].right - params->rgrc[1].left;
-                        params->rgrc[0].bottom = params->rgrc[1].bottom - params->rgrc[1].top;
-                        LogDebug("Window style hook: Modified NCCALCSIZE to remove non-client areas");
+                        // ENHANCED LOGGING: Log NCCALCSIZE to debug top border removal
+                        std::ostringstream oss;
+                        oss << "Window style hook: WM_NCCALCSIZE - Window: (" << params->rgrc[1].left << "," << params->rgrc[1].top 
+                            << ") to (" << params->rgrc[1].right << "," << params->rgrc[1].bottom << ")";
+                        
+                        // Calculate desired window state to get current target position
+                        CalculateWindowState(hwnd, "hook_nccalcsize");
+                        
+                        // Use global window position data instead of hardcoding (0,0)
+                        // This ensures the client area respects the actual window position
+                        params->rgrc[0].left = g_window_state.target_x;
+                        params->rgrc[0].top = g_window_state.target_y;
+                        params->rgrc[0].right = g_window_state.target_x + g_window_state.target_w;
+                        params->rgrc[0].bottom = g_window_state.target_y + g_window_state.target_h;
+                        
+                        oss << " -> Client: (" << params->rgrc[0].left << "," << params->rgrc[0].top 
+                            << ") to (" << params->rgrc[0].right << "," << params->rgrc[0].bottom << ") [TOP BORDER REMOVED with global position!]";
+                        LogInfo(oss.str().c_str());
+                        
                         return 0; // Don't call default handler
+                    }
+                } else {
+                    // Log when NCCALCSIZE is not handled
+                    if (s_remove_top_bar < 0.5f) {
+                        LogDebug("Window style hook: WM_NCCALCSIZE not handled - s_remove_top_bar is " + std::to_string(s_remove_top_bar));
                     }
                 }
                 break;
@@ -195,6 +239,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                     
                     // For now, allow the move but log the mismatch
                     // Background tasks will handle position enforcement
+                    return 0; // Don't call default handler
                 } else {
                     LogDebug("Window style hook: Move message matches desired state");
                 }
@@ -248,6 +293,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                         lParam = MAKELONG(static_cast<short>(client_rect.right - client_rect.left), 
                                          static_cast<short>(client_rect.bottom - client_rect.top));
                     }
+                    return 0; // Don't call default handler
                 }
                 break;
             }
@@ -285,6 +331,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                             wp->cx = client_rect.right - client_rect.left;
                             wp->cy = client_rect.bottom - client_rect.top;
                         }
+                        return 0; // Don't call default handler
                     }
                     
                     // Position is managed automatically - allow all position changes
@@ -357,12 +404,30 @@ void InstallWindowStyleHooks() {
     
     // Force immediate focus application if continuous rendering is enabled
     if (s_force_continuous_rendering >= 0.5f) {
+        // ENHANCED LOGGING: Log focus forcing attempts
+        std::ostringstream oss;
+        oss << "Window style hooks: Applying focus forcing - Window: " << hwnd 
+            << ", Current foreground: " << GetForegroundWindow() 
+            << ", Current active: " << GetActiveWindow();
+        LogInfo(oss.str().c_str());
+        
         // Force the window to be the foreground and active window
         SetForegroundWindow(hwnd);
         SetActiveWindow(hwnd);
         SetFocus(hwnd);
         
-        LogInfo("Window style hooks: Applied focus forcing immediately for continuous rendering");
+        // Verify the focus forcing worked
+        HWND new_foreground = GetForegroundWindow();
+        HWND new_active = GetActiveWindow();
+        
+        if (new_foreground == hwnd && new_active == hwnd) {
+            LogInfo("Window style hooks: Focus forcing SUCCESSFUL - Game window now has focus");
+        } else {
+            std::ostringstream oss2;
+            oss2 << "Window style hooks: Focus forcing FAILED - Foreground: " << new_foreground 
+                 << ", Active: " << new_active << ", Target: " << hwnd;
+            LogWarn(oss2.str().c_str());
+        }
     }
 }
 

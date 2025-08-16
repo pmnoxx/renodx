@@ -34,27 +34,15 @@ void RunFpsLimiterTask() {
     }
     
     if (is_background) {
-        // Background: apply background FPS limit if enabled
-        if (s_fps_limit_background >= 0.f) {
-            const float desired_limit = s_fps_limit_background;
-            if (renodx::utils::swapchain::fps_limit != desired_limit) {
-                const float old_limit = renodx::utils::swapchain::fps_limit;
-                renodx::utils::swapchain::fps_limit = desired_limit;
-                std::ostringstream oss;
-                oss << "FPS limiter: Applied background limit " << desired_limit << " FPS (was " << old_limit << ")";
-                LogInfo(oss.str().c_str());
-            }
-        } else {
-            // Background limit disabled - apply foreground limit instead
-            const float desired_limit = s_fps_limit;
-            if (renodx::utils::swapchain::fps_limit != desired_limit) {
-                const float old_limit = renodx::utils::swapchain::fps_limit;
-                renodx::utils::swapchain::fps_limit = desired_limit;
-                std::ostringstream oss;
-                oss << "FPS limiter: Background limit disabled, applied foreground limit " << desired_limit << " FPS (was " << old_limit << ")";
-                LogInfo(oss.str().c_str());
-            }
+        const float desired_limit = s_fps_limit_background;
+        if (renodx::utils::swapchain::fps_limit != desired_limit) {
+            const float old_limit = renodx::utils::swapchain::fps_limit;
+            renodx::utils::swapchain::fps_limit = desired_limit;
+            std::ostringstream oss;
+            oss << "FPS limiter: Applied background limit " << desired_limit << " FPS (was " << old_limit << ")";
+            LogInfo(oss.str().c_str());
         }
+  
     } else {
         // Foreground: apply foreground FPS limit
         const float desired_limit = s_fps_limit;

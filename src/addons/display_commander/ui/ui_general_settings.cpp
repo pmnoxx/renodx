@@ -76,7 +76,7 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .key = "ContinuousMonitoring",
         .binding = &s_continuous_monitoring_enabled,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
+        .default_value = 1.f, // Enabled by default to match globals.cpp
         .label = "Continuous Monitoring",
         .section = "Display",
         .tooltip = "Continuously monitor and automatically fix window position, size, and style every second.",

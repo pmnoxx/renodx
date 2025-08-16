@@ -222,7 +222,72 @@ bool NVAPIFullscreenPrevention::SetFullscreenPrevention(bool enable) {
 }
 
 bool NVAPIFullscreenPrevention::IsFullscreenPreventionEnabled() const {
-    return fullscreen_prevention_enabled;
+    if (!initialized) {
+        return false;
+    }
+    
+    // Query the actual DRS setting from the driver instead of returning cached value
+    NvAPI_Status status;
+    NvDRSSessionHandle hSession = {0};
+    NvDRSProfileHandle hProfile = {0};
+    
+    // Create DRS session
+    status = NvAPI_DRS_CreateSession(&hSession);
+    if (status != NVAPI_OK) {
+        LogDebug("IsFullscreenPreventionEnabled: Failed to create DRS session for query");
+        return false;
+    }
+    
+    // Load settings
+    status = NvAPI_DRS_LoadSettings(hSession);
+    if (status != NVAPI_OK) {
+        LogDebug("IsFullscreenPreventionEnabled: Failed to load DRS settings for query");
+        NvAPI_DRS_DestroySession(hSession);
+        return false;
+    }
+    
+    // Get current executable name
+    char exePath[MAX_PATH];
+    GetModuleFileNameA(nullptr, exePath, MAX_PATH);
+    char* exeName = strrchr(exePath, '\\');
+    if (exeName) exeName++;
+    else exeName = exePath;
+    
+    // Find application profile
+    NVDRS_APPLICATION app = {0};
+    app.version = NVDRS_APPLICATION_VER;
+    strcpy((char*)app.appName, exeName);
+    
+    status = NvAPI_DRS_FindApplicationByName(hSession, (NvU16*)exeName, &hProfile, &app);
+    if (status != NVAPI_OK) {
+        LogDebug("IsFullscreenPreventionEnabled: Application profile not found");
+        NvAPI_DRS_DestroySession(hSession);
+        return false;
+    }
+    
+    // Query the actual setting value
+    NVDRS_SETTING setting = {0};
+    setting.version = NVDRS_SETTING_VER;
+    setting.settingId = 0x20324987; // OGL_DX_PRESENT_DEBUG_ID
+    
+    status = NvAPI_DRS_GetSetting(hSession, hProfile, setting.settingId, &setting);
+    if (status != NVAPI_OK) {
+        LogDebug("IsFullscreenPreventionEnabled: Failed to get DRS setting");
+        NvAPI_DRS_DestroySession(hSession);
+        return false;
+    }
+    
+    // Clean up
+    NvAPI_DRS_DestroySession(hSession);
+    
+    // Check if fullscreen prevention flags are set
+    bool is_enabled = (setting.u32CurrentValue & 0x00000001) != 0; // DISABLE_FULLSCREEN_OPT flag
+    
+    std::ostringstream oss;
+    oss << "IsFullscreenPreventionEnabled: Query result - setting value: 0x" << std::hex << setting.u32CurrentValue << ", fullscreen prevention: " << (is_enabled ? "ENABLED" : "DISABLED");
+    LogDebug(oss.str().c_str());
+    
+    return is_enabled;
 }
 
 std::string NVAPIFullscreenPrevention::GetLastError() const {
