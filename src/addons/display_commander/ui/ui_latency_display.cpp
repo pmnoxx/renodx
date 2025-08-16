@@ -1,4 +1,6 @@
 #include "ui_common.hpp"
+#include <sstream>
+#include <iomanip>
 
 namespace renodx::ui {
 
@@ -91,6 +93,8 @@ void AddLatencyDisplaySettings(std::vector<renodx::utils::settings::Setting*>& s
         },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
+
+    // CONTINUOUS RENDERING UI REMOVED - Focus spoofing is now handled by Win32 hooks
     
     // Debug Button to show atomic variable values
     settings.push_back(new renodx::utils::settings::Setting{

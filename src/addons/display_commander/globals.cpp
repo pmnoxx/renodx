@@ -98,6 +98,18 @@ float s_continuous_monitoring_enabled = 1.f; // Enabled by default
 std::atomic<bool> g_monitoring_thread_running{false};
 std::thread g_monitoring_thread;
 
+// Continuous rendering system
+float s_continuous_rendering_enabled = 0.f; // Off by default
+float s_continuous_rendering_throttle = 2.f; // Throttle to every 2nd frame by default
+float s_force_continuous_rendering = 0.f; // Force continuous rendering on every frame (off by default)
+std::atomic<bool> g_continuous_rendering_thread_running{false};
+std::thread g_continuous_rendering_thread;
+
+// Focus loss detection and DXGI forcing
+std::atomic<std::chrono::steady_clock::time_point> g_last_present_time{std::chrono::steady_clock::now()};
+std::atomic<bool> g_focus_loss_detected{false};
+std::atomic<int> g_focus_loss_counter{0};
+
 // Global window state instance
 GlobalWindowState g_window_state;
 

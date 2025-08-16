@@ -14,6 +14,10 @@
 void StartContinuousMonitoring();
 void StopContinuousMonitoring();
 
+// Forward declarations for continuous rendering functions
+void StartContinuousRendering();
+void StopContinuousRendering();
+
 // External declarations for settings
 extern float s_remove_top_bar;
 
@@ -54,10 +58,10 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       
 
       
-      // Clean up continuous monitoring if it's running
+            // Clean up continuous monitoring if it's running
       StopContinuousMonitoring();
       
-
+      // CONTINUOUS RENDERING CLEANUP REMOVED - Focus spoofing is now handled by Win32 hooks
       
       // Clean up Reflex hooks if they're installed
       UninstallReflexHooks();
@@ -92,6 +96,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       StartContinuousMonitoring();
       LogInfo("Continuous monitoring started proactively");
     }
+
+    // CONTINUOUS RENDERING INITIALIZATION REMOVED - Focus spoofing is now handled by Win32 hooks
     
     // Initialize NVAPI fullscreen prevention if enabled
     if (s_nvapi_fullscreen_prevention >= 0.5f) {
@@ -133,5 +139,10 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
 
   return TRUE;
 }
+
+// CONTINUOUS RENDERING FUNCTIONS REMOVED - Focus spoofing is now handled by Win32 hooks
+
+// CONTINUOUS RENDERING THREAD REMOVED - Focus spoofing is now handled by Win32 hooks
+// This provides a much cleaner and more effective solution
 
 

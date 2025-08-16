@@ -1,12 +1,19 @@
 #include "ui_general_settings.hpp"
 #include "ui_common.hpp"
 #include "../../../utils/settings.hpp"
+#include "../addon.hpp"
 
 // External declarations for general settings
 extern float s_ui_mode;
 extern float s_auto_apply_enabled;
 extern float s_auto_apply_delay_sec;
 extern float s_auto_apply_init_delay_sec;
+extern float s_continuous_monitoring_enabled;
+extern float s_continuous_rendering_enabled;
+extern float s_continuous_rendering_throttle;
+extern float s_force_continuous_rendering;
+
+    // CONTINUOUS RENDERING FUNCTIONS REMOVED - Focus spoofing is now handled by Win32 hooks
 
 namespace renodx::ui {
 
@@ -83,6 +90,8 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
             }
         },
     });
+
+    // CONTINUOUS RENDERING UI SETTINGS REMOVED - Focus spoofing is now handled by Win32 hooks
 }
 
 } // namespace renodx::ui

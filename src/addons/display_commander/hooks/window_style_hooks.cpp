@@ -12,10 +12,65 @@ HWND g_hooked_window = nullptr;
 WNDPROC g_original_window_proc = nullptr;
 bool g_hooks_installed = false;
 
-// Hooked window procedure that intercepts style-changing messages
+// Hooked window procedure that intercepts style-changing messages and focus loss messages
 // NOTE: Do not make any system calls within this function - only log and modify message parameters
 // Background tasks will handle the actual window state enforcement later
 LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    // SPOOF FOCUS FEATURE - Prevent games from knowing they lost focus through Win32 message suppression
+    if (s_force_continuous_rendering >= 0.5f) {
+        switch (uMsg) {
+            case WM_KILLFOCUS:
+                // Suppress focus loss messages to keep the game rendering
+                LogDebug("Window style hook: SUPPRESSED WM_KILLFOCUS - Preventing game from knowing it lost focus");
+                return 0; // Block the message completely
+                
+            case WM_ACTIVATE:
+                if (LOWORD(wParam) == WA_INACTIVE) {
+                    // Suppress deactivation messages to keep the game active
+                    LogDebug("Window style hook: SUPPRESSED WM_ACTIVATE(WA_INACTIVE) - Keeping game active");
+                    return 0; // Block the message completely
+                }
+                break;
+                
+            case WM_ACTIVATEAPP:
+                if (wParam == FALSE) {
+                    // Suppress app deactivation messages
+                    LogDebug("Window style hook: SUPPRESSED WM_ACTIVATEAPP(FALSE) - Preventing app deactivation");
+                    return 0; // Block the message completely
+                }
+                break;
+                
+            case WM_NCACTIVATE:
+                if (wParam == FALSE) {
+                    // Suppress non-client area deactivation messages
+                    LogDebug("Window style hook: SUPPRESSED WM_NCACTIVATE(FALSE) - Preventing non-client deactivation");
+                    return 0; // Block the message completely
+                }
+                break;
+                
+            case WM_SETFOCUS:
+                // Always allow focus gain, but log it
+                LogDebug("Window style hook: ALLOWED WM_SETFOCUS - Game gained focus (this is good)");
+                break;
+                
+            case WM_MOUSEACTIVATE:
+                // Prevent mouse activation from deactivating the game
+                if (s_force_continuous_rendering >= 0.5f) {
+                    LogDebug("Window style hook: SUPPRESSED WM_MOUSEACTIVATE - Preventing mouse deactivation");
+                    return MA_ACTIVATE; // Force activation
+                }
+                break;
+                
+            case WM_WINDOWPOSCHANGING:
+                // Prevent window position changes from affecting focus
+                if (s_force_continuous_rendering >= 0.5f) {
+                    // Allow position changes but ensure focus stays
+                    LogDebug("Window style hook: ALLOWED WM_WINDOWPOSCHANGING - Position change with focus preservation");
+                }
+                break;
+        }
+    }
+    
     // Check if we should prevent style changes
     if (s_remove_top_bar >= 0.5f) {
         switch (uMsg) {
@@ -298,6 +353,16 @@ void InstallWindowStyleHooks() {
             SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
             LogInfo("Window style hooks: Applied borderless style immediately");
         }
+    }
+    
+    // Force immediate focus application if continuous rendering is enabled
+    if (s_force_continuous_rendering >= 0.5f) {
+        // Force the window to be the foreground and active window
+        SetForegroundWindow(hwnd);
+        SetActiveWindow(hwnd);
+        SetFocus(hwnd);
+        
+        LogInfo("Window style hooks: Applied focus forcing immediately for continuous rendering");
     }
 }
 

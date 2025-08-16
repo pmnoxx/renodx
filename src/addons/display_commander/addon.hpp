@@ -83,6 +83,18 @@ extern float s_continuous_monitoring_enabled;
 extern std::atomic<bool> g_monitoring_thread_running;
 extern std::thread g_monitoring_thread;
 
+// Continuous rendering system
+extern float s_continuous_rendering_enabled;
+extern float s_force_continuous_rendering;
+extern float s_continuous_rendering_throttle;
+extern std::atomic<bool> g_continuous_rendering_thread_running;
+extern std::thread g_continuous_rendering_thread;
+
+// Focus loss detection and DXGI forcing
+extern std::atomic<std::chrono::steady_clock::time_point> g_last_present_time;
+extern std::atomic<bool> g_focus_loss_detected;
+extern std::atomic<int> g_focus_loss_counter;
+
 // Structs
 struct GlobalWindowState {
   int desired_width = 0;
@@ -233,6 +245,8 @@ void StartContinuousMonitoring();
 void StopContinuousMonitoring();
 void ContinuousMonitoringThread();
 bool NeedsWindowAdjustment(HWND hwnd, int& out_width, int& out_height, int& out_pos_x, int& out_pos_y, WindowStyleMode& out_style_mode);
+
+// CONTINUOUS RENDERING FUNCTIONS REMOVED - Focus spoofing is now handled by Win32 hooks
 
 // Swapchain event handlers
 void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize);
