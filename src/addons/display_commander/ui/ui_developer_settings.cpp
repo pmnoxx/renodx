@@ -124,6 +124,24 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
+
+    // Suppress Maximize Messages
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "SuppressMaximizeMessages",
+        .binding = &s_suppress_maximize,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 1.f,
+        .label = "Suppress Maximize Messages",
+        .section = "Display",
+        .tooltip = "Suppress window maximize messages. Prevents games from maximizing their windows unexpectedly.",
+        .labels = {"Disabled", "Enabled"},
+        .on_change_value = [](float previous, float current){ 
+            std::ostringstream oss;
+            oss << "Suppress maximize messages changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            LogInfo(oss.str().c_str());
+        },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+    });
 }
 
 } // namespace renodx::ui

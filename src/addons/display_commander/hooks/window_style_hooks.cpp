@@ -59,9 +59,15 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
             }
             
             case WM_SYSCOMMAND: {
+                // Check if we should suppress maximize commands
+                if (s_suppress_maximize >= 0.5f && wParam == SC_MAXIMIZE) {
+                    LogDebug("Window style hook: Suppressed maximize command");
+                    return 0; // Block the maximize command
+                }
+                
                 // Prevent system menu commands that could restore borders
-                if (wParam == SC_RESTORE || wParam == SC_MAXIMIZE) {
-                    LogDebug("Window style hook: Blocked system command");
+                if (wParam == SC_RESTORE) {
+                    LogDebug("Window style hook: Blocked restore command");
                     return 0; // Block the command
                 }
                 break;
@@ -102,6 +108,20 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 // Intercept window size messages
                 int new_w = static_cast<int>(LOWORD(lParam));
                 int new_h = static_cast<int>(HIWORD(lParam));
+                WPARAM size_type = wParam;
+                
+                // Check if we should suppress maximize
+                if (s_suppress_maximize >= 0.5f && size_type == SIZE_MAXIMIZED) {
+                    LogDebug("Window style hook: Suppressed maximize size message");
+                    // Modify the message to keep current size (suppress the maximize)
+                    RECT client_rect;
+                    if (GetClientRect(hwnd, &client_rect)) {
+                        lParam = MAKELONG(static_cast<short>(client_rect.right - client_rect.left), 
+                                         static_cast<short>(client_rect.bottom - client_rect.top));
+                        wParam = SIZE_RESTORED; // Change from SIZE_MAXIMIZED to SIZE_RESTORED
+                    }
+                    break;
+                }
                 
                 // Calculate desired window state to get current target size
                 CalculateWindowState(hwnd, "hook_size_check");

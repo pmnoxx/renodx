@@ -15,6 +15,7 @@ float s_windowed_width = 1920.f;
 float s_windowed_height = 1080.f;
 float s_remove_top_bar = 1.f; // Suppress top bar/border messages by default
 float s_suppress_move_resize_messages = 1.f; // Suppress move/resize messages by default
+float s_suppress_maximize = 1.f; // Suppress maximize messages by default
 float s_resize_mode = 0.f;
 float s_aspect_index = 3.f; // 16:9
 

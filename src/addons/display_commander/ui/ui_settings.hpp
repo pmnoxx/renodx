@@ -14,6 +14,7 @@ namespace renodx::utils::settings {
 
 extern float s_reflex_debug_output;
 extern float s_remove_top_bar;
+extern float s_suppress_maximize;
 extern float s_ui_mode;
 extern float s_auto_apply_enabled;
 extern float s_auto_apply_delay_sec;
