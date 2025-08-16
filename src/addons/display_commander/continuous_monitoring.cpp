@@ -74,6 +74,26 @@ void ContinuousMonitoringThread() {
                     LogInfo("Continuous monitoring: Always on top styles removed and window forced to normal Z-order");
                     continue; // Skip normal ApplyWindowChange since we just fixed the issue
                 }
+                
+                // PROACTIVE MOUSE CONFINEMENT RELEASE: Prevent DirectInput from keeping mouse confined
+                // Check if mouse is currently captured or cursor is clipped
+                HWND captured_window = GetCapture();
+                if (captured_window == hwnd) {
+                    LogInfo("Continuous monitoring: MOUSE CAPTURE DETECTED - Releasing to prevent confinement");
+                    ReleaseCapture();
+                }
+                
+                // Also check if cursor is clipped to this window
+                RECT clip_rect;
+                if (GetClipCursor(&clip_rect)) {
+                    RECT window_rect;
+                    GetWindowRect(hwnd, &window_rect);
+                    // If cursor is clipped to window bounds, release it
+                    if (memcmp(&clip_rect, &window_rect, sizeof(RECT)) == 0) {
+                        LogInfo("Continuous monitoring: CURSOR CLIPPING DETECTED - Releasing to prevent confinement");
+                        ClipCursor(nullptr);
+                    }
+                }
             }
             
             // Apply window changes - the function will automatically determine what needs to be changed

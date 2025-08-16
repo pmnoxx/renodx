@@ -27,12 +27,29 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
             case WM_KILLFOCUS:
                 // Suppress focus loss messages to keep the game rendering
                 LogDebug("Window style hook: SUPPRESSED WM_KILLFOCUS - Preventing game from knowing it lost focus");
+                
+                // RELEASE DIRECTINPUT: Force release mouse/keyboard capture to prevent confinement
+                if (s_prevent_always_on_top >= 0.5f) {
+                    // Try to release any captured input devices
+                    ReleaseCapture(); // Release mouse capture
+                    ClipCursor(nullptr); // Release cursor clipping
+                    LogDebug("Window style hook: Released mouse capture and cursor clipping to prevent confinement");
+                }
+                
                 return 0; // Block the message completely
                 
             case WM_ACTIVATE:
                 if (LOWORD(wParam) == WA_INACTIVE) {
                     // Suppress deactivation messages to keep the game active
                     LogDebug("Window style hook: SUPPRESSED WM_ACTIVATE(WA_INACTIVE) - Keeping game active");
+                    
+                    // RELEASE DIRECTINPUT: Force release mouse/keyboard capture when becoming inactive
+                    if (s_prevent_always_on_top >= 0.5f) {
+                        ReleaseCapture(); // Release mouse capture
+                        ClipCursor(nullptr); // Release cursor clipping
+                        LogDebug("Window style hook: Released mouse capture and cursor clipping on deactivation");
+                    }
+                    
                     return 0; // Block the message completely
                 }
                 break;
