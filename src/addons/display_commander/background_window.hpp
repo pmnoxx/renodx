@@ -5,6 +5,10 @@
 #include <thread>
 
 // Background window management using dedicated message processing thread
+// 
+// ARCHITECTURAL PRINCIPLE: Windows must be created in the same thread that processes their messages.
+// This prevents cross-thread ownership issues and ensures proper message routing.
+// The background window is created inside m_background_thread, not in the main thread.
 class BackgroundWindowManager {
 public:
     BackgroundWindowManager();
@@ -32,6 +36,9 @@ private:
     // Start the dedicated message processing thread
     void StartBackgroundThread(HWND game_hwnd);
     
+    // Create the background window inside the message thread
+    bool CreateBackgroundWindowInThread(HWND game_hwnd);
+    
     // Background window handle
     HWND m_background_hwnd;
     
@@ -47,15 +54,8 @@ private:
     // Flag to ignore focus events during creation
     std::atomic<bool> m_ignore_focus_events;
     
-    static constexpr int COLOR_COUNT = 8;
+    static constexpr int COLOR_COUNT = 1;
     static constexpr COLORREF COLORS[COLOR_COUNT] = {
-        RGB(255, 0, 0),      // Red
-        RGB(0, 255, 0),      // Green
-        RGB(0, 0, 255),      // Blue
-        RGB(255, 255, 0),    // Yellow
-        RGB(255, 0, 255),    // Magenta
-        RGB(0, 255, 255),    // Cyan
-        RGB(128, 128, 128),  // Gray
         RGB(0, 0, 0)         // Black
     };
     

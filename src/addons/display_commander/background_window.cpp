@@ -2,6 +2,11 @@
 #include "addon.hpp"
 #include <sstream>
 
+// IMPORTANT ARCHITECTURAL PRINCIPLE:
+// Windows must be created in the same thread that processes their messages.
+// This prevents cross-thread ownership issues and ensures proper message routing.
+// The background window is created inside m_background_thread, not in the main thread.
+
 // Global instance is defined in globals.cpp
 extern BackgroundWindowManager g_backgroundWindowManager;
 
@@ -50,6 +55,23 @@ bool BackgroundWindowManager::CreateBackgroundWindow(HWND game_hwnd) {
         return true; // Already exists
     }
     
+    // Start the dedicated message processing thread (window will be created inside the thread)
+    StartBackgroundThread(game_hwnd);
+    
+    // Enable focus events after thread is started
+    m_ignore_focus_events.store(false);
+    
+    m_has_background_window.store(true);
+    LogInfo("Background window thread started successfully");
+    
+    return true;
+}
+
+bool BackgroundWindowManager::CreateBackgroundWindowInThread(HWND game_hwnd) {
+    if (m_background_hwnd != nullptr) {
+        return true; // Already exists
+    }
+
     // Try custom class first, fallback to existing Windows class
     bool custom_class_registered = RegisterWindowClass();
     const char* window_class_to_use;
@@ -99,15 +121,6 @@ bool BackgroundWindowManager::CreateBackgroundWindow(HWND game_hwnd) {
     SetWindowLongPtr(m_background_hwnd, GWL_EXSTYLE, 
                      GetWindowLongPtr(m_background_hwnd, GWL_EXSTYLE) | WS_EX_NOACTIVATE);
     
-    // Start the dedicated message processing thread
-    StartBackgroundThread(game_hwnd);
-    
-    // Enable focus events after window is fully created
-    m_ignore_focus_events.store(false);
-    
-    m_has_background_window.store(true);
-    LogInfo("Background window created successfully");
-    
     return true;
 }
 
@@ -121,6 +134,12 @@ void BackgroundWindowManager::StartBackgroundThread(HWND game_hwnd) {
     m_background_thread = std::thread([this, game_hwnd]() {
         LogInfo("[BG-WINDOW-THREAD] Background window message thread started");
         
+        // CREATE WINDOW IN THIS THREAD (fixes cross-thread ownership issue)
+        if (!CreateBackgroundWindowInThread(game_hwnd)) {
+            LogInfo("[BG-WINDOW-THREAD] Failed to create background window in thread");
+            return;
+        }
+        
         // Set a timer for color cycling
         SetTimer(m_background_hwnd, 1, 100, nullptr);
         
@@ -132,14 +151,13 @@ void BackgroundWindowManager::StartBackgroundThread(HWND game_hwnd) {
                 // Handle specific messages
                 switch (msg.message) {
                     case WM_PAINT: {
-                        // Handle painting with color cycling
+                        // Handle painting with solid black color
                         PAINTSTRUCT ps;
                         HDC hdc = BeginPaint(m_background_hwnd, &ps);
                         
                         if (hdc) {
-                            // Get current color based on frame counter
-                            int color_index = (m_frame_counter / 10) % COLOR_COUNT;
-                            COLORREF current_color = COLORS[color_index];
+                            // Use solid black color
+                            COLORREF current_color = COLORS[0]; // Always black
                             
                             // Create brush and fill the window
                             HBRUSH brush = CreateSolidBrush(current_color);
@@ -152,22 +170,9 @@ void BackgroundWindowManager::StartBackgroundThread(HWND game_hwnd) {
                     }
                     
                     case WM_TIMER: {
-                        // Handle timer for color cycling
+                        // Handle timer for repainting (no color cycling needed)
                         if (msg.wParam == 1) { // Our timer
-                            m_frame_counter.fetch_add(1);
-                            
-                            // Log every 100 frames
-                            if (m_frame_counter % 100 == 0) {
-                                int color_index = (m_frame_counter / 10) % COLOR_COUNT;
-                                std::ostringstream oss;
-                                oss << "[BG-WINDOW-THREAD] Background window: Frame " << m_frame_counter << ", Color RGB(" 
-                                    << (color_index & 1 ? "true" : "false") << "," 
-                                    << (color_index & 2 ? "true" : "false") << "," 
-                                    << (color_index & 4 ? "true" : "false") << ")";
-                                LogInfo(oss.str().c_str());
-                            }
-                            
-                            // Trigger repaint
+                            // Just trigger a repaint to keep window responsive
                             InvalidateRect(m_background_hwnd, nullptr, FALSE);
                             UpdateWindow(m_background_hwnd);
                         }
@@ -180,26 +185,7 @@ void BackgroundWindowManager::StartBackgroundThread(HWND game_hwnd) {
                         break;
                     }
                     
-                    case WM_LBUTTONDOWN:
-                    case WM_RBUTTONDOWN:
-                    case WM_MBUTTONDOWN: {
-                        // Close window on any click
-                        LogInfo("[BG-WINDOW-THREAD] Background window clicked - closing");
-                        m_has_background_window.store(false);
-                        break;
-                    }
-                    
-                    case WM_SETFOCUS:
-                    case WM_ACTIVATE: {
-                        // Only close window when it gains focus if we're not ignoring focus events
-                        if (!m_ignore_focus_events) {
-                            LogInfo("[BG-WINDOW-THREAD] Background window gained focus - closing");
-                            m_has_background_window.store(false);
-                        } else {
-                            LogInfo("[BG-WINDOW-THREAD] Background window focus event ignored during creation");
-                        }
-                        break;
-                    }
+                    // Removed click and focus handlers - window should keep running
                     
                     default:
                         // Let Windows handle other messages
@@ -221,7 +207,7 @@ void BackgroundWindowManager::StartBackgroundThread(HWND game_hwnd) {
 
 void BackgroundWindowManager::UpdateBackgroundWindowPosition(HWND game_hwnd) {
     if (m_background_hwnd == nullptr) {
-        return;
+        return; // Window not created yet
     }
     
     // Get monitor info for the game window
@@ -251,7 +237,7 @@ void BackgroundWindowManager::UpdateBackgroundWindow(HWND game_hwnd) {
     if (s_background_feature_enabled < 0.5f) {
         // Feature disabled, destroy background window if it exists
         if (m_has_background_window.load()) {
-            DestroyBackgroundWindow();
+         //   DestroyBackgroundWindow();
         }
         return;
     }
