@@ -98,3 +98,6 @@
 87	2178	7770115809441749	CMakeFiles/display_commander.dir/src/addons/display_commander/ui/ui_audio_settings.cpp.obj	c5d019cfb41e76bb
 85	2322	7770115809421714	CMakeFiles/display_commander.dir/src/addons/display_commander/main_entry.cpp.obj	433e764babd4bda
 2322	2464	7770115831796141	renodx-display_commander.addon64	b9075de7db7c9f4a
+54	78	7770118304993694	D:/repos/renodx2/build_ninja/CMakeFiles/cmake.verify_globs	d546f856aeed2425
+82	2216	7770118305274368	CMakeFiles/display_commander.dir/src/addons/display_commander/ui/ui_audio_settings.cpp.obj	c5d019cfb41e76bb
+2216	2347	7770118326616644	renodx-display_commander.addon64	b9075de7db7c9f4a
