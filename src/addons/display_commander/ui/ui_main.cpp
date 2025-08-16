@@ -4,7 +4,7 @@
 #include "ui_audio_settings.hpp"
 #include "ui_window_controls.hpp"
 #include "ui_developer_settings.hpp"
-#include "ui_window_position_settings.hpp"
+
 #include "ui_hdr_colorspace_settings.hpp"
 #include "../nvapi/ui_nvapi_settings.hpp"
 #include "ui_device_info.hpp"
@@ -41,7 +41,7 @@ void InitializeUISettings() {
     renodx::ui::AddAudioSettings(settings);
     renodx::ui::AddWindowControls(settings);
     renodx::ui::AddDeveloperSettings(settings);
-    renodx::ui::AddWindowPositionSettings(settings);
+
     renodx::ui::AddHdrColorspaceSettings(settings);
     renodx::ui::AddNvapiSettings(settings);
     renodx::ui::AddDeviceInfoSettings(settings);

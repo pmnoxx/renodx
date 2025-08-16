@@ -21,8 +21,6 @@ extern float s_auto_apply_init_delay_sec;
 extern float s_windowed_width;
 extern float s_windowed_height;
 extern float s_resize_mode;
-extern float s_windowed_pos_x;
-extern float s_windowed_pos_y;
 extern float s_move_to_zero_if_out;
 extern float s_force_borderless;
 extern float s_nvapi_fullscreen_prevention;
@@ -48,7 +46,6 @@ void ComputeDesiredSize(int& width, int& height);
 
 // Window management functions
 enum class WindowStyleMode;
-void ApplyWindowChange(HWND hwnd, bool do_resize, int client_width, int client_height, bool do_move, int pos_x, int pos_y, WindowStyleMode style_mode, const char* reason = "unknown");
 
 // Audio debugging functions
 void DebugAudioSessions();

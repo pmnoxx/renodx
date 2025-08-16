@@ -1,5 +1,6 @@
 #include "../addon.hpp"
 #include "../utils.hpp"
+#include "window_management.hpp"
 #include <thread>
 #include <algorithm>
 #include <sstream>
@@ -11,15 +12,17 @@ void ComputeDesiredSize(int& out_w, int& out_h);
 
 
 
-void ApplyWindowChange(HWND hwnd, const char* reason) {
+// First function: Calculate and update global window state
+void CalculateWindowState(HWND hwnd, const char* reason) {
   if (hwnd == nullptr) return;
-
+  
+  // Reset global state
+  g_window_state.reset();
+  g_window_state.reason = reason;
+  
   // Get current window state
   RECT wr_current{};
   GetWindowRect(hwnd, &wr_current);
-  
-  // Check if maximized (needed for restoration)
-  const bool was_maximized = IsZoomed(hwnd) != FALSE;
   
   // Get current styles
   LONG_PTR current_style = GetWindowLongPtrW(hwnd, GWL_STYLE);
@@ -30,30 +33,21 @@ void ApplyWindowChange(HWND hwnd, const char* reason) {
   LONG_PTR new_ex_style = current_ex_style & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
   
   // Check if styles actually changed
-  bool style_changed = (new_style != current_style) || (new_ex_style != current_ex_style);
+  g_window_state.style_changed = (new_style != current_style) || (new_ex_style != current_ex_style);
+  g_window_state.style_mode = WindowStyleMode::BORDERLESS;
 
   // Get desired dimensions and position from global settings
-  int desired_width = 0, desired_height = 0;
-  ComputeDesiredSize(desired_width, desired_height);
+  ComputeDesiredSize(g_window_state.desired_width, g_window_state.desired_height);
   
-  int target_w = 0;
-  int target_h = 0;
-  int target_x = 0;
-  int target_y = 0;
-
   // Calculate target dimensions
-  RECT client_rect = RectFromWH(desired_width, desired_height);
+  RECT client_rect = RectFromWH(g_window_state.desired_width, g_window_state.desired_height);
   if (AdjustWindowRectEx(&client_rect, static_cast<DWORD>(new_style), FALSE, static_cast<DWORD>(new_ex_style)) == FALSE) {
-    LogWarn("AdjustWindowRectEx failed for ApplyWindowChange.");
+    LogWarn("AdjustWindowRectEx failed for CalculateWindowState.");
     return;
   }
-  target_w = client_rect.right - client_rect.left;
-  target_h = client_rect.bottom - client_rect.top;
+  g_window_state.target_w = client_rect.right - client_rect.left;
+  g_window_state.target_h = client_rect.bottom - client_rect.top;
 
-  // Calculate target position
-  int pos_x = static_cast<int>(s_windowed_pos_x);
-  int pos_y = static_cast<int>(s_windowed_pos_y);
-  
   // Get monitor info efficiently
   HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
   MONITORINFOEXW mi{};
@@ -74,9 +68,9 @@ void ApplyWindowChange(HWND hwnd, const char* reason) {
     GetMonitorInfoW(hmon, &mi);
   }
   
-  // Calculate target position with monitor offset
-  target_x = pos_x + mi.rcMonitor.left;
-  target_y = pos_y + mi.rcMonitor.top;
+  // Calculate target position - start with monitor top-left
+  g_window_state.target_x = mi.rcMonitor.left;
+  g_window_state.target_y = mi.rcMonitor.top;
   
   // Apply alignment if enabled
   if (s_move_to_zero_if_out > 0) {
@@ -85,36 +79,36 @@ void ApplyWindowChange(HWND hwnd, const char* reason) {
     // Apply alignment based on setting
     switch (static_cast<int>(s_move_to_zero_if_out)) {
       case 1: // Top Left
-        target_x = mr.left;
-        target_y = mr.top;
+        g_window_state.target_x = mr.left;
+        g_window_state.target_y = mr.top;
         break;
       case 2: // Top Right
-        target_x = mr.right - target_w;
-        target_y = mr.top;
+        g_window_state.target_x = mr.right - g_window_state.target_w;
+        g_window_state.target_y = mr.top;
         break;
       case 3: // Bottom Left
-        target_x = mr.left;
-        target_y = mr.bottom - target_h;
+        g_window_state.target_x = mr.left;
+        g_window_state.target_y = mr.bottom - g_window_state.target_h;
         break;
       case 4: // Bottom Right
-        target_x = mr.right - target_w;
-        target_y = mr.bottom - target_h;
+        g_window_state.target_x = mr.right - g_window_state.target_w;
+        g_window_state.target_y = mr.bottom - g_window_state.target_h;
         break;
       case 5: // Center
-        target_x = mr.left + (mr.right - mr.left - target_w) / 2;
-        target_y = mr.top + (mr.bottom - mr.top - target_h) / 2;
+        g_window_state.target_x = mr.left + (mr.right - mr.left - g_window_state.target_w) / 2;
+        g_window_state.target_y = mr.top + (mr.bottom - mr.top - g_window_state.target_h) / 2;
         break;
       default: // Fallback to top left
-        target_x = mr.left;
-        target_y = mr.top;
+        g_window_state.target_x = mr.left;
+        g_window_state.target_y = mr.top;
         break;
     }
     
     // Clamp to monitor bounds
-    if (target_x < mr.left) target_x = mr.left;
-    if (target_x + target_w > mr.right) target_x = mr.right - target_w;
-    if (target_y < mr.top) target_y = mr.top;
-    if (target_y + target_h > mr.bottom) target_y = mr.bottom - target_h;
+    if (g_window_state.target_x < mr.left) g_window_state.target_x = mr.left;
+    if (g_window_state.target_x + g_window_state.target_w > mr.right) g_window_state.target_x = mr.right - g_window_state.target_w;
+    if (g_window_state.target_y < mr.top) g_window_state.target_y = mr.top;
+    if (g_window_state.target_y + g_window_state.target_h > mr.bottom) g_window_state.target_y = mr.bottom - g_window_state.target_h;
     
     // Fallback to virtual screen if still out of bounds
     const int vx = GetSystemMetrics(SM_XVIRTUALSCREEN);
@@ -122,69 +116,96 @@ void ApplyWindowChange(HWND hwnd, const char* reason) {
     const int vw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
     const int vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
     
-    bool out_of_bounds = (target_x < vx) || (target_y < vy) ||
-                        (target_x + target_w > vx + vw) || (target_y + target_h > vy + vh);
+    bool out_of_bounds = (g_window_state.target_x < vx) || (g_window_state.target_y < vy) ||
+                        (g_window_state.target_x + g_window_state.target_w > vx + vw) || (g_window_state.target_y + g_window_state.target_h > vy + vh);
     if (out_of_bounds) {
       // Apply same alignment to virtual screen
       switch (static_cast<int>(s_move_to_zero_if_out)) {
         case 1: // Top Left
-          target_x = vx;
-          target_y = vy;
+          g_window_state.target_x = vx;
+          g_window_state.target_y = vy;
           break;
         case 2: // Top Right
-          target_x = vx + vw - target_w;
-          target_y = vy;
+          g_window_state.target_x = vx + vw - g_window_state.target_w;
+          g_window_state.target_y = vy;
           break;
         case 3: // Bottom Left
-          target_x = vx;
-          target_y = vy + vh - target_h;
+          g_window_state.target_x = vx;
+          g_window_state.target_y = vy + vh - g_window_state.target_h;
           break;
         case 4: // Bottom Right
-          target_x = vx + vw - target_w;
-          target_y = vy + vh - target_h;
+          g_window_state.target_x = vx + vw - g_window_state.target_w;
+          g_window_state.target_y = vy + vh - g_window_state.target_h;
           break;
         case 5: // Center
-          target_x = vx + (vw - target_w) / 2;
-          target_y = vy + (vh - target_h) / 2;
+          g_window_state.target_x = vx + (vw - g_window_state.target_w) / 2;
+          g_window_state.target_y = vy + (vh - g_window_state.target_h) / 2;
           break;
         default: // Fallback to top left
-          target_x = vx;
-          target_y = vy;
+          g_window_state.target_x = vx;
+          g_window_state.target_y = vy;
           break;
       }
     }
   }
 
   // Check if any changes are actually needed
-  bool needs_resize = (target_w != (wr_current.right - wr_current.left)) || 
-                     (target_h != (wr_current.bottom - wr_current.top));
-  bool needs_move = (target_x != wr_current.left) || (target_y != wr_current.top);
+  g_window_state.needs_resize = (g_window_state.target_w != (wr_current.right - wr_current.left)) || 
+                                (g_window_state.target_h != (wr_current.bottom - wr_current.top));
+  g_window_state.needs_move = (g_window_state.target_x != wr_current.left) || (g_window_state.target_y != wr_current.top);
   
-  if (!needs_resize && !needs_move && !style_changed) {
-    LogDebug("ApplyWindowChange: No changes needed");
+  if (!g_window_state.needs_resize && !g_window_state.needs_move && !g_window_state.style_changed) {
+    LogDebug("CalculateWindowState: No changes needed");
     return;
   }
 
-  // Log the operation
+  // Log the calculated state
   {
     std::ostringstream log_oss;
-    log_oss << "ApplyWindowChange hwnd=" << hwnd
+    log_oss << "CalculateWindowState hwnd=" << hwnd
             << " reason=" << reason
             << " style_mode=Borderless"
-            << " resize=" << (needs_resize ? "1" : "0")
-            << " move=" << (needs_move ? "1" : "0")
-            << " target_size=" << target_w << "x" << target_h
-            << " target_pos=" << target_x << "," << target_y
-            << " was_maximized=" << (was_maximized ? "1" : "0")
-            << " style_changed=" << (style_changed ? "1" : "0");
+            << " resize=" << (g_window_state.needs_resize ? "1" : "0")
+            << " move=" << (g_window_state.needs_move ? "1" : "0")
+            << " target_size=" << g_window_state.target_w << "x" << g_window_state.target_h
+            << " target_pos=" << g_window_state.target_x << "," << g_window_state.target_y;
     LogInfo(log_oss.str().c_str());
   }
+}
 
+// Second function: Apply the calculated window changes
+void ApplyWindowChange(HWND hwnd, const char* reason) {
+  if (hwnd == nullptr) return;
+  
+  // First calculate the desired window state
+  CalculateWindowState(hwnd, reason);
+  
+  // Check if any changes are needed
+  if (!g_window_state.needs_resize && !g_window_state.needs_move && !g_window_state.style_changed) {
+    LogDebug("ApplyWindowChange: No changes needed");
+    return;
+  }
+  
+  // Get current window state
+  RECT wr_current{};
+  GetWindowRect(hwnd, &wr_current);
+  
+  // Check if maximized (needed for restoration)
+  const bool was_maximized = IsZoomed(hwnd) != FALSE;
+  
+  // Get current styles
+  LONG_PTR current_style = GetWindowLongPtrW(hwnd, GWL_STYLE);
+  LONG_PTR current_ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+  
+  // Calculate new borderless styles
+  LONG_PTR new_style = current_style & ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
+  LONG_PTR new_ex_style = current_ex_style & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
+  
   // Apply all changes in a single SetWindowPos call
   UINT flags = SWP_NOZORDER | SWP_NOACTIVATE;
-  if (!needs_resize) flags |= SWP_NOSIZE;
-  if (!needs_move) flags |= SWP_NOMOVE;
-  if (style_changed) flags |= SWP_FRAMECHANGED;
+  if (!g_window_state.needs_resize) flags |= SWP_NOSIZE;
+  if (!g_window_state.needs_move) flags |= SWP_NOMOVE;
+  if (g_window_state.style_changed) flags |= SWP_FRAMECHANGED;
   
   // Restore window if it was maximized (needed for style changes to take effect)
   if (was_maximized) {
@@ -192,13 +213,13 @@ void ApplyWindowChange(HWND hwnd, const char* reason) {
   }
   
   // Apply style changes first if needed
-  if (style_changed) {
+  if (g_window_state.style_changed) {
     SetWindowLongPtrW(hwnd, GWL_STYLE, new_style);
     SetWindowLongPtrW(hwnd, GWL_EXSTYLE, new_ex_style);
   }
   
   // Apply position and size changes
-  SetWindowPos(hwnd, nullptr, target_x, target_y, target_w, target_h, flags);
+  SetWindowPos(hwnd, nullptr, g_window_state.target_x, g_window_state.target_y, g_window_state.target_w, g_window_state.target_h, flags);
 }
 
 bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h) {
@@ -225,9 +246,7 @@ void ScheduleAutoApplyOnInit(HWND hwnd) {
 
   // Capture current desired size at schedule time
   int want_w = 0; int want_h = 0; ComputeDesiredSize(want_w, want_h);
-  const int target_pos_x = static_cast<int>(s_windowed_pos_x);
-  const int target_pos_y = static_cast<int>(s_windowed_pos_y);
-  std::thread([my_gen, delay_ms, hwnd, want_w, want_h, target_pos_x, target_pos_y]() {
+  std::thread([my_gen, delay_ms, hwnd, want_w, want_h]() {
     if (delay_ms > 0) std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
     if (g_init_apply_generation.load() != my_gen) return;
     if (hwnd == nullptr) return;
@@ -241,7 +260,6 @@ void ScheduleAutoApplyOnInit(HWND hwnd) {
       LogDebug("AutoApply skipped: backbuffer matches desired state");
       return;
     }
-    ApplyWindowChange(hwnd,
-                      "schedule_auto_apply_on_init");
+    ApplyWindowChange(hwnd, "schedule_auto_apply_on_init");
   }).detach();
 }

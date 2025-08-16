@@ -1,5 +1,6 @@
 #include "window_style_hooks.hpp"
 #include "../addon.hpp"
+#include "../window_management/window_management.hpp"
 #include <sstream>
 
 namespace renodx::hooks {
@@ -76,22 +77,23 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 int new_x = static_cast<int>(static_cast<short>(LOWORD(lParam)));
                 int new_y = static_cast<int>(static_cast<short>(HIWORD(lParam)));
                 
-                // Get our desired position from window state calculator
-                int desired_x = static_cast<int>(s_windowed_pos_x);
-                int desired_y = static_cast<int>(s_windowed_pos_y);
+                // Calculate desired window state to get current target position
+                CalculateWindowState(hwnd, "hook_move_check");
+                
+                // Get our desired position from global window state
+                int desired_x = g_window_state.target_x;
+                int desired_y = g_window_state.target_y;
                 
                 // Check if this move matches our desired state
                 if (new_x != desired_x || new_y != desired_y) {
                     std::ostringstream oss;
-                    oss << "Window style hook: Suppressed move message - position mismatch. Game wants (" << new_x << "," << new_y << "), we want (" << desired_x << "," << desired_y << "). Background task will fix this later.";
+                    oss << "Window style hook: Move message mismatch detected. Game wants (" << new_x << "," << new_y << "), we want (" << desired_x << "," << desired_y << "). Background task will fix this later.";
                     LogDebug(oss.str());
                     
-                    // Modify the message to keep current position (suppress the move)
-                    // We'll use the current window position as the "new" position
-                    RECT window_rect;
-                    if (GetWindowRect(hwnd, &window_rect)) {
-                        lParam = MAKELONG(static_cast<short>(window_rect.left), static_cast<short>(window_rect.top));
-                    }
+                    // For now, allow the move but log the mismatch
+                    // Background tasks will handle position enforcement
+                } else {
+                    LogDebug("Window style hook: Move message matches desired state");
                 }
                 break;
             }
@@ -101,9 +103,12 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 int new_w = static_cast<int>(LOWORD(lParam));
                 int new_h = static_cast<int>(HIWORD(lParam));
                 
-                // Get our desired size from window state calculator
-                int desired_w = static_cast<int>(s_windowed_width);
-                int desired_h = static_cast<int>(s_windowed_height);
+                // Calculate desired window state to get current target size
+                CalculateWindowState(hwnd, "hook_size_check");
+                
+                // Get our desired size from global window state
+                int desired_w = g_window_state.target_w;
+                int desired_h = g_window_state.target_h;
                 
                 // Check if this resize matches our desired state
                 if (new_w != desired_w || new_h != desired_h) {
@@ -126,35 +131,31 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 // Intercept window position/size change confirmations
                 WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
                 if (wp) {
-                    // Get our desired state from window state calculator
-                    int desired_w = static_cast<int>(s_windowed_width);
-                    int desired_h = static_cast<int>(s_windowed_height);
-                    int desired_x = static_cast<int>(s_windowed_pos_x);
-                    int desired_y = static_cast<int>(s_windowed_pos_y);
+                    // Calculate desired window state to get current target size
+                    CalculateWindowState(hwnd, "hook_windowpos_check");
                     
-                    // Check if this change matches our desired state
-                    bool position_mismatch = (wp->x != desired_x || wp->y != desired_y);
+                    // Get our desired size from global window state
+                    int desired_w = g_window_state.target_w;
+                    int desired_h = g_window_state.target_h;
+                    
+                    // Check if this change matches our desired state (size only)
                     bool size_mismatch = (wp->cx != desired_w || wp->cy != desired_h);
                     
-                    if (position_mismatch || size_mismatch) {
+                    if (size_mismatch) {
                         std::ostringstream oss;
-                        oss << "Window style hook: Suppressed windowpos change - mismatch detected. Game wants pos(" << wp->x << "," << wp->y << ") size(" << wp->cx << "x" << wp->cy << "), we want pos(" << desired_x << "," << desired_y << ") size(" << desired_w << "x" << desired_h << "). Background task will fix this later.";
+                        oss << "Window style hook: Suppressed windowpos change - size mismatch detected. Game wants size(" << wp->cx << "x" << wp->cy << "), we want size(" << desired_w << "x" << desired_h << "). Background task will fix this later.";
                         LogDebug(oss.str());
                         
-                        // Modify the message to keep current state (suppress the change)
-                        // We'll use the current window position as the "new" position
-                        RECT window_rect;
-                        if (GetWindowRect(hwnd, &window_rect)) {
-                            wp->x = window_rect.left;
-                            wp->y = window_rect.top;
-                        }
-                        
+                        // Modify the message to keep current size (suppress the resize)
                         RECT client_rect;
                         if (GetClientRect(hwnd, &client_rect)) {
                             wp->cx = client_rect.right - client_rect.left;
                             wp->cy = client_rect.bottom - client_rect.top;
                         }
                     }
+                    
+                    // Position is managed automatically - allow all position changes
+                    LogDebug("Window style hook: Position change allowed - managed automatically");
                 }
                 break;
             }

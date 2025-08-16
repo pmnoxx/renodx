@@ -103,6 +103,27 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
+
+    // Suppress Top Bar/Border Messages
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "SuppressTopBarBorderMessages",
+        .binding = &s_remove_top_bar,
+        .value_type = renodx::utils::settings::SettingValueType::FLOAT,
+        .default_value = 1.f,
+        .label = "Suppress Top Bar/Border Messages",
+        .section = "Display",
+        .tooltip = "Suppress window messages that would add title bars and borders. Prevents games from restoring unwanted window decorations.",
+        .min = 0.f,
+        .max = 1.f,
+        .format = "%.1f",
+        .on_change_value = [](float previous, float current) {
+            // Note: Borderless style enforcement removed - use continuous monitoring instead
+            std::ostringstream oss;
+            oss << "Suppress top bar/border messages setting changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
+            LogInfo(oss.str().c_str());
+        },
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+    });
 }
 
 } // namespace renodx::ui

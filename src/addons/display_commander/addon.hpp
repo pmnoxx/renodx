@@ -84,6 +84,34 @@ extern std::atomic<bool> g_monitoring_thread_running;
 extern std::thread g_monitoring_thread;
 
 // Structs
+struct GlobalWindowState {
+  int desired_width = 0;
+  int desired_height = 0;
+  int target_x = 0;
+  int target_y = 0;
+  int target_w = 0;
+  int target_h = 0;
+  bool needs_resize = false;
+  bool needs_move = false;
+  bool style_changed = false;
+  WindowStyleMode style_mode = WindowStyleMode::BORDERLESS;
+  std::string reason = "unknown";
+  
+  void reset() {
+    desired_width = 0;
+    desired_height = 0;
+    target_x = 0;
+    target_y = 0;
+    target_w = 0;
+    target_h = 0;
+    needs_resize = false;
+    needs_move = false;
+    style_changed = false;
+    style_mode = WindowStyleMode::BORDERLESS;
+    reason = "unknown";
+  }
+};
+
 struct IndependentFlipFailures {
   std::atomic<bool> swapchain_null{false};
   std::atomic<bool> device_null{false};
@@ -120,8 +148,6 @@ extern float s_auto_apply_delay_sec;
 extern float s_auto_apply_init_delay_sec;
 extern float s_windowed_width;
 extern float s_windowed_height;
-extern float s_windowed_pos_x;
-extern float s_windowed_pos_y;
 extern float s_remove_top_bar;
 extern float s_suppress_move_resize_messages;
 extern float s_resize_mode;
@@ -179,6 +205,9 @@ extern float s_enforce_desired_window;
 extern std::unique_ptr<ReflexManager> g_reflexManager;
 // Global flag for Reflex settings changes
 extern std::atomic<bool> g_reflex_settings_changed;
+
+// Global window state instance
+extern GlobalWindowState g_window_state;
 
 // Direct atomic variables for latency tracking (UI access)
 extern std::atomic<float> g_current_latency_ms;

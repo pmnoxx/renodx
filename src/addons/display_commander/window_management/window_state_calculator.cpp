@@ -79,27 +79,12 @@ DesiredWindowState CalculateDesiredPosition(HWND hwnd) {
     int current_x = window_rect.left;
     int current_y = window_rect.top;
     
-    // Get desired position from settings (global namespace)
-    int desired_x = static_cast<int>(s_windowed_pos_x);
-    int desired_y = static_cast<int>(s_windowed_pos_y);
-    
-    // Check if move is needed
-    bool needs_move = (current_x != desired_x || current_y != desired_y);
-    
-    if (needs_move) {
-        state.pos_x = desired_x;
-        state.pos_y = desired_y;
-        state.should_move = true;
-        
-        std::ostringstream oss;
-        oss << "Move needed: (" << current_x << "," << current_y << ") -> (" << desired_x << "," << desired_y << ")";
-        LogInfo(oss.str().c_str());
-    } else {
-        state.pos_x = current_x;
-        state.pos_y = current_y;
-        state.should_move = false;
-        LogDebug("CalculateDesiredPosition: No move needed");
-    }
+    // Position is calculated automatically by window management system
+    // No manual position control needed
+    state.pos_x = current_x;
+    state.pos_y = current_y;
+    state.should_move = false;
+    LogDebug("CalculateDesiredPosition: Position managed automatically");
     
     return state;
 }
@@ -113,7 +98,7 @@ DesiredWindowState CalculateDesiredStyle(HWND hwnd) {
     LONG_PTR current_ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
     
     // Get desired style mode from settings (global namespace)
-    WindowStyleMode desired_mode = (::s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
+    WindowStyleMode desired_mode = (s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
     
     // Check if style change is needed
     bool needs_style_change = false;

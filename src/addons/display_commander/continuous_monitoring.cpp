@@ -14,8 +14,7 @@ extern std::thread g_monitoring_thread;
 extern std::atomic<HWND> g_last_swapchain_hwnd;
 
 // Additional global variables needed for monitoring
-extern float s_windowed_pos_x;
-extern float s_windowed_pos_y;
+
 extern float s_remove_top_bar;
 
 // Main monitoring thread function

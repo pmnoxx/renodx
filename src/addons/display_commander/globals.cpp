@@ -13,9 +13,7 @@ float s_auto_apply_init_delay_sec = 1.f;
 // Window settings
 float s_windowed_width = 1920.f;
 float s_windowed_height = 1080.f;
-float s_windowed_pos_x = 0.f;
-float s_windowed_pos_y = 0.f;
-float s_remove_top_bar = 0.f;
+float s_remove_top_bar = 1.f; // Suppress top bar/border messages by default
 float s_suppress_move_resize_messages = 1.f; // Suppress move/resize messages by default
 float s_resize_mode = 0.f;
 float s_aspect_index = 3.f; // 16:9
@@ -98,6 +96,9 @@ std::atomic<bool> g_reflex_settings_changed{false};
 float s_continuous_monitoring_enabled = 1.f; // Enabled by default
 std::atomic<bool> g_monitoring_thread_running{false};
 std::thread g_monitoring_thread;
+
+// Global window state instance
+GlobalWindowState g_window_state;
 
 // Global DXGI Device Info Manager instance
 std::unique_ptr<DXGIDeviceInfoManager> g_dxgiDeviceInfoManager;
