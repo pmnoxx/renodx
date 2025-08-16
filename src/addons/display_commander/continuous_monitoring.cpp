@@ -182,9 +182,24 @@ void ContinuousMonitoringThread() {
                 LogInfo(oss.str().c_str());
             }
             
+            // FOCUS LOSS DETECTION: Close background window when main window loses focus
+            HWND foreground_window = GetForegroundWindow();
+            if (foreground_window != hwnd && g_backgroundWindowManager.HasBackgroundWindow()) {
+                // Main window lost focus, close background window
+                LogInfo("Continuous monitoring: Main window lost focus - closing background window");
+                g_backgroundWindowManager.DestroyBackgroundWindow();
+            }
+            
             if (s_background_feature_enabled >= 0.5f) {
-                LogInfo("Continuous monitoring: Calling UpdateBackgroundWindow for background window management");
-                g_backgroundWindowManager.UpdateBackgroundWindow(hwnd);
+                // Only create/update background window if main window has focus
+                if (foreground_window == hwnd) {
+                    LogInfo("Continuous monitoring: Calling UpdateBackgroundWindow for background window management");
+                    g_backgroundWindowManager.UpdateBackgroundWindow(hwnd);
+                } else {
+                    if (background_check_counter % 10 == 0) { // Log occasionally
+                        LogInfo("Continuous monitoring: Skipping background window update - main window not focused");
+                    }
+                }
             } else {
                 if (background_check_counter % 10 == 0) { // Log occasionally
                     LogInfo("Continuous monitoring: Background feature disabled (s_background_feature_enabled < 0.5f)");

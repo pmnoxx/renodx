@@ -8,7 +8,7 @@ float s_ui_mode = 0.f; // Basic mode by default
 
 // Auto-apply settings
 float s_auto_apply_enabled = 1.f; // Enabled by default
-float s_auto_apply_delay_sec = 10.f;
+float s_auto_apply_delay_sec = 1.f; // Changed from 10.f to 1.f
 float s_auto_apply_init_delay_sec = 1.f;
 
 // Window settings

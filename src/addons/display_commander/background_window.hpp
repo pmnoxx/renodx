@@ -2,9 +2,9 @@
 
 #include <windows.h>
 #include <atomic>
-#include <thread> // Added for std::thread
+#include <thread>
 
-// Background window management
+// Background window management using dedicated message processing thread
 class BackgroundWindowManager {
 public:
     BackgroundWindowManager();
@@ -21,16 +21,16 @@ public:
     
     // Get background window handle
     HWND GetBackgroundWindow() const;
-    
-    // Check if message processing thread is alive and restart if needed
-    void CheckAndRestartMessageThread(HWND game_hwnd);
 
 private:
-    // Create the background window
+    // Create the background window in the background thread
     bool CreateBackgroundWindow(HWND game_hwnd);
     
     // Update background window position and size
     void UpdateBackgroundWindowPosition(HWND game_hwnd);
+    
+    // Start the dedicated message processing thread
+    void StartBackgroundThread(HWND game_hwnd);
     
     // Background window handle
     HWND m_background_hwnd;
@@ -38,8 +38,15 @@ private:
     // Flag to track if background window exists
     std::atomic<bool> m_has_background_window;
     
+    // Dedicated message processing thread
+    std::thread m_background_thread;
+    
     // Color cycling for visual feedback
     std::atomic<int> m_frame_counter;
+    
+    // Flag to ignore focus events during creation
+    std::atomic<bool> m_ignore_focus_events;
+    
     static constexpr int COLOR_COUNT = 8;
     static constexpr COLORREF COLORS[COLOR_COUNT] = {
         RGB(255, 0, 0),      // Red
@@ -55,17 +62,11 @@ private:
     // Window class name for background window
     static constexpr const char* BACKGROUND_WINDOW_CLASS = "RenodxBackgroundWindow";
     
-    // Window procedure for background window
-    static LRESULT CALLBACK BackgroundWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-    
     // Register window class
     static bool RegisterWindowClass();
     
     // Unregister window class
     static void UnregisterWindowClass();
-    
-    // Static instance for window procedure
-    static BackgroundWindowManager* s_instance;
 };
 
 // Global instance
