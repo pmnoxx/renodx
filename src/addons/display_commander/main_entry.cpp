@@ -4,7 +4,7 @@
 #include "ui_settings.hpp"
 #include "settings.hpp"
 #include "ui/ui_main.hpp"
-#include "fps_limiter/fps_limiter.hpp"
+#include "background_tasks/background_task_coordinator.hpp"
 
 
 
@@ -69,7 +69,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       g_attach_time = std::chrono::steady_clock::now();
       g_shutdown.store(false);
       std::thread(RunBackgroundAudioMonitor).detach();
-      std::thread(RunFpsLimiterMonitor).detach();
+      renodx::background::StartBackgroundTasks();
       // NVAPI HDR monitor will be started after settings load below if enabled
       // Seed default fps limit snapshot
       g_default_fps_limit.store(renodx::utils::swapchain::fps_limit);
