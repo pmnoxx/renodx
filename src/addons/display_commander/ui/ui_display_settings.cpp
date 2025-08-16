@@ -1,6 +1,9 @@
 #include "ui_display_settings.hpp"
 #include "ui_common.hpp"
 #include "../../../utils/settings.hpp"
+#include "../addon.hpp"
+#include "../../../utils/swapchain.hpp"
+#include <sstream>
 
 namespace renodx::ui {
 
@@ -84,7 +87,18 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .min = 0.f,
         .max = 300.f,
         .format = "%d FPS",
-        .on_change_value = [](float previous, float current){ g_default_fps_limit.store(current); },
+        .on_change_value = [](float previous, float current){ 
+            g_default_fps_limit.store(current);
+            // Apply FPS limit immediately
+            renodx::utils::swapchain::fps_limit = current;
+            std::ostringstream oss;
+            if (current > 0.f) {
+                oss << "FPS limit applied: " << static_cast<int>(current) << " FPS";
+            } else {
+                oss << "FPS limit removed (no limit)";
+            }
+            LogInfo(oss.str().c_str());
+        },
         .on_draw = []() -> bool {
             // Sync with current atomic value
             s_fps_limit = g_default_fps_limit.load();
@@ -105,6 +119,19 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .min = 0.f,
         .max = 240.f,
         .format = "%d FPS",
+        .on_change_value = [](float previous, float current){
+            // Apply background FPS limit immediately if currently in background
+            HWND hwnd = g_last_swapchain_hwnd.load();
+            if (hwnd == nullptr) hwnd = GetForegroundWindow();
+            const bool is_background = (hwnd != nullptr && GetForegroundWindow() != hwnd);
+            
+            if (is_background && current >= 0.f) {
+                renodx::utils::swapchain::fps_limit = current;
+                std::ostringstream oss;
+                oss << "Background FPS limit applied immediately: " << static_cast<int>(current) << " FPS";
+                LogInfo(oss.str().c_str());
+            }
+        },
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     });
 
