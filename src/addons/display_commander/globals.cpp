@@ -11,17 +11,17 @@ float s_auto_apply_delay_sec = 10.f;
 float s_auto_apply_init_delay_sec = 1.f;
 
 // Window settings
-float s_windowed_width = 1920.f;
-float s_windowed_height = 1080.f;
+float s_windowed_width = 3440.f; // 21:9 ultrawide width
+float s_windowed_height = 1440.f; // 21:9 ultrawide height
 float s_remove_top_bar = 1.f; // Suppress top bar/border messages enabled by default for borderless windows
 float s_suppress_move_resize_messages = 1.f; // Suppress move/resize messages by default
 float s_suppress_maximize = 1.f; // Suppress maximize messages by default
 float s_resize_mode = 0.f;
-float s_aspect_index = 3.f; // 16:9
+float s_aspect_index = 4.f; // 21:9 ultrawide
 
 // Window alignment when repositioning is needed (0 = None, 1 = Top Left, 2 = Top Right, 3 = Bottom Left, 4 = Bottom Right, 5 = Center)
 float s_move_to_zero_if_out = 2.f; // default to top right
-float s_force_borderless = 0.f;
+float s_force_borderless = 1.f; // Force borderless mode enabled
 
 // Prevent Fullscreen
 float s_prevent_fullscreen = 0.f;
@@ -59,7 +59,7 @@ float s_fix_hdr10_colorspace = 0.f;
 float s_prevent_windows_minimize = 0.f;
 
 // Enforce desired window settings
-float s_enforce_desired_window = 0.f;
+float s_enforce_desired_window = 1.f; // Enable window enforcement
 
 
 

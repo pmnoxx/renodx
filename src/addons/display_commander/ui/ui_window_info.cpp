@@ -1,6 +1,8 @@
 #include "ui_window_info.hpp"
 #include "ui_common.hpp"
 #include "../window_management/window_state_calculator.hpp"
+#include "../addon.hpp"
+#include "../window_management/window_management.hpp"
 
 // External declarations for window info
 extern std::atomic<HWND> g_last_swapchain_hwnd;
@@ -98,10 +100,88 @@ void AddWindowInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
                     ImGui::Text("Desired State:");
                     ImGui::Text("  Size: %dx%d", desired_state.width, desired_state.height);
                     ImGui::Text("  Position: (%d,%d)", desired_state.pos_x, desired_state.pos_y);
-                    ImGui::Text("  Style Mode: %d", static_cast<int>(desired_state.style_mode));
-                    ImGui::Text("  Should Resize: %s", desired_state.should_resize ? "Yes" : "No");
-                    ImGui::Text("  Should Move: %s", desired_state.should_move ? "Yes" : "No");
-                    ImGui::Text("  Should Change Style: %s", desired_state.should_change_style ? "Yes" : "No");
+                }
+                
+                // Global Window State Information
+                ImGui::Separator();
+                ImGui::Text("=== Global Window State ===");
+                
+                // Get current global window state (already declared in addon.hpp)
+                
+                ImGui::Text("Current State:");
+                ImGui::Text("  Is Maximized: %s", g_window_state.is_maximized ? "YES" : "No");
+                ImGui::Text("  Is Minimized: %s", g_window_state.is_minimized ? "YES" : "No");
+                ImGui::Text("  Is Restored: %s", g_window_state.is_restored ? "YES" : "No");
+                
+                // Additional window properties that affect mouse behavior
+                bool is_topmost = (GetWindowLongPtr(hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
+                bool is_layered = (GetWindowLongPtr(hwnd, GWL_EXSTYLE) & WS_EX_LAYERED) != 0;
+                bool is_transparent = (GetWindowLongPtr(hwnd, GWL_EXSTYLE) & WS_EX_TRANSPARENT) != 0;
+                
+                ImGui::Separator();
+                ImGui::Text("Window Properties (Mouse Behavior):");
+                ImGui::Text("  Always On Top: %s", is_topmost ? "YES" : "No");
+                ImGui::Text("  Layered: %s", is_layered ? "YES" : "No");
+                ImGui::Text("  Transparent: %s", is_transparent ? "YES" : "No");
+                
+                // Check for mouse confinement properties
+                bool has_system_menu = (GetWindowLongPtr(hwnd, GWL_STYLE) & WS_SYSMENU) != 0;
+                bool has_minimize_box = (GetWindowLongPtr(hwnd, GWL_STYLE) & WS_MINIMIZEBOX) != 0;
+                bool has_maximize_box = (GetWindowLongPtr(hwnd, GWL_STYLE) & WS_MAXIMIZEBOX) != 0;
+                
+                ImGui::Text("Mouse & Input Properties:");
+                ImGui::Text("  System Menu: %s", has_system_menu ? "YES" : "No");
+                ImGui::Text("  Minimize Box: %s", has_minimize_box ? "YES" : "No");
+                ImGui::Text("  Maximize Box: %s", has_maximize_box ? "YES" : "No");
+                
+                // Check for cursor confinement and focus
+                bool is_foreground = (GetForegroundWindow() == hwnd);
+                bool is_active = (GetActiveWindow() == hwnd);
+                bool is_focused = (GetFocus() == hwnd);
+                
+                ImGui::Text("Focus & Input State:");
+                ImGui::Text("  Is Foreground: %s", is_foreground ? "YES" : "No");
+                ImGui::Text("  Is Active: %s", is_active ? "YES" : "No");
+                ImGui::Text("  Is Focused: %s", is_focused ? "YES" : "No");
+                
+                // Check for cursor confinement
+                POINT cursor_pos;
+                GetCursorPos(&cursor_pos);
+                bool cursor_in_window = (cursor_pos.x >= window_rect.left && cursor_pos.x <= window_rect.right &&
+                                       cursor_pos.y >= window_rect.top && cursor_pos.y <= window_rect.bottom);
+                
+                ImGui::Text("Cursor Information:");
+                ImGui::Text("  Cursor Pos: (%ld, %ld)", cursor_pos.x, cursor_pos.y);
+                ImGui::Text("  Cursor In Window: %s", cursor_in_window ? "YES" : "No");
+                ImGui::Text("  Window Bounds: (%ld,%ld) to (%ld,%ld)", 
+                           window_rect.left, window_rect.top, window_rect.right, window_rect.bottom);
+                
+                ImGui::Separator();
+                ImGui::Text("Target State:");
+                ImGui::Text("  Target Size: %dx%d", g_window_state.target_w, g_window_state.target_h);
+                ImGui::Text("  Target Position: (%d,%d)", g_window_state.target_x, g_window_state.target_y);
+                
+                ImGui::Text("Change Requirements:");
+                ImGui::Text("  Needs Resize: %s", g_window_state.needs_resize ? "YES" : "No");
+                ImGui::Text("  Needs Move: %s", g_window_state.needs_move ? "YES" : "No");
+                ImGui::Text("  Style Changed: %s", g_window_state.style_changed ? "YES" : "No");
+                
+                ImGui::Text("Style Mode: %s", 
+                    g_window_state.style_mode == WindowStyleMode::BORDERLESS ? "BORDERLESS" :
+                    g_window_state.style_mode == WindowStyleMode::OVERLAPPED_WINDOW ? "WINDOWED" :
+                    "KEEP");
+                
+                ImGui::Text("Last Reason: %s", g_window_state.reason.c_str());
+                
+                // Add a refresh button
+                if (ImGui::Button("Refresh Global State")) {
+                    // Force a recalculation of the global window state
+                    CalculateWindowState(hwnd, "ui_refresh");
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Apply Changes")) {
+                    // Force application of the current global window state
+                    ApplyWindowChange(hwnd, "ui_apply");
                 }
             } else {
                 ImGui::Text("No window available");

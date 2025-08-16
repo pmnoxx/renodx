@@ -28,6 +28,25 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
   LONG_PTR current_style = GetWindowLongPtrW(hwnd, GWL_STYLE);
   LONG_PTR current_ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
   
+  // Detect window state (maximized, minimized, restored)
+  WINDOWPLACEMENT wp = { sizeof(WINDOWPLACEMENT) };
+  if (GetWindowPlacement(hwnd, &wp)) {
+    g_window_state.is_maximized = (wp.showCmd == SW_SHOWMAXIMIZED);
+    g_window_state.is_minimized = (wp.showCmd == SW_SHOWMINIMIZED);
+    g_window_state.is_restored = (wp.showCmd == SW_SHOWNORMAL);
+    
+    // Log window state detection
+    if (g_window_state.is_maximized) {
+      LogDebug("CalculateWindowState: Window is MAXIMIZED - will need restoration");
+    } else if (g_window_state.is_minimized) {
+      LogDebug("CalculateWindowState: Window is MINIMIZED - will need restoration");
+    } else if (g_window_state.is_restored) {
+      LogDebug("CalculateWindowState: Window is RESTORED (normal state)");
+    }
+  } else {
+    LogWarn("CalculateWindowState: Could not get window placement");
+  }
+  
   // Calculate new borderless styles
   LONG_PTR new_style = current_style & ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
   LONG_PTR new_ex_style = current_ex_style & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
@@ -168,8 +187,29 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
             << " resize=" << (g_window_state.needs_resize ? "1" : "0")
             << " move=" << (g_window_state.needs_move ? "1" : "0")
             << " target_size=" << g_window_state.target_w << "x" << g_window_state.target_h
-            << " target_pos=" << g_window_state.target_x << "," << g_window_state.target_y;
+            << " target_pos=" << g_window_state.target_x << "," << g_window_state.target_y
+            << " state=" << (g_window_state.is_maximized ? "MAXIMIZED" : 
+                           g_window_state.is_minimized ? "MINIMIZED" : "RESTORED");
     LogInfo(log_oss.str().c_str());
+  }
+  
+  // AUTO-RESTORE: If window is maximized and we're suppressing maximize, restore it automatically
+  if (s_suppress_maximize >= 0.5f && g_window_state.is_maximized) {
+    LogInfo("CalculateWindowState: AUTO-RESTORE - Window is maximized, sending restore command");
+    
+    // Post a restore command to bring it back to normal
+    PostMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
+    
+    // Also try to force the window size to our desired state
+    SetWindowPos(hwnd, nullptr, 
+               g_window_state.target_x, g_window_state.target_y,
+               g_window_state.target_w, g_window_state.target_h,
+               SWP_NOZORDER | SWP_NOACTIVATE);
+    
+    std::ostringstream restore_oss;
+    restore_oss << "CalculateWindowState: AUTO-RESTORE - Forced window to target size " 
+               << g_window_state.target_w << "x" << g_window_state.target_h;
+    LogInfo(restore_oss.str().c_str());
   }
 }
 

@@ -16,6 +16,11 @@ bool g_hooks_installed = false;
 // NOTE: Do not make any system calls within this function - only log and modify message parameters
 // Background tasks will handle the actual window state enforcement later
 LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    // DEBUG: Log that our hook is active (only for important messages to avoid spam)
+    if (uMsg == WM_SYSCOMMAND || uMsg == WM_SIZE || uMsg == WM_GETMINMAXINFO) {
+        LogDebug("Window style hook: ACTIVE - Processing message 0x" + std::to_string(uMsg));
+    }
+    
     // SPOOF FOCUS FEATURE - Prevent games from knowing they lost focus through Win32 message suppression
     if (s_force_continuous_rendering >= 0.5f) {
         switch (uMsg) {
@@ -146,10 +151,10 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
             }
             
             case WM_SYSCOMMAND: {
-                // Check if we should suppress maximize commands
+                // AGGRESSIVE: Block ALL maximize commands when s_suppress_maximize is enabled
                 if (s_suppress_maximize >= 0.5f && wParam == SC_MAXIMIZE) {
-                    LogDebug("Window style hook: Suppressed maximize command");
-                    return 0; // Block the maximize command
+                    LogDebug("Window style hook: AGGRESSIVELY BLOCKED SC_MAXIMIZE - No maximize allowed at all");
+                    return 0; // Block ALL maximize commands completely
                 }
                 
                 // Smart restore: Allow restore only when window is minimized or maximized
@@ -174,17 +179,34 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                         return 0; // Block the command
                     }
                 }
+                
+                // Also handle SC_MINIMIZE to prevent unwanted minimization
+                if (wParam == SC_MINIMIZE) {
+                    LogDebug("Window style hook: Blocked SC_MINIMIZE - Preventing unwanted minimization");
+                    return 0; // Block minimize commands
+                }
                 break;
             }
 
             case WM_GETMINMAXINFO: {
                 // Prevent the window from being maximized or restored
-                if (s_remove_top_bar >= 0.5f) {
-                    MINMAXINFO* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
-                    if (mmi) {
-                        // Set max position to current position to prevent maximize
-                        RECT window_rect;
-                        if (GetWindowRect(hwnd, &window_rect)) {
+                MINMAXINFO* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
+                if (mmi) {
+                    RECT window_rect;
+                    if (GetWindowRect(hwnd, &window_rect)) {
+                        // AGGRESSIVE: Always prevent maximize when s_suppress_maximize is enabled
+                        if (s_suppress_maximize >= 0.5f) {
+                            // Force the window to stay at current size - no maximize allowed
+                            mmi->ptMaxSize.x = window_rect.right - window_rect.left;
+                            mmi->ptMaxSize.y = window_rect.bottom - window_rect.top;
+                            mmi->ptMaxPosition.x = window_rect.left;
+                            mmi->ptMaxPosition.y = window_rect.top;
+                            LogDebug("Window style hook: AGGRESSIVE maximize prevention - locked to current size");
+                        }
+                        
+                        // Additional prevention when removing top bar
+                        if (s_remove_top_bar >= 0.5f) {
+                            // Set max position to current position to prevent maximize
                             mmi->ptMaxPosition.x = window_rect.left;
                             mmi->ptMaxPosition.y = window_rect.top;
                             mmi->ptMaxSize.x = window_rect.right - window_rect.left;
@@ -271,14 +293,15 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 
                 // Check if we should suppress maximize
                 if (s_suppress_maximize >= 0.5f && size_type == SIZE_MAXIMIZED) {
-                    LogDebug("Window style hook: Suppressed maximize size message");
-                    // Modify the message to keep current size (suppress the maximize)
-                    RECT client_rect;
-                    if (GetClientRect(hwnd, &client_rect)) {
-                        lParam = MAKELONG(static_cast<short>(client_rect.right - client_rect.left), 
-                                         static_cast<short>(client_rect.bottom - client_rect.top));
-                        wParam = SIZE_RESTORED; // Change from SIZE_MAXIMIZED to SIZE_RESTORED
-                    }
+                    LogDebug("Window style hook: SUPPRESSED maximize size message - blocking maximize completely");
+                    // Block maximize completely - don't even process the message
+                    return 0; // Don't call default handler
+                }
+                
+                // Allow restore from maximized state (SIZE_RESTORED)
+                if (size_type == SIZE_RESTORED) {
+                    LogDebug("Window style hook: ALLOWED SIZE_RESTORED - Window restoring from maximized/minimized state");
+                    // Allow the restore message to process normally
                     break;
                 }
                 
