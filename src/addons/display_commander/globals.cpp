@@ -64,6 +64,9 @@ float s_prevent_windows_minimize = 0.f;
 // Prevent always on top behavior
 float s_prevent_always_on_top = 1.f; // Prevent games from staying on top by default
 
+// Block input when in background
+float s_block_input_in_background = 1.f; // Block input when in background by default
+
 // Enforce desired window settings
 float s_enforce_desired_window = 1.f; // Enable window enforcement
 

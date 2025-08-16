@@ -13,6 +13,7 @@ extern float s_continuous_rendering_enabled;
 extern float s_continuous_rendering_throttle;
 extern float s_force_continuous_rendering;
 extern float s_prevent_always_on_top;
+extern float s_block_input_in_background;
 
     // CONTINUOUS RENDERING FUNCTIONS REMOVED - Focus spoofing is now handled by Win32 hooks
 
@@ -94,6 +95,20 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .label = "Prevent Always On Top",
         .section = "Display",
         .tooltip = "Prevents windows from becoming always on top, even if they are moved or resized.",
+        .labels = {"Off", "On"},
+        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        // .on_change_value removed due to linter errors, functionality handled by continuous monitoring
+    });
+
+    // Block Input When In Background toggle
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "BlockInputInBackground",
+        .binding = &s_block_input_in_background,
+        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .default_value = 1.f, // Enabled by default
+        .label = "Block Input When In Background",
+        .section = "Display",
+        .tooltip = "Uses ReShade's input blocking to prevent mouse confinement when the app is not focused.",
         .labels = {"Off", "On"},
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });

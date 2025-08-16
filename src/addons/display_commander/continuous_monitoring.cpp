@@ -54,7 +54,7 @@ void ContinuousMonitoringThread() {
             }
             
             // RESHADE INPUT BLOCKING: Use ReShade's input blocking when app is in background
-            if (g_input_blocking_active.load() && s_prevent_always_on_top >= 0.5f) {
+            if (g_input_blocking_active.load() && s_block_input_in_background >= 0.5f) {
                 auto runtime = g_reshade_runtime.load();
                 if (runtime != nullptr) {
                     // Block input to prevent game from re-capturing mouse

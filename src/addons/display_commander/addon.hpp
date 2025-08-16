@@ -223,6 +223,9 @@ extern float s_prevent_windows_minimize;
 // Prevent always on top behavior
 extern float s_prevent_always_on_top;
 
+// Block input when in background
+extern float s_block_input_in_background;
+
 // Enforce desired window settings
 extern float s_enforce_desired_window;
 
