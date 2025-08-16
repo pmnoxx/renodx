@@ -5,6 +5,8 @@
 
 namespace renodx::hooks {
 
+// No external declarations needed - variables are accessible from addon.hpp
+
 // Global variables for hook management
 HWND g_hooked_window = nullptr;
 WNDPROC g_original_window_proc = nullptr;
@@ -45,14 +47,18 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 // Intercept style change confirmations
                 STYLESTRUCT* style = reinterpret_cast<STYLESTRUCT*>(lParam);
                 if (style) {
-                    // Force borderless style
+                    // Log the style change but don't modify it here
+                    // The background task will enforce the borderless style
                     DWORD remove_styles = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
-                    DWORD current_style = GetWindowLong(hwnd, GWL_STYLE);
-                    DWORD new_style = current_style & ~remove_styles;
+                    DWORD current_style = style->styleNew;
                     
-                    if (current_style != new_style) {
-                        SetWindowLong(hwnd, GWL_STYLE, new_style);
-                        LogDebug("Window style hook: Forced borderless style");
+                    if (current_style & remove_styles) {
+                        std::ostringstream oss;
+                        oss << "Window style hook: Style change detected with unwanted styles. Game wants style 0x" << std::hex << current_style << ". Background task will enforce borderless style.";
+                        LogDebug(oss.str());
+                        
+                        // Mark that we need to enforce styles later
+                        // Don't call SetWindowLong here - let background task handle it
                     }
                 }
                 break;
@@ -69,6 +75,42 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 if (wParam == SC_RESTORE) {
                     LogDebug("Window style hook: Blocked restore command");
                     return 0; // Block the command
+                }
+                break;
+            }
+
+            case WM_GETMINMAXINFO: {
+                // Prevent the window from being maximized or restored
+                if (s_remove_top_bar >= 0.5f) {
+                    MINMAXINFO* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
+                    if (mmi) {
+                        // Set max position to current position to prevent maximize
+                        RECT window_rect;
+                        if (GetWindowRect(hwnd, &window_rect)) {
+                            mmi->ptMaxPosition.x = window_rect.left;
+                            mmi->ptMaxPosition.y = window_rect.top;
+                            mmi->ptMaxSize.x = window_rect.right - window_rect.left;
+                            mmi->ptMaxSize.y = window_rect.bottom - window_rect.top;
+                            LogDebug("Window style hook: Modified minmax info to prevent maximize");
+                        }
+                    }
+                }
+                break;
+            }
+
+            case WM_NCCALCSIZE: {
+                // Prevent non-client area calculation (title bar, borders)
+                if (s_remove_top_bar >= 0.5f && wParam == TRUE) {
+                    NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+                    if (params) {
+                        // Set the client area to fill the entire window
+                        params->rgrc[0].left = 0;
+                        params->rgrc[0].top = 0;
+                        params->rgrc[0].right = params->rgrc[1].right - params->rgrc[1].left;
+                        params->rgrc[0].bottom = params->rgrc[1].bottom - params->rgrc[1].top;
+                        LogDebug("Window style hook: Modified NCCALCSIZE to remove non-client areas");
+                        return 0; // Don't call default handler
+                    }
                 }
                 break;
             }
@@ -134,6 +176,14 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 if (new_w != desired_w || new_h != desired_h) {
                     std::ostringstream oss;
                     oss << "Window style hook: Suppressed resize message - size mismatch. Game wants " << new_w << "x" << new_h << ", we want " << desired_w << "x" << desired_h << ". Background task will fix this later.";
+                    
+                    // Add continuous monitoring status to the log
+                    if (s_continuous_monitoring_enabled >= 0.5f) {
+                        oss << " [Continuous monitoring: ENABLED]";
+                    } else {
+                        oss << " [Continuous monitoring: DISABLED]";
+                    }
+                    
                     LogDebug(oss.str());
                     
                     // Modify the message to keep current size (suppress the resize)
@@ -164,6 +214,14 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                     if (size_mismatch) {
                         std::ostringstream oss;
                         oss << "Window style hook: Suppressed windowpos change - size mismatch detected. Game wants size(" << wp->cx << "x" << wp->cy << "), we want size(" << desired_w << "x" << desired_h << "). Background task will fix this later.";
+                        
+                        // Add continuous monitoring status to the log
+                        if (s_continuous_monitoring_enabled >= 0.5f) {
+                            oss << " [Continuous monitoring: ENABLED]";
+                        } else {
+                            oss << " [Continuous monitoring: DISABLED]";
+                        }
+                        
                         LogDebug(oss.str());
                         
                         // Modify the message to keep current size (suppress the resize)
