@@ -10,6 +10,8 @@ WNDPROC g_original_window_proc = nullptr;
 bool g_hooks_installed = false;
 
 // Hooked window procedure that intercepts style-changing messages
+// NOTE: Do not make any system calls within this function - only log and modify message parameters
+// Background tasks will handle the actual window state enforcement later
 LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     // Check if we should prevent style changes
     if (s_remove_top_bar >= 0.5f) {
@@ -60,6 +62,99 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 if (wParam == SC_RESTORE || wParam == SC_MAXIMIZE) {
                     LogDebug("Window style hook: Blocked system command");
                     return 0; // Block the command
+                }
+                break;
+            }
+        }
+    }
+
+    // Check if we should suppress move/resize messages
+    if (s_suppress_move_resize_messages >= 0.5f) {
+        switch (uMsg) {
+            case WM_MOVE: {
+                // Intercept window move messages
+                int new_x = static_cast<int>(static_cast<short>(LOWORD(lParam)));
+                int new_y = static_cast<int>(static_cast<short>(HIWORD(lParam)));
+                
+                // Get our desired position from window state calculator
+                int desired_x = static_cast<int>(s_windowed_pos_x);
+                int desired_y = static_cast<int>(s_windowed_pos_y);
+                
+                // Check if this move matches our desired state
+                if (new_x != desired_x || new_y != desired_y) {
+                    std::ostringstream oss;
+                    oss << "Window style hook: Suppressed move message - position mismatch. Game wants (" << new_x << "," << new_y << "), we want (" << desired_x << "," << desired_y << "). Background task will fix this later.";
+                    LogDebug(oss.str());
+                    
+                    // Modify the message to keep current position (suppress the move)
+                    // We'll use the current window position as the "new" position
+                    RECT window_rect;
+                    if (GetWindowRect(hwnd, &window_rect)) {
+                        lParam = MAKELONG(static_cast<short>(window_rect.left), static_cast<short>(window_rect.top));
+                    }
+                }
+                break;
+            }
+            
+            case WM_SIZE: {
+                // Intercept window size messages
+                int new_w = static_cast<int>(LOWORD(lParam));
+                int new_h = static_cast<int>(HIWORD(lParam));
+                
+                // Get our desired size from window state calculator
+                int desired_w = static_cast<int>(s_windowed_width);
+                int desired_h = static_cast<int>(s_windowed_height);
+                
+                // Check if this resize matches our desired state
+                if (new_w != desired_w || new_h != desired_h) {
+                    std::ostringstream oss;
+                    oss << "Window style hook: Suppressed resize message - size mismatch. Game wants " << new_w << "x" << new_h << ", we want " << desired_w << "x" << desired_h << ". Background task will fix this later.";
+                    LogDebug(oss.str());
+                    
+                    // Modify the message to keep current size (suppress the resize)
+                    // We'll use the current window size as the "new" size
+                    RECT client_rect;
+                    if (GetClientRect(hwnd, &client_rect)) {
+                        lParam = MAKELONG(static_cast<short>(client_rect.right - client_rect.left), 
+                                         static_cast<short>(client_rect.bottom - client_rect.top));
+                    }
+                }
+                break;
+            }
+            
+            case WM_WINDOWPOSCHANGED: {
+                // Intercept window position/size change confirmations
+                WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
+                if (wp) {
+                    // Get our desired state from window state calculator
+                    int desired_w = static_cast<int>(s_windowed_width);
+                    int desired_h = static_cast<int>(s_windowed_height);
+                    int desired_x = static_cast<int>(s_windowed_pos_x);
+                    int desired_y = static_cast<int>(s_windowed_pos_y);
+                    
+                    // Check if this change matches our desired state
+                    bool position_mismatch = (wp->x != desired_x || wp->y != desired_y);
+                    bool size_mismatch = (wp->cx != desired_w || wp->cy != desired_h);
+                    
+                    if (position_mismatch || size_mismatch) {
+                        std::ostringstream oss;
+                        oss << "Window style hook: Suppressed windowpos change - mismatch detected. Game wants pos(" << wp->x << "," << wp->y << ") size(" << wp->cx << "x" << wp->cy << "), we want pos(" << desired_x << "," << desired_y << ") size(" << desired_w << "x" << desired_h << "). Background task will fix this later.";
+                        LogDebug(oss.str());
+                        
+                        // Modify the message to keep current state (suppress the change)
+                        // We'll use the current window position as the "new" position
+                        RECT window_rect;
+                        if (GetWindowRect(hwnd, &window_rect)) {
+                            wp->x = window_rect.left;
+                            wp->y = window_rect.top;
+                        }
+                        
+                        RECT client_rect;
+                        if (GetClientRect(hwnd, &client_rect)) {
+                            wp->cx = client_rect.right - client_rect.left;
+                            wp->cy = client_rect.bottom - client_rect.top;
+                        }
+                    }
                 }
                 break;
             }

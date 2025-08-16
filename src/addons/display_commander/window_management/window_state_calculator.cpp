@@ -35,9 +35,8 @@ DesiredWindowState CalculateDesiredSize(HWND hwnd) {
     int current_h = window_rect.bottom - window_rect.top;
     
     // Get desired size from settings (global namespace)
-    extern float s_windowed_width, s_windowed_height;
-    int desired_w = static_cast<int>(::s_windowed_width);
-    int desired_h = static_cast<int>(::s_windowed_height);
+    int desired_w = static_cast<int>(s_windowed_width);
+    int desired_h = static_cast<int>(s_windowed_height);
     
     // Validate desired size
     if (desired_w <= 0 || desired_h <= 0) {
@@ -81,9 +80,8 @@ DesiredWindowState CalculateDesiredPosition(HWND hwnd) {
     int current_y = window_rect.top;
     
     // Get desired position from settings (global namespace)
-    extern float s_windowed_pos_x, s_windowed_pos_y;
-    int desired_x = static_cast<int>(::s_windowed_pos_x);
-    int desired_y = static_cast<int>(::s_windowed_pos_y);
+    int desired_x = static_cast<int>(s_windowed_pos_x);
+    int desired_y = static_cast<int>(s_windowed_pos_y);
     
     // Check if move is needed
     bool needs_move = (current_x != desired_x || current_y != desired_y);
@@ -115,7 +113,6 @@ DesiredWindowState CalculateDesiredStyle(HWND hwnd) {
     LONG_PTR current_ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
     
     // Get desired style mode from settings (global namespace)
-    extern float s_remove_top_bar;
     WindowStyleMode desired_mode = (::s_remove_top_bar >= 0.5f) ? WindowStyleMode::BORDERLESS : WindowStyleMode::OVERLAPPED_WINDOW;
     
     // Check if style change is needed

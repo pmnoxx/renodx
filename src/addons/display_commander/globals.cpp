@@ -16,6 +16,7 @@ float s_windowed_height = 1080.f;
 float s_windowed_pos_x = 0.f;
 float s_windowed_pos_y = 0.f;
 float s_remove_top_bar = 0.f;
+float s_suppress_move_resize_messages = 1.f; // Suppress move/resize messages by default
 float s_resize_mode = 0.f;
 float s_aspect_index = 3.f; // 16:9
 
