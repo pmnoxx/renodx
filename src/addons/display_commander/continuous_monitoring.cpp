@@ -16,6 +16,7 @@ extern std::atomic<HWND> g_last_swapchain_hwnd;
 // Additional global variables needed for monitoring
 extern float s_remove_top_bar;
 extern float s_prevent_always_on_top;
+extern float s_block_input_in_background; // Added this line
 
 // ReShade runtime for input blocking
 extern std::atomic<reshade::api::effect_runtime*> g_reshade_runtime;
@@ -47,6 +48,21 @@ void ContinuousMonitoringThread() {
                 if (current_background) {
                     LogInfo("Continuous monitoring: App moved to BACKGROUND - Starting ReShade input blocking");
                     g_input_blocking_active.store(true);
+                    
+                    // Immediately log the current state of input blocking settings
+                    if (s_block_input_in_background >= 0.5f) {
+                        LogInfo("Continuous monitoring: Input blocking setting is ENABLED - will block input");
+                    } else {
+                        LogInfo("Continuous monitoring: Input blocking setting is DISABLED - will NOT block input");
+                    }
+                    
+                    // Check if ReShade runtime is available
+                    auto runtime = g_reshade_runtime.load();
+                    if (runtime != nullptr) {
+                        LogInfo("Continuous monitoring: ReShade runtime is AVAILABLE for input blocking");
+                    } else {
+                        LogInfo("Continuous monitoring: ReShade runtime is NOT AVAILABLE for input blocking");
+                    }
                 } else {
                     LogInfo("Continuous monitoring: App moved to FOREGROUND - Stopping ReShade input blocking");
                     g_input_blocking_active.store(false);
@@ -71,6 +87,16 @@ void ContinuousMonitoringThread() {
                     }
                 } else {
                     LogDebug("Continuous monitoring: ReShade runtime not available for input blocking");
+                }
+            } else {
+                // Log why input blocking is not active
+                static int debug_counter = 0;
+                if (++debug_counter % 30 == 0) { // Log every 30 seconds
+                    if (!g_input_blocking_active.load()) {
+                        LogDebug("Continuous monitoring: Input blocking inactive - app is in foreground");
+                    } else if (s_block_input_in_background < 0.5f) {
+                        LogDebug("Continuous monitoring: Input blocking disabled by user setting");
+                    }
                 }
             }
             
