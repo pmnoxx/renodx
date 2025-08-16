@@ -214,6 +214,9 @@ extern std::vector<MonitorInfo> g_monitors;
 // Fix HDR10 color space when backbuffer is RGB10A2
 extern float s_fix_hdr10_colorspace;
 
+// ReShade runtime for input blocking
+extern std::atomic<reshade::api::effect_runtime*> g_reshade_runtime;
+
 // Window minimize prevention
 extern float s_prevent_windows_minimize;
 

@@ -55,6 +55,9 @@ float s_spoof_window_focus = 0.f;
 // Fix HDR10 color space when backbuffer is RGB10A2
 float s_fix_hdr10_colorspace = 0.f;
 
+// ReShade runtime for input blocking
+std::atomic<reshade::api::effect_runtime*> g_reshade_runtime = nullptr;
+
 // Window minimize prevention
 float s_prevent_windows_minimize = 0.f;
 

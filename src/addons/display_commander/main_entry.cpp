@@ -18,14 +18,44 @@ void StopContinuousMonitoring();
 void StartContinuousRendering();
 void StopContinuousRendering();
 
+// Forward declarations for ReShade event handlers
+void OnInitEffectRuntime(reshade::api::effect_runtime* runtime);
+bool OnReShadeOverlayOpen(reshade::api::effect_runtime* runtime, bool open, reshade::api::input_source source);
+
 // External declarations for settings
 extern float s_remove_top_bar;
+
+// ReShade effect runtime event handler for input blocking
+void OnInitEffectRuntime(reshade::api::effect_runtime* runtime) {
+    if (runtime != nullptr) {
+        g_reshade_runtime.store(runtime);
+        LogInfo("ReShade effect runtime initialized - Input blocking now available");
+    }
+}
+
+// ReShade overlay event handler for input blocking
+bool OnReShadeOverlayOpen(reshade::api::effect_runtime* runtime, bool open, reshade::api::input_source source) {
+    if (open) {
+        LogInfo("ReShade overlay opened - Input blocking active");
+        // When ReShade overlay opens, we can also use its input blocking
+        if (runtime != nullptr) {
+            g_reshade_runtime.store(runtime);
+        }
+    } else {
+        LogInfo("ReShade overlay closed - Input blocking inactive");
+    }
+    return false; // Don't prevent ReShade from opening/closing the overlay
+}
 
 BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   switch (fdw_reason) {
     case DLL_PROCESS_ATTACH:
       if (!reshade::register_addon(h_module)) return FALSE;
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
+      
+      // Register ReShade effect runtime events for input blocking
+      reshade::register_event<reshade::addon_event::init_effect_runtime>(OnInitEffectRuntime);
+      reshade::register_event<reshade::addon_event::reshade_open_overlay>(OnReShadeOverlayOpen);
       
       // Defer NVAPI / Reflex init until after settings are loaded below
       

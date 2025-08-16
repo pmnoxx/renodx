@@ -14,9 +14,15 @@ extern std::thread g_monitoring_thread;
 extern std::atomic<HWND> g_last_swapchain_hwnd;
 
 // Additional global variables needed for monitoring
-
 extern float s_remove_top_bar;
 extern float s_prevent_always_on_top;
+
+// ReShade runtime for input blocking
+extern std::atomic<reshade::api::effect_runtime*> g_reshade_runtime;
+
+// Input blocking state
+static std::atomic<bool> g_input_blocking_active = false;
+static std::atomic<bool> g_app_in_background = false;
 
 // Main monitoring thread function
 void ContinuousMonitoringThread() {
@@ -31,6 +37,43 @@ void ContinuousMonitoringThread() {
         // Get the current swapchain window
         HWND hwnd = g_last_swapchain_hwnd.load();
         if (hwnd != nullptr && IsWindow(hwnd)) {
+            // BACKGROUND DETECTION: Check if the app is in background
+            bool current_background = (GetForegroundWindow() != hwnd);
+            bool background_changed = (current_background != g_app_in_background.load());
+            
+            if (background_changed) {
+                g_app_in_background.store(current_background);
+                
+                if (current_background) {
+                    LogInfo("Continuous monitoring: App moved to BACKGROUND - Starting ReShade input blocking");
+                    g_input_blocking_active.store(true);
+                } else {
+                    LogInfo("Continuous monitoring: App moved to FOREGROUND - Stopping ReShade input blocking");
+                    g_input_blocking_active.store(false);
+                }
+            }
+            
+            // RESHADE INPUT BLOCKING: Use ReShade's input blocking when app is in background
+            if (g_input_blocking_active.load() && s_prevent_always_on_top >= 0.5f) {
+                auto runtime = g_reshade_runtime.load();
+                if (runtime != nullptr) {
+                    // Block input to prevent game from re-capturing mouse
+                    runtime->block_input_next_frame();
+                    
+                    // Also force release any existing mouse confinement
+                    ReleaseCapture();
+                    ClipCursor(nullptr);
+                    
+                    // Log only occasionally to avoid spam
+                    static int log_counter = 0;
+                    if (++log_counter % 60 == 0) { // Log every 60 seconds
+                        LogDebug("Continuous monitoring: ReShade input blocking active - preventing mouse re-capture");
+                    }
+                } else {
+                    LogDebug("Continuous monitoring: ReShade runtime not available for input blocking");
+                }
+            }
+            
             // PROACTIVE ALWAYS ON TOP CHECK: Force style enforcement if always on top is detected
             if (s_prevent_always_on_top >= 0.5f) {
                 LONG_PTR current_ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
