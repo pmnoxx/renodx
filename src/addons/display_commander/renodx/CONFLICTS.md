@@ -30,13 +30,13 @@ This document tracks conflicts and issues that need resolution in the RenoDX pro
 **Solution**: Use specific types instead of `void*` where possible, or provide type-safe alternatives.
 
 ### 3. Suppress Top Bar/Border Messages Feature
-**Status**: ⚠️ **NEEDS MORE WORK** - Medium priority
+**Status**: 🚫 **DISABLED BY DEFAULT** - Medium priority
 
-**Problem**: The "Suppress Top Bar/Border Messages" feature in the UI is marked as needing more work to be fully functional.
+**Problem**: The "Suppress Top Bar/Border Messages" feature in the UI has bugs and is not fully functional.
 
-**Impact**: Users may enable this feature expecting it to work properly, but it may not function as intended.
+**Impact**: Users cannot access this feature until the bugs are fixed.
 
-**Solution**: Investigate what additional work is needed and implement the missing functionality.
+**Solution**: Fix the bugs and re-enable the feature in the UI.
 
 ## 📋 Resolution Checklist
 
@@ -50,10 +50,10 @@ This document tracks conflicts and issues that need resolution in the RenoDX pro
   - [ ] Provide type-safe alternatives
   - [ ] Update documentation
 - [ ] **Complete Suppress Top Bar/Border Messages feature** (Medium priority)
-  - [ ] Investigate what additional work is needed
-  - [ ] Implement missing functionality
+  - [ ] Fix bugs in the feature
   - [ ] Test the feature thoroughly
-  - [ ] Remove "Needs More Work" warning from UI
+  - [ ] Re-enable the feature in the UI
+  - [ ] Remove "Buggy - Disabled" warning from UI
 
 ## 🧪 Testing Required
 

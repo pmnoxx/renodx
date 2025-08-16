@@ -113,10 +113,10 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .key = "SuppressTopBarBorderMessages",
         .binding = &s_remove_top_bar,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f,
-        .label = "Suppress Top Bar/Border Messages (⚠️ Needs More Work)",
+        .default_value = 0.f, // Disabled by default due to bug
+        .label = "Suppress Top Bar/Border Messages (⚠️ Buggy - Disabled)",
         .section = "Display",
-        .tooltip = "Suppress window messages that would add title bars and borders. Prevents games from restoring unwanted window decorations. ⚠️ WARNING: This feature needs more work to be fully functional.",
+        .tooltip = "Suppress window messages that would add title bars and borders. Prevents games from restoring unwanted window decorations. ⚠️ WARNING: This feature has bugs and is disabled by default.",
         .labels = {"Disabled", "Enabled"},
         .on_change_value = [](float previous, float current){ 
             std::ostringstream oss;
