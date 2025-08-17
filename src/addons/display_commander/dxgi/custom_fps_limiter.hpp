@@ -40,19 +40,19 @@ private:
     std::chrono::high_resolution_clock::time_point m_frame_end_time;
     std::chrono::high_resolution_clock::time_point m_last_present_time;
     
-    // Timing state (cloned from RenoDX)
-    std::chrono::high_resolution_clock::time_point m_last_time_point;
-    std::chrono::nanoseconds m_spin_lock_duration{0};
+    // Timing state (exact RenoDX variable names)
+    std::chrono::high_resolution_clock::time_point last_time_point;
+    std::chrono::nanoseconds spin_lock_duration{0};
     
-    // Sleep latency tracking (cloned from RenoDX)
-    std::deque<std::chrono::nanoseconds> m_sleep_latency_history;
-    static constexpr size_t MAX_LATENCY_HISTORY_SIZE = 100;
+    // Sleep latency tracking (exact RenoDX variable names)
+    std::deque<std::chrono::nanoseconds> sleep_latency_history;
+    static constexpr size_t MAX_LATENCY_HISTORY_SIZE = 1000;  // Match RenoDX exactly
     
-    // Failure tracking (cloned from RenoDX)
-    int m_spin_lock_failures = 0;
+    // Failure tracking (exact RenoDX variable names)
+    std::uint32_t spin_lock_failures = 0;
     
-    // Last FPS limit for reset detection
-    float m_last_fps_limit = 0.0f;
+    // Last FPS limit for reset detection (exact RenoDX variable name)
+    float last_fps_limit = 0.0f;
     
     // Frame state tracking
     bool m_frame_in_progress = false;
