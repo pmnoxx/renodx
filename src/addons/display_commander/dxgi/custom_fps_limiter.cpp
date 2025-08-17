@@ -53,18 +53,35 @@ void CustomFpsLimiter::UpdateTiming()
     // Calculate time per frame (cloned from RenoDX)
     const auto time_per_frame = std::chrono::high_resolution_clock::duration(std::chrono::milliseconds(1000)) / static_cast<double>(m_target_fps);
     
-    // Calculate next target time based on last present (not frame start)
-    const auto next_time_point = m_last_present_time + time_per_frame;
+    // Calculate next target time based on last time point (FIXED - matches RenoDX exactly)
+    const auto next_time_point = m_last_time_point + time_per_frame;
     auto time_till_next_frame = next_time_point - now;
+    
+    // Debug: Log timing information (can be removed later)
+    static int frame_count = 0;
+    if (++frame_count % 60 == 0) { // Log every 60 frames
+        auto time_per_frame_ms = std::chrono::duration_cast<std::chrono::microseconds>(time_per_frame).count() / 1000.0;
+        auto time_till_next_ms = std::chrono::duration_cast<std::chrono::microseconds>(time_till_next_frame).count() / 1000.0;
+        printf("FPS Limiter Debug: target_fps=%.1f, time_per_frame=%.3fms, time_till_next=%.3fms\n", 
+               m_target_fps, time_per_frame_ms, time_till_next_ms);
+    }
     
     if (time_till_next_frame.count() <= 0) {
         // We're already late, update timing and return
-        m_last_present_time = now;
+        m_last_time_point = now;
         return;
     }
 
     // Use sleep for as much as reliably possible (cloned from RenoDX)
     auto sleep_duration = time_till_next_frame - m_spin_lock_duration;
+    
+    // Debug: Log sleep calculation (can be removed later)
+    if (frame_count % 60 == 0) {
+        auto sleep_duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(sleep_duration).count() / 1000.0;
+        auto spin_lock_ms = std::chrono::duration_cast<std::chrono::microseconds>(m_spin_lock_duration).count() / 1000.0;
+        printf("FPS Limiter Debug: sleep_duration=%.3fms, spin_lock_duration=%.3fms\n", 
+               sleep_duration_ms, spin_lock_ms);
+    }
     
     if (sleep_duration.count() > 0) {
         std::this_thread::sleep_for(sleep_duration);
@@ -115,8 +132,8 @@ void CustomFpsLimiter::UpdateTiming()
         now = std::chrono::high_resolution_clock::now();
     }
 
-    // Update last present time (this is when we actually presented the frame)
-    m_last_present_time = now;
+    // Update last time point (FIXED - matches RenoDX exactly)
+    m_last_time_point = now;
 }
 
 void CustomFpsLimiter::ApplySleepAndSpinLock()
