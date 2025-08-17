@@ -1,6 +1,7 @@
 #include "background_window.hpp"
 #include "addon.hpp"
 #include <sstream>
+#include <algorithm>
 
 // IMPORTANT ARCHITECTURAL PRINCIPLE:
 // Windows must be created in the same thread that processes their messages.
@@ -122,6 +123,12 @@ bool BackgroundWindowManager::CreateBackgroundWindowInThread(HWND game_hwnd) {
     SetWindowLongPtr(m_background_hwnd, GWL_EXSTYLE, 
                      GetWindowLongPtr(m_background_hwnd, GWL_EXSTYLE) | WS_EX_NOACTIVATE);
     
+    // Switch focus back to the game window after creating background window
+    SetForegroundWindow(game_hwnd);
+    SetActiveWindow(game_hwnd);
+    SetFocus(game_hwnd);
+    LogInfo("[BG-WINDOW-THREAD] Background window created, focus switched back to game window");
+    
     return true;
 }
 
@@ -152,18 +159,63 @@ void BackgroundWindowManager::StartBackgroundThread(HWND game_hwnd) {
                 // Handle specific messages
                 switch (msg.message) {
                     case WM_PAINT: {
-                        // Handle painting with solid black color
+                        // Handle painting with different colors inside/outside game rectangle
                         PAINTSTRUCT ps;
                         HDC hdc = BeginPaint(m_background_hwnd, &ps);
                         
                         if (hdc) {
-                            // Use solid black color
-                            COLORREF current_color = COLORS[0]; // Always black
-                            
-                            // Create brush and fill the window
-                            HBRUSH brush = CreateSolidBrush(current_color);
-                            FillRect(hdc, &ps.rcPaint, brush);
-                            DeleteObject(brush);
+                            // Get game window rectangle
+                            RECT game_rect;
+                            if (GetWindowRect(game_hwnd, &game_rect)) {
+                                // Fill outside game rectangle with black
+                                RECT outside_rects[4];
+                                
+                                // Top rectangle (above game)
+                                outside_rects[0] = {ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, game_rect.top};
+                                
+                                // Bottom rectangle (below game)
+                                outside_rects[1] = {ps.rcPaint.left, game_rect.bottom, ps.rcPaint.right, ps.rcPaint.bottom};
+                                
+                                // Left rectangle (left of game)
+                                outside_rects[2] = {ps.rcPaint.left, ps.rcPaint.top, game_rect.left, ps.rcPaint.bottom};
+                                
+                                // Right rectangle (right of game)
+                                outside_rects[3] = {game_rect.right, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom};
+                                
+                                // Paint outside areas with black
+                                HBRUSH black_brush = CreateSolidBrush(COLORS[0]); // Black
+                                if (black_brush) {
+                                    for (int i = 0; i < 4; i++) {
+                                        if (outside_rects[i].right > outside_rects[i].left && 
+                                            outside_rects[i].bottom > outside_rects[i].top) {
+                                            FillRect(hdc, &outside_rects[i], black_brush);
+                                        }
+                                    }
+                                    DeleteObject(black_brush);
+                                }
+                                
+                                // Fill inside game rectangle with transparent color (magenta)
+                                RECT inside_rect;
+                                inside_rect.left = (std::max)(ps.rcPaint.left, game_rect.left);
+                                inside_rect.top = (std::max)(ps.rcPaint.top, game_rect.top);
+                                inside_rect.right = (std::min)(ps.rcPaint.right, game_rect.right);
+                                inside_rect.bottom = (std::min)(ps.rcPaint.bottom, game_rect.bottom);
+                                
+                                if (inside_rect.right > inside_rect.left && inside_rect.bottom > inside_rect.top) {
+                                    HBRUSH magenta_brush = CreateSolidBrush(COLORS[1]); // Magenta (transparent)
+                                    if (magenta_brush) {
+                                        FillRect(hdc, &inside_rect, magenta_brush);
+                                        DeleteObject(magenta_brush);
+                                    }
+                                }
+                            } else {
+                                // Fallback: fill entire area with black if we can't get game rect
+                                HBRUSH black_brush = CreateSolidBrush(COLORS[0]);
+                                if (black_brush) {
+                                    FillRect(hdc, &ps.rcPaint, black_brush);
+                                    DeleteObject(black_brush);
+                                }
+                            }
                         }
                         
                         EndPaint(m_background_hwnd, &ps);

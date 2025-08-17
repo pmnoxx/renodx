@@ -50,16 +50,10 @@ private:
     
     // Color cycling for visual feedback
     std::atomic<int> m_frame_counter;
-    static constexpr int COLOR_COUNT = 8;
+    static constexpr int COLOR_COUNT = 2;
     static constexpr COLORREF COLORS[COLOR_COUNT] = {
-        RGB(0, 0, 0),         // Black
-        RGB(255, 0, 255),      // Red
-        RGB(0, 255, 0),      // Green
-        RGB(0, 0, 255),      // Blue
-        RGB(255, 255, 0),    // Yellow
-        RGB(255, 0, 255),    // Magenta
-        RGB(0, 255, 255),    // Cyan
-        //RGB(128, 128, 128),  // Gray
+        RGB(0, 0, 0),         // Black (visible)
+        RGB(255, 0, 255)      // Magenta (transparent)
     };
     
     // Window class name for background window
