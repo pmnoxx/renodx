@@ -132,10 +132,32 @@ static void OnPresentUpdate(
   // Call Custom FPS Limiter on EVERY frame (not throttled)
   extern float s_custom_fps_limiter_enabled;
   if (s_custom_fps_limiter_enabled > 0.5f) {
-    // Call the custom FPS limiter directly
+    // Check window focus and apply appropriate FPS limit
+    extern std::atomic<HWND> g_last_swapchain_hwnd;
+    extern float s_fps_limit_background;
+    extern std::atomic<float> g_default_fps_limit;
+    
+    HWND hwnd = g_last_swapchain_hwnd.load();
+    if (hwnd == nullptr) hwnd = GetForegroundWindow();
+    
+    const bool is_background = (hwnd != nullptr && GetForegroundWindow() != hwnd);
+    
+    // Get the appropriate FPS limit based on focus state
+    float target_fps = 0.0f;
+    if (is_background) {
+      target_fps = s_fps_limit_background;  // Use background FPS limit
+    } else {
+      target_fps = g_default_fps_limit.load();  // Use foreground FPS limit
+    }
+    
+    // Apply the FPS limit to the Custom FPS Limiter
     auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
-    if (limiter.IsEnabled()) {
+    if (target_fps > 0.0f) {
+      limiter.SetTargetFps(target_fps);
+      limiter.SetEnabled(true);
       limiter.LimitFrameRate();
+    } else {
+      limiter.SetEnabled(false);
     }
   }
 
