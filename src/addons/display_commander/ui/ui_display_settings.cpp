@@ -84,14 +84,14 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "FPSLimit",
         .binding = &s_fps_limit,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings::SettingValueType::FLOAT,
         .default_value = 0.f,
         .label = "FPS Limit",
         .section = "Performance",
         .tooltip = "Set FPS limit for the game (0 = no limit). Now uses the new Custom FPS Limiter system.",
         .min = 0.f,
         .max = 300.f,
-        .format = "%d FPS",
+        .format = "%.2f FPS",
         .on_change_value = [](float previous, float current){ 
             if (current > 0.0f) {
                 // Custom FPS Limiter is always enabled, just initialize if needed
@@ -138,14 +138,14 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "FPSLimitBackground",
         .binding = &s_fps_limit_background,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings::SettingValueType::FLOAT,
         .default_value = 30.f,
         .label = "Background FPS Limit",
         .section = "Performance",
         .tooltip = "FPS cap when the game window is not in the foreground. Now uses the new Custom FPS Limiter system.",
         .min = 0.f,
         .max = 240.f,
-        .format = "%d FPS",
+        .format = "%.2f FPS",
         .on_change_value = [](float previous, float current){
             if (current > 0.0f) {
                 // Custom FPS Limiter is always enabled, just initialize if needed
