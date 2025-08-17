@@ -22,13 +22,13 @@ bool NVAPIFullscreenPrevention::Initialize() {
         oss << "Failed to initialize NVAPI. Status: " << status;
         
         // Provide basic status information
-        if (status == 0x10001) {
+        if (status == NVAPI_API_NOT_INITIALIZED) {
             oss << " (API not initialized)";
-        } else if (status == 0x10002) {
+        } else if (status == NVAPI_LIBRARY_NOT_FOUND) {
             oss << " (Library not found)";
-        } else if (status == 0x10003) {
+        } else if (status == NVAPI_NO_IMPLEMENTATION) {
             oss << " (No NVIDIA device found)";
-        } else if (status == 0x10004) {
+        } else if (status == NVAPI_ERROR) {
             oss << " (General error)";
         }
         
@@ -106,7 +106,7 @@ bool NVAPIFullscreenPrevention::SetFullscreenPrevention(bool enable) {
     // Find or create application profile
     NVDRS_APPLICATION app = {0};
     app.version = NVDRS_APPLICATION_VER;
-    strcpy((char*)app.appName, exeName);
+    strcpy_s((char*)app.appName, sizeof(app.appName), exeName);
     
     LogInfo("Searching for existing application profile...");
     status = NvAPI_DRS_FindApplicationByName(hSession, (NvU16*)exeName, &hProfile, &app);
@@ -117,7 +117,7 @@ bool NVAPIFullscreenPrevention::SetFullscreenPrevention(bool enable) {
         NVDRS_PROFILE profile = {0};
         profile.version = NVDRS_PROFILE_VER;
         profile.isPredefined = FALSE;
-        strcpy((char*)profile.profileName, "Fullscreen Prevention Profile");
+        strcpy_s((char*)profile.profileName, sizeof(profile.profileName), "Fullscreen Prevention Profile");
         
         status = NvAPI_DRS_CreateProfile(hSession, &profile, &hProfile);
         if (status != NVAPI_OK) {
@@ -133,8 +133,8 @@ bool NVAPIFullscreenPrevention::SetFullscreenPrevention(bool enable) {
         app.version = NVDRS_APPLICATION_VER;
         app.isPredefined = FALSE;
         app.isMetro = FALSE;
-        strcpy((char*)app.appName, exeName);
-        strcpy((char*)app.userFriendlyName, exeName);
+        strcpy_s((char*)app.appName, sizeof(app.appName), exeName);
+        strcpy_s((char*)app.userFriendlyName, sizeof(app.userFriendlyName), exeName);
         
         LogInfo("Adding application to profile...");
         status = NvAPI_DRS_CreateApplication(hSession, hProfile, &app);
@@ -256,7 +256,7 @@ bool NVAPIFullscreenPrevention::IsFullscreenPreventionEnabled() const {
     // Find application profile
     NVDRS_APPLICATION app = {0};
     app.version = NVDRS_APPLICATION_VER;
-    strcpy((char*)app.appName, exeName);
+    strcpy_s((char*)app.appName, sizeof(app.appName), exeName);
     
     status = NvAPI_DRS_FindApplicationByName(hSession, (NvU16*)exeName, &hProfile, &app);
     if (status != NVAPI_OK) {
@@ -308,7 +308,7 @@ std::string NVAPIFullscreenPrevention::GetDriverVersion() const {
     
     // Format the driver version similar to SpecialK
     char ver_str[64];
-    snprintf(ver_str, sizeof(ver_str), "%03u.%02u", driverVersion / 100, driverVersion % 100);
+    snprintf(ver_str, sizeof(ver_str), "%03lu.%02lu", driverVersion / 100, driverVersion % 100);
     return std::string(ver_str);
 }
 

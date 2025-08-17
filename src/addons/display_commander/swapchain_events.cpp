@@ -217,7 +217,9 @@ void FixHDR10Colorspace(reshade::api::swapchain* swapchain) {
   auto now = std::chrono::system_clock::now();
   auto time_t = std::chrono::system_clock::to_time_t(now);
   std::stringstream ss;
-  ss << std::put_time(std::localtime(&time_t), "%H:%M:%S");
+  struct tm timeinfo;
+  localtime_s(&timeinfo, &time_t);
+  ss << std::put_time(&timeinfo, "%H:%M:%S");
   g_hdr10_override_timestamp = ss.str();
   
   // Get the device to check backbuffer format

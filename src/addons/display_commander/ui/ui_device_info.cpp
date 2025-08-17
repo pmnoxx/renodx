@@ -22,7 +22,6 @@ void AddDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .label = "=== Device Information ===",
         .section = "Device Info",
         .tooltip = "Current device and display information",
-        .is_visible = []() { return is_device_tab(s_ui_mode); },
         .on_draw = []() {
             // Get current device info
             HWND hwnd = g_last_swapchain_hwnd.load();
@@ -56,7 +55,8 @@ void AddDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
             }
             
             return true;
-        }
+        },
+        .is_visible = []() { return is_device_tab(s_ui_mode); }
     });
 
     // Refresh Device Info Button
@@ -68,12 +68,12 @@ void AddDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .label = "Refresh Device Info",
         .section = "Device Info",
         .tooltip = "Refresh device information display",
-        .is_visible = []() { return is_device_tab(s_ui_mode); },
         .on_click = []() -> bool {
             // Force refresh of device information
             LogInfo("Device information refreshed");
             return true;
-        }
+        },
+        .is_visible = []() { return is_device_tab(s_ui_mode); }
     });
 
     // Device Debug Mode
@@ -86,14 +86,14 @@ void AddDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .section = "Device Info",
         .tooltip = "Enable detailed device debugging information",
         .labels = {"Disabled", "Enabled"},
-        .is_visible = []() { return is_device_tab(s_ui_mode); },
         .on_change_value = [](float previous, float current) {
             if (current >= 0.5f) {
                 LogInfo("Device debug mode enabled");
             } else {
                 LogInfo("Device debug mode disabled");
             }
-        }
+        },
+        .is_visible = []() { return is_device_tab(s_ui_mode); }
     });
 }
 

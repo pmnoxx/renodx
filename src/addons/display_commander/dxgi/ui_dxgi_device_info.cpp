@@ -143,7 +143,7 @@ void AddDxgiDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& s
                                 ImGui::Text("Device Name: %s", output.device_name.c_str());
                                 ImGui::Text("Monitor Name: %s", output.monitor_name.c_str());
                                 ImGui::Text("Attached: %s", output.is_attached ? "Yes" : "No");
-                                ImGui::Text("Desktop Coordinates: (%d, %d) to (%d, %d)", 
+                                ImGui::Text("Desktop Coordinates: (%ld, %ld) to (%ld, %ld)", 
                                            output.desktop_coordinates.left, output.desktop_coordinates.top,
                                            output.desktop_coordinates.right, output.desktop_coordinates.bottom);
                                 

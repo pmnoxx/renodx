@@ -22,7 +22,6 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .label = "Window Width",
         .section = "Display",
         .labels = MakeLabels(WIDTH_OPTIONS, 7),
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
         .parse = [](float index) {
           int i = static_cast<int>(index);
           i = (std::max)(i, 0);
@@ -30,6 +29,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
           i = (std::min)(i, max_i);
           return static_cast<float>(WIDTH_OPTIONS[i]);
         },
+        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
     });
 
     // Window height preset slider with labels
@@ -41,7 +41,6 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .label = "Window Height",
         .section = "Display",
         .labels = MakeLabels(HEIGHT_OPTIONS, 7),
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
         .is_enabled = [](){ return s_resize_mode < 0.5f; },
         .parse = [](float index) {
           int i = static_cast<int>(index);
@@ -50,6 +49,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
           i = (std::min)(i, max_i);
           return static_cast<float>(HEIGHT_OPTIONS[i]);
         },
+        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
     });
 
     // Resize mode: width/height vs aspect ratio
@@ -62,7 +62,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .section = "Display",
         .tooltip = "Choose between manual width/height or aspect ratio-based resizing.",
         .labels = {"Width/Height", "Aspect Ratio"},
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
     });
 
     // Aspect Ratio (only when in Aspect mode)
@@ -77,7 +77,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .labels = {"3:2", "4:3", "16:10", "16:9", "19:9", "19.5:9", "21:9", "32:9"},
         .min = 0.f,
         .max = 7.f,
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
     });
 
     // FPS Limit (Now uses Custom FPS Limiter)
@@ -92,6 +92,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .min = 0.f,
         .max = 300.f,
         .format = "%.2f FPS",
+        .is_enabled = []() { return true; }, // Always enabled
         .on_change_value = [](float previous, float current){ 
             if (current > 0.0f) {
                 // Custom FPS Limiter is always enabled, just initialize if needed
@@ -126,8 +127,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
             s_fps_limit = g_default_fps_limit.load();
             return false;
         },
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
-        .is_enabled = []() { return true; }, // Always enabled
+        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
     });
 
 
@@ -146,6 +146,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .min = 0.f,
         .max = 240.f,
         .format = "%.2f FPS",
+        .is_enabled = []() { return true; }, // Always enabled
         .on_change_value = [](float previous, float current){
             if (current > 0.0f) {
                 // Custom FPS Limiter is always enabled, just initialize if needed
@@ -181,8 +182,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
                 }
             }
         },
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
-        .is_enabled = []() { return true; }, // Always enabled
+        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
     });
 
     // Target Monitor
