@@ -9,6 +9,10 @@
 #include "../hooks/hooks_manager.hpp"
 #include "../../../mods/swapchain.hpp"
 
+// Global variable declarations (outside namespace)
+extern float s_fps_limit;
+extern float s_custom_fps_limiter_enabled;
+
 namespace renodx::proxy {
 
 // ============================================================================
@@ -96,24 +100,18 @@ bool GetUseDeviceProxy() {
 float GetFpsLimit() {
     // Return the current FPS limit from our Custom FPS Limiter
     // Since we're not using RenoDX's built-in limiter anymore
-    extern float s_fps_limit;
+    // These are global variables declared in globals.cpp
     return s_fps_limit;
 }
 
 void SetFpsLimit(float limit) {
     // Set the FPS limit in our Custom FPS Limiter
     // Since we're not using RenoDX's built-in limiter anymore
-    extern float s_fps_limit;
+    // These are global variables declared in globals.cpp
     s_fps_limit = limit;
     
-    // Also update the Custom FPS Limiter if it's enabled
-    extern float s_custom_fps_limiter_enabled;
-    if (s_custom_fps_limiter_enabled > 0.5f) {
-        extern renodx::dxgi::fps_limiter::CustomFpsLimiterManager g_customFpsLimiterManager;
-        auto& limiter = g_customFpsLimiterManager.GetFpsLimiter();
-        limiter.SetTargetFps(limit);
-        limiter.SetEnabled(limit > 0.0f);
-    }
+    // Note: Custom FPS Limiter updates are handled elsewhere
+    // This function just updates the global variable
 }
 
 void InitializeSwapchain(DWORD fdw_reason) {

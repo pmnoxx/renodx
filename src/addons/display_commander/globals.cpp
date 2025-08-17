@@ -1,6 +1,7 @@
 #include "addon.hpp"
 #include "reflex/reflex_management.hpp"
 #include "background_window.hpp" // Added this line
+#include "dxgi/custom_fps_limiter_manager.hpp"
 
 // Global variables
 // UI mode (0 = Basic, 1 = Developer)
@@ -131,6 +132,9 @@ BackgroundWindowManager g_backgroundWindowManager;
 
 // Global DXGI Device Info Manager instance
 std::unique_ptr<DXGIDeviceInfoManager> g_dxgiDeviceInfoManager;
+
+// Global Custom FPS Limiter Manager instance
+std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager = std::make_unique<renodx::dxgi::fps_limiter::CustomFpsLimiterManager>();
 
 // Direct atomic variables for latency tracking (UI access)
 std::atomic<float> g_current_latency_ms{16.67f};

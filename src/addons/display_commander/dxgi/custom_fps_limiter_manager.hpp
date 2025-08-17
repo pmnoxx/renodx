@@ -23,6 +23,6 @@ private:
 };
 
 // Global instance
-extern CustomFpsLimiterManager g_customFpsLimiterManager;
+extern std::unique_ptr<CustomFpsLimiterManager> g_customFpsLimiterManager;
 
 } // namespace renodx::dxgi::fps_limiter

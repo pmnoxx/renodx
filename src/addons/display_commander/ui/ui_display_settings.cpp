@@ -7,7 +7,8 @@
 #include "../dxgi/custom_fps_limiter_manager.hpp"
 #include <sstream>
 
-
+// Global variable declaration
+extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
 
 namespace renodx::ui {
 
@@ -95,7 +96,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
             if (current > 0.0f) {
                 // Auto-initialize the custom FPS limiter system if needed
                 if (s_custom_fps_limiter_enabled <= 0.5f) {
-                    if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager.InitializeCustomFpsLimiterSystem()) {
+                    if (g_customFpsLimiterManager && g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
                         s_custom_fps_limiter_enabled = 1.0f; // Mark as enabled
                         LogWarn("Custom FPS Limiter system auto-initialized");
                     } else {
@@ -105,19 +106,23 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
                 }
                 
                 // Update the custom FPS limiter
-                auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
-                limiter.SetTargetFps(current);
-                limiter.SetEnabled(true);
-                
-                std::ostringstream oss;
-                oss << "FPS limit applied: " << static_cast<int>(current) << " FPS (via Custom FPS Limiter)";
-                LogInfo(oss.str().c_str());
+                if (g_customFpsLimiterManager) {
+                    auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+                    limiter.SetTargetFps(current);
+                    limiter.SetEnabled(true);
+                    
+                    std::ostringstream oss;
+                    oss << "FPS limit applied: " << static_cast<int>(current) << " FPS (via Custom FPS Limiter)";
+                    LogInfo(oss.str().c_str());
+                }
             } else {
                 // FPS limit set to 0, disable the limiter
                 if (s_custom_fps_limiter_enabled > 0.5f) {
-                    auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
-                    limiter.SetEnabled(false);
-                    LogInfo("FPS limit removed (no limit)");
+                    if (g_customFpsLimiterManager) {
+                        auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+                        limiter.SetEnabled(false);
+                        LogInfo("FPS limit removed (no limit)");
+                    }
                 }
             }
         },
@@ -150,7 +155,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
             if (current > 0.0f) {
                 // Auto-initialize the custom FPS limiter system if needed
                 if (s_custom_fps_limiter_enabled <= 0.5f) {
-                    if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager.InitializeCustomFpsLimiterSystem()) {
+                    if (g_customFpsLimiterManager && g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
                         s_custom_fps_limiter_enabled = 1.0f; // Mark as enabled
                         LogWarn("Custom FPS Limiter system auto-initialized");
                     } else {
@@ -165,20 +170,24 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
                 const bool is_background = (hwnd != nullptr && GetForegroundWindow() != hwnd);
                 
                 if (is_background && current >= 0.f) {
-                    auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
-                    limiter.SetTargetFps(current);
-                    limiter.SetEnabled(true);
-                    
-                    std::ostringstream oss;
-                    oss << "Background FPS limit applied immediately: " << static_cast<int>(current) << " FPS (via Custom FPS Limiter)";
-                    LogInfo(oss.str().c_str());
+                    if (g_customFpsLimiterManager) {
+                        auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+                        limiter.SetTargetFps(current);
+                        limiter.SetEnabled(true);
+                        
+                        std::ostringstream oss;
+                        oss << "Background FPS limit applied immediately: " << static_cast<int>(current) << " FPS (via Custom FPS Limiter)";
+                        LogInfo(oss.str().c_str());
+                    }
                 }
             } else {
                 // Background FPS limit set to 0, disable the limiter
                 if (s_custom_fps_limiter_enabled > 0.5f) {
-                    auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
-                    limiter.SetEnabled(false);
-                    LogInfo("Background FPS limit removed (no limit)");
+                    if (g_customFpsLimiterManager) {
+                        auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+                        limiter.SetEnabled(false);
+                        LogInfo("Background FPS limit removed (no limit)");
+                    }
                 }
             }
         },

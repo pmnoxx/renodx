@@ -27,7 +27,4 @@ void CustomFpsLimiterManager::ShutdownCustomFpsLimiterSystem()
     LogWarn("RenoDX built-in FPS limiter re-enabled");
 }
 
-// Global instance
-CustomFpsLimiterManager g_customFpsLimiterManager;
-
 } // namespace renodx::dxgi::fps_limiter
