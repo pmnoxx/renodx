@@ -16,7 +16,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .section = "Display",
         .tooltip = "Force window to be borderless. Useful for games that don't support borderless mode.",
         .labels = {"Off", "On"},
-        .on_change_value = [](float previous, float current){ renodx::proxy::SetForceBorderless(current >= 0.5f); },
+        .on_change_value = [](float previous, float current){ /* SetForceBorderless removed from proxy */ },
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
 

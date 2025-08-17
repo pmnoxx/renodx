@@ -73,14 +73,15 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       g_attach_time = std::chrono::steady_clock::now();
       g_shutdown.store(false);
       std::thread(RunBackgroundAudioMonitor).detach();
-      renodx::proxy::StartBackgroundTasks();
+      renodx::background::StartBackgroundTasks();
       
       // Install window hooks for style management
-      renodx::proxy::InstallAllHooks();
+      renodx::hooks::InstallAllHooks();
       
       // NVAPI HDR monitor will be started after settings load below if enabled
       // Seed default fps limit snapshot
-      g_default_fps_limit.store(renodx::proxy::GetFpsLimit());
+      // GetFpsLimit removed from proxy, use s_fps_limit directly
+      g_default_fps_limit.store(s_fps_limit);
       reshade::register_event<reshade::addon_event::present>(OnPresentUpdate);
       
       // Register frame lifecycle hooks for custom FPS limiter
@@ -106,7 +107,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       UninstallReflexHooks();
       
       // Clean up window hooks
-      renodx::proxy::UninstallAllHooks();
+      renodx::hooks::UninstallAllHooks();
       
       // Clean up DXGI Device Info Manager
       g_dxgiDeviceInfoManager.reset();
@@ -129,7 +130,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   InitializeUISettings();
   
   renodx::proxy::InitializeSettings(fdw_reason, &settings);
-  renodx::proxy::InitializeSwapchain(fdw_reason);
+  // InitializeSwapchain removed from proxy
 
   // Initialize hooks if settings are enabled on startup (after settings are loaded)
   if (fdw_reason == DLL_PROCESS_ATTACH) {
