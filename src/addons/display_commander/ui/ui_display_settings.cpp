@@ -79,36 +79,28 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     });
 
-    // FPS Limit
+    // FPS Limit (NON-FUNCTIONAL - Replaced by Custom FPS Limiter)
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "FPSLimit",
         .binding = &s_fps_limit,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 0.f,
-        .label = "FPS Limit",
+        .label = "FPS Limit (Disabled)",
         .section = "Performance",
-        .tooltip = "Set FPS limit for the game (0 = no limit).",
+        .tooltip = "DEPRECATED: This setting is non-functional. Use Custom FPS Limiter in Developer mode instead.",
         .min = 0.f,
         .max = 300.f,
         .format = "%d FPS",
         .on_change_value = [](float previous, float current){ 
-            g_default_fps_limit.store(current);
-            // Apply FPS limit immediately
-            renodx::utils::swapchain::fps_limit = current;
-            std::ostringstream oss;
-            if (current > 0.f) {
-                oss << "FPS limit applied: " << static_cast<int>(current) << " FPS";
-            } else {
-                oss << "FPS limit removed (no limit)";
-            }
-            LogInfo(oss.str().c_str());
+            // DISABLED: No longer functional
+            LogWarn("FPS Limit setting is disabled. Use Custom FPS Limiter instead.");
         },
         .on_draw = []() -> bool {
-            // Sync with current atomic value
-            s_fps_limit = g_default_fps_limit.load();
+            // DISABLED: No longer functional
             return false;
         },
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
+        .is_enabled = []() { return false; }, // DISABLED
     });
 
     // Custom FPS Limiter Enable/Disable (Developer mode only)
@@ -167,32 +159,24 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         },
     });
 
-    // Background FPS Limit
+    // Background FPS Limit (NON-FUNCTIONAL - Replaced by Custom FPS Limiter)
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "FPSLimitBackground",
         .binding = &s_fps_limit_background,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 30.f,
-        .label = "Background FPS Limit",
+        .label = "Background FPS Limit (Disabled)",
         .section = "Performance",
-        .tooltip = "FPS cap when the game window is not in the foreground.",
+        .tooltip = "DEPRECATED: This setting is non-functional. Use Custom FPS Limiter in Developer mode instead.",
         .min = 0.f,
         .max = 240.f,
         .format = "%d FPS",
         .on_change_value = [](float previous, float current){
-            // Apply background FPS limit immediately if currently in background
-            HWND hwnd = g_last_swapchain_hwnd.load();
-            if (hwnd == nullptr) hwnd = GetForegroundWindow();
-            const bool is_background = (hwnd != nullptr && GetForegroundWindow() != hwnd);
-            
-            if (is_background && current >= 0.f) {
-                renodx::utils::swapchain::fps_limit = current;
-                std::ostringstream oss;
-                oss << "Background FPS limit applied immediately: " << static_cast<int>(current) << " FPS";
-                LogInfo(oss.str().c_str());
-            }
+            // DISABLED: No longer functional
+            LogWarn("Background FPS Limit setting is disabled. Use Custom FPS Limiter instead.");
         },
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
+        .is_enabled = []() { return false; }, // DISABLED
     });
 
     // Target Monitor
