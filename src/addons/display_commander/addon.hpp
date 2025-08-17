@@ -231,6 +231,13 @@ extern float s_prevent_always_on_top;
 // Enforce desired window settings
 extern float s_enforce_desired_window;
 
+// Desktop Resolution Override
+extern float s_override_desktop_resolution;
+extern float s_selected_monitor_index;
+extern float s_desktop_width;
+extern float s_desktop_height;
+extern float s_desktop_refresh_rate;
+
 // Global Reflex manager instance
 extern std::unique_ptr<ReflexManager> g_reflexManager;
 // Global flag for Reflex settings changes

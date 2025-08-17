@@ -79,7 +79,12 @@ float s_background_feature_enabled = 0.f; // Disabled by default
 // Enforce desired window settings
 float s_enforce_desired_window = 1.f; // Enable window enforcement
 
-
+// Desktop Resolution Override
+float s_override_desktop_resolution = 0.f; // Disabled by default
+float s_selected_monitor_index = 0.f; // Primary monitor by default
+float s_desktop_width = 1920.f; // Default desktop width
+float s_desktop_height = 1080.f; // Default desktop height
+float s_desktop_refresh_rate = 60.f; // Default refresh rate
 
 // Reflex settings
 float s_reflex_enabled = 1.f; // Enabled by default

@@ -1,6 +1,7 @@
 #include "ui_common.hpp"
 #include "ui_general_settings.hpp"
 #include "ui_display_settings.hpp"
+#include "ui_display_tab.hpp"
 #include "ui_audio_settings.hpp"
 #include "ui_window_controls.hpp"
 #include "ui_developer_settings.hpp"
@@ -39,6 +40,7 @@ void InitializeUISettings() {
     // Add all settings sections
     renodx::ui::AddGeneralSettings(settings);
     renodx::ui::AddDisplaySettings(settings);
+    renodx::ui::AddDisplayTabSettings(settings);
     renodx::ui::AddAudioSettings(settings);
     renodx::ui::AddWindowControls(settings);
     renodx::ui::AddDeveloperSettings(settings);

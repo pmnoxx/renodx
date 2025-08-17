@@ -34,35 +34,6 @@ void AddWindowControls(std::vector<renodx::utils::settings::Setting*>& settings)
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
 
-    // Maximize Window
-    settings.push_back(new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
-        .label = "Maximize Window",
-        .section = "Display",
-        .tooltip = "Maximize the current game window. Useful for testing window management.",
-        .on_click = []() {
-            std::thread([](){
-                HWND hwnd = g_last_swapchain_hwnd.load();
-                if (hwnd == nullptr) hwnd = GetForegroundWindow();
-                if (hwnd == nullptr) {
-                    LogWarn("Maximize Window: no window handle available");
-                    return;
-                }
-                LogDebug("Maximize Window button pressed (bg thread)");
-                if (ShowWindow(hwnd, SW_MAXIMIZE)) {
-                    LogInfo("Window maximized successfully");
-                } else {
-                    DWORD error = GetLastError();
-                    std::ostringstream oss;
-                    oss << "Failed to maximize window. Error: " << error;
-                    LogWarn(oss.str().c_str());
-                }
-            }).detach();
-            return false;
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    });
-
     // Restore Window
     settings.push_back(new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,

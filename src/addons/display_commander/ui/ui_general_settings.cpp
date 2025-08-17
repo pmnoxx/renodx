@@ -21,7 +21,7 @@ extern float s_background_feature_enabled; // Added this line
 namespace renodx::ui {
 
 void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
-    // Basic/Developer/Device Info mode toggle
+    // UI Mode selector
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "UIMode",
         .binding = &s_ui_mode,
@@ -29,8 +29,11 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .default_value = 0.f, // Basic mode by default
         .label = "UI Mode",
         .section = "General",
-        .tooltip = "Choose between Basic (minimal features), Developer (all features), Device Info (DXGI device information), Window Info (window creation details), and DirectInput (input blocking controls) modes.",
-        .labels = {"Basic", "Developer", "Device Info", "Window Info", "DirectInput"},
+        .tooltip = "Choose between Simple (minimal features), Display (desktop resolution override), Developer (all features), Device Info (DXGI device information), Window Info (window creation details), and DirectInput (input blocking controls) modes.",
+        .labels = TAB_LABELS,
+        .min = 0.f,
+        .max = static_cast<float>(TAB_LABELS.size() - 1),
+        .is_visible = []() { return true; }, // Always visible
     });
 
     // Auto-apply toggle and delay (seconds)
