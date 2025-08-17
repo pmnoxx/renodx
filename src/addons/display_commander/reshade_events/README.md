@@ -12,3 +12,4 @@ This folder contains event handlers for various ReShade events that Display Comm
 - Return `true` to suppress the event, `false` to allow it to proceed
 - No external checks or complex logic
 - Direct integration with Display Commander settings
+

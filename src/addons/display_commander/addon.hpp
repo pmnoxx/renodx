@@ -234,9 +234,11 @@ extern float s_enforce_desired_window;
 // Desktop Resolution Override
 extern float s_override_desktop_resolution;
 extern float s_selected_monitor_index;
-extern float s_desktop_width;
-extern float s_desktop_height;
-extern float s_desktop_refresh_rate;
+
+// Display Tab Enhanced Settings
+extern float s_selected_aspect_ratio;
+extern float s_selected_resolution_index;
+extern float s_selected_refresh_rate_index;
 
 // Global Reflex manager instance
 extern std::unique_ptr<ReflexManager> g_reflexManager;

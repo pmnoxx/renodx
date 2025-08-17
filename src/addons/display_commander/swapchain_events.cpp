@@ -2,6 +2,7 @@
 #include "reflex/reflex_management.hpp"
 #include "dxgi/dxgi_device_info.hpp"
 #include "dxgi/custom_fps_limiter_manager.hpp"
+#include "resolution_helpers.hpp"
 #include <dxgi1_4.h>
 #include "../../utils/swapchain.hpp"
 #include "utils.hpp"
@@ -80,7 +81,19 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
           dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
           dm.dmPelsWidth = static_cast<DWORD>(desc.texture.width);
           dm.dmPelsHeight = static_cast<DWORD>(desc.texture.height);
-          dm.dmDisplayFrequency = static_cast<DWORD>(s_desktop_refresh_rate);
+          
+          // Use the new dynamic refresh rate system
+          float refresh_rate = 60.0f; // Default fallback
+          if (renodx::resolution::GetSelectedRefreshRate(static_cast<int>(s_selected_monitor_index), 
+                                   static_cast<int>(desc.texture.width), 
+                                   static_cast<int>(desc.texture.height),
+                                   static_cast<int>(s_selected_refresh_rate_index), 
+                                   refresh_rate)) {
+            dm.dmDisplayFrequency = static_cast<DWORD>(refresh_rate);
+          } else {
+            // Fallback to default refresh rate if new system fails
+            dm.dmDisplayFrequency = 60; // Default to 60Hz
+          }
           
           // Apply the changes for the game
           LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
@@ -88,7 +101,7 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
           if (result == DISP_CHANGE_SUCCESSFUL) {
             std::ostringstream oss2;
             oss2 << "OnInitSwapchain: Auto-applied desktop resolution override for game: " 
-                 << desc.texture.width << "x" << desc.texture.height << " @ " << s_desktop_refresh_rate << "Hz on monitor " << s_selected_monitor_index;
+                 << desc.texture.width << "x" << desc.texture.height << " @ " << refresh_rate << "Hz on monitor " << s_selected_monitor_index;
             LogInfo(oss2.str().c_str());
           } else {
             std::ostringstream oss2;

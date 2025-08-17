@@ -58,5 +58,7 @@ AspectRatio GetAspectByIndex(int index);
 // Monitor enumeration callback
 BOOL CALLBACK MonitorEnumProc(HMONITOR hmon, HDC hdc, LPRECT rect, LPARAM lparam);
 
+
+
 // External declarations needed by utility functions
 extern std::vector<MonitorInfo> g_monitors;

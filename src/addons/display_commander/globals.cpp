@@ -82,9 +82,11 @@ float s_enforce_desired_window = 1.f; // Enable window enforcement
 // Desktop Resolution Override
 float s_override_desktop_resolution = 0.f; // Disabled by default
 float s_selected_monitor_index = 0.f; // Primary monitor by default
-float s_desktop_width = 1920.f; // Default desktop width
-float s_desktop_height = 1080.f; // Default desktop height
-float s_desktop_refresh_rate = 60.f; // Default refresh rate
+
+// Display Tab Enhanced Settings
+float s_selected_aspect_ratio = 1.f; // Default to 16:9
+float s_selected_resolution_index = 0.f; // Default to first available resolution
+float s_selected_refresh_rate_index = 0.f; // Default to first available refresh rate
 
 // Reflex settings
 float s_reflex_enabled = 1.f; // Enabled by default

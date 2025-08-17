@@ -2,12 +2,17 @@
 #include "ui_common.hpp"
 #include "../../../utils/settings.hpp"
 #include "../addon.hpp"
+#include "../resolution_helpers.hpp"
 #include <windows.h>
 #include <vector>
 #include <sstream>
 #include <algorithm>
+#include <map> // Added for resolution_map
+#include <iomanip> // Added for std::fixed and std::setprecision
 
 namespace renodx::ui {
+
+
 
 // Helper function to get monitor information
 std::vector<std::string> GetMonitorLabels() {
@@ -43,109 +48,9 @@ std::vector<std::string> GetMonitorLabels() {
     return labels;
 }
 
-// Helper function to get available resolutions for a monitor
-std::vector<std::string> GetResolutionLabels(int monitor_index) {
-    std::vector<std::string> labels;
-    
-    // Get monitor handle
-    std::vector<HMONITOR> monitors;
-    EnumDisplayMonitors(nullptr, nullptr, 
-        [](HMONITOR hmon, HDC, LPRECT, LPARAM lparam) -> BOOL {
-            auto* monitors_ptr = reinterpret_cast<std::vector<HMONITOR>*>(lparam);
-            monitors_ptr->push_back(hmon);
-            return TRUE;
-        }, 
-        reinterpret_cast<LPARAM>(&monitors));
-    
-    if (monitor_index >= 0 && monitor_index < static_cast<int>(monitors.size())) {
-        HMONITOR hmon = monitors[monitor_index];
-        
-        MONITORINFOEXW mi;
-        mi.cbSize = sizeof(mi);
-        if (GetMonitorInfoW(hmon, &mi)) {
-            std::wstring device_name = mi.szDevice;
-            
-            // Enumerate all display modes
-            DEVMODEW dm;
-            dm.dmSize = sizeof(dm);
-            
-            for (int i = 0; EnumDisplaySettingsW(device_name.c_str(), i, &dm); i++) {
-                // Only add unique resolutions
-                std::ostringstream oss;
-                oss << dm.dmPelsWidth << " x " << dm.dmPelsHeight;
-                std::string resolution = oss.str();
-                
-                // Check if this resolution is already in the list
-                bool found = false;
-                for (const auto& existing : labels) {
-                    if (existing == resolution) {
-                        found = true;
-                        break;
-                    }
-                }
-                
-                if (!found) {
-                    labels.push_back(resolution);
-                }
-            }
-        }
-    }
-    
-    return labels;
-}
 
-// Helper function to get available refresh rates for a monitor and resolution
-std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int height) {
-    std::vector<std::string> labels;
-    
-    // Get monitor handle
-    std::vector<HMONITOR> monitors;
-    EnumDisplayMonitors(nullptr, nullptr, 
-        [](HMONITOR hmon, HDC, LPRECT, LPARAM lparam) -> BOOL {
-            auto* monitors_ptr = reinterpret_cast<std::vector<HMONITOR>*>(lparam);
-            monitors_ptr->push_back(hmon);
-            return TRUE;
-        }, 
-        reinterpret_cast<LPARAM>(&monitors));
-    
-    if (monitor_index >= 0 && monitor_index < static_cast<int>(monitors.size())) {
-        HMONITOR hmon = monitors[monitor_index];
-        
-        MONITORINFOEXW mi;
-        mi.cbSize = sizeof(mi);
-        if (GetMonitorInfoW(hmon, &mi)) {
-            std::wstring device_name = mi.szDevice;
-            
-            // Enumerate all display modes
-            DEVMODEW dm;
-            dm.dmSize = sizeof(dm);
-            
-            for (int i = 0; EnumDisplaySettingsW(device_name.c_str(), i, &dm); i++) {
-                // Only add refresh rates for the selected resolution
-                if (dm.dmPelsWidth == width && dm.dmPelsHeight == height) {
-                    std::ostringstream oss;
-                    oss << dm.dmDisplayFrequency << " Hz";
-                    std::string refresh_rate = oss.str();
-                    
-                    // Check if this refresh rate is already in the list
-                    bool found = false;
-                    for (const auto& existing : labels) {
-                        if (existing == refresh_rate) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!found) {
-                        labels.push_back(refresh_rate);
-                    }
-                }
-            }
-        }
-    }
-    
-    return labels;
-}
+
+
 
 // Helper function to get max monitor index
 float GetMaxMonitorIndex() {
@@ -169,7 +74,7 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .default_value = 0.f, // Disabled by default
         .label = "Override Desktop Resolution",
         .section = "Display Tab",
-        .tooltip = "Enable to override the desktop resolution and refresh rate. This affects the entire desktop, not just games.",
+        .tooltip = "Enable to apply the selected resolution and refresh rate to the desktop. When disabled, you can still browse available options.",
         .is_visible = []() { return is_display_tab(s_ui_mode); } // Show in Display tab mode
     });
 
@@ -181,105 +86,135 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .default_value = 0.f, // Primary monitor by default
         .label = "Monitor",
         .section = "Display Tab",
-        .tooltip = "Select which monitor to override. Only available when Desktop Resolution Override is enabled.",
+        .tooltip = "Select which monitor to view and configure. Available options are always shown regardless of override setting.",
         .labels = GetMonitorLabels(),
         .min = 0.f,
         .max = GetMaxMonitorIndex(),
-        .is_enabled = []() { return s_override_desktop_resolution >= 0.5f; },
+        .is_enabled = []() { return true; }, // Always enabled for selection
         .is_visible = []() { return is_display_tab(s_ui_mode); } // Show in Display tab mode
     });
 
-    // Display Resolution Width
+    // Resolution Selection (dynamically populated based on selected monitor)
     settings.push_back(new renodx::utils::settings::Setting{
-        .key = "DesktopWidth",
-        .binding = &s_desktop_width,
+        .key = "SelectedResolution",
+        .binding = &s_selected_resolution_index,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1920.f,
-        .label = "Desktop Width",
+        .default_value = 0.f, // Default to first available resolution
+        .label = "Resolution",
         .section = "Display Tab",
-        .tooltip = "Set the desktop width in pixels. Only available when Desktop Resolution Override is enabled.",
-        .min = 800.f,
-        .max = 7680.f, // Support up to 8K
-        .is_enabled = []() { return s_override_desktop_resolution >= 0.5f; },
+        .tooltip = "Select resolution from the list of supported resolutions for the selected monitor. Available options are always shown regardless of override setting.",
+        .labels = renodx::resolution::GetResolutionLabels(static_cast<int>(s_selected_monitor_index)),
+        .min = 0.f,
+        .max = []() { 
+            auto labels = renodx::resolution::GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+            return static_cast<float>((std::max)(0, static_cast<int>(labels.size()) - 1));
+        }(),
+        .is_enabled = []() { return true; }, // Always enabled for selection
         .is_visible = []() { return is_display_tab(s_ui_mode); } // Show in Display tab mode
     });
 
-    // Display Resolution Height
+    // Refresh Rate Selection (dynamically populated based on selected monitor and resolution)
     settings.push_back(new renodx::utils::settings::Setting{
-        .key = "DesktopHeight",
-        .binding = &s_desktop_height,
+        .key = "SelectedRefreshRate",
+        .binding = &s_selected_refresh_rate_index,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1080.f,
-        .label = "Desktop Height",
-        .section = "Display Tab",
-        .tooltip = "Set the desktop height in pixels. Only available when Desktop Resolution Override is enabled.",
-        .min = 600.f,
-        .max = 4320.f, // Support up to 8K
-        .is_enabled = []() { return s_override_desktop_resolution >= 0.5f; },
-        .is_visible = []() { return is_display_tab(s_ui_mode); } // Show in Display tab mode
-    });
-
-    // Refresh Rate
-    settings.push_back(new renodx::utils::settings::Setting{
-        .key = "DesktopRefreshRate",
-        .binding = &s_desktop_refresh_rate,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 60.f,
+        .default_value = 0.f, // Default to first available refresh rate
         .label = "Refresh Rate",
         .section = "Display Tab",
-        .tooltip = "Set the desktop refresh rate in Hz. Only available when Desktop Resolution Override is enabled.",
-        .min = 30.f,
-        .max = 360.f, // Support up to 360Hz
-        .format = "%d Hz",
-        .is_enabled = []() { return s_override_desktop_resolution >= 0.5f; },
+        .tooltip = "Select refresh rate from the list of supported refresh rates for the selected resolution. Available options are always shown regardless of override setting.",
+        .labels = []() {
+            // Get the selected resolution to find refresh rates
+            auto resolution_labels = renodx::resolution::GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+            if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+                std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+                int width, height;
+                sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
+                return renodx::resolution::GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), width, height);
+            }
+            return std::vector<std::string>(); // Return empty if no resolution selected
+        }(),
+        .min = 0.f,
+        .max = []() { 
+            auto resolution_labels = renodx::resolution::GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+            if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+                std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+                int width, height;
+                sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
+                auto refresh_labels = renodx::resolution::GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), width, height);
+                return static_cast<float>((std::max)(0, static_cast<int>(refresh_labels.size()) - 1));
+            }
+            return 0.f;
+        }(),
+        .is_enabled = []() { return true; }, // Always enabled for selection
         .is_visible = []() { return is_display_tab(s_ui_mode); } // Show in Display tab mode
     });
+
+
 
     // Apply Changes Button
     settings.push_back(new renodx::utils::settings::Setting{
         .value_type = renodx::utils::settings::SettingValueType::BUTTON,
         .label = "Apply Desktop Changes",
         .section = "Display Tab",
-        .tooltip = "Apply the desktop resolution and refresh rate changes. This will affect the entire desktop.",
+        .tooltip = "Apply the selected resolution and refresh rate to the desktop. This button is only available when Desktop Resolution Override is enabled.",
         .is_enabled = []() { return s_override_desktop_resolution >= 0.5f; },
         .on_click = []() {
             if (s_override_desktop_resolution >= 0.5f) {
                 std::thread([](){
-                    // Get monitor handle
-                    std::vector<HMONITOR> monitors;
-                    EnumDisplayMonitors(nullptr, nullptr, 
-                        [](HMONITOR hmon, HDC, LPRECT, LPARAM lparam) -> BOOL {
-                            auto* monitors_ptr = reinterpret_cast<std::vector<HMONITOR>*>(lparam);
-                            monitors_ptr->push_back(hmon);
-                            return TRUE;
-                        }, 
-                        reinterpret_cast<LPARAM>(&monitors));
+                                    // Get the selected resolution from the dynamic list
+                auto resolution_labels = renodx::resolution::GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+                if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+                    std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+                    int width, height;
+                    sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
                     
-                    if (s_selected_monitor_index >= 0 && s_selected_monitor_index < static_cast<int>(monitors.size())) {
-                        HMONITOR hmon = monitors[static_cast<int>(s_selected_monitor_index)];
-                        
-                        MONITORINFOEXW mi;
-                        mi.cbSize = sizeof(mi);
-                        if (GetMonitorInfoW(hmon, &mi)) {
-                            std::wstring device_name = mi.szDevice;
+                    // Get the selected refresh rate from the dynamic list
+                    auto refresh_rate_labels = renodx::resolution::GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), width, height);
+                        if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                            std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
+                            float refresh_rate;
+                            sscanf(selected_refresh_rate.c_str(), "%f Hz", &refresh_rate);
                             
-                            // Create DEVMODE structure
-                            DEVMODEW dm;
-                            dm.dmSize = sizeof(dm);
-                            dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-                            dm.dmPelsWidth = static_cast<DWORD>(s_desktop_width);
-                            dm.dmPelsHeight = static_cast<DWORD>(s_desktop_height);
-                            dm.dmDisplayFrequency = static_cast<DWORD>(s_desktop_refresh_rate);
+                            // Get monitor handle
+                            std::vector<HMONITOR> monitors;
+                            EnumDisplayMonitors(nullptr, nullptr, 
+                                [](HMONITOR hmon, HDC, LPRECT, LPARAM lparam) -> BOOL {
+                                    auto* monitors_ptr = reinterpret_cast<std::vector<HMONITOR>*>(lparam);
+                                    monitors_ptr->push_back(hmon);
+                                    return TRUE;
+                                }, 
+                                reinterpret_cast<LPARAM>(&monitors));
                             
-                            // Apply the changes
-                            LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
-                            
-                            if (result == DISP_CHANGE_SUCCESSFUL) {
-                                LogInfo("Desktop resolution changed successfully");
-                            } else {
-                                std::ostringstream oss;
-                                oss << "Failed to change desktop resolution. Error code: " << result;
-                                LogWarn(oss.str().c_str());
+                            if (s_selected_monitor_index >= 0 && s_selected_monitor_index < static_cast<int>(monitors.size())) {
+                                HMONITOR hmon = monitors[static_cast<int>(s_selected_monitor_index)];
+                                
+                                MONITORINFOEXW mi;
+                                mi.cbSize = sizeof(mi);
+                                if (GetMonitorInfoW(hmon, &mi)) {
+                                    std::wstring device_name = mi.szDevice;
+                                    
+                                    // Create DEVMODE structure with selected resolution and refresh rate
+                                    DEVMODEW dm;
+                                    dm.dmSize = sizeof(dm);
+                                    dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+                                    dm.dmPelsWidth = width;
+                                    dm.dmPelsHeight = height;
+                                    dm.dmDisplayFrequency = static_cast<DWORD>(refresh_rate);
+                                    
+                                    // Apply the changes
+                                    LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+                                    
+                                    if (result == DISP_CHANGE_SUCCESSFUL) {
+                                        std::ostringstream oss;
+                                        oss << "Display changes applied successfully: " << width << "x" << height 
+                                            << " @ " << std::fixed << std::setprecision(2) << refresh_rate << "Hz";
+                                        LogInfo(oss.str().c_str());
+                                    } else {
+                                        std::ostringstream oss;
+                                        oss << "Failed to apply display changes. Error code: " << result;
+                                        LogWarn(oss.str().c_str());
+                                    }
+                                }
                             }
                         }
                     }
