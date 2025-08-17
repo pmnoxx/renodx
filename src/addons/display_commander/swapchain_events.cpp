@@ -141,7 +141,6 @@ static void OnPresentUpdate(
     // Check window focus and apply appropriate FPS limit
     extern std::atomic<HWND> g_last_swapchain_hwnd;
     extern float s_fps_limit_background;
-    extern std::atomic<float> g_default_fps_limit;
     
     HWND hwnd = g_last_swapchain_hwnd.load();
     if (hwnd == nullptr) hwnd = GetForegroundWindow();
@@ -153,7 +152,8 @@ static void OnPresentUpdate(
     if (is_background) {
       target_fps = s_fps_limit_background;  // Use background FPS limit
     } else {
-      target_fps = g_default_fps_limit.load();  // Use foreground FPS limit
+      extern float s_fps_limit;  // Use foreground FPS limit from UI settings
+      target_fps = s_fps_limit;
     }
     
     // Apply the FPS limit to the Custom FPS Limiter
