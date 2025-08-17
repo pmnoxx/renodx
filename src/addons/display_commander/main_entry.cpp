@@ -22,6 +22,10 @@ void StopContinuousRendering();
 void OnInitEffectRuntime(reshade::api::effect_runtime* runtime);
 bool OnReShadeOverlayOpen(reshade::api::effect_runtime* runtime, bool open, reshade::api::input_source source);
 
+// Forward declarations for frame lifecycle hooks
+void OnBeginRenderPass(reshade::api::command_list* cmd_list);
+void OnEndRenderPass(reshade::api::command_list* cmd_list);
+
 // External declarations for settings
 extern float s_remove_top_bar;
 
@@ -77,6 +81,10 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       // Seed default fps limit snapshot
       g_default_fps_limit.store(renodx::proxy::GetFpsLimit());
       reshade::register_event<reshade::addon_event::present>(OnPresentUpdate);
+      
+      // Register frame lifecycle hooks for custom FPS limiter
+      reshade::register_event<reshade::addon_event::begin_render_pass>(OnBeginRenderPass);
+      reshade::register_event<reshade::addon_event::end_render_pass>(OnEndRenderPass);
       break;
     case DLL_PROCESS_DETACH:
       // Clean up the failure tracking structure
@@ -103,6 +111,11 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       g_dxgiDeviceInfoManager.reset();
       
       reshade::unregister_event<reshade::addon_event::present>(OnPresentUpdate);
+      
+      // Unregister frame lifecycle hooks for custom FPS limiter
+      reshade::unregister_event<reshade::addon_event::begin_render_pass>(OnBeginRenderPass);
+      reshade::unregister_event<reshade::addon_event::end_render_pass>(OnEndRenderPass);
+      
       reshade::unregister_event<reshade::addon_event::set_fullscreen_state>(
           renodx::display_commander::events::OnSetFullscreenState);
       reshade::unregister_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);

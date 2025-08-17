@@ -45,7 +45,7 @@ void RunFpsLimiterTask() {
   
     } else {
         // Foreground: apply foreground FPS limit
-        const float desired_limit = s_fps_limit;
+        const float desired_limit = g_default_fps_limit.load();
         if (renodx::utils::swapchain::fps_limit != desired_limit) {
             const float old_limit = renodx::utils::swapchain::fps_limit;
             renodx::utils::swapchain::fps_limit = desired_limit;

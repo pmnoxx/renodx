@@ -101,7 +101,8 @@ void SetFpsLimit(float limit) {
 }
 
 void InitializeSwapchain(DWORD fdw_reason) {
-    renodx::utils::swapchain::Use(fdw_reason);
+    // DISABLED FOR NOW, due to potencia lcrashes
+    // renodx::utils::swapchain::Use(fdw_reason);
 }
 
 void ResizeSwapchainBuffers(void* swapchain, int target_format, int target_color_space) {

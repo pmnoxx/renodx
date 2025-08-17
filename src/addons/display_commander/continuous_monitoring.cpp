@@ -187,7 +187,8 @@ void ContinuousMonitoringThread() {
             if (foreground_window != hwnd && g_backgroundWindowManager.HasBackgroundWindow()) {
                 // Main window lost focus, close background window
                 LogInfo("Continuous monitoring: Main window lost focus - closing background window");
-                g_backgroundWindowManager.DestroyBackgroundWindow();
+         
+         //       g_backgroundWindowManager.DestroyBackgroundWindow();
             }
             
             if (s_background_feature_enabled >= 0.5f) {

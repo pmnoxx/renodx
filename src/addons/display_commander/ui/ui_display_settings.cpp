@@ -3,7 +3,11 @@
 #include "../../../utils/settings.hpp"
 #include "../addon.hpp"
 #include "../../../utils/swapchain.hpp"
+#include "../dxgi/custom_fps_limiter.hpp"
+#include "../dxgi/custom_fps_limiter_manager.hpp"
 #include <sstream>
+
+
 
 namespace renodx::ui {
 
@@ -105,6 +109,62 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
             return false;
         },
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
+    });
+
+    // Custom FPS Limiter Enable/Disable (Developer mode only)
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "CustomFpsLimiterEnabled",
+        .binding = &s_custom_fps_limiter_enabled,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 0.f,
+        .label = "Custom FPS Limiter",
+        .section = "Performance",
+        .tooltip = "Enable custom FPS limiting system (separate from the built-in limiter).",
+        .labels = {"Disabled", "Enabled"},
+        .min = 0.f,
+        .max = 1.f,
+        .is_visible = []() { return !is_basic_tab(s_ui_mode); }, // Show in Developer mode
+        .on_change_value = [](float previous, float current) {
+            if (current > 0.5f) {
+                // Initialize the custom FPS limiter system
+                if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager.InitializeCustomFpsLimiterSystem()) {
+                    // Enable the FPS limiter
+                    auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
+                    limiter.SetEnabled(true);
+                    LogWarn("Custom FPS Limiter system enabled");
+                } else {
+                    LogWarn("Failed to initialize Custom FPS Limiter system");
+                }
+            } else {
+                // Disable and shutdown
+                auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
+                limiter.SetEnabled(false);
+                renodx::dxgi::fps_limiter::g_customFpsLimiterManager.ShutdownCustomFpsLimiterSystem();
+                LogWarn("Custom FPS Limiter system disabled");
+            }
+        },
+    });
+
+    // Custom FPS Limit Slider
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "CustomFpsLimit",
+        .binding = &s_custom_fps_limit,
+        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .default_value = 60.f,
+        .label = "Custom FPS Limit",
+        .section = "Performance",
+        .tooltip = "Set custom FPS limit for the custom limiter system (0 = no limit).",
+        .min = 0.f,
+        .max = 300.f,
+        .format = "%d FPS",
+        .is_visible = []() { return !is_basic_tab(s_ui_mode) && s_custom_fps_limiter_enabled > 0.5f; }, // Show only when enabled
+        .on_change_value = [](float previous, float current) {
+            if (s_custom_fps_limiter_enabled > 0.5f) {
+                auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
+                limiter.SetTargetFps(current);
+                limiter.SetEnabled(current > 0.0f);
+            }
+        },
     });
 
     // Background FPS Limit

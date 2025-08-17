@@ -56,8 +56,6 @@ enum class WindowStyleMode : std::uint8_t { KEEP, BORDERLESS, OVERLAPPED_WINDOW 
 // Forward declarations that depend on enums
 DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain);
 
-// Forward declaration for background window manager
-class BackgroundWindowManager;
 
 
 // Additional Alt suppression methods
@@ -76,6 +74,10 @@ bool InstallReflexHooks();
 void UninstallReflexHooks();
 void SetReflexLatencyMarkers(reshade::api::swapchain* swapchain);
 void SetReflexSleepMode(reshade::api::swapchain* swapchain);
+
+// Frame lifecycle hooks for custom FPS limiter
+void OnBeginRenderPass(reshade::api::command_list* cmd_list, uint32_t count, const reshade::api::render_pass_render_target_desc* rts, const reshade::api::render_pass_depth_stencil_desc* ds);
+void OnEndRenderPass(reshade::api::command_list* cmd_list);
 
 // Global flags for Reflex management
 extern std::atomic<bool> g_reflex_settings_changed;
@@ -194,6 +196,8 @@ extern float s_audio_volume_percent;
 extern float s_audio_mute;
 extern float s_fps_limit_background;
 extern float s_fps_limit;
+extern float s_custom_fps_limit;
+extern float s_custom_fps_limiter_enabled;
 extern float s_target_monitor_index;
 extern float s_dxgi_composition_state;
 
@@ -205,7 +209,9 @@ extern std::atomic<int> g_comp_last_logged;
 extern std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr;
 extern std::atomic<IndependentFlipFailures*> g_if_failures;
 extern std::atomic<uint64_t> g_init_apply_generation;
+extern std::atomic<reshade::api::effect_runtime*> g_reshade_runtime;
 extern std::chrono::steady_clock::time_point g_attach_time;
+extern void (*g_custom_fps_limiter_callback)();
 extern std::atomic<HWND> g_last_swapchain_hwnd;
 extern std::atomic<bool> g_shutdown;
 extern std::atomic<bool> g_muted_applied;
@@ -216,20 +222,11 @@ extern std::vector<MonitorInfo> g_monitors;
 // Fix HDR10 color space when backbuffer is RGB10A2
 extern float s_fix_hdr10_colorspace;
 
-// ReShade runtime for input blocking
-extern std::atomic<reshade::api::effect_runtime*> g_reshade_runtime;
-
 // Window minimize prevention
 extern float s_prevent_windows_minimize;
 
 // Prevent always on top behavior
 extern float s_prevent_always_on_top;
-
-// Block input when in background
-extern float s_block_input_in_background;
-
-// Background feature - show black window behind game when not fullscreen
-extern float s_background_feature_enabled;
 
 // Enforce desired window settings
 extern float s_enforce_desired_window;
@@ -241,12 +238,6 @@ extern std::atomic<bool> g_reflex_settings_changed;
 
 // Global window state instance
 extern GlobalWindowState g_window_state;
-
-// Global background window manager instance
-extern BackgroundWindowManager g_backgroundWindowManager;
-
-// Global DXGI Device Info Manager instance
-extern std::unique_ptr<DXGIDeviceInfoManager> g_dxgiDeviceInfoManager;
 
 // Direct atomic variables for latency tracking (UI access)
 extern std::atomic<float> g_current_latency_ms;

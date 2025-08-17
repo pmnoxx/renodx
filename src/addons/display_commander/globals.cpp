@@ -47,6 +47,10 @@ float s_fps_limit_background = 30.f;
 // FPS limit for foreground
 float s_fps_limit = 0.f;
 
+// Custom FPS Limiter settings
+float s_custom_fps_limit = 0.f;
+float s_custom_fps_limiter_enabled = 0.f; // 0=disabled, 1=enabled
+
 // Monitor and display settings
 float s_target_monitor_index = 0.f;
 float s_dxgi_composition_state = 0.f;
