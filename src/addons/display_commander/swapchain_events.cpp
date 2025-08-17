@@ -12,7 +12,7 @@
 // Frame lifecycle hooks for custom FPS limiter
 void OnBeginRenderPass(reshade::api::command_list* cmd_list, uint32_t count, const reshade::api::render_pass_render_target_desc* rts, const reshade::api::render_pass_depth_stencil_desc* ds) {
     // Call custom FPS limiter frame begin if enabled
-    extern float s_custom_fps_limiter_enabled;
+    extern const float s_custom_fps_limiter_enabled;
     if (s_custom_fps_limiter_enabled > 0.5f) {
         extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
         if (g_customFpsLimiterManager) {
@@ -26,7 +26,7 @@ void OnBeginRenderPass(reshade::api::command_list* cmd_list, uint32_t count, con
 
 void OnEndRenderPass(reshade::api::command_list* cmd_list) {
     // Call custom FPS limiter frame end if enabled
-    extern float s_custom_fps_limiter_enabled;
+    extern const float s_custom_fps_limiter_enabled;
     if (s_custom_fps_limiter_enabled > 0.5f) {
         extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
         if (g_customFpsLimiterManager) {
@@ -136,7 +136,7 @@ static void OnPresentUpdate(
   }
 
   // Call Custom FPS Limiter on EVERY frame (not throttled)
-  extern float s_custom_fps_limiter_enabled;
+  extern const float s_custom_fps_limiter_enabled;
   if (s_custom_fps_limiter_enabled > 0.5f) {
     // Check window focus and apply appropriate FPS limit
     extern std::atomic<HWND> g_last_swapchain_hwnd;

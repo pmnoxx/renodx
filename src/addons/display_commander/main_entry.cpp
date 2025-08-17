@@ -176,11 +176,10 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
     extern float s_fps_limit;
     extern float s_fps_limit_background;
     if (s_fps_limit > 0.0f || s_fps_limit_background > 0.0f) {
-      extern float s_custom_fps_limiter_enabled;
+      extern const float s_custom_fps_limiter_enabled;
       extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
       
       if (g_customFpsLimiterManager && g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
-        s_custom_fps_limiter_enabled = 1.0f; // Mark as enabled
         LogInfo("Custom FPS Limiter system auto-initialized at startup (FPS limits detected)");
       } else {
         LogWarn("Failed to initialize Custom FPS Limiter system at startup");

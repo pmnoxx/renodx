@@ -197,7 +197,7 @@ extern float s_audio_mute;
 extern float s_fps_limit_background;
 extern float s_fps_limit;
 extern float s_custom_fps_limit;
-extern float s_custom_fps_limiter_enabled;
+extern const float s_custom_fps_limiter_enabled;
 extern float s_target_monitor_index;
 extern float s_dxgi_composition_state;
 

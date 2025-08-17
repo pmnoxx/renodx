@@ -11,7 +11,7 @@
 
 // Global variable declarations (outside namespace)
 extern float s_fps_limit;
-extern float s_custom_fps_limiter_enabled;
+extern const float s_custom_fps_limiter_enabled;
 
 namespace renodx::proxy {
 

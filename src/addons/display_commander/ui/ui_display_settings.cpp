@@ -94,15 +94,12 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .format = "%d FPS",
         .on_change_value = [](float previous, float current){ 
             if (current > 0.0f) {
-                // Auto-initialize the custom FPS limiter system if needed
-                if (s_custom_fps_limiter_enabled <= 0.5f) {
-                    if (g_customFpsLimiterManager && g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
-                        s_custom_fps_limiter_enabled = 1.0f; // Mark as enabled
-                        LogWarn("Custom FPS Limiter system auto-initialized");
-                    } else {
-                        LogWarn("Failed to initialize Custom FPS Limiter system");
-                        return;
-                    }
+                // Custom FPS Limiter is always enabled, just initialize if needed
+                if (g_customFpsLimiterManager && g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
+                    LogWarn("Custom FPS Limiter system auto-initialized");
+                } else {
+                    LogWarn("Failed to initialize Custom FPS Limiter system");
+                    return;
                 }
                 
                 // Update the custom FPS limiter
@@ -117,12 +114,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
                 }
             } else {
                 // FPS limit set to 0, disable the limiter
-                if (s_custom_fps_limiter_enabled > 0.5f) {
-                    if (g_customFpsLimiterManager) {
-                        auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
-                        limiter.SetEnabled(false);
-                        LogInfo("FPS limit removed (no limit)");
-                    }
+                if (g_customFpsLimiterManager) {
+                    auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+                    limiter.SetEnabled(false);
+                    LogInfo("FPS limit removed (no limit)");
                 }
             }
         },
@@ -153,15 +148,12 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .format = "%d FPS",
         .on_change_value = [](float previous, float current){
             if (current > 0.0f) {
-                // Auto-initialize the custom FPS limiter system if needed
-                if (s_custom_fps_limiter_enabled <= 0.5f) {
-                    if (g_customFpsLimiterManager && g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
-                        s_custom_fps_limiter_enabled = 1.0f; // Mark as enabled
-                        LogWarn("Custom FPS Limiter system auto-initialized");
-                    } else {
-                        LogWarn("Failed to initialize Custom FPS Limiter system");
-                        return;
-                    }
+                // Custom FPS Limiter is always enabled, just initialize if needed
+                if (g_customFpsLimiterManager && g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
+                    LogWarn("Custom FPS Limiter system auto-initialized");
+                } else {
+                    LogWarn("Failed to initialize Custom FPS Limiter system");
+                    return;
                 }
                 
                 // Apply background FPS limit immediately if currently in background
@@ -182,12 +174,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
                 }
             } else {
                 // Background FPS limit set to 0, disable the limiter
-                if (s_custom_fps_limiter_enabled > 0.5f) {
-                    if (g_customFpsLimiterManager) {
-                        auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
-                        limiter.SetEnabled(false);
-                        LogInfo("Background FPS limit removed (no limit)");
-                    }
+                if (g_customFpsLimiterManager) {
+                    auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+                    limiter.SetEnabled(false);
+                    LogInfo("Background FPS limit removed (no limit)");
                 }
             }
         },
