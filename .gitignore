@@ -45,6 +45,9 @@ bin/**
 # Temporary files and directories
 /tmp
 
+# Private documentation repository
+private_docs/
+
 # Build directories
 build_ninja/
 build_ninja/**
