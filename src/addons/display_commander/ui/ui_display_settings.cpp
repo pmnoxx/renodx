@@ -103,19 +103,19 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .is_enabled = []() { return false; }, // DISABLED
     });
 
-    // Custom FPS Limiter Enable/Disable (Developer mode only)
+    // Custom FPS Limiter Enable/Disable (WIP - moved to front page)
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "CustomFpsLimiterEnabled",
         .binding = &s_custom_fps_limiter_enabled,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 0.f,
-        .label = "Custom FPS Limiter",
+        .label = "Custom FPS Limiter (WIP)",
         .section = "Performance",
-        .tooltip = "Enable custom FPS limiting system (separate from the built-in limiter).",
+        .tooltip = "Enable custom FPS limiting system (separate from the built-in limiter). WIP - Work in Progress.",
         .labels = {"Disabled", "Enabled"},
         .min = 0.f,
         .max = 1.f,
-        .is_visible = []() { return !is_basic_tab(s_ui_mode); }, // Show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode (front page)
         .on_change_value = [](float previous, float current) {
             if (current > 0.5f) {
                 // Initialize the custom FPS limiter system
@@ -137,19 +137,19 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         },
     });
 
-    // Custom FPS Limit Slider
+    // Custom FPS Limit Slider (WIP - moved to front page)
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "CustomFpsLimit",
         .binding = &s_custom_fps_limit,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 60.f,
-        .label = "Custom FPS Limit",
+        .label = "Custom FPS Limit (WIP)",
         .section = "Performance",
-        .tooltip = "Set custom FPS limit for the custom limiter system (0 = no limit).",
+        .tooltip = "Set custom FPS limit for the custom limiter system (0 = no limit). WIP - Work in Progress.",
         .min = 0.f,
         .max = 300.f,
         .format = "%d FPS",
-        .is_visible = []() { return !is_basic_tab(s_ui_mode) && s_custom_fps_limiter_enabled > 0.5f; }, // Show only when enabled
+        .is_visible = []() { return is_basic_tab(s_ui_mode) && s_custom_fps_limiter_enabled > 0.5f; }, // Show in Basic mode when enabled
         .on_change_value = [](float previous, float current) {
             if (s_custom_fps_limiter_enabled > 0.5f) {
                 auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
