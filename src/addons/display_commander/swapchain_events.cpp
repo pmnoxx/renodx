@@ -54,6 +54,51 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
                                 << ", resize=" << (resize ? "true" : "false") << ", colorspace=" << static_cast<int>(g_current_colorspace) << ")";
     LogDebug(oss.str());
     
+    // Automatic desktop resolution override for games
+    if (s_override_desktop_resolution >= 0.5f) {
+      // Get the selected monitor from Display tab
+      std::vector<HMONITOR> monitors;
+      EnumDisplayMonitors(nullptr, nullptr, 
+        [](HMONITOR hmon, HDC, LPRECT, LPARAM lparam) -> BOOL {
+          auto* monitors_ptr = reinterpret_cast<std::vector<HMONITOR>*>(lparam);
+          monitors_ptr->push_back(hmon);
+          return TRUE;
+        }, 
+        reinterpret_cast<LPARAM>(&monitors));
+      
+      if (s_selected_monitor_index >= 0 && s_selected_monitor_index < static_cast<int>(monitors.size())) {
+        HMONITOR hmon = monitors[static_cast<int>(s_selected_monitor_index)];
+        
+        MONITORINFOEXW mi;
+        mi.cbSize = sizeof(mi);
+        if (GetMonitorInfoW(hmon, &mi)) {
+          std::wstring device_name = mi.szDevice;
+          
+          // Create DEVMODE structure with game's resolution and selected refresh rate
+          DEVMODEW dm;
+          dm.dmSize = sizeof(dm);
+          dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+          dm.dmPelsWidth = static_cast<DWORD>(desc.texture.width);
+          dm.dmPelsHeight = static_cast<DWORD>(desc.texture.height);
+          dm.dmDisplayFrequency = static_cast<DWORD>(s_desktop_refresh_rate);
+          
+          // Apply the changes for the game
+          LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+          
+          if (result == DISP_CHANGE_SUCCESSFUL) {
+            std::ostringstream oss2;
+            oss2 << "OnInitSwapchain: Auto-applied desktop resolution override for game: " 
+                 << desc.texture.width << "x" << desc.texture.height << " @ " << s_desktop_refresh_rate << "Hz on monitor " << s_selected_monitor_index;
+            LogInfo(oss2.str().c_str());
+          } else {
+            std::ostringstream oss2;
+            oss2 << "OnInitSwapchain: Failed to apply desktop resolution override for game. Error code: " << result;
+            LogWarn(oss2.str().c_str());
+          }
+        }
+      }
+    }
+    
     // Schedule auto-apply even on resizes (generation counter ensures only latest runs)
   }
 

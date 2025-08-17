@@ -85,8 +85,22 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
   MONITORINFOEXW mi{};
   mi.cbSize = sizeof(mi);
   
-  // Use target monitor if specified
-  if (s_target_monitor_index > 0.5f) {
+  // Use target monitor if specified, or Display tab monitor if desktop resolution override is enabled
+  if (s_override_desktop_resolution >= 0.5f) {
+    // Use the monitor selected in the Display tab
+    const int index = static_cast<int>(s_selected_monitor_index);
+    g_monitors.clear();
+    EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&g_monitors));
+    if (index >= 0 && index < static_cast<int>(g_monitors.size())) {
+      hmon = g_monitors[index].handle;
+      mi = g_monitors[index].info;
+      
+      std::ostringstream oss;
+      oss << "CalculateWindowState: Using Display tab monitor " << index << " for desktop resolution override";
+      LogDebug(oss.str());
+    }
+  } else if (s_target_monitor_index > 0.5f) {
+    // Use the legacy target monitor setting
     const int index = static_cast<int>(s_target_monitor_index) - 1;
     g_monitors.clear();
     EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&g_monitors));
