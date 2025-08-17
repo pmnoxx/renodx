@@ -79,28 +79,44 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     });
 
-    // FPS Limit (NON-FUNCTIONAL - Replaced by Custom FPS Limiter)
+    // FPS Limit (Now uses Custom FPS Limiter)
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "FPSLimit",
         .binding = &s_fps_limit,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 0.f,
-        .label = "FPS Limit (Disabled)",
+        .label = "FPS Limit",
         .section = "Performance",
-        .tooltip = "DEPRECATED: This setting is non-functional. Use Custom FPS Limiter in Developer mode instead.",
+        .tooltip = "Set FPS limit for the game (0 = no limit). Now uses the new Custom FPS Limiter system.",
         .min = 0.f,
         .max = 300.f,
         .format = "%d FPS",
         .on_change_value = [](float previous, float current){ 
-            // DISABLED: No longer functional
-            LogWarn("FPS Limit setting is disabled. Use Custom FPS Limiter instead.");
+            if (s_custom_fps_limiter_enabled > 0.5f) {
+                // Update the custom FPS limiter
+                auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
+                limiter.SetTargetFps(current);
+                limiter.SetEnabled(current > 0.0f);
+                
+                std::ostringstream oss;
+                if (current > 0.f) {
+                    oss << "FPS limit applied: " << static_cast<int>(current) << " FPS (via Custom FPS Limiter)";
+                } else {
+                    oss << "FPS limit removed (no limit)";
+                }
+                LogInfo(oss.str().c_str());
+            } else {
+                // Custom FPS Limiter not enabled, show warning
+                LogWarn("Please enable Custom FPS Limiter first to use FPS limiting");
+            }
         },
         .on_draw = []() -> bool {
-            // DISABLED: No longer functional
+            // Sync with current atomic value
+            s_fps_limit = g_default_fps_limit.load();
             return false;
         },
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
-        .is_enabled = []() { return false; }, // DISABLED
+        .is_enabled = []() { return s_custom_fps_limiter_enabled > 0.5f; }, // Only enabled when Custom FPS Limiter is on
     });
 
     // Custom FPS Limiter Enable/Disable (WIP - moved to front page)
@@ -109,9 +125,9 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .binding = &s_custom_fps_limiter_enabled,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 0.f,
-        .label = "Custom FPS Limiter (WIP)",
+        .label = "Custom FPS Limiter",
         .section = "Performance",
-        .tooltip = "Enable custom FPS limiting system (separate from the built-in limiter). WIP - Work in Progress.",
+        .tooltip = "Enable custom FPS limiting system (separate from the built-in limiter).",
         .labels = {"Disabled", "Enabled"},
         .min = 0.f,
         .max = 1.f,
@@ -137,46 +153,43 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         },
     });
 
-    // Custom FPS Limit Slider (WIP - moved to front page)
-    settings.push_back(new renodx::utils::settings::Setting{
-        .key = "CustomFpsLimit",
-        .binding = &s_custom_fps_limit,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 60.f,
-        .label = "Custom FPS Limit (WIP)",
-        .section = "Performance",
-        .tooltip = "Set custom FPS limit for the custom limiter system (0 = no limit). WIP - Work in Progress.",
-        .min = 0.f,
-        .max = 300.f,
-        .format = "%d FPS",
-        .is_visible = []() { return is_basic_tab(s_ui_mode) && s_custom_fps_limiter_enabled > 0.5f; }, // Show in Basic mode when enabled
-        .on_change_value = [](float previous, float current) {
-            if (s_custom_fps_limiter_enabled > 0.5f) {
-                auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
-                limiter.SetTargetFps(current);
-                limiter.SetEnabled(current > 0.0f);
-            }
-        },
-    });
 
-    // Background FPS Limit (NON-FUNCTIONAL - Replaced by Custom FPS Limiter)
+
+    // Background FPS Limit (Now uses Custom FPS Limiter)
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "FPSLimitBackground",
         .binding = &s_fps_limit_background,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
         .default_value = 30.f,
-        .label = "Background FPS Limit (Disabled)",
+        .label = "Background FPS Limit",
         .section = "Performance",
-        .tooltip = "DEPRECATED: This setting is non-functional. Use Custom FPS Limiter in Developer mode instead.",
+        .tooltip = "FPS cap when the game window is not in the foreground. Now uses the new Custom FPS Limiter system.",
         .min = 0.f,
         .max = 240.f,
         .format = "%d FPS",
         .on_change_value = [](float previous, float current){
-            // DISABLED: No longer functional
-            LogWarn("Background FPS Limit setting is disabled. Use Custom FPS Limiter instead.");
+            if (s_custom_fps_limiter_enabled > 0.5f) {
+                // Apply background FPS limit immediately if currently in background
+                HWND hwnd = g_last_swapchain_hwnd.load();
+                if (hwnd == nullptr) hwnd = GetForegroundWindow();
+                const bool is_background = (hwnd != nullptr && GetForegroundWindow() != hwnd);
+                
+                if (is_background && current >= 0.f) {
+                    auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager.GetFpsLimiter();
+                    limiter.SetTargetFps(current);
+                    limiter.SetEnabled(current > 0.0f);
+                    
+                    std::ostringstream oss;
+                    oss << "Background FPS limit applied immediately: " << static_cast<int>(current) << " FPS (via Custom FPS Limiter)";
+                    LogInfo(oss.str().c_str());
+                }
+            } else {
+                // Custom FPS Limiter not enabled, show warning
+                LogWarn("Please enable Custom FPS Limiter first to use background FPS limiting");
+            }
         },
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
-        .is_enabled = []() { return false; }, // DISABLED
+        .is_enabled = []() { return s_custom_fps_limiter_enabled > 0.5f; }, // Only enabled when Custom FPS Limiter is on
     });
 
     // Target Monitor
