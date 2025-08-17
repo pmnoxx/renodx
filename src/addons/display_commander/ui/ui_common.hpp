@@ -13,6 +13,7 @@ inline bool is_basic_tab(float ui_mode) { return ui_mode < 0.5f; }
 inline bool is_developer_tab(float ui_mode) { return ui_mode >= 0.5f && ui_mode < 2.0f; }
 inline bool is_device_tab(float ui_mode) { return ui_mode >= 2.0f && ui_mode < 3.0f; }
 inline bool is_window_info_tab(float ui_mode) { return ui_mode >= 3.0f; }
+inline bool is_direct_input_tab(float ui_mode) { return ui_mode >= 4.0f && ui_mode < 5.0f; }
 inline bool is_main_tab(float ui_mode) { return ui_mode < 2.0f; } // Show in Basic and Developer modes, but not Device Info or Window Info
 
 // Forward declarations for settings sections

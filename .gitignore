@@ -48,3 +48,9 @@ bin/**
 # Build directories
 build_ninja/
 build_ninja/**
+build32_ninja/
+build32_ninja/**
+build_vs/
+build_vs/**
+build32_vs/
+build32_vs/**

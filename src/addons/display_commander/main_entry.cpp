@@ -8,7 +8,7 @@
 #include "reshade_events/fullscreen_prevention.hpp"
 #include "renodx/proxy.hpp"
 #include "dxgi/custom_fps_limiter_manager.hpp"
-
+#include "input/directinput/direct_input.hpp"
 
 
 // Forward declarations for continuous monitoring functions
@@ -135,6 +135,12 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   // Initialize hooks if settings are enabled on startup (after settings are loaded)
   if (fdw_reason == DLL_PROCESS_ATTACH) {
 
+    // Initialize DirectInput manager
+    if (renodx::input::direct_input::g_directInputManager && renodx::input::direct_input::g_directInputManager->Initialize()) {
+      LogInfo("DirectInput manager initialized successfully");
+    } else {
+      LogWarn("Failed to initialize DirectInput manager");
+    }
     
     // Check if continuous monitoring should be enabled
     if (s_continuous_monitoring_enabled >= 0.5f) {

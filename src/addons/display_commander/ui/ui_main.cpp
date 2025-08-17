@@ -17,6 +17,7 @@
 #include "../dxgi/ui_dxgi_device_info_detailed.hpp"
 #include "../dxgi/ui_dxgi_composition_info.hpp"
 #include "ui_independent_flip_failures.hpp"
+#include "ui_direct_input_status.hpp"
 #include "../settings.hpp"
 
 // UI/settings - main vector that includes all sections
@@ -62,6 +63,9 @@ void InitializeUISettings() {
     
     // Add Independent Flip failures settings
     renodx::ui::AddIndependentFlipFailuresSettings(settings);
+    
+    // Add DirectInput status settings
+    renodx::ui::AddDirectInputStatusSettings(settings);
     
     // Mark as initialized
     ui_settings_initialized = true;
