@@ -106,59 +106,59 @@ bool XInputTester::InstallHooks() {
         LogTestEvent("No XInput modules found yet - will retry later");
     }
     
-    // Hook XInputGetState if available
-    if (xinput13) {
-        m_original_XInputGetState = (XInputGetState_t)GetProcAddress(xinput13, "XInputGetState");
-        if (m_original_XInputGetState) {
-            LogTestEvent("XInputGetState function found and stored from xinput1_3.dll");
-        }
-    }
-    if (xinput14 && !m_original_XInputGetState) {
+    // Hook XInputGetState if available - PRIORITIZE XInput 1.4 over 1.3
+    if (xinput14) {
         m_original_XInputGetState = (XInputGetState_t)GetProcAddress(xinput14, "XInputGetState");
         if (m_original_XInputGetState) {
-            LogTestEvent("XInputGetState function found and stored from xinput1_4.dll");
+            LogTestEvent("XInputGetState function found and stored from xinput1_4.dll (PRIORITY)");
+        }
+    }
+    if (xinput13 && !m_original_XInputGetState) {
+        m_original_XInputGetState = (XInputGetState_t)GetProcAddress(xinput13, "XInputGetState");
+        if (m_original_XInputGetState) {
+            LogTestEvent("XInputGetState function found and stored from xinput1_3.dll (fallback)");
         }
     }
     
-    // Hook XInputSetState if available
-    if (xinput13) {
-        m_original_XInputSetState = (XInputSetState_t)GetProcAddress(xinput13, "XInputSetState");
-        if (m_original_XInputSetState) {
-            LogTestEvent("XInputSetState function found and stored from xinput1_3.dll");
-        }
-    }
-    if (xinput14 && !m_original_XInputSetState) {
+    // Hook XInputSetState if available - PRIORITIZE XInput 1.4 over 1.3
+    if (xinput14) {
         m_original_XInputSetState = (XInputSetState_t)GetProcAddress(xinput14, "XInputSetState");
         if (m_original_XInputSetState) {
-            LogTestEvent("XInputSetState function found and stored from xinput1_4.dll");
+            LogTestEvent("XInputSetState function found and stored from xinput1_4.dll (PRIORITY)");
+        }
+    }
+    if (xinput13 && !m_original_XInputSetState) {
+        m_original_XInputSetState = (XInputSetState_t)GetProcAddress(xinput13, "XInputSetState");
+        if (m_original_XInputSetState) {
+            LogTestEvent("XInputSetState function found and stored from xinput1_3.dll (fallback)");
         }
     }
     
-    // Hook XInputGetCapabilities if available
-    if (xinput13) {
-        m_original_XInputGetCapabilities = (XInputGetCapabilities_t)GetProcAddress(xinput13, "XInputGetCapabilities");
-        if (m_original_XInputGetCapabilities) {
-            LogTestEvent("XInputGetCapabilities function found and stored from xinput1_3.dll");
-        }
-    }
-    if (xinput14 && !m_original_XInputGetCapabilities) {
+    // Hook XInputGetCapabilities if available - PRIORITIZE XInput 1.4 over 1.3
+    if (xinput14) {
         m_original_XInputGetCapabilities = (XInputGetCapabilities_t)GetProcAddress(xinput14, "XInputGetCapabilities");
         if (m_original_XInputGetCapabilities) {
-            LogTestEvent("XInputGetCapabilities function found and stored from xinput1_4.dll");
+            LogTestEvent("XInputGetCapabilities function found and stored from xinput1_4.dll (PRIORITY)");
+        }
+    }
+    if (xinput13 && !m_original_XInputGetCapabilities) {
+        m_original_XInputGetCapabilities = (XInputGetCapabilities_t)GetProcAddress(xinput13, "XInputGetCapabilities");
+        if (m_original_XInputGetCapabilities) {
+            LogTestEvent("XInputGetCapabilities function found and stored from xinput1_3.dll (fallback)");
         }
     }
     
-    // Hook XInputEnable if available
-    if (xinput13) {
-        m_original_XInputEnable = (XInputEnable_t)GetProcAddress(xinput13, "XInputEnable");
-        if (m_original_XInputEnable) {
-            LogTestEvent("XInputEnable function found and stored from xinput1_3.dll");
-        }
-    }
-    if (xinput14 && !m_original_XInputEnable) {
+    // Hook XInputEnable if available - PRIORITIZE XInput 1.4 over 1.3
+    if (xinput14) {
         m_original_XInputEnable = (XInputEnable_t)GetProcAddress(xinput14, "XInputEnable");
         if (m_original_XInputEnable) {
-            LogTestEvent("XInputEnable function found and stored from xinput1_4.dll");
+            LogTestEvent("XInputEnable function found and stored from xinput1_4.dll (PRIORITY)");
+        }
+    }
+    if (xinput13 && !m_original_XInputEnable) {
+        m_original_XInputEnable = (XInputEnable_t)GetProcAddress(xinput13, "XInputEnable");
+        if (m_original_XInputEnable) {
+            LogTestEvent("XInputEnable function found and stored from xinput1_3.dll (fallback)");
         }
     }
     
@@ -187,42 +187,9 @@ bool XInputTester::InstallRuntimeHooks() {
     
     bool hooked_any = false;
     
-    if (xinput13) {
-        LogTestEvent("Found xinput1_3.dll, installing runtime hooks...");
-        
-        // Get the original function addresses
-        FARPROC original_XInputGetState = GetProcAddress(xinput13, "XInputGetState");
-        FARPROC original_XInputSetState = GetProcAddress(xinput13, "XInputSetState");
-        FARPROC original_XInputGetCapabilities = GetProcAddress(xinput13, "XInputGetCapabilities");
-        FARPROC original_XInputEnable = GetProcAddress(xinput13, "XInputEnable");
-        
-        if (original_XInputGetState) {
-            m_original_XInputGetState = (XInputGetState_t)original_XInputGetState;
-            LogTestEvent("XInputGetState runtime hook installed from xinput1_3.dll");
-            hooked_any = true;
-        }
-        
-        if (original_XInputSetState) {
-            m_original_XInputSetState = (XInputSetState_t)original_XInputSetState;
-            LogTestEvent("XInputSetState runtime hook installed from xinput1_3.dll");
-            hooked_any = true;
-        }
-        
-        if (original_XInputGetCapabilities) {
-            m_original_XInputGetCapabilities = (XInputGetCapabilities_t)original_XInputGetCapabilities;
-            LogTestEvent("XInputGetCapabilities runtime hook installed from xinput1_3.dll");
-            hooked_any = true;
-        }
-        
-        if (original_XInputEnable) {
-            m_original_XInputEnable = (XInputEnable_t)original_XInputEnable;
-            LogTestEvent("XInputEnable runtime hook installed from xinput1_3.dll");
-            hooked_any = true;
-        }
-    }
-    
-    if (xinput14 && !hooked_any) {
-        LogTestEvent("Found xinput1_4.dll, installing runtime hooks...");
+    // PRIORITIZE XInput 1.4 over 1.3 for modern games
+    if (xinput14) {
+        LogTestEvent("Found xinput1_4.dll, installing runtime hooks (PRIORITY)...");
         
         // Get the original function addresses
         FARPROC original_XInputGetState = GetProcAddress(xinput14, "XInputGetState");
@@ -232,25 +199,60 @@ bool XInputTester::InstallRuntimeHooks() {
         
         if (original_XInputGetState) {
             m_original_XInputGetState = (XInputGetState_t)original_XInputGetState;
-            LogTestEvent("XInputGetState runtime hook installed from xinput1_4.dll");
+            LogTestEvent("XInputGetState runtime hook installed from xinput1_4.dll (PRIORITY)");
             hooked_any = true;
         }
         
         if (original_XInputSetState) {
             m_original_XInputSetState = (XInputSetState_t)original_XInputSetState;
-            LogTestEvent("XInputSetState runtime hook installed from xinput1_4.dll");
+            LogTestEvent("XInputSetState runtime hook installed from xinput1_4.dll (PRIORITY)");
             hooked_any = true;
         }
         
         if (original_XInputGetCapabilities) {
             m_original_XInputGetCapabilities = (XInputGetCapabilities_t)original_XInputGetCapabilities;
-            LogTestEvent("XInputGetCapabilities runtime hook installed from xinput1_4.dll");
+            LogTestEvent("XInputGetCapabilities runtime hook installed from xinput1_4.dll (PRIORITY)");
             hooked_any = true;
         }
         
         if (original_XInputEnable) {
             m_original_XInputEnable = (XInputEnable_t)original_XInputEnable;
-            LogTestEvent("XInputEnable runtime hook installed from xinput1_4.dll");
+            LogTestEvent("XInputEnable runtime hook installed from xinput1_4.dll (PRIORITY)");
+            hooked_any = true;
+        }
+    }
+    
+    // Fallback to XInput 1.3 if 1.4 not available or no hooks installed
+    if (xinput13 && !hooked_any) {
+        LogTestEvent("Found xinput1_3.dll, installing runtime hooks (fallback)...");
+        
+        // Get the original function addresses
+        FARPROC original_XInputGetState = GetProcAddress(xinput13, "XInputGetState");
+        FARPROC original_XInputSetState = GetProcAddress(xinput13, "XInputSetState");
+        FARPROC original_XInputGetCapabilities = GetProcAddress(xinput13, "XInputGetCapabilities");
+        FARPROC original_XInputEnable = GetProcAddress(xinput13, "XInputEnable");
+        
+        if (original_XInputGetState) {
+            m_original_XInputGetState = (XInputGetState_t)original_XInputGetState;
+            LogTestEvent("XInputGetState runtime hook installed from xinput1_3.dll (fallback)");
+            hooked_any = true;
+        }
+        
+        if (original_XInputSetState) {
+            m_original_XInputSetState = (XInputSetState_t)original_XInputSetState;
+            LogTestEvent("XInputSetState runtime hook installed from xinput1_3.dll (fallback)");
+            hooked_any = true;
+        }
+        
+        if (original_XInputGetCapabilities) {
+            m_original_XInputGetCapabilities = (XInputGetCapabilities_t)original_XInputGetCapabilities;
+            LogTestEvent("XInputGetCapabilities runtime hook installed from xinput1_3.dll (fallback)");
+            hooked_any = true;
+        }
+        
+        if (original_XInputEnable) {
+            m_original_XInputEnable = (XInputEnable_t)original_XInputEnable;
+            LogTestEvent("XInputEnable runtime hook installed from xinput1_3.dll (fallback)");
             hooked_any = true;
         }
     }
@@ -683,8 +685,30 @@ std::string XInputTester::GetLoadedXInputModulesInfo() const {
     oss << "  xinput1_4.dll: " << (xinput14 ? "Loaded" : "Not loaded") << "\n";
     oss << "  xinput9_1_0.dll: " << (xinput9 ? "Loaded" : "Not loaded") << "\n";
     
+    // Show which version is actually being used for hooking
+    oss << "\nActive Hooking Version:\n";
+    if (m_original_XInputGetState) {
+        // Determine which DLL the function came from
+        HMODULE xinput13 = GetModuleHandleA("xinput1_3.dll");
+        HMODULE xinput14 = GetModuleHandleA("xinput1_4.dll");
+        
+        FARPROC hookAddress = (FARPROC)m_original_XInputGetState;
+        
+        if (xinput14 && hookAddress >= (FARPROC)xinput14 && 
+            hookAddress < (FARPROC)((BYTE*)xinput14 + 0x100000)) {
+            oss << "  Using XInput 1.4 for hooks (PRIORITY)\n";
+        } else if (xinput13 && hookAddress >= (FARPROC)xinput13 && 
+                   hookAddress < (FARPROC)((BYTE*)xinput13 + 0x100000)) {
+            oss << "  Using XInput 1.3 for hooks (fallback)\n";
+        } else {
+            oss << "  Hook source: Unknown location\n";
+        }
+    } else {
+        oss << "  No XInput hooks active yet\n";
+    }
+    
     // Check hook status
-    oss << "Hook Status:\n";
+    oss << "\nHook Status:\n";
     oss << "  XInputGetState: " << (IsXInputGetStateHookActive() ? "Active" : "Inactive") << "\n";
     oss << "  XInputSetState: " << (IsXInputSetStateHookActive() ? "Active" : "Inactive") << "\n";
     oss << "  XInputGetCapabilities: " << (IsXInputGetCapabilitiesHookActive() ? "Active" : "Inactive") << "\n";
@@ -732,12 +756,12 @@ bool XInputTester::AreHooksStillValid() const {
 // Hook function implementations
 DWORD WINAPI XInputTester::HookXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState) {
     if (s_instance) {
-        s_instance->LogTestEvent("XInputGetState intercepted - Controller: " + std::to_string(dwUserIndex));
+        s_instance->LogTestEvent("🎯 XInputGetState HOOK CALLED - Controller: " + std::to_string(dwUserIndex));
         s_instance->m_current_test_stats.controller_states_intercepted++;
         
         // Check if input blocking is enabled
         if (s_instance->IsBlockingXInputInput()) {
-            s_instance->LogTestEvent("XInputGetState BLOCKED - Input blocking enabled");
+            s_instance->LogTestEvent("🚫 XInputGetState BLOCKED - Input blocking enabled");
             // Return success but with zeroed state (no input)
             if (pState) {
                 ZeroMemory(pState, sizeof(XINPUT_STATE));
@@ -746,54 +770,50 @@ DWORD WINAPI XInputTester::HookXInputGetState(DWORD dwUserIndex, XINPUT_STATE* p
             return ERROR_SUCCESS;
         }
         
-        // Try to load modules if we don't have the original function yet
-        if (!s_instance->m_original_XInputGetState) {
-            s_instance->TryLoadXInputModules();
+        // TEST: Return dummy value instead of calling original function
+        // This will prove if our hooks are actually being called
+        s_instance->LogTestEvent("🧪 XInputGetState TEST MODE - Returning dummy value, not calling original");
+        if (pState) {
+            ZeroMemory(pState, sizeof(XINPUT_STATE));
+            pState->dwPacketNumber = 0;
         }
+        return ERROR_SUCCESS; // Return success with no input
     }
     
-    // Call original function if available
-    if (s_instance && s_instance->m_original_XInputGetState) {
-        return s_instance->m_original_XInputGetState(dwUserIndex, pState);
-    }
-    
+    // Fallback: return no device connected
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
 DWORD WINAPI XInputTester::HookXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration) {
     if (s_instance) {
-        s_instance->LogTestEvent("XInputSetState intercepted - Controller: " + std::to_string(dwUserIndex));
+        s_instance->LogTestEvent("🎯 XInputSetState HOOK CALLED - Controller: " + std::to_string(dwUserIndex));
         s_instance->m_current_test_stats.vibration_commands_intercepted++;
         
         // Check if input blocking is enabled
         if (s_instance->IsBlockingXInputInput()) {
-            s_instance->LogTestEvent("XInputSetState BLOCKED - Input blocking enabled");
+            s_instance->LogTestEvent("🚫 XInputSetState BLOCKED - Input blocking enabled");
             // Return success but don't apply vibration
             return ERROR_SUCCESS;
         }
         
-        // Try to load modules if we don't have the original function yet
-        if (!s_instance->m_original_XInputSetState) {
-            s_instance->TryLoadXInputModules();
-        }
+        // TEST: Return dummy value instead of calling original function
+        // This will prove if our hooks are actually being called
+        s_instance->LogTestEvent("🧪 XInputSetState TEST MODE - Returning dummy value, not calling original");
+        return ERROR_SUCCESS; // Return success but no vibration
     }
     
-    // Call original function if available
-    if (s_instance && s_instance->m_original_XInputSetState) {
-        return s_instance->m_original_XInputSetState(dwUserIndex, pVibration);
-    }
-    
+    // Fallback: return no device connected
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
 DWORD WINAPI XInputTester::HookXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPABILITIES* pCapabilities) {
     if (s_instance) {
-        s_instance->LogTestEvent("XInputGetCapabilities intercepted - Controller: " + std::to_string(dwUserIndex));
+        s_instance->LogTestEvent("🎯 XInputGetCapabilities HOOK CALLED - Controller: " + std::to_string(dwUserIndex));
         s_instance->m_current_test_stats.capability_queries_intercepted++;
         
         // Check if input blocking is enabled
         if (s_instance->IsBlockingXInputInput()) {
-            s_instance->LogTestEvent("XInputGetCapabilities BLOCKED - Input blocking enabled");
+            s_instance->LogTestEvent("🚫 XInputGetCapabilities BLOCKED - Input blocking enabled");
             // Return success but with zeroed capabilities
             if (pCapabilities) {
                 ZeroMemory(pCapabilities, sizeof(XINPUT_CAPABILITIES));
@@ -801,45 +821,41 @@ DWORD WINAPI XInputTester::HookXInputGetCapabilities(DWORD dwUserIndex, DWORD dw
             return ERROR_SUCCESS;
         }
         
-        // Try to load modules if we don't have the original function yet
-        if (!s_instance->m_original_XInputGetCapabilities) {
-            s_instance->TryLoadXInputModules();
+        // TEST: Return dummy value instead of calling original function
+        // This will prove if our hooks are actually being called
+        s_instance->LogTestEvent("🧪 XInputGetCapabilities TEST MODE - Returning dummy value, not calling original");
+        if (pCapabilities) {
+            ZeroMemory(pCapabilities, sizeof(XINPUT_CAPABILITIES));
         }
+        return ERROR_SUCCESS; // Return success with no capabilities
     }
     
-    // Call original function if available
-    if (s_instance && s_instance->m_original_XInputGetCapabilities) {
-        return s_instance->m_original_XInputGetCapabilities(dwUserIndex, dwFlags, pCapabilities);
-    }
-    
+    // Fallback: return no device connected
     return ERROR_DEVICE_NOT_CONNECTED;
 }
 
 void WINAPI XInputTester::HookXInputEnable(BOOL enable) {
     if (s_instance) {
-        s_instance->LogTestEvent("XInputEnable intercepted - Enable: " + std::string(enable ? "TRUE" : "FALSE"));
+        s_instance->LogTestEvent("🎯 XInputEnable HOOK CALLED - Enable: " + std::string(enable ? "TRUE" : "FALSE"));
         s_instance->m_current_test_stats.enable_calls_intercepted++;
         
         // Check if input blocking is enabled
         if (s_instance->IsBlockingXInputInput()) {
-            s_instance->LogTestEvent("XInputEnable BLOCKED - Input blocking enabled");
+            s_instance->LogTestEvent("🚫 XInputEnable BLOCKED - Input blocking enabled");
             // Don't call original function when blocking
             return;
         }
         
-        // Try to load modules if we don't have the original function yet
-        if (!s_instance->m_original_XInputEnable) {
-            s_instance->TryLoadXInputModules();
-        }
-    }
-    
-    // Call original function if available
-    if (s_instance && s_instance->m_original_XInputEnable) {
-        s_instance->m_original_XInputEnable(enable);
+        // TEST: Return dummy value instead of calling original function
+        // This will prove if our hooks are actually being called
+        s_instance->LogTestEvent("🧪 XInputEnable TEST MODE - Returning dummy value, not calling original");
+        return; // Do nothing, don't call original
     }
 }
 
 // Dynamic loading hook functions
+// NOTE: These functions are too dangerous and cause system crashes - commenting them out
+/*
 HMODULE WINAPI XInputTester::HookLoadLibraryA(LPCSTR lpLibFileName) {
     if (s_instance && lpLibFileName) {
         std::string libName(lpLibFileName);
@@ -880,7 +896,7 @@ HMODULE WINAPI XInputTester::HookLoadLibraryW(LPCWSTR lpLibFileName) {
     if (s_instance && s_instance->m_original_LoadLibraryW) {
         HMODULE result = s_instance->m_original_LoadLibraryW(lpLibFileName);
         
-        // If this is an XInput library, try to install hooks on it
+        // If this is an XInput library, try to install hooks on the newly loaded library
         if (s_instance && lpLibFileName) {
             std::wstring libName(lpLibFileName);
             if (libName.find(L"xinput") != std::wstring::npos || libName.find(L"XInput") != std::wstring::npos) {
@@ -923,6 +939,7 @@ FARPROC WINAPI XInputTester::HookGetProcAddress(HMODULE hModule, LPCSTR lpProcNa
     
     return GetProcAddress(hModule, lpProcName);
 }
+*/
 
 // Keyboard/Mouse hook function implementations
 SHORT WINAPI XInputTester::HookGetAsyncKeyState(int vKey) {
@@ -1095,6 +1112,8 @@ bool XInputTester::InstallAPIHooks() {
     }
     
     // Install hooks for dynamic loading functions to intercept XInput loading at the source
+    // NOTE: These hooks are too dangerous and cause system crashes - removing them
+    /*
     if (m_original_LoadLibraryA) {
         LogTestEvent("Installing detour hook for LoadLibraryA...");
         if (InstallDetourHook((FARPROC)m_original_LoadLibraryA, (FARPROC)HookLoadLibraryA)) {
@@ -1124,6 +1143,9 @@ bool XInputTester::InstallAPIHooks() {
             success = false;
         }
     }
+    */
+    
+    LogTestEvent("Skipping dynamic loading hooks for system stability - only hooking XInput functions directly");
     
     // Now try to patch the import tables to ensure our hooks are called
     if (success) {
