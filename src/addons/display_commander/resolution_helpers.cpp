@@ -3,6 +3,7 @@
 #include <wrl/client.h>
 #include <iomanip>
 #include <cmath>
+#include <cwchar> // for wcslen
 
 using Microsoft::WRL::ComPtr;
 
@@ -349,61 +350,148 @@ bool ApplyDisplaySettingsModern(int monitor_index, int width, int height, UINT32
         }, 
         reinterpret_cast<LPARAM>(&monitors));
     
-    if (monitor_index >= 0 && monitor_index < static_cast<int>(monitors.size())) {
-        HMONITOR hmon = monitors[monitor_index];
+    if (monitor_index < 0 || monitor_index >= static_cast<int>(monitors.size())) {
+        // Log error: Invalid monitor index
+        std::ostringstream oss;
+        oss << "ApplyDisplaySettingsModern: Invalid monitor index " << monitor_index << " (valid range: 0-" << (monitors.size() - 1) << ")";
+        // Note: We can't use LogWarn here as it's not available in this file
+        return false;
+    }
+    
+    HMONITOR hmon = monitors[monitor_index];
 
-        // Get the path info for this monitor
-        MONITORINFOEXW mi;
-        mi.cbSize = sizeof(mi);
-        if (!GetMonitorInfoW(hmon, &mi)) {
-            return false;
-        }
+    // Get the path info for this monitor
+    MONITORINFOEXW mi;
+    mi.cbSize = sizeof(mi);
+    if (!GetMonitorInfoW(hmon, &mi)) {
+        // Log error: Failed to get monitor info
+        std::ostringstream oss;
+        oss << "ApplyDisplaySettingsModern: Failed to get monitor info for monitor " << monitor_index;
+        return false;
+    }
 
-        // Try to use modern SetDisplayConfig API
-        UINT32 path_elements = 0;
-        UINT32 mode_elements = 0;
-        if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &path_elements, &mode_elements) == ERROR_SUCCESS) {
-            std::vector<DISPLAYCONFIG_PATH_INFO> paths(path_elements);
-            std::vector<DISPLAYCONFIG_MODE_INFO> modes(mode_elements);
-            
-            if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &path_elements, paths.data(), &mode_elements, modes.data(), nullptr) == ERROR_SUCCESS) {
-                // Find the path for our monitor
-                for (UINT32 i = 0; i < path_elements; i++) {
-                    DISPLAYCONFIG_SOURCE_DEVICE_NAME source_name = {};
-                    source_name.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
-                    source_name.header.size = sizeof(source_name);
-                    source_name.header.adapterId = paths[i].sourceInfo.adapterId;
-                    source_name.header.id = paths[i].sourceInfo.id;
+    // Try to use modern SetDisplayConfig API
+    UINT32 path_elements = 0;
+    UINT32 mode_elements = 0;
+    LONG result = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &path_elements, &mode_elements);
+    if (result != ERROR_SUCCESS) {
+        // Log error: Failed to get buffer sizes
+        std::ostringstream oss;
+        oss << "ApplyDisplaySettingsModern: GetDisplayConfigBufferSizes failed with error " << result;
+        return false;
+    }
+    
+    if (path_elements == 0 || mode_elements == 0) {
+        // Log error: No display paths or modes found
+        std::ostringstream oss;
+        oss << "ApplyDisplaySettingsModern: No display paths (" << path_elements << ") or modes (" << mode_elements << ") found";
+        return false;
+    }
+    
+    std::vector<DISPLAYCONFIG_PATH_INFO> paths(path_elements);
+    std::vector<DISPLAYCONFIG_MODE_INFO> modes(mode_elements);
+    
+    result = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &path_elements, paths.data(), &mode_elements, modes.data(), nullptr);
+    if (result != ERROR_SUCCESS) {
+        // Log error: Failed to query display config
+        std::ostringstream oss;
+        oss << "ApplyDisplaySettingsModern: QueryDisplayConfig failed with error " << result;
+        return false;
+    }
+    
+    // Find the path for our monitor
+    bool found_monitor = false;
+    for (UINT32 i = 0; i < path_elements; i++) {
+        DISPLAYCONFIG_SOURCE_DEVICE_NAME source_name = {};
+        source_name.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+        source_name.header.size = sizeof(source_name);
+        source_name.header.adapterId = paths[i].sourceInfo.adapterId;
+        source_name.header.id = paths[i].sourceInfo.id;
+        
+        result = DisplayConfigGetDeviceInfo(&source_name.header);
+        if (result == ERROR_SUCCESS) {
+            // Convert monitor device name to wide string for comparison
+            std::wstring monitor_device(mi.szDevice);
+            if (monitor_device == source_name.viewGdiDeviceName) {
+                found_monitor = true;
+                
+                // Found our monitor path, now modify the mode
+                if (paths[i].sourceInfo.modeInfoIdx < mode_elements) {
+                    auto& source_mode = modes[paths[i].sourceInfo.modeInfoIdx].sourceMode;
+                    source_mode.width = width;
+                    source_mode.height = height;
                     
-                    if (DisplayConfigGetDeviceInfo(&source_name.header) == ERROR_SUCCESS) {
-                        // Convert monitor device name to wide string for comparison
-                        std::wstring monitor_device(mi.szDevice);
-                        if (monitor_device == source_name.viewGdiDeviceName) {
-                            // Found our monitor path, now modify the mode
-                            if (paths[i].sourceInfo.modeInfoIdx < mode_elements) {
-                                auto& source_mode = modes[paths[i].sourceInfo.modeInfoIdx].sourceMode;
-                                source_mode.width = width;
-                                source_mode.height = height;
-                                
-                                // Set the rational refresh rate
-                                paths[i].targetInfo.refreshRate.Numerator = refresh_numerator;
-                                paths[i].targetInfo.refreshRate.Denominator = refresh_denominator;
-                                
-                                // Apply the changes
-                                if (SetDisplayConfig(path_elements, paths.data(), mode_elements, modes.data(), 
-                                                   SDC_APPLY | SDC_USE_SUPPLIED_DISPLAY_CONFIG) == ERROR_SUCCESS) {
-                                    return true;
-                                }
-                            }
-                            break;
+                    // Set the rational refresh rate in target mode
+                    paths[i].targetInfo.refreshRate.Numerator = refresh_numerator;
+                    paths[i].targetInfo.refreshRate.Denominator = refresh_denominator;
+                    
+                    // Apply the changes with more aggressive flags
+                    result = SetDisplayConfig(path_elements, paths.data(), mode_elements, modes.data(), 
+                               SDC_APPLY | SDC_USE_SUPPLIED_DISPLAY_CONFIG | SDC_SAVE_TO_DATABASE);
+                    if (result == ERROR_SUCCESS) {
+                        return true;
+                    } else {
+                        // Try without SDC_SAVE_TO_DATABASE flag
+                        result = SetDisplayConfig(path_elements, paths.data(), mode_elements, modes.data(), 
+                                   SDC_APPLY | SDC_USE_SUPPLIED_DISPLAY_CONFIG);
+                        if (result == ERROR_SUCCESS) {
+                            return true;
+                        } else {
+                            // Log error: SetDisplayConfig failed
+                            std::ostringstream oss;
+                            oss << "ApplyDisplaySettingsModern: SetDisplayConfig failed with error " << result;
+                            return false;
                         }
                     }
+                } else {
+                    // Log error: Invalid mode index
+                    std::ostringstream oss;
+                    oss << "ApplyDisplaySettingsModern: Invalid mode index " << paths[i].sourceInfo.modeInfoIdx 
+                        << " (max: " << (mode_elements - 1) << ")";
+                    return false;
                 }
+                break;
             }
+        } else {
+            // Log error: Failed to get source device name
+            std::ostringstream oss;
+            oss << "ApplyDisplaySettingsModern: DisplayConfigGetDeviceInfo failed for path " << i << " with error " << result;
         }
     }
     
+    if (!found_monitor) {
+        // Log error: Monitor not found in display config
+        std::ostringstream oss;
+        oss << "ApplyDisplaySettingsModern: Monitor device '" << std::string(mi.szDevice, mi.szDevice + wcslen(mi.szDevice)) 
+            << "' not found in display config paths";
+        return false;
+    }
+    
     return false;
+}
+
+// Helper function to check if modern display API is available
+bool IsModernDisplayAPIAvailable() {
+    // Check if we can get display config buffer sizes
+    UINT32 path_elements = 0;
+    UINT32 mode_elements = 0;
+    LONG result = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &path_elements, &mode_elements);
+    
+    if (result != ERROR_SUCCESS) {
+        return false;
+    }
+    
+    if (path_elements == 0 || mode_elements == 0) {
+        return false;
+    }
+    
+    // Try to query display config to see if it works
+    std::vector<DISPLAYCONFIG_PATH_INFO> paths(path_elements);
+    std::vector<DISPLAYCONFIG_MODE_INFO> modes(mode_elements);
+    
+    result = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &path_elements, paths.data(), &mode_elements, modes.data(), nullptr);
+    
+    return (result == ERROR_SUCCESS);
 }
 
 } // namespace renodx::resolution
