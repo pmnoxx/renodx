@@ -166,7 +166,7 @@ std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int 
                 dm.dmSize = sizeof(dm);
                 for (int i = 0; EnumDisplaySettingsW(device_name.c_str(), i, &dm); i++) {
                     if (dm.dmPelsWidth == width && dm.dmPelsHeight == height) {
-                                                 std::ostringstream oss;
+                                                                          std::ostringstream oss;
                          // Note: dmDisplayFrequency is integer; present it as xx Hz (no trailing zeros)
                          oss << std::fixed << std::setprecision(10) << static_cast<double>(dm.dmDisplayFrequency);
                          std::string rate_str = oss.str();
@@ -182,7 +182,7 @@ std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int 
                                  rate_str = rate_str.substr(0, last_nonzero + 1);
                              }
                          }
-                                                  std::string refresh_rate = rate_str + " Hz";
+                         std::string refresh_rate = rate_str + " Hz";
                         bool found = false;
                         for (const auto& existing : labels) {
                             if (existing == refresh_rate) { found = true; break; }
