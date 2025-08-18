@@ -129,12 +129,12 @@ std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int 
                         }
                     }
 
-                    std::sort(rates.begin(), rates.end()); // ascending
-                    for (double r : rates) {
-                        std::ostringstream oss;
-                        oss << std::fixed << std::setprecision(2) << r << " Hz";
-                        labels.push_back(oss.str());
-                    }
+                                         std::sort(rates.begin(), rates.end()); // ascending
+                     for (double r : rates) {
+                         std::ostringstream oss;
+                         oss << std::fixed << std::setprecision(6) << r << " Hz";
+                         labels.push_back(oss.str());
+                     }
 
                     used_dxgi = true;
                     break; // matched output found
@@ -153,9 +153,9 @@ std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int 
                 dm.dmSize = sizeof(dm);
                 for (int i = 0; EnumDisplaySettingsW(device_name.c_str(), i, &dm); i++) {
                     if (dm.dmPelsWidth == width && dm.dmPelsHeight == height) {
-                        std::ostringstream oss;
-                        // Note: dmDisplayFrequency is integer; present it as xx.00 Hz
-                        oss << std::fixed << std::setprecision(2) << static_cast<double>(dm.dmDisplayFrequency) << " Hz";
+                                                 std::ostringstream oss;
+                         // Note: dmDisplayFrequency is integer; present it as xx.000000 Hz
+                         oss << std::fixed << std::setprecision(6) << static_cast<double>(dm.dmDisplayFrequency) << " Hz";
                         std::string refresh_rate = oss.str();
                         bool found = false;
                         for (const auto& existing : labels) {
