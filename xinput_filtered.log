@@ -1,53 +1,73 @@
-23:53:25:745 [29732] | INFO  | [Display Commander] [XInput Test] No XInput modules found yet - will retry later
-23:53:25:745 [29732] | INFO  | [Display Commander] [XInput Test] GetAsyncKeyState function found and stored from user32.dll
-23:53:25:745 [29732] | INFO  | [Display Commander] [XInput Test] GetKeyState function found and stored from user32.dll
-23:53:25:745 [29732] | INFO  | [Display Commander] [XInput Test] GetKeyboardState function found and stored from user32.dll
-23:53:25:745 [29732] | INFO  | [Display Commander] [XInput Test] GetCursorPos function found and stored from user32.dll
-23:53:25:745 [29732] | INFO  | [Display Commander] [XInput Test] SetCursorPos function found and stored from user32.dll
-23:53:25:745 [29732] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
-23:53:25:745 [29732] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
-23:53:25:745 [29732] | INFO  | [Display Commander] [XInput Test] XInput runtime hooks prepared - will activate when modules are loaded
-23:53:25:745 [29732] | INFO  | [Display Commander] XInput tester initialized successfully
-23:53:25:749 [14416] | INFO  | [Display Commander] [XInput Test] XInput background retry thread started
-23:53:25:750 [14416] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 1 - checking for XInput modules
-23:53:25:750 [14416] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
-23:53:25:750 [14416] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
-23:53:25:750 [14416] | INFO  | [Display Commander] [XInput Test] No XInput modules found in process
-23:53:26:005 [14416] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 2 - checking for XInput modules
-23:53:26:005 [14416] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
-23:53:26:005 [14416] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
-23:53:26:005 [14416] | INFO  | [Display Commander] [XInput Test] No XInput modules found in process
-23:53:26:257 [14416] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 3 - checking for XInput modules
-23:53:26:257 [14416] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
-23:53:26:257 [14416] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
-23:53:26:257 [14416] | INFO  | [Display Commander] [XInput Test] No XInput modules found in process
-23:53:26:513 [14416] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 4 - checking for XInput modules
-23:53:26:513 [14416] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
-23:53:26:514 [14416] | INFO  | [Display Commander] [XInput Test] Found xinput1_3.dll, installing runtime hooks...
-23:53:26:514 [14416] | INFO  | [Display Commander] [XInput Test] XInputGetState runtime hook installed from xinput1_3.dll
-23:53:26:514 [14416] | INFO  | [Display Commander] [XInput Test] XInputSetState runtime hook installed from xinput1_3.dll
-23:53:26:514 [14416] | INFO  | [Display Commander] [XInput Test] XInputGetCapabilities runtime hook installed from xinput1_3.dll
-23:53:26:514 [14416] | INFO  | [Display Commander] [XInput Test] XInputEnable runtime hook installed from xinput1_3.dll
-23:53:26:514 [14416] | INFO  | [Display Commander] [XInput Test] Runtime hooks installed successfully
-23:53:26:514 [14416] | INFO  | [Display Commander] [XInput Test] Installing working detour hooks for XInput functions...
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Installing detour hook for XInputGetState...
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Installing detour hook: 467216464 -> 1697511808
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Detour hook installed successfully
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Successfully installed detour hook for XInputGetState
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Installing detour hook for XInputSetState...
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Installing detour hook: 467217440 -> 1697512704
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Detour hook installed successfully
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Successfully installed detour hook for XInputSetState
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Installing detour hook for XInputGetCapabilities...
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Installing detour hook: 467217824 -> 1697513584
-23:53:26:515 [14416] | INFO  | [Display Commander] [XInput Test] Detour hook installed successfully
-23:53:26:516 [14416] | INFO  | [Display Commander] [XInput Test] Successfully installed detour hook for XInputGetCapabilities
-23:53:26:516 [14416] | INFO  | [Display Commander] [XInput Test] Installing detour hook for XInputEnable...
-23:53:26:516 [14416] | INFO  | [Display Commander] [XInput Test] Installing detour hook: 467218320 -> 1697514496
-23:53:26:516 [14416] | INFO  | [Display Commander] [XInput Test] Detour hook installed successfully
-23:53:26:516 [14416] | INFO  | [Display Commander] [XInput Test] Successfully installed detour hook for XInputEnable
-23:53:26:516 [14416] | INFO  | [Display Commander] [XInput Test] All XInput detour hooks installed successfully - input blocking should now work!
-23:53:26:517 [14416] | INFO  | [Display Commander] [XInput Test] XInput API hooks installed successfully
-23:53:26:517 [14416] | INFO  | [Display Commander] [XInput Test] Successfully installed XInput runtime hooks on retry
-23:53:26:517 [14416] | INFO  | [Display Commander] [XInput Test] Found XInput modules on retry 4
-23:53:26:518 [14416] | INFO  | [Display Commander] [XInput Test] XInput hooks became active
+23:55:59:747 [12040] | INFO  | [Display Commander] [XInput Test] No XInput modules found yet - will retry later
+23:55:59:747 [12040] | INFO  | [Display Commander] [XInput Test] GetAsyncKeyState function found and stored from user32.dll
+23:55:59:747 [12040] | INFO  | [Display Commander] [XInput Test] GetKeyState function found and stored from user32.dll
+23:55:59:747 [12040] | INFO  | [Display Commander] [XInput Test] GetKeyboardState function found and stored from user32.dll
+23:55:59:747 [12040] | INFO  | [Display Commander] [XInput Test] GetCursorPos function found and stored from user32.dll
+23:55:59:747 [12040] | INFO  | [Display Commander] [XInput Test] SetCursorPos function found and stored from user32.dll
+23:55:59:747 [12040] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
+23:55:59:747 [12040] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
+23:55:59:762 [12040] | INFO  | [Display Commander] [XInput Test] XInput runtime hooks prepared - will activate when modules are loaded
+23:55:59:762 [12040] | INFO  | [Display Commander] XInput tester initialized successfully
+23:55:59:762 [41652] | INFO  | [Display Commander] [XInput Test] XInput background retry thread started
+23:55:59:762 [41652] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 1 - checking for XInput modules
+23:55:59:762 [41652] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
+23:55:59:762 [41652] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
+23:55:59:762 [41652] | INFO  | [Display Commander] [XInput Test] No XInput modules found in process
+23:56:00:021 [41652] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 2 - checking for XInput modules
+23:56:00:021 [41652] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
+23:56:00:022 [41652] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
+23:56:00:022 [41652] | INFO  | [Display Commander] [XInput Test] No XInput modules found in process
+23:56:00:282 [41652] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 3 - checking for XInput modules
+23:56:00:282 [41652] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
+23:56:00:282 [41652] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
+23:56:00:282 [41652] | INFO  | [Display Commander] [XInput Test] No XInput modules found in process
+23:56:00:539 [41652] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 4 - checking for XInput modules
+23:56:00:539 [41652] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
+23:56:00:539 [41652] | INFO  | [Display Commander] [XInput Test] Found xinput1_3.dll, installing runtime hooks...
+23:56:00:539 [41652] | INFO  | [Display Commander] [XInput Test] XInputGetState runtime hook installed from xinput1_3.dll
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] XInputSetState runtime hook installed from xinput1_3.dll
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] XInputGetCapabilities runtime hook installed from xinput1_3.dll
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] XInputEnable runtime hook installed from xinput1_3.dll
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Runtime hooks installed successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Installing working detour hooks for XInput functions...
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Installing detour hook for XInputGetState...
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Installing detour hook: 4204624 -> 1697514272
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Memory protection changed successfully to PAGE_EXECUTE_READWRITE
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Original bytes before patching: e9 b5 df 23 75 83 ec 1c c7 45 f8 00 
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Patched bytes after hooking: ff 25 00 00 00 00 20 03 2e 65 00 00 
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Memory protection restored successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Instruction cache flushed successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Detour hook installed successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Successfully installed detour hook for XInputGetState
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Installing detour hook for XInputSetState...
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Installing detour hook: 4205600 -> 1697515168
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Memory protection changed successfully to PAGE_EXECUTE_READWRITE
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Original bytes before patching: e9 65 dc 23 75 83 ec 1c c7 45 f8 00 
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Patched bytes after hooking: ff 25 00 00 00 00 a0 06 2e 65 00 00 
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Memory protection restored successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Instruction cache flushed successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Detour hook installed successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Successfully installed detour hook for XInputSetState
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Installing detour hook for XInputGetCapabilities...
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Installing detour hook: 4205984 -> 1697516048
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Memory protection changed successfully to PAGE_EXECUTE_READWRITE
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Original bytes before patching: e9 a5 d9 23 75 83 ec 20 c7 45 f8 00 
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Patched bytes after hooking: ff 25 00 00 00 00 10 0a 2e 65 00 00 
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Memory protection restored successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Instruction cache flushed successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Detour hook installed successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Successfully installed detour hook for XInputGetCapabilities
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Installing detour hook for XInputEnable...
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Installing detour hook: 4206480 -> 1697516960
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Memory protection changed successfully to PAGE_EXECUTE_READWRITE
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Original bytes before patching: e9 35 d7 23 75 83 ec 08 a1 24 0c 41 
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Patched bytes after hooking: ff 25 00 00 00 00 a0 0d 2e 65 00 00 
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Memory protection restored successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Instruction cache flushed successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Detour hook installed successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Successfully installed detour hook for XInputEnable
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] All XInput detour hooks installed successfully - input blocking should now work!
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] XInput API hooks installed successfully
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Successfully installed XInput runtime hooks on retry
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] Found XInput modules on retry 4
+23:56:00:541 [41652] | INFO  | [Display Commander] [XInput Test] XInput hooks became active

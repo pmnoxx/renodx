@@ -321,7 +321,7 @@ bool XInputTester::InstallDetourHook(FARPROC originalFunction, FARPROC newFuncti
     
     // Change memory protection to allow writing
     DWORD oldProtect;
-    if (!VirtualProtect(originalFunction, 12, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+    if (!VirtualProtect(originalFunction, 14, PAGE_EXECUTE_READWRITE, &oldProtect)) {
         LogTestEvent("Failed to change memory protection for detour hook");
         return false;
     }
@@ -329,7 +329,7 @@ bool XInputTester::InstallDetourHook(FARPROC originalFunction, FARPROC newFuncti
     LogTestEvent("Memory protection changed successfully to PAGE_EXECUTE_READWRITE");
     
     // Create a jump instruction to our hook function
-    // For x64: JMP QWORD PTR [RIP+0] followed by the target address
+    // For x64: Use a direct jump with relative addressing
     BYTE* code = (BYTE*)originalFunction;
     
     // Log the original bytes before patching
@@ -340,28 +340,30 @@ bool XInputTester::InstallDetourHook(FARPROC originalFunction, FARPROC newFuncti
     }
     LogTestEvent(oss.str());
     
-    // JMP QWORD PTR [RIP+0] = FF 25 00 00 00 00
-    code[0] = 0xFF;  // JMP
-    code[1] = 0x25;  // QWORD PTR [RIP+0]
-    code[2] = 0x00;  // Displacement = 0
-    code[3] = 0x00;  // Displacement = 0
-    code[4] = 0x00;  // Displacement = 0
-    code[5] = 0x00;  // Displacement = 0
+    // Use a different approach: push the target address and ret
+    // This is more reliable than trying to calculate relative jumps
+    code[0] = 0x68;  // PUSH imm32 (push lower 32 bits)
+    *(DWORD*)(code + 1) = (DWORD)((ULONGLONG)newFunction & 0xFFFFFFFF);
     
-    // Store the target address after the jump instruction
-    *(ULONGLONG*)(code + 6) = (ULONGLONG)newFunction;
+    code[5] = 0xC7;  // MOV [RSP+4], imm32
+    code[6] = 0x44;  // ModRM: [RSP+4]
+    code[7] = 0x24;  // SIB: [RSP+4]
+    code[8] = 0x04;  // Displacement: +4
+    *(DWORD*)(code + 9) = (DWORD)((ULONGLONG)newFunction >> 32);
+    
+    code[13] = 0xC3; // RET (jump to the address we just pushed)
     
     // Log the patched bytes
     std::ostringstream oss2;
     oss2 << "Patched bytes after hooking: ";
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 14; i++) {
         oss2 << std::hex << std::setw(2) << std::setfill('0') << (int)code[i] << " ";
     }
     LogTestEvent(oss2.str());
     
     // Restore memory protection
     DWORD dummy;
-    if (!VirtualProtect(originalFunction, 12, oldProtect, &dummy)) {
+    if (!VirtualProtect(originalFunction, 14, oldProtect, &dummy)) {
         LogTestEvent("Failed to restore memory protection after detour hook");
         return false;
     }
@@ -369,7 +371,7 @@ bool XInputTester::InstallDetourHook(FARPROC originalFunction, FARPROC newFuncti
     LogTestEvent("Memory protection restored successfully");
     
     // Flush instruction cache
-    if (!FlushInstructionCache(GetCurrentProcess(), originalFunction, 12)) {
+    if (!FlushInstructionCache(GetCurrentProcess(), originalFunction, 14)) {
         LogTestEvent("Failed to flush instruction cache for detour hook");
         return false;
     }
