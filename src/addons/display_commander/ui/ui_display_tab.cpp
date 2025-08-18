@@ -291,108 +291,60 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
                                 static_cast<int>(s_selected_refresh_rate_index), 
                                 refresh_rate);
                             
-                            if (has_rational) {
-                                // Use modern API with rational refresh rates
-                                if (renodx::resolution::ApplyDisplaySettingsModern(
-                                    static_cast<int>(s_selected_monitor_index), width, height, 
-                                    refresh_rate.numerator, refresh_rate.denominator)) {
-                                    
-                                    double refresh_rate_hz = refresh_rate.ToHz();
-                                    std::ostringstream oss;
-                                    oss << "Display changes applied successfully using modern API: " << width << "x" << height 
-                                        << " @ " << std::fixed << std::setprecision(3) << refresh_rate_hz << "Hz";
-                                    LogInfo(oss.str().c_str());
-                                } else {
-                                    // Fallback to legacy API
-                                    float refresh_rate;
-                                    sscanf(selected_refresh_rate.c_str(), "%fHz", &refresh_rate);
-                                    
-                                    // Get monitor handle
-                                    std::vector<HMONITOR> monitors;
-                                    EnumDisplayMonitors(nullptr, nullptr, 
-                                        [](HMONITOR hmon, HDC, LPRECT, LPARAM lparam) -> BOOL {
-                                            auto* monitors_ptr = reinterpret_cast<std::vector<HMONITOR>*>(lparam);
-                                            monitors_ptr->push_back(hmon);
-                                            return TRUE;
-                                        }, 
-                                        reinterpret_cast<LPARAM>(&monitors));
-                                    
-                                    if (s_selected_monitor_index >= 0 && s_selected_monitor_index < static_cast<int>(monitors.size())) {
-                                        HMONITOR hmon = monitors[static_cast<int>(s_selected_monitor_index)];
-                                        
-                                        MONITORINFOEXW mi;
-                                        mi.cbSize = sizeof(mi);
-                                        if (GetMonitorInfoW(hmon, &mi)) {
-                                            std::wstring device_name = mi.szDevice;
-                                            
-                                            // Create DEVMODE structure with selected resolution and refresh rate
-                                            DEVMODEW dm;
-                                            dm.dmSize = sizeof(dm);
-                                            dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-                                            dm.dmPelsWidth = width;
-                                            dm.dmPelsHeight = height;
-                                            dm.dmDisplayFrequency = static_cast<DWORD>(refresh_rate);
-                                            
-                                            // Apply the changes
-                                            LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
-                                            
-                                            if (result == DISP_CHANGE_SUCCESSFUL) {
-                                                std::ostringstream oss;
-                                                oss << "Display changes applied successfully using legacy API: " << width << "x" << height 
-                                                    << " @ " << std::fixed << std::setprecision(2) << refresh_rate << "Hz";
-                                                LogInfo(oss.str().c_str());
-                                            } else {
-                                                std::ostringstream oss;
-                                                oss << "Failed to apply display changes. Error code: " << result;
-                                                LogWarn(oss.str().c_str());
-                                            }
-                                        }
-                                    }
-                                }
-                            } else {
-                                // No rational refresh rate available, use legacy API
-                                float refresh_rate;
-                                sscanf(selected_refresh_rate.c_str(), "%fHz", &refresh_rate);
-                                
+                            // Always use the reliable legacy API for now, but with high-precision refresh rate from cache
+                            // Get the exact refresh rate from the rational values
+                            double exact_refresh_rate = refresh_rate.ToHz();
+                            
+                            // Log the values we're trying to apply
+                            std::ostringstream debug_oss;
+                            debug_oss << "Attempting to apply display changes: Monitor=" << s_selected_monitor_index 
+                                      << ", Resolution=" << width << "x" << height 
+                                      << ", Refresh Rate=" << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz"
+                                      << " (Rational: " << refresh_rate.numerator << "/" << refresh_rate.denominator << ")";
+                            LogInfo(debug_oss.str().c_str());
+                            
+                            // Get monitor handle from the display cache
+                            const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
+                            if (display) {
                                 // Get monitor handle
-                                std::vector<HMONITOR> monitors;
-                                EnumDisplayMonitors(nullptr, nullptr, 
-                                    [](HMONITOR hmon, HDC, LPRECT, LPARAM lparam) -> BOOL {
-                                        auto* monitors_ptr = reinterpret_cast<std::vector<HMONITOR>*>(lparam);
-                                        monitors_ptr->push_back(hmon);
-                                        return TRUE;
-                                    }, 
-                                    reinterpret_cast<LPARAM>(&monitors));
+                                HMONITOR hmon = display->monitor_handle;
                                 
-                                if (s_selected_monitor_index >= 0 && s_selected_monitor_index < static_cast<int>(monitors.size())) {
-                                    HMONITOR hmon = monitors[static_cast<int>(s_selected_monitor_index)];
+                                MONITORINFOEXW mi;
+                                mi.cbSize = sizeof(mi);
+                                if (GetMonitorInfoW(hmon, &mi)) {
+                                    std::wstring device_name = mi.szDevice;
                                     
-                                    MONITORINFOEXW mi;
-                                    mi.cbSize = sizeof(mi);
-                                    if (GetMonitorInfoW(hmon, &mi)) {
-                                        std::wstring device_name = mi.szDevice;
+                                    // Create DEVMODE structure with selected resolution and refresh rate
+                                    DEVMODEW dm;
+                                    dm.dmSize = sizeof(dm);
+                                    dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+                                    dm.dmPelsWidth = width;
+                                    dm.dmPelsHeight = height;
+                                    
+                                    // Use the exact refresh rate from rational values, but convert to DWORD for DEVMODE
+                                    // Note: This will truncate to integer, but we'll log the exact value
+                                    dm.dmDisplayFrequency = static_cast<DWORD>(exact_refresh_rate);
+                                    
+                                    // Apply the changes
+                                    LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+                                    
+                                    if (result == DISP_CHANGE_SUCCESSFUL) {
+                                        std::ostringstream oss;
+                                        oss << "Display changes applied successfully: " << width << "x" << height 
+                                            << " @ " << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz";
+                                        LogInfo(oss.str().c_str());
                                         
-                                        // Create DEVMODE structure with selected resolution and refresh rate
-                                        DEVMODEW dm;
-                                        dm.dmSize = sizeof(dm);
-                                        dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-                                        dm.dmPelsWidth = width;
-                                        dm.dmPelsHeight = height;
-                                        dm.dmDisplayFrequency = static_cast<DWORD>(refresh_rate);
-                                        
-                                        // Apply the changes
-                                        LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
-                                        
-                                        if (result == DISP_CHANGE_SUCCESSFUL) {
-                                            std::ostringstream oss;
-                                            oss << "Display changes applied successfully using legacy API: " << width << "x" << height 
-                                                << " @ " << std::fixed << std::setprecision(2) << refresh_rate << "Hz";
-                                            LogInfo(oss.str().c_str());
-                                        } else {
-                                            std::ostringstream oss;
-                                            oss << "Failed to apply display changes. Error code: " << result;
-                                            LogWarn(oss.str().c_str());
+                                        // Log a warning about precision loss if the refresh rate was truncated
+                                        if (exact_refresh_rate != static_cast<double>(dm.dmDisplayFrequency)) {
+                                            std::ostringstream warn_oss;
+                                            warn_oss << "Note: Refresh rate was truncated from " << std::fixed << std::setprecision(3) 
+                                                     << exact_refresh_rate << "Hz to " << dm.dmDisplayFrequency << "Hz due to legacy API limitation";
+                                            LogWarn(warn_oss.str().c_str());
                                         }
+                                    } else {
+                                        std::ostringstream oss;
+                                        oss << "Failed to apply display changes. Error code: " << result;
+                                        LogWarn(oss.str().c_str());
                                     }
                                 }
                             }
