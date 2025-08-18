@@ -46,6 +46,57 @@ void XInputTester::Shutdown() {
 }
 
 bool XInputTester::InstallHooks() {
+    // FIRST: Get all original function addresses BEFORE installing any hooks
+    // This prevents circular dependencies when hooking LoadLibrary/GetProcAddress
+    
+    // Get dynamic loading functions from kernel32.dll FIRST
+    HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
+    if (kernel32) {
+        m_original_LoadLibraryA = (LoadLibraryA_t)GetProcAddress(kernel32, "LoadLibraryA");
+        if (m_original_LoadLibraryA) {
+            LogTestEvent("LoadLibraryA function found and stored from kernel32.dll");
+        }
+        
+        m_original_LoadLibraryW = (LoadLibraryW_t)GetProcAddress(kernel32, "LoadLibraryW");
+        if (m_original_LoadLibraryW) {
+            LogTestEvent("LoadLibraryW function found and stored from kernel32.dll");
+        }
+        
+        m_original_GetProcAddress = (GetProcAddress_t)GetProcAddress(kernel32, "GetProcAddress");
+        if (m_original_GetProcAddress) {
+            LogTestEvent("GetProcAddress function found and stored from kernel32.dll");
+        }
+    }
+    
+    // Get Keyboard/Mouse functions from user32.dll
+    HMODULE user32 = GetModuleHandleA("user32.dll");
+    if (user32) {
+        m_original_GetAsyncKeyState = (GetAsyncKeyState_t)GetProcAddress(user32, "GetAsyncKeyState");
+        if (m_original_GetAsyncKeyState) {
+            LogTestEvent("GetAsyncKeyState function found and stored from user32.dll");
+        }
+        
+        m_original_GetKeyState = (GetKeyState_t)GetProcAddress(user32, "GetKeyState");
+        if (m_original_GetKeyState) {
+            LogTestEvent("GetKeyState function found and stored from user32.dll");
+        }
+        
+        m_original_GetKeyboardState = (GetKeyboardState_t)GetProcAddress(user32, "GetKeyboardState");
+        if (m_original_GetKeyboardState) {
+            LogTestEvent("GetKeyboardState function found and stored from user32.dll");
+        }
+        
+        m_original_GetCursorPos = (GetCursorPos_t)GetProcAddress(user32, "GetCursorPos");
+        if (m_original_GetCursorPos) {
+            LogTestEvent("GetCursorPos function found and stored from user32.dll");
+        }
+        
+        m_original_SetCursorPos = (SetCursorPos_t)GetProcAddress(user32, "SetCursorPos");
+        if (m_original_SetCursorPos) {
+            LogTestEvent("SetCursorPos function found and stored from user32.dll");
+        }
+    }
+    
     // Try to get XInput modules - they might not be loaded yet
     HMODULE xinput13 = GetModuleHandleA("xinput1_3.dll");
     HMODULE xinput14 = GetModuleHandleA("xinput1_4.dll");
@@ -111,42 +162,13 @@ bool XInputTester::InstallHooks() {
         }
     }
     
-    // Hook Keyboard/Mouse functions from user32.dll
-    HMODULE user32 = GetModuleHandleA("user32.dll");
-    if (user32) {
-        m_original_GetAsyncKeyState = (GetAsyncKeyState_t)GetProcAddress(user32, "GetAsyncKeyState");
-        if (m_original_GetAsyncKeyState) {
-            LogTestEvent("GetAsyncKeyState function found and stored from user32.dll");
-        }
-        
-        m_original_GetKeyState = (GetKeyState_t)GetProcAddress(user32, "GetKeyState");
-        if (m_original_GetKeyState) {
-            LogTestEvent("GetKeyState function found and stored from user32.dll");
-        }
-        
-        m_original_GetKeyboardState = (GetKeyboardState_t)GetProcAddress(user32, "GetKeyboardState");
-        if (m_original_GetKeyboardState) {
-            LogTestEvent("GetKeyboardState function found and stored from user32.dll");
-        }
-        
-        m_original_GetCursorPos = (GetCursorPos_t)GetProcAddress(user32, "GetCursorPos");
-        if (m_original_GetCursorPos) {
-            LogTestEvent("GetCursorPos function found and stored from user32.dll");
-        }
-        
-        m_original_SetCursorPos = (SetCursorPos_t)GetProcAddress(user32, "SetCursorPos");
-        if (m_original_SetCursorPos) {
-            LogTestEvent("SetCursorPos function found and stored from user32.dll");
-        }
-    }
-    
     // Mark hooks as installed even if some modules aren't loaded yet
     m_hooks_installed = true;
     
     // Try to install runtime hooks for XInput functions
-    bool xinput_hooks_installed = InstallRuntimeHooks();
+    bool runtime_hooks_installed = InstallRuntimeHooks();
     
-    if (xinput_hooks_installed) {
+    if (runtime_hooks_installed) {
         LogTestEvent("XInput runtime hooks installed successfully");
     } else {
         LogTestEvent("XInput runtime hooks prepared - will activate when modules are loaded");
@@ -534,22 +556,41 @@ void XInputTester::StartRetryThread() {
     m_retry_thread = std::thread([this]() {
         LogTestEvent("XInput background retry thread started");
         int retry_count = 0;
-        // Poll a few times per second until any XInput hook becomes active
-        while (m_retry_thread_running.load() && !IsXInputGetStateHookActive()) {
+        bool hooks_installed = false;
+        
+        // Continuously monitor and maintain hooks - never stop retrying
+        while (m_retry_thread_running.load()) {
             retry_count++;
-            LogTestEvent("XInput retry attempt " + std::to_string(retry_count) + " - checking for XInput modules");
-            bool found_any = TryLoadXInputModules();
-            if (found_any) {
-                LogTestEvent("Found XInput modules on retry " + std::to_string(retry_count));
-                break;
+            
+            // Check if we need to install or reinstall hooks
+            if (!hooks_installed) {
+                LogTestEvent("XInput retry attempt " + std::to_string(retry_count) + " - checking for XInput modules");
+                bool found_any = TryLoadXInputModules();
+                if (found_any) {
+                    LogTestEvent("Found XInput modules on retry " + std::to_string(retry_count));
+                    LogTestEvent("XInput hooks became active");
+                    hooks_installed = true;
+                }
+            } else {
+                // Hooks are installed, check if they're still working
+                if (!IsXInputGetStateHookActive()) {
+                    LogTestEvent("XInput retry attempt " + std::to_string(retry_count) + " - hooks were overridden, reinstalling...");
+                    hooks_installed = false; // Force reinstallation
+                    // Small delay before retry to avoid spam
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    continue;
+                } else {
+                    // Hooks are working, just log periodic status
+                    if (retry_count % 40 == 0) { // Log every 10 seconds (40 * 250ms)
+                        LogTestEvent("XInput retry attempt " + std::to_string(retry_count) + " - hooks still active and working");
+                    }
+                }
             }
+            
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
-        if (IsXInputGetStateHookActive()) {
-            LogTestEvent("XInput hooks became active");
-        } else {
-            LogTestEvent("XInput background retry thread exiting without finding XInput modules");
-        }
+        
+        LogTestEvent("XInput background retry thread stopped by user");
         m_retry_thread_running.store(false);
     });
 }
@@ -656,6 +697,36 @@ std::string XInputTester::GetLoadedXInputModulesInfo() const {
     oss << "  SetCursorPos: " << (IsSetCursorPosHookActive() ? "Active" : "Inactive") << "\n";
     
     return oss.str();
+}
+
+bool XInputTester::AreHooksStillValid() const {
+    // Check if our hooks are still pointing to our hook functions
+    // This helps detect if ReShade or the game has overridden our hooks
+    
+    // For now, we'll use a simple check - if hooks are installed and we have original functions
+    // In a more sophisticated implementation, we could verify the actual function addresses
+    // haven't been changed by external code
+    
+    if (!m_hooks_installed) {
+        return false;
+    }
+    
+    // Check if we have the basic hook infrastructure
+    bool has_basic_hooks = (m_original_XInputGetState != nullptr) ||
+                          (m_original_XInputSetState != nullptr) ||
+                          (m_original_XInputGetCapabilities != nullptr) ||
+                          (m_original_XInputEnable != nullptr);
+    
+    if (!has_basic_hooks) {
+        return false;
+    }
+    
+    // TODO: In the future, we could add more sophisticated validation:
+    // - Check if the function addresses still point to our hook functions
+    // - Verify the detour instructions are still in place
+    // - Check if import table entries still point to our hooks
+    
+    return true;
 }
 
 // Hook function implementations
@@ -766,6 +837,91 @@ void WINAPI XInputTester::HookXInputEnable(BOOL enable) {
     if (s_instance && s_instance->m_original_XInputEnable) {
         s_instance->m_original_XInputEnable(enable);
     }
+}
+
+// Dynamic loading hook functions
+HMODULE WINAPI XInputTester::HookLoadLibraryA(LPCSTR lpLibFileName) {
+    if (s_instance && lpLibFileName) {
+        std::string libName(lpLibFileName);
+        if (libName.find("xinput") != std::string::npos || libName.find("XInput") != std::string::npos) {
+            s_instance->LogTestEvent("LoadLibraryA intercepted - XInput library: " + libName);
+        }
+    }
+    
+    // Call original function
+    if (s_instance && s_instance->m_original_LoadLibraryA) {
+        HMODULE result = s_instance->m_original_LoadLibraryA(lpLibFileName);
+        
+        // If this is an XInput library, try to install hooks on it
+        if (s_instance && lpLibFileName) {
+            std::string libName(lpLibFileName);
+            if (libName.find("xinput") != std::string::npos || libName.find("XInput") != std::string::npos) {
+                s_instance->LogTestEvent("XInput library loaded via LoadLibraryA, attempting to hook...");
+                // Trigger hook installation on the newly loaded library
+                s_instance->TryLoadXInputModules();
+            }
+        }
+        
+        return result;
+    }
+    
+    return LoadLibraryA(lpLibFileName);
+}
+
+HMODULE WINAPI XInputTester::HookLoadLibraryW(LPCWSTR lpLibFileName) {
+    if (s_instance && lpLibFileName) {
+        std::wstring libName(lpLibFileName);
+        if (libName.find(L"xinput") != std::wstring::npos || libName.find(L"XInput") != std::wstring::npos) {
+            s_instance->LogTestEvent("LoadLibraryW intercepted - XInput library: " + std::string(libName.begin(), libName.end()));
+        }
+    }
+    
+    // Call original function
+    if (s_instance && s_instance->m_original_LoadLibraryW) {
+        HMODULE result = s_instance->m_original_LoadLibraryW(lpLibFileName);
+        
+        // If this is an XInput library, try to install hooks on it
+        if (s_instance && lpLibFileName) {
+            std::wstring libName(lpLibFileName);
+            if (libName.find(L"xinput") != std::wstring::npos || libName.find(L"XInput") != std::wstring::npos) {
+                s_instance->LogTestEvent("XInput library loaded via LoadLibraryW, attempting to hook...");
+                // Trigger hook installation on the newly loaded library
+                s_instance->TryLoadXInputModules();
+            }
+        }
+        
+        return result;
+    }
+    
+    return LoadLibraryW(lpLibFileName);
+}
+
+FARPROC WINAPI XInputTester::HookGetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
+    if (s_instance && lpProcName) {
+        std::string procName(lpProcName);
+        if (procName.find("XInput") != std::string::npos) {
+            s_instance->LogTestEvent("GetProcAddress intercepted - XInput function: " + procName);
+        }
+    }
+    
+    // Call original function
+    if (s_instance && s_instance->m_original_GetProcAddress) {
+        FARPROC result = s_instance->m_original_GetProcAddress(hModule, lpProcName);
+        
+        // If this is an XInput function, try to install hooks
+        if (s_instance && lpProcName) {
+            std::string procName(lpProcName);
+            if (procName.find("XInput") != std::string::npos) {
+                s_instance->LogTestEvent("XInput function retrieved via GetProcAddress: " + procName);
+                // Trigger hook installation
+                s_instance->TryLoadXInputModules();
+            }
+        }
+        
+        return result;
+    }
+    
+    return GetProcAddress(hModule, lpProcName);
 }
 
 // Keyboard/Mouse hook function implementations
@@ -934,6 +1090,37 @@ bool XInputTester::InstallAPIHooks() {
             LogTestEvent("Successfully installed detour hook for XInputEnable");
         } else {
             LogTestEvent("Failed to install detour hook for XInputEnable");
+            success = false;
+        }
+    }
+    
+    // Install hooks for dynamic loading functions to intercept XInput loading at the source
+    if (m_original_LoadLibraryA) {
+        LogTestEvent("Installing detour hook for LoadLibraryA...");
+        if (InstallDetourHook((FARPROC)m_original_LoadLibraryA, (FARPROC)HookLoadLibraryA)) {
+            LogTestEvent("Successfully installed detour hook for LoadLibraryA");
+        } else {
+            LogTestEvent("Failed to install detour hook for LoadLibraryA");
+            success = false;
+        }
+    }
+    
+    if (m_original_LoadLibraryW) {
+        LogTestEvent("Installing detour hook for LoadLibraryW...");
+        if (InstallDetourHook((FARPROC)m_original_LoadLibraryW, (FARPROC)HookLoadLibraryW)) {
+            LogTestEvent("Successfully installed detour hook for LoadLibraryW");
+        } else {
+            LogTestEvent("Failed to install detour hook for LoadLibraryW");
+            success = false;
+        }
+    }
+    
+    if (m_original_GetProcAddress) {
+        LogTestEvent("Installing detour hook for GetProcAddress...");
+        if (InstallDetourHook((FARPROC)m_original_GetProcAddress, (FARPROC)HookGetProcAddress)) {
+            LogTestEvent("Successfully installed detour hook for GetProcAddress");
+        } else {
+            LogTestEvent("Failed to install detour hook for GetProcAddress");
             success = false;
         }
     }

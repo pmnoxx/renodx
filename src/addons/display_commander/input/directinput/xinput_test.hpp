@@ -58,6 +58,22 @@ public:
     
     // Debug information
     std::string GetLoadedXInputModulesInfo() const;
+    
+    // Check if hooks are still properly installed (not overridden)
+    bool AreHooksStillValid() const;
+    
+    // Test helpers
+    void LogTestEvent(const std::string& event);
+    void SimulateTestInput();
+    
+    // Module loading retry
+    bool TryLoadXInputModules();
+    
+    // Background retry thread management
+    void StartRetryThread();
+    void StopRetryThread();
+    
+
 
 private:
     // Hook functions for XInput APIs
@@ -73,6 +89,11 @@ private:
     static BOOL WINAPI HookGetCursorPos(LPPOINT lpPoint);
     static BOOL WINAPI HookSetCursorPos(int x, int y);
     static BOOL WINAPI HookGetMousePos(int* x, int* y);
+    
+    // Hook functions for dynamic loading APIs
+    static HMODULE WINAPI HookLoadLibraryA(LPCSTR lpLibFileName);
+    static HMODULE WINAPI HookLoadLibraryW(LPCWSTR lpLibFileName);
+    static FARPROC WINAPI HookGetProcAddress(HMODULE hModule, LPCSTR lpProcName);
     
     // Install hooks
     bool InstallHooks();
@@ -99,17 +120,6 @@ private:
     // Helper method for patching individual import entries
     bool PatchImportEntry(PIMAGE_THUNK_DATA pThunk, FARPROC newFunction);
     
-    // Module loading retry
-    bool TryLoadXInputModules();
-    
-    // Background retry thread management
-    void StartRetryThread();
-    void StopRetryThread();
-    
-    // Test helpers
-    void LogTestEvent(const std::string& event);
-    void SimulateTestInput();
-    
     // Original function pointers
     using XInputGetState_t = DWORD(WINAPI*)(DWORD, XINPUT_STATE*);
     using XInputSetState_t = DWORD(WINAPI*)(DWORD, XINPUT_VIBRATION*);
@@ -134,6 +144,15 @@ private:
     GetCursorPos_t m_original_GetCursorPos = nullptr;
     SetCursorPos_t m_original_SetCursorPos = nullptr;
 
+    // Original function pointers for Dynamic Loading APIs
+    using LoadLibraryA_t = HMODULE(WINAPI*)(LPCSTR);
+    using LoadLibraryW_t = HMODULE(WINAPI*)(LPCWSTR);
+    using GetProcAddress_t = FARPROC(WINAPI*)(HMODULE, LPCSTR);
+
+    LoadLibraryA_t m_original_LoadLibraryA = nullptr;
+    LoadLibraryW_t m_original_LoadLibraryW = nullptr;
+    GetProcAddress_t m_original_GetProcAddress = nullptr;
+    
     // Test state
     std::atomic<bool> m_test_running{false};
     std::string m_last_test_result;
