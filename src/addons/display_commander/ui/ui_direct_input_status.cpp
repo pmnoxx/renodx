@@ -1,6 +1,7 @@
 #include "ui_direct_input_status.hpp"
 #include "../input/directinput/direct_input.hpp"
 #include "../input/directinput/direct_input_test_ui.hpp"
+#include "../input/directinput/xinput_test_ui.hpp"
 #include "ui_common.hpp"
 #include "../addon.hpp"
 #include <deps/imgui/imgui.h>
@@ -174,8 +175,23 @@ void AddDirectInputStatusSettings(std::vector<renodx::utils::settings::Setting*>
             renodx::input::direct_input::test::RenderDirectInputTestPanel();
             return true;
         },
-        .is_visible = []() { return is_direct_input_tab(s_ui_mode); },
-    });
-}
-
-} // namespace renodx::ui
+                    .is_visible = []() { return is_direct_input_tab(s_ui_mode); },
+        });
+        
+        // XInput Testing Panel
+        settings.push_back(new renodx::utils::settings::Setting{
+            .key = "XInputTesting",
+            .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+            .label = "XInput Testing",
+            .section = "XInput Testing",
+            .tooltip = "Test XInput hooking and input blocking functionality",
+            .on_draw = []() -> bool {
+                // Render the XInput test panel
+                renodx::input::direct_input::test::RenderXInputTestPanel();
+                return true;
+            },
+            .is_visible = []() { return is_direct_input_tab(s_ui_mode); },
+        });
+    }
+    
+    } // namespace renodx::ui
