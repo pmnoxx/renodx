@@ -39,6 +39,13 @@ public:
     bool IsXInputGetCapabilitiesHookActive() const { return m_hooks_installed && m_original_XInputGetCapabilities != nullptr; }
     bool IsXInputEnableHookActive() const { return m_hooks_installed && m_original_XInputEnable != nullptr; }
     
+    // Keyboard/Mouse hook status queries
+    bool IsGetAsyncKeyStateHookActive() const { return m_hooks_installed && m_original_GetAsyncKeyState != nullptr; }
+    bool IsGetKeyStateHookActive() const { return m_hooks_installed && m_original_GetKeyState != nullptr; }
+    bool IsGetKeyboardStateHookActive() const { return m_hooks_installed && m_original_GetKeyboardState != nullptr; }
+    bool IsGetCursorPosHookActive() const { return m_hooks_installed && m_original_GetCursorPos != nullptr; }
+    bool IsSetCursorPosHookActive() const { return m_hooks_installed && m_original_SetCursorPos != nullptr; }
+    
     // Input blocking control
     void SetBlockXInputInput(bool block) { m_block_xinput_input.store(block); }
     bool IsBlockingXInputInput() const { return m_block_xinput_input.load(); }
@@ -58,6 +65,14 @@ private:
     static DWORD WINAPI HookXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration);
     static DWORD WINAPI HookXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPABILITIES* pCapabilities);
     static void WINAPI HookXInputEnable(BOOL enable);
+    
+    // Hook functions for Keyboard/Mouse APIs (for testing)
+    static SHORT WINAPI HookGetAsyncKeyState(int vKey);
+    static SHORT WINAPI HookGetKeyState(int nVirtKey);
+    static BOOL WINAPI HookGetKeyboardState(PBYTE lpKeyState);
+    static BOOL WINAPI HookGetCursorPos(LPPOINT lpPoint);
+    static BOOL WINAPI HookSetCursorPos(int x, int y);
+    static BOOL WINAPI HookGetMousePos(int* x, int* y);
     
     // Install hooks
     bool InstallHooks();
@@ -87,6 +102,19 @@ private:
     XInputGetCapabilities_t m_original_XInputGetCapabilities = nullptr;
     XInputEnable_t m_original_XInputEnable = nullptr;
 
+    // Original function pointers for Keyboard/Mouse APIs
+    using GetAsyncKeyState_t = SHORT(WINAPI*)(int);
+    using GetKeyState_t = SHORT(WINAPI*)(int);
+    using GetKeyboardState_t = BOOL(WINAPI*)(PBYTE);
+    using GetCursorPos_t = BOOL(WINAPI*)(LPPOINT);
+    using SetCursorPos_t = BOOL(WINAPI*)(int, int);
+
+    GetAsyncKeyState_t m_original_GetAsyncKeyState = nullptr;
+    GetKeyState_t m_original_GetKeyState = nullptr;
+    GetKeyboardState_t m_original_GetKeyboardState = nullptr;
+    GetCursorPos_t m_original_GetCursorPos = nullptr;
+    SetCursorPos_t m_original_SetCursorPos = nullptr;
+
     // Test state
     std::atomic<bool> m_test_running{false};
     std::string m_last_test_result;
@@ -100,10 +128,20 @@ private:
     
     // Test statistics
     struct TestStats {
+        // XInput stats
         int controller_states_intercepted = 0;
         int vibration_commands_intercepted = 0;
         int capability_queries_intercepted = 0;
         int enable_calls_intercepted = 0;
+        
+        // Keyboard/Mouse stats
+        int get_async_key_state_calls = 0;
+        int get_key_state_calls = 0;
+        int get_keyboard_state_calls = 0;
+        int get_cursor_pos_calls = 0;
+        int set_cursor_pos_calls = 0;
+        
+        // General
         std::vector<std::string> intercepted_events;
     };
     

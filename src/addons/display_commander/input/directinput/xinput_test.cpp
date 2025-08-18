@@ -110,6 +110,35 @@ bool XInputTester::InstallHooks() {
         }
     }
     
+    // Hook Keyboard/Mouse functions from user32.dll
+    HMODULE user32 = GetModuleHandleA("user32.dll");
+    if (user32) {
+        m_original_GetAsyncKeyState = (GetAsyncKeyState_t)GetProcAddress(user32, "GetAsyncKeyState");
+        if (m_original_GetAsyncKeyState) {
+            LogTestEvent("GetAsyncKeyState function found and stored from user32.dll");
+        }
+        
+        m_original_GetKeyState = (GetKeyState_t)GetProcAddress(user32, "GetKeyState");
+        if (m_original_GetKeyState) {
+            LogTestEvent("GetKeyState function found and stored from user32.dll");
+        }
+        
+        m_original_GetKeyboardState = (GetKeyboardState_t)GetProcAddress(user32, "GetKeyboardState");
+        if (m_original_GetKeyboardState) {
+            LogTestEvent("GetKeyboardState function found and stored from user32.dll");
+        }
+        
+        m_original_GetCursorPos = (GetCursorPos_t)GetProcAddress(user32, "GetCursorPos");
+        if (m_original_GetCursorPos) {
+            LogTestEvent("GetCursorPos function found and stored from user32.dll");
+        }
+        
+        m_original_SetCursorPos = (SetCursorPos_t)GetProcAddress(user32, "SetCursorPos");
+        if (m_original_SetCursorPos) {
+            LogTestEvent("SetCursorPos function found and stored from user32.dll");
+        }
+    }
+    
     // Mark hooks as installed even if some modules aren't loaded yet
     m_hooks_installed = true;
     
@@ -236,6 +265,65 @@ bool XInputTester::ReplaceXInputFunctions() {
                 else if (strcmp(pszFunctionName, "XInputEnable") == 0 && m_original_XInputEnable) {
                     LogTestEvent("Replacing XInputEnable in IAT");
                     if (ReplaceFunctionInIAT(pThunk, (FARPROC)HookXInputEnable)) {
+                        replaced_any = true;
+                    }
+                }
+                
+                pThunk++;
+                pOriginalThunk++;
+            }
+        }
+        // Check if this is user32.dll for keyboard/mouse functions
+        else if (strstr(pszDllName, "user32") || strstr(pszDllName, "USER32")) {
+            LogTestEvent("Found USER32 DLL: " + std::string(pszDllName));
+            
+            // Get the import address table (IAT)
+            PIMAGE_THUNK_DATA pThunk = (PIMAGE_THUNK_DATA)((BYTE*)hModule + pImportDesc->FirstThunk);
+            PIMAGE_THUNK_DATA pOriginalThunk = (PIMAGE_THUNK_DATA)((BYTE*)hModule + pImportDesc->OriginalFirstThunk);
+            
+            // Walk through all imports from this DLL
+            while (pThunk->u1.Function) {
+                // Get the function name
+                if (pOriginalThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG) {
+                    // Ordinal import, skip
+                    pThunk++;
+                    pOriginalThunk++;
+                    continue;
+                }
+                
+                PIMAGE_IMPORT_BY_NAME pImportByName = (PIMAGE_IMPORT_BY_NAME)((BYTE*)hModule + 
+                    pOriginalThunk->u1.AddressOfData);
+                
+                LPCSTR pszFunctionName = (LPCSTR)pImportByName->Name;
+                
+                // Check if this is a keyboard/mouse function we want to hook
+                if (strcmp(pszFunctionName, "GetAsyncKeyState") == 0 && m_original_GetAsyncKeyState) {
+                    LogTestEvent("Replacing GetAsyncKeyState in IAT");
+                    if (ReplaceFunctionInIAT(pThunk, (FARPROC)HookGetAsyncKeyState)) {
+                        replaced_any = true;
+                    }
+                }
+                else if (strcmp(pszFunctionName, "GetKeyState") == 0 && m_original_GetKeyState) {
+                    LogTestEvent("Replacing GetKeyState in IAT");
+                    if (ReplaceFunctionInIAT(pThunk, (FARPROC)HookGetKeyState)) {
+                        replaced_any = true;
+                    }
+                }
+                else if (strcmp(pszFunctionName, "GetKeyboardState") == 0 && m_original_GetKeyboardState) {
+                    LogTestEvent("Replacing GetKeyboardState in IAT");
+                    if (ReplaceFunctionInIAT(pThunk, (FARPROC)HookGetKeyboardState)) {
+                        replaced_any = true;
+                    }
+                }
+                else if (strcmp(pszFunctionName, "GetCursorPos") == 0 && m_original_GetCursorPos) {
+                    LogTestEvent("Replacing GetCursorPos in IAT");
+                    if (ReplaceFunctionInIAT(pThunk, (FARPROC)HookGetCursorPos)) {
+                        replaced_any = true;
+                    }
+                }
+                else if (strcmp(pszFunctionName, "SetCursorPos") == 0 && m_original_SetCursorPos) {
+                    LogTestEvent("Replacing SetCursorPos in IAT");
+                    if (ReplaceFunctionInIAT(pThunk, (FARPROC)HookSetCursorPos)) {
                         replaced_any = true;
                     }
                 }
@@ -422,6 +510,12 @@ void XInputTester::RunXInputTest() {
         oss << "Vibration commands intercepted: " << m_current_test_stats.vibration_commands_intercepted << "\n";
         oss << "Capability queries intercepted: " << m_current_test_stats.capability_queries_intercepted << "\n";
         oss << "Enable calls intercepted: " << m_current_test_stats.enable_calls_intercepted << "\n";
+        oss << "\nKeyboard/Mouse Events:\n";
+        oss << "GetAsyncKeyState calls: " << m_current_test_stats.get_async_key_state_calls << "\n";
+        oss << "GetKeyState calls: " << m_current_test_stats.get_key_state_calls << "\n";
+        oss << "GetKeyboardState calls: " << m_current_test_stats.get_keyboard_state_calls << "\n";
+        oss << "GetCursorPos calls: " << m_current_test_stats.get_cursor_pos_calls << "\n";
+        oss << "SetCursorPos calls: " << m_current_test_stats.set_cursor_pos_calls << "\n";
         
         m_last_test_result = oss.str();
         m_test_running.store(false);
@@ -466,6 +560,12 @@ std::string XInputTester::GetLoadedXInputModulesInfo() const {
     oss << "  XInputSetState: " << (IsXInputSetStateHookActive() ? "Active" : "Inactive") << "\n";
     oss << "  XInputGetCapabilities: " << (IsXInputGetCapabilitiesHookActive() ? "Active" : "Inactive") << "\n";
     oss << "  XInputEnable: " << (IsXInputEnableHookActive() ? "Active" : "Inactive") << "\n";
+    oss << "\nKeyboard/Mouse Hook Status:\n";
+    oss << "  GetAsyncKeyState: " << (IsGetAsyncKeyStateHookActive() ? "Active" : "Inactive") << "\n";
+    oss << "  GetKeyState: " << (IsGetKeyStateHookActive() ? "Active" : "Inactive") << "\n";
+    oss << "  GetKeyboardState: " << (IsGetKeyboardStateHookActive() ? "Active" : "Inactive") << "\n";
+    oss << "  GetCursorPos: " << (IsGetCursorPosHookActive() ? "Active" : "Inactive") << "\n";
+    oss << "  SetCursorPos: " << (IsSetCursorPosHookActive() ? "Active" : "Inactive") << "\n";
     
     return oss.str();
 }
@@ -578,6 +678,97 @@ void WINAPI XInputTester::HookXInputEnable(BOOL enable) {
     if (s_instance && s_instance->m_original_XInputEnable) {
         s_instance->m_original_XInputEnable(enable);
     }
+}
+
+// Keyboard/Mouse hook function implementations
+SHORT WINAPI XInputTester::HookGetAsyncKeyState(int vKey) {
+    if (s_instance) {
+        s_instance->LogTestEvent("GetAsyncKeyState intercepted - Key: " + std::to_string(vKey));
+        s_instance->m_current_test_stats.get_async_key_state_calls++;
+    }
+    
+    // Call original function if available
+    if (s_instance && s_instance->m_original_GetAsyncKeyState) {
+        return s_instance->m_original_GetAsyncKeyState(vKey);
+    }
+    
+    return 0;
+}
+
+SHORT WINAPI XInputTester::HookGetKeyState(int nVirtKey) {
+    if (s_instance) {
+        s_instance->LogTestEvent("GetKeyState intercepted - Key: " + std::to_string(nVirtKey));
+        s_instance->m_current_test_stats.get_key_state_calls++;
+    }
+    
+    // Call original function if available
+    if (s_instance && s_instance->m_original_GetKeyState) {
+        return s_instance->m_original_GetKeyState(nVirtKey);
+    }
+    
+    return 0;
+}
+
+BOOL WINAPI XInputTester::HookGetKeyboardState(PBYTE lpKeyState) {
+    if (s_instance) {
+        s_instance->LogTestEvent("GetKeyboardState intercepted");
+        s_instance->m_current_test_stats.get_keyboard_state_calls++;
+    }
+    
+    // Call original function if available
+    if (s_instance && s_instance->m_original_GetKeyboardState) {
+        return s_instance->m_original_GetKeyboardState(lpKeyState);
+    }
+    
+    return FALSE;
+}
+
+BOOL WINAPI XInputTester::HookGetCursorPos(LPPOINT lpPoint) {
+    if (s_instance) {
+        s_instance->LogTestEvent("GetCursorPos intercepted");
+        s_instance->m_current_test_stats.get_cursor_pos_calls++;
+    }
+    
+    // Call original function if available
+    if (s_instance && s_instance->m_original_GetCursorPos) {
+        return s_instance->m_original_GetCursorPos(lpPoint);
+    }
+    
+    return FALSE;
+}
+
+BOOL WINAPI XInputTester::HookSetCursorPos(int x, int y) {
+    if (s_instance) {
+        s_instance->LogTestEvent("SetCursorPos intercepted - X: " + std::to_string(x) + ", Y: " + std::to_string(y));
+        s_instance->m_current_test_stats.set_cursor_pos_calls++;
+    }
+    
+    // Call original function if available
+    if (s_instance && s_instance->m_original_SetCursorPos) {
+        return s_instance->m_original_SetCursorPos(x, y);
+    }
+    
+    return FALSE;
+}
+
+BOOL WINAPI XInputTester::HookGetMousePos(int* x, int* y) {
+    if (s_instance) {
+        s_instance->LogTestEvent("GetMousePos intercepted");
+        s_instance->m_current_test_stats.get_cursor_pos_calls++;
+    }
+    
+    // Call original function if available
+    if (s_instance && s_instance->m_original_GetCursorPos) {
+        POINT pt;
+        BOOL result = s_instance->m_original_GetCursorPos(&pt);
+        if (result && x && y) {
+            *x = pt.x;
+            *y = pt.y;
+        }
+        return result;
+    }
+    
+    return FALSE;
 }
 
 bool XInputTester::ReplaceFunctionInIAT(PIMAGE_THUNK_DATA pThunk, FARPROC newFunction) {
