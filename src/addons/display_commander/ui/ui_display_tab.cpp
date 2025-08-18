@@ -125,6 +125,153 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .is_visible = []() { return is_display_tab(s_ui_mode); } // Show in Display tab mode
     });
 
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "MonitorSettingsCustom",
+        .binding = nullptr, // No direct binding, just for display
+        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .default_value = 0.f,
+        .label = "Dynamic Monitor Settings",
+        .section = "Display",
+        .tooltip = "Interactive monitor, resolution, and refresh rate selection with real-time updates.",
+        .on_draw = []() -> bool {
+            // Get current monitor labels
+            auto monitor_labels = GetMonitorLabels();
+            if (monitor_labels.empty()) {
+                ImGui::Text("No monitors detected");
+                return false;
+            }
+            
+            // Monitor selection
+            if (ImGui::BeginCombo("Monitor", monitor_labels[static_cast<int>(s_selected_monitor_index)].c_str())) {
+                for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
+                    const bool is_selected = (i == static_cast<int>(s_selected_monitor_index));
+                    if (ImGui::Selectable(monitor_labels[i].c_str(), is_selected)) {
+                        s_selected_monitor_index = static_cast<float>(i);
+                        s_selected_resolution_index = 0.f; // Reset resolution when monitor changes
+                        s_selected_refresh_rate_index = 0.f; // Reset refresh rate when monitor changes
+                    }
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            
+            // Resolution selection
+            auto resolution_labels = renodx::resolution::GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+            if (!resolution_labels.empty()) {
+                if (ImGui::BeginCombo("Resolution", resolution_labels[static_cast<int>(s_selected_resolution_index)].c_str())) {
+                    for (int i = 0; i < static_cast<int>(resolution_labels.size()); i++) {
+                        const bool is_selected = (i == static_cast<int>(s_selected_resolution_index));
+                        if (ImGui::Selectable(resolution_labels[i].c_str(), is_selected)) {
+                            s_selected_resolution_index = static_cast<float>(i);
+                            s_selected_refresh_rate_index = 0.f; // Reset refresh rate when resolution changes
+                        }
+                        if (is_selected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+            }
+            
+            // Refresh rate selection
+            if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+                std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+                int width, height;
+                if (sscanf(selected_resolution.c_str(), "%d x %d", &width, &height) == 2) {
+                    auto refresh_rate_labels = renodx::resolution::GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), width, height);
+                    if (!refresh_rate_labels.empty()) {
+                        if (ImGui::BeginCombo("Refresh Rate", refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)].c_str())) {
+                            for (int i = 0; i < static_cast<int>(refresh_rate_labels.size()); i++) {
+                                const bool is_selected = (i == static_cast<int>(s_selected_refresh_rate_index));
+                                if (ImGui::Selectable(refresh_rate_labels[i].c_str(), is_selected)) {
+                                    s_selected_refresh_rate_index = static_cast<float>(i);
+                                }
+                                if (is_selected) {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
+                    }
+                }
+            }
+            
+            // Apply Changes Button
+            if (ImGui::Button("Apply Desktop Changes")) {
+                // Apply the changes using the existing logic
+                if (s_override_desktop_resolution >= 0.5f) {
+                    std::thread([](){
+                        // Get the selected resolution from the dynamic list
+                        auto resolution_labels = renodx::resolution::GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+                        if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+                            std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+                            int width, height;
+                            sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
+                            
+                            // Get the selected refresh rate from the dynamic list
+                            auto refresh_rate_labels = renodx::resolution::GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), width, height);
+                            if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                                std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
+                                float refresh_rate;
+                                sscanf(selected_refresh_rate.c_str(), "%f Hz", &refresh_rate);
+                                
+                                // Get monitor handle
+                                std::vector<HMONITOR> monitors;
+                                EnumDisplayMonitors(nullptr, nullptr, 
+                                    [](HMONITOR hmon, HDC, LPRECT, LPARAM lparam) -> BOOL {
+                                        auto* monitors_ptr = reinterpret_cast<std::vector<HMONITOR>*>(lparam);
+                                        monitors_ptr->push_back(hmon);
+                                        return TRUE;
+                                    }, 
+                                    reinterpret_cast<LPARAM>(&monitors));
+                                
+                                if (s_selected_monitor_index >= 0 && s_selected_monitor_index < static_cast<int>(monitors.size())) {
+                                    HMONITOR hmon = monitors[static_cast<int>(s_selected_monitor_index)];
+                                    
+                                    MONITORINFOEXW mi;
+                                    mi.cbSize = sizeof(mi);
+                                    if (GetMonitorInfoW(hmon, &mi)) {
+                                        std::wstring device_name = mi.szDevice;
+                                        
+                                        // Create DEVMODE structure with selected resolution and refresh rate
+                                        DEVMODEW dm;
+                                        dm.dmSize = sizeof(dm);
+                                        dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+                                        dm.dmPelsWidth = width;
+                                        dm.dmPelsHeight = height;
+                                        dm.dmDisplayFrequency = static_cast<DWORD>(refresh_rate);
+                                        
+                                        // Apply the changes
+                                        LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+                                        
+                                        if (result == DISP_CHANGE_SUCCESSFUL) {
+                                            std::ostringstream oss;
+                                            oss << "Display changes applied successfully: " << width << "x" << height 
+                                                << " @ " << std::fixed << std::setprecision(2) << refresh_rate << "Hz";
+                                            LogInfo(oss.str().c_str());
+                                        } else {
+                                            std::ostringstream oss;
+                                            oss << "Failed to apply display changes. Error code: " << result;
+                                            LogWarn(oss.str().c_str());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }).detach();
+                }
+            }
+            
+            return false; // No value change
+        },
+        .is_visible = []() { return is_basic_tab(s_ui_mode) || is_display_tab(s_ui_mode); } // Show in Simple and Display modes
+    });
+
+    // Old UI:
+
+
     // Monitor Selection
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "SelectedMonitor",
