@@ -118,6 +118,18 @@ struct DisplayInfo {
         return current_refresh_rate.ToString();
     }
     
+    // Get comprehensive current display info string
+    std::string GetCurrentDisplayInfoString() const {
+        std::ostringstream oss;
+        oss << "Current: " << GetCurrentResolutionString() << " @ " << GetCurrentRefreshRateString();
+        
+        // Debug: Show raw refresh rate values
+        oss << " [Raw: " << current_refresh_rate.numerator << "/" << current_refresh_rate.denominator 
+            << " = " << std::setprecision(10) << current_refresh_rate.ToHz() << "Hz]";
+        
+        return oss.str();
+    }
+    
     // Find resolution by dimensions
     std::optional<size_t> FindResolutionIndex(int width, int height) const {
         for (size_t i = 0; i < resolutions.size(); ++i) {
@@ -139,6 +151,65 @@ struct DisplayInfo {
             }
         }
         return std::nullopt;
+    }
+    
+    // Find the closest supported resolution to current settings
+    std::optional<size_t> FindClosestResolutionIndex() const {
+        if (resolutions.empty()) return std::nullopt;
+        
+        // Find exact match first
+        for (size_t i = 0; i < resolutions.size(); ++i) {
+            if (resolutions[i].width == current_width && resolutions[i].height == current_height) {
+                return i;
+            }
+        }
+        
+        // If no exact match, find closest by area
+        size_t closest_index = 0;
+        int current_area = current_width * current_height;
+        int min_diff = std::abs(resolutions[0].width * resolutions[0].height - current_area);
+        
+        for (size_t i = 1; i < resolutions.size(); ++i) {
+            int area = resolutions[i].width * resolutions[i].height;
+            int diff = std::abs(area - current_area);
+            if (diff < min_diff) {
+                min_diff = diff;
+                closest_index = i;
+            }
+        }
+        
+        return closest_index;
+    }
+    
+    // Find the closest supported refresh rate within a resolution to current refresh rate
+    std::optional<size_t> FindClosestRefreshRateIndex(size_t resolution_index) const {
+        if (resolution_index >= resolutions.size()) return std::nullopt;
+        
+        const auto& res = resolutions[resolution_index];
+        if (res.refresh_rates.empty()) return std::nullopt;
+        
+        // Find exact match first
+        for (size_t i = 0; i < res.refresh_rates.size(); ++i) {
+            if (res.refresh_rates[i] == current_refresh_rate) {
+                return i;
+            }
+        }
+        
+        // If no exact match, find closest by frequency
+        size_t closest_index = 0;
+        double current_hz = current_refresh_rate.ToHz();
+        double min_diff = std::abs(res.refresh_rates[0].ToHz() - current_hz);
+        
+        for (size_t i = 1; i < res.refresh_rates.size(); ++i) {
+            double hz = res.refresh_rates[i].ToHz();
+            double diff = std::abs(hz - current_hz);
+            if (diff < min_diff) {
+                min_diff = diff;
+                closest_index = i;
+            }
+        }
+        
+        return closest_index;
     }
     
     // Get resolution labels for UI
@@ -214,6 +285,12 @@ public:
     // Get rational refresh rate for a specific display, resolution, and refresh rate index
     bool GetRationalRefreshRate(size_t display_index, size_t resolution_index, size_t refresh_rate_index,
                                RationalRefreshRate& refresh_rate) const;
+    
+    // Get current display info (current settings, not supported modes)
+    bool GetCurrentDisplayInfo(size_t display_index, int& width, int& height, RationalRefreshRate& refresh_rate) const;
+    
+    // Get supported modes info (what the display can do)
+    bool GetSupportedModes(size_t display_index, std::vector<Resolution>& resolutions) const;
     
     // Check if cache is initialized
     bool IsInitialized() const { return is_initialized; }

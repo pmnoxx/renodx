@@ -13,6 +13,12 @@
 #include <cmath> // Added for std::round
 #include <atomic>
 
+// External variables
+extern float s_selected_monitor_index;
+extern float s_selected_resolution_index;
+extern float s_selected_refresh_rate_index;
+extern bool s_initial_auto_selection_done;
+
 namespace renodx::ui {
 
 // Initialize the display cache for the UI
@@ -38,16 +44,16 @@ std::vector<std::string> GetMonitorLabelsFromCache() {
             if (display) {
                 std::ostringstream oss;
                 
-                // Convert device name to string for unique identification
-                std::string device_name(display->device_name.begin(), display->device_name.end());
+                // Convert friendly name to string for user-friendly display
+                std::string friendly_name(display->friendly_name.begin(), display->friendly_name.end());
                 
-                // Get high-precision refresh rate with decimals
+                // Get high-precision refresh rate with full precision
                 double exact_refresh_rate = display->current_refresh_rate.ToHz();
                 std::ostringstream rate_oss;
-                rate_oss << std::setprecision(3) << exact_refresh_rate;
+                rate_oss << std::setprecision(10) << exact_refresh_rate;
                 std::string rate_str = rate_oss.str();
                 
-                // Remove trailing zeros after decimal point
+                // Remove trailing zeros after decimal point but keep meaningful precision
                 size_t decimal_pos = rate_str.find('.');
                 if (decimal_pos != std::string::npos) {
                     size_t last_nonzero = rate_str.find_last_not_of('0');
@@ -60,9 +66,12 @@ std::vector<std::string> GetMonitorLabelsFromCache() {
                     }
                 }
                 
-                // Format: Device Path - Resolution @ RefreshRateHz
-                oss << device_name << " - " << display->GetCurrentResolutionString() 
-                    << " @ " << rate_str << "Hz";
+                // Format: [DeviceID] Friendly Name - Resolution @ PreciseRefreshRateHz [Raw: num/den]
+                std::string device_name(display->device_name.begin(), display->device_name.end());
+                oss << "[" << device_name << "] " << friendly_name << " - " << display->GetCurrentResolutionString() 
+                    << " @ " << rate_str << "Hz [Raw: " 
+                    << display->current_refresh_rate.numerator << "/" 
+                    << display->current_refresh_rate.denominator << "]";
                 labels.push_back(oss.str());
             }
         }
@@ -155,9 +164,11 @@ bool HandleMonitorSettingsUI() {
                 }
             }
         }
+        
+
     }
     
-    // Get current monitor labels
+    // Get current monitor labels (now with precise refresh rates and raw rational values)
     auto monitor_labels = GetMonitorLabelsFromCache();
     if (monitor_labels.empty()) {
         ImGui::Text("No monitors detected");
@@ -165,9 +176,8 @@ bool HandleMonitorSettingsUI() {
     }
     
     // Auto-detect current display resolution and set as default if not already set
-    static bool first_run = true;
-    if (first_run) {
-        first_run = false;
+    if (!s_initial_auto_selection_done) {
+        s_initial_auto_selection_done = true;
         
         // Get current display info for the selected monitor
         HWND hwnd = g_last_swapchain_hwnd.load();
@@ -221,8 +231,40 @@ bool HandleMonitorSettingsUI() {
             const bool is_selected = (i == static_cast<int>(s_selected_monitor_index));
             if (ImGui::Selectable(monitor_labels[i].c_str(), is_selected)) {
                 s_selected_monitor_index = static_cast<float>(i);
-                s_selected_resolution_index = 0.f; // Reset resolution when monitor changes
-                s_selected_refresh_rate_index = 0.f; // Reset refresh rate when monitor changes
+                
+                // Auto-select closest resolution and refresh rate for the newly selected monitor
+                const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i);
+                if (display) {
+                    // Find closest supported resolution to current settings
+                    auto closest_resolution_index = display->FindClosestResolutionIndex();
+                    if (closest_resolution_index.has_value()) {
+                        s_selected_resolution_index = static_cast<float>(closest_resolution_index.value());
+                        
+                        // Find closest refresh rate within this resolution
+                        auto closest_refresh_rate_index = display->FindClosestRefreshRateIndex(closest_resolution_index.value());
+                        if (closest_refresh_rate_index.has_value()) {
+                            s_selected_refresh_rate_index = static_cast<float>(closest_refresh_rate_index.value());
+                            
+                            // Debug: Log what we auto-selected
+                            std::ostringstream auto_select_oss;
+                            auto_select_oss << "Auto-selected for monitor " << i << ": Resolution " 
+                                           << s_selected_resolution_index << " (closest to current " 
+                                           << display->GetCurrentResolutionString() << "), Refresh Rate " 
+                                           << s_selected_refresh_rate_index << " (closest to current " 
+                                           << display->GetCurrentRefreshRateString() << ")";
+                            LogInfo(auto_select_oss.str().c_str());
+                        } else {
+                            // Fallback to first refresh rate if no match found
+                            s_selected_refresh_rate_index = 0.0f;
+                            LogWarn("No refresh rate match found for auto-selection, using first available");
+                        }
+                    } else {
+                        // Fallback to first resolution if no match found
+                        s_selected_resolution_index = 0.0f;
+                        s_selected_refresh_rate_index = 0.0f;
+                        LogWarn("No resolution match found for auto-selection, using first available");
+                    }
+                }
             }
             if (is_selected) {
                 ImGui::SetItemDefaultFocus();

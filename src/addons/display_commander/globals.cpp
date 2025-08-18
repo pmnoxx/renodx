@@ -87,6 +87,7 @@ float s_selected_monitor_index = 0.f; // Primary monitor by default
 float s_selected_aspect_ratio = 1.f; // Default to 16:9
 float s_selected_resolution_index = 0.f; // Default to first available resolution
 float s_selected_refresh_rate_index = 0.f; // Default to first available refresh rate
+bool s_initial_auto_selection_done = false; // Track if we've done initial auto-selection
 
 // Reflex settings
 float s_reflex_enabled = 1.f; // Enabled by default
