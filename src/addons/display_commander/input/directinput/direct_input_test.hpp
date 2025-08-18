@@ -50,6 +50,9 @@ public:
     
     // Thread status
     bool IsRetryThreadRunning() const { return m_retry_thread_running.load(); }
+    
+    // Debug information
+    std::string GetLoadedInputModulesInfo() const;
 
 private:
     // Background retry thread management

@@ -14,3 +14,4 @@ std::string GetXInputTestStatusText();
 bool IsAnyXInputTestRunning();
 
 } // namespace renodx::input::direct_input::test
+

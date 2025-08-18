@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <thread>
+#include <include/reshade.hpp>
 
 namespace renodx::input::direct_input::test {
 
@@ -33,10 +34,14 @@ public:
     int GetTestDuration() const { return m_test_duration_ms; }
     
     // Hook status queries
-    bool IsXInputGetStateHookActive() const { return m_original_XInputGetState != nullptr; }
-    bool IsXInputSetStateHookActive() const { return m_original_XInputSetState != nullptr; }
-    bool IsXInputGetCapabilitiesHookActive() const { return m_original_XInputGetCapabilities != nullptr; }
-    bool IsXInputEnableHookActive() const { return m_original_XInputEnable != nullptr; }
+    bool IsXInputGetStateHookActive() const { return m_hooks_installed && m_original_XInputGetState != nullptr; }
+    bool IsXInputSetStateHookActive() const { return m_hooks_installed && m_original_XInputSetState != nullptr; }
+    bool IsXInputGetCapabilitiesHookActive() const { return m_hooks_installed && m_original_XInputGetCapabilities != nullptr; }
+    bool IsXInputEnableHookActive() const { return m_hooks_installed && m_original_XInputEnable != nullptr; }
+    
+    // Input blocking control
+    void SetBlockXInputInput(bool block) { m_block_xinput_input.store(block); }
+    bool IsBlockingXInputInput() const { return m_block_xinput_input.load(); }
     
     // Manual retry trigger
     bool RetryLoadModules() { return TryLoadXInputModules(); }
@@ -57,6 +62,8 @@ private:
     // Install hooks
     bool InstallHooks();
     void UninstallHooks();
+    bool ReplaceXInputFunctions();
+    bool ReplaceFunctionInIAT(PIMAGE_THUNK_DATA pThunk, FARPROC newFunction);
     
     // Module loading retry
     bool TryLoadXInputModules();
@@ -88,6 +95,7 @@ private:
     // Hook state
     bool m_hooks_installed = false;
     std::atomic<bool> m_retry_thread_running{false};
+    std::atomic<bool> m_block_xinput_input{false};
     std::thread m_retry_thread;
     
     // Test statistics

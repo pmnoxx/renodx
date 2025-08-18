@@ -116,6 +116,13 @@ bool XInputTester::InstallHooks() {
     if (m_original_XInputGetState || m_original_XInputSetState || 
         m_original_XInputGetCapabilities || m_original_XInputEnable) {
         LogTestEvent("XInput hooks installed successfully");
+        
+        // Now try to replace the functions in memory so our hooks are actually called
+        if (ReplaceXInputFunctions()) {
+            LogTestEvent("XInput functions successfully replaced in memory");
+        } else {
+            LogTestEvent("Failed to replace XInput functions in memory - hooks may not work");
+        }
     } else {
         LogTestEvent("XInput hooks prepared - will activate when modules are loaded");
     }
@@ -136,6 +143,118 @@ void XInputTester::UninstallHooks() {
     
     m_hooks_installed = false;
     LogTestEvent("XInput hooks uninstalled");
+}
+
+bool XInputTester::ReplaceXInputFunctions() {
+    LogTestEvent("Attempting to replace XInput functions in memory...");
+    
+    // Get the current process handle
+    HANDLE hProcess = GetCurrentProcess();
+    if (!hProcess) {
+        LogTestEvent("Failed to get current process handle");
+        return false;
+    }
+    
+    // Get the main module (our addon)
+    HMODULE hModule = GetModuleHandleA(nullptr);
+    if (!hModule) {
+        LogTestEvent("Failed to get main module handle");
+        return false;
+    }
+    
+    // Get the DOS header
+    PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)hModule;
+    if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
+        LogTestEvent("Invalid DOS header");
+        return false;
+    }
+    
+    // Get the NT headers
+    PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)((BYTE*)hModule + pDosHeader->e_lfanew);
+    if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE) {
+        LogTestEvent("Invalid NT headers");
+        return false;
+    }
+    
+    // Get the import directory
+    PIMAGE_IMPORT_DESCRIPTOR pImportDesc = (PIMAGE_IMPORT_DESCRIPTOR)((BYTE*)hModule + 
+        pNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+    
+    if (!pImportDesc) {
+        LogTestEvent("No import directory found");
+        return false;
+    }
+    
+    bool replaced_any = false;
+    
+    // Walk through all import descriptors
+    while (pImportDesc->Name) {
+        LPCSTR pszDllName = (LPCSTR)((BYTE*)hModule + pImportDesc->Name);
+        
+        // Check if this is an XInput DLL
+        if (strstr(pszDllName, "xinput") || strstr(pszDllName, "XInput")) {
+            LogTestEvent("Found XInput DLL: " + std::string(pszDllName));
+            
+            // Get the import address table (IAT)
+            PIMAGE_THUNK_DATA pThunk = (PIMAGE_THUNK_DATA)((BYTE*)hModule + pImportDesc->FirstThunk);
+            PIMAGE_THUNK_DATA pOriginalThunk = (PIMAGE_THUNK_DATA)((BYTE*)hModule + pImportDesc->OriginalFirstThunk);
+            
+            // Walk through all imports from this DLL
+            while (pThunk->u1.Function) {
+                // Get the function name
+                if (pOriginalThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG) {
+                    // Ordinal import, skip
+                    pThunk++;
+                    pOriginalThunk++;
+                    continue;
+                }
+                
+                PIMAGE_IMPORT_BY_NAME pImportByName = (PIMAGE_IMPORT_BY_NAME)((BYTE*)hModule + 
+                    pOriginalThunk->u1.AddressOfData);
+                
+                LPCSTR pszFunctionName = (LPCSTR)pImportByName->Name;
+                
+                // Check if this is an XInput function we want to hook
+                if (strcmp(pszFunctionName, "XInputGetState") == 0 && m_original_XInputGetState) {
+                    LogTestEvent("Replacing XInputGetState in IAT");
+                    if (ReplaceFunctionInIAT(pThunk, (FARPROC)HookXInputGetState)) {
+                        replaced_any = true;
+                    }
+                }
+                else if (strcmp(pszFunctionName, "XInputSetState") == 0 && m_original_XInputSetState) {
+                    LogTestEvent("Replacing XInputSetState in IAT");
+                    if (ReplaceFunctionInIAT(pThunk, (FARPROC)HookXInputSetState)) {
+                        replaced_any = true;
+                    }
+                }
+                else if (strcmp(pszFunctionName, "XInputGetCapabilities") == 0 && m_original_XInputGetCapabilities) {
+                    LogTestEvent("Replacing XInputGetCapabilities in IAT");
+                    if (ReplaceFunctionInIAT(pThunk, (FARPROC)HookXInputGetCapabilities)) {
+                        replaced_any = true;
+                    }
+                }
+                else if (strcmp(pszFunctionName, "XInputEnable") == 0 && m_original_XInputEnable) {
+                    LogTestEvent("Replacing XInputEnable in IAT");
+                    if (ReplaceFunctionInIAT(pThunk, (FARPROC)HookXInputEnable)) {
+                        replaced_any = true;
+                    }
+                }
+                
+                pThunk++;
+                pOriginalThunk++;
+            }
+        }
+        
+        pImportDesc++;
+    }
+    
+    if (replaced_any) {
+        LogTestEvent("Successfully replaced XInput functions in IAT");
+        return true;
+    } else {
+        LogTestEvent("No XInput functions found to replace in IAT");
+        return false;
+    }
 }
 
 bool XInputTester::TryLoadXInputModules() {
@@ -357,6 +476,17 @@ DWORD WINAPI XInputTester::HookXInputGetState(DWORD dwUserIndex, XINPUT_STATE* p
         s_instance->LogTestEvent("XInputGetState intercepted - Controller: " + std::to_string(dwUserIndex));
         s_instance->m_current_test_stats.controller_states_intercepted++;
         
+        // Check if input blocking is enabled
+        if (s_instance->IsBlockingXInputInput()) {
+            s_instance->LogTestEvent("XInputGetState BLOCKED - Input blocking enabled");
+            // Return success but with zeroed state (no input)
+            if (pState) {
+                ZeroMemory(pState, sizeof(XINPUT_STATE));
+                pState->dwPacketNumber = 0;
+            }
+            return ERROR_SUCCESS;
+        }
+        
         // Try to load modules if we don't have the original function yet
         if (!s_instance->m_original_XInputGetState) {
             s_instance->TryLoadXInputModules();
@@ -375,6 +505,13 @@ DWORD WINAPI XInputTester::HookXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATIO
     if (s_instance) {
         s_instance->LogTestEvent("XInputSetState intercepted - Controller: " + std::to_string(dwUserIndex));
         s_instance->m_current_test_stats.vibration_commands_intercepted++;
+        
+        // Check if input blocking is enabled
+        if (s_instance->IsBlockingXInputInput()) {
+            s_instance->LogTestEvent("XInputSetState BLOCKED - Input blocking enabled");
+            // Return success but don't apply vibration
+            return ERROR_SUCCESS;
+        }
         
         // Try to load modules if we don't have the original function yet
         if (!s_instance->m_original_XInputSetState) {
@@ -395,6 +532,16 @@ DWORD WINAPI XInputTester::HookXInputGetCapabilities(DWORD dwUserIndex, DWORD dw
         s_instance->LogTestEvent("XInputGetCapabilities intercepted - Controller: " + std::to_string(dwUserIndex));
         s_instance->m_current_test_stats.capability_queries_intercepted++;
         
+        // Check if input blocking is enabled
+        if (s_instance->IsBlockingXInputInput()) {
+            s_instance->LogTestEvent("XInputGetCapabilities BLOCKED - Input blocking enabled");
+            // Return success but with zeroed capabilities
+            if (pCapabilities) {
+                ZeroMemory(pCapabilities, sizeof(XINPUT_CAPABILITIES));
+            }
+            return ERROR_SUCCESS;
+        }
+        
         // Try to load modules if we don't have the original function yet
         if (!s_instance->m_original_XInputGetCapabilities) {
             s_instance->TryLoadXInputModules();
@@ -414,6 +561,13 @@ void WINAPI XInputTester::HookXInputEnable(BOOL enable) {
         s_instance->LogTestEvent("XInputEnable intercepted - Enable: " + std::string(enable ? "TRUE" : "FALSE"));
         s_instance->m_current_test_stats.enable_calls_intercepted++;
         
+        // Check if input blocking is enabled
+        if (s_instance->IsBlockingXInputInput()) {
+            s_instance->LogTestEvent("XInputEnable BLOCKED - Input blocking enabled");
+            // Don't call original function when blocking
+            return;
+        }
+        
         // Try to load modules if we don't have the original function yet
         if (!s_instance->m_original_XInputEnable) {
             s_instance->TryLoadXInputModules();
@@ -426,4 +580,36 @@ void WINAPI XInputTester::HookXInputEnable(BOOL enable) {
     }
 }
 
+bool XInputTester::ReplaceFunctionInIAT(PIMAGE_THUNK_DATA pThunk, FARPROC newFunction) {
+    if (!pThunk || !newFunction) {
+        return false;
+    }
+    
+    // Store the original function pointer
+    FARPROC originalFunction = (FARPROC)pThunk->u1.Function;
+    
+    // Change memory protection to allow writing
+    DWORD oldProtect;
+    if (!VirtualProtect(&pThunk->u1.Function, sizeof(FARPROC), PAGE_READWRITE, &oldProtect)) {
+        LogTestEvent("Failed to change memory protection for IAT");
+        return false;
+    }
+    
+    // Replace the function pointer
+    pThunk->u1.Function = (ULONGLONG)newFunction;
+    
+    // Restore memory protection
+    DWORD dummy;
+    VirtualProtect(&pThunk->u1.Function, sizeof(FARPROC), oldProtect, &dummy);
+    
+    // Flush instruction cache
+    FlushInstructionCache(GetCurrentProcess(), &pThunk->u1.Function, sizeof(FARPROC));
+    
+    LogTestEvent("Successfully replaced function in IAT: " + std::to_string((ULONGLONG)originalFunction) + 
+                 " -> " + std::to_string((ULONGLONG)newFunction));
+    
+    return true;
+}
+
 } // namespace renodx::input::direct_input::test
+

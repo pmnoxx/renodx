@@ -24,6 +24,10 @@ void RenderDirectInputTestPanel() {
     ImGui::Text("Retry Thread Status: %s", 
         g_directInputTester->IsRetryThreadRunning() ? "Running" : "Stopped");
     
+    // Debug information
+    ImGui::Text("=== Debug Information ===");
+    ImGui::TextWrapped("%s", g_directInputTester->GetLoadedInputModulesInfo().c_str());
+    
     // Test control buttons (using only available ImGui functions)
     ImGui::Text("Test Controls:");
     ImGui::Text("• Run Mouse Test - Click to start mouse input testing");

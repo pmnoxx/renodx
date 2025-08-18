@@ -568,6 +568,7 @@ foreach(FILE ${ADDON_FILES})
   target_include_directories(${ADDON} SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/reshade)
   target_include_directories(${ADDON} SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_include_directories(${ADDON} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${ADDON}.include)
+  
   target_link_libraries(${ADDON} PRIVATE dbghelp)
   
   # Add NVAPI library linking for display_commander addon
@@ -581,6 +582,9 @@ foreach(FILE ${ADDON_FILES})
       target_link_libraries(${ADDON} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/SpecialK/depends/lib/nvapi/x64/nvapi64.lib)
     endif()
     target_include_directories(${ADDON} SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/SpecialK/depends/include/nvapi)
+    
+    # Add SpecialK ImGui library
+    target_include_directories(${ADDON} SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/SpecialK/src/imgui)
   endif()
   
   #target_compile_definitions(${ADDON} PRIVATE _UNICODE)

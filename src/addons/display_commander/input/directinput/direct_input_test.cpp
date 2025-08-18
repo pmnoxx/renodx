@@ -179,12 +179,15 @@ bool DirectInputTester::InstallDeviceHooks(IDirectInputDevice8* device) {
 }
 
 bool DirectInputTester::TryLoadDirectInputModules() {
+    bool found_any = false;
+    
     // Try to load DirectInput8 module
     HMODULE dinput8 = GetModuleHandleA("dinput8.dll");
     if (dinput8 && !m_original_DirectInput8Create) {
         m_original_DirectInput8Create = (DirectInput8Create_t)GetProcAddress(dinput8, "DirectInput8Create");
         if (m_original_DirectInput8Create) {
             LogTestEvent("DirectInput8Create function loaded on retry");
+            found_any = true;
         }
     }
     
@@ -195,6 +198,7 @@ bool DirectInputTester::TryLoadDirectInputModules() {
             m_original_DirectInputCreateA = (DirectInputCreateA_t)GetProcAddress(dinput, "DirectInputCreateA");
             if (m_original_DirectInputCreateA) {
                 LogTestEvent("DirectInputCreateA function loaded on retry");
+                found_any = true;
             }
         }
         
@@ -202,6 +206,7 @@ bool DirectInputTester::TryLoadDirectInputModules() {
             m_original_DirectInputCreateW = (DirectInputCreateW_t)GetProcAddress(dinput, "DirectInputCreateW");
             if (m_original_DirectInputCreateW) {
                 LogTestEvent("DirectInputCreateW function loaded on retry");
+                found_any = true;
             }
         }
         
@@ -209,13 +214,54 @@ bool DirectInputTester::TryLoadDirectInputModules() {
             m_original_DirectInputCreateEx = (DirectInputCreateEx_t)GetProcAddress(dinput, "DirectInputCreateEx");
             if (m_original_DirectInputCreateEx) {
                 LogTestEvent("DirectInputCreateEx function loaded on retry");
+                found_any = true;
             }
         }
     }
     
-    // Return true if we found at least one function
-    return (m_original_DirectInput8Create || m_original_DirectInputCreateA || 
-            m_original_DirectInputCreateW || m_original_DirectInputCreateEx);
+    // Enhanced debugging: Log what we found
+    if (found_any) {
+        LogTestEvent("Successfully loaded DirectInput functions on retry");
+    } else {
+        // Log module status for debugging
+        if (!dinput8 && !dinput) {
+            LogTestEvent("No DirectInput modules found in process");
+        } else if (dinput8 || dinput) {
+            LogTestEvent("DirectInput modules found but functions not accessible");
+        }
+    }
+    
+    return found_any;
+}
+
+std::string DirectInputTester::GetLoadedInputModulesInfo() const {
+    std::ostringstream oss;
+    oss << "Input module status:\n";
+    
+    // Check DirectInput modules
+    HMODULE dinput8 = GetModuleHandleA("dinput8.dll");
+    HMODULE dinput = GetModuleHandleA("dinput.dll");
+    
+    oss << "  dinput8.dll: " << (dinput8 ? "Loaded" : "Not loaded") << "\n";
+    oss << "  dinput.dll: " << (dinput ? "Loaded" : "Not loaded") << "\n";
+    
+    // Check other common input modules
+    HMODULE xinput = GetModuleHandleA("xinput1_4.dll");
+    HMODULE xinput9 = GetModuleHandleA("xinput9_1_0.dll");
+    HMODULE xinput13 = GetModuleHandleA("xinput1_3.dll");
+    
+    oss << "  xinput1_4.dll: " << (xinput ? "Loaded" : "Not loaded") << "\n";
+    oss << "  xinput9_1_0.dll: " << (xinput9 ? "Loaded" : "Not loaded") << "\n";
+    oss << "  xinput1_3.dll: " << (xinput13 ? "Loaded" : "Not loaded") << "\n";
+    
+    // Check Windows input modules
+    HMODULE user32 = GetModuleHandleA("user32.dll");
+    HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
+    
+    oss << "  user32.dll: " << (user32 ? "Loaded" : "Not loaded") << "\n";
+    oss << "  kernel32.dll: " << (kernel32 ? "Loaded" : "Not loaded") << "\n";
+    
+    return oss.str();
 }
 
 void DirectInputTester::UninstallDeviceHooks() {
@@ -554,3 +600,5 @@ HRESULT WINAPI DirectInputTester::HookGetDeviceState(
 }
 
 } // namespace renodx::input::direct_input::test
+
+
