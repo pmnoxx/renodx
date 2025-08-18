@@ -9,6 +9,7 @@
 #include "renodx/proxy.hpp"
 #include "dxgi/custom_fps_limiter_manager.hpp"
 #include "input/directinput/direct_input.hpp"
+#include "input/directinput/direct_input_test.hpp"
 
 
 // Forward declarations for continuous monitoring functions
@@ -140,6 +141,13 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       LogInfo("DirectInput manager initialized successfully");
     } else {
       LogWarn("Failed to initialize DirectInput manager");
+    }
+    
+    // Initialize DirectInput tester
+    if (renodx::input::direct_input::test::g_directInputTester && renodx::input::direct_input::test::g_directInputTester->Initialize()) {
+      LogInfo("DirectInput tester initialized successfully");
+    } else {
+      LogWarn("Failed to initialize DirectInput tester");
     }
     
     // Check if continuous monitoring should be enabled

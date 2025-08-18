@@ -1,5 +1,6 @@
 #include "ui_direct_input_status.hpp"
 #include "../input/directinput/direct_input.hpp"
+#include "../input/directinput/direct_input_test_ui.hpp"
 #include "ui_common.hpp"
 #include "../addon.hpp"
 #include <deps/imgui/imgui.h>
@@ -156,6 +157,21 @@ void AddDirectInputStatusSettings(std::vector<renodx::utils::settings::Setting*>
             ImGui::Text("Note: Hook installation is currently placeholder - will be implemented");
             ImGui::Text("when ReShade integration is fully resolved.");
             
+            return true;
+        },
+        .is_visible = []() { return is_direct_input_tab(s_ui_mode); },
+    });
+
+    // DirectInput Testing Panel
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "DirectInputTesting",
+        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .label = "DirectInput Testing",
+        .section = "DirectInput Testing",
+        .tooltip = "Test DirectInput hooking and input blocking functionality",
+        .on_draw = []() -> bool {
+            // Render the DirectInput test panel
+            renodx::input::direct_input::test::RenderDirectInputTestPanel();
             return true;
         },
         .is_visible = []() { return is_direct_input_tab(s_ui_mode); },
