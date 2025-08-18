@@ -4,7 +4,7 @@
 #include <cmath>
 #include <algorithm>
 #include <set>
-#include <limits>
+#include <windows.h>
 
 using Microsoft::WRL::ComPtr;
 
@@ -117,7 +117,7 @@ bool GetCurrentDisplaySettings(HMONITOR monitor, int& width, int& height, Ration
                         if (EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
                             // Among modes with the current resolution, pick the refresh closest to current setting
                             const double current_hz = static_cast<double>(dm.dmDisplayFrequency);
-                            double best_diff = std::numeric_limits<double>::infinity();
+                            double best_diff = 1e10; // Large number instead of infinity
                             DXGI_MODE_DESC best_mode{};
                             bool have_best = false;
 

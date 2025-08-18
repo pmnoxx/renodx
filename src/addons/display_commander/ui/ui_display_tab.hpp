@@ -15,4 +15,7 @@ namespace renodx::ui {
     
     // Get current display info using the display cache
     std::string GetCurrentDisplayInfoFromCache();
+    
+    // Handle monitor settings UI (extracted from on_draw lambda)
+    bool HandleMonitorSettingsUI();
 }

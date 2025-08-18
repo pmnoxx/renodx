@@ -33,17 +33,39 @@ std::vector<std::string> GetMonitorLabelsFromCache() {
     size_t display_count = renodx::display_cache::g_displayCache.GetDisplayCount();
     labels.reserve(display_count);
     
-    for (size_t i = 0; i < display_count; ++i) {
-        const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i);
-        if (display) {
-            std::ostringstream oss;
-            // Convert wide string to narrow string for UI
-            std::string friendly_name(display->friendly_name.begin(), display->friendly_name.end());
-            oss << friendly_name << " (" << display->GetCurrentResolutionString() 
-                << " @ " << display->GetCurrentRefreshRateString() << ")";
-            labels.push_back(oss.str());
+        for (size_t i = 0; i < display_count; ++i) {
+            const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i);
+            if (display) {
+                std::ostringstream oss;
+                
+                // Convert device name to string for unique identification
+                std::string device_name(display->device_name.begin(), display->device_name.end());
+                
+                // Get high-precision refresh rate with decimals
+                double exact_refresh_rate = display->current_refresh_rate.ToHz();
+                std::ostringstream rate_oss;
+                rate_oss << std::setprecision(3) << exact_refresh_rate;
+                std::string rate_str = rate_oss.str();
+                
+                // Remove trailing zeros after decimal point
+                size_t decimal_pos = rate_str.find('.');
+                if (decimal_pos != std::string::npos) {
+                    size_t last_nonzero = rate_str.find_last_not_of('0');
+                    if (last_nonzero == decimal_pos) {
+                        // All zeros after decimal, remove decimal point too
+                        rate_str = rate_str.substr(0, decimal_pos);
+                    } else if (last_nonzero > decimal_pos) {
+                        // Remove trailing zeros but keep some precision
+                        rate_str = rate_str.substr(0, last_nonzero + 1);
+                    }
+                }
+                
+                // Format: Device Path - Resolution @ RefreshRateHz
+                oss << device_name << " - " << display->GetCurrentResolutionString() 
+                    << " @ " << rate_str << "Hz";
+                labels.push_back(oss.str());
+            }
         }
-    }
     
     return labels;
 }
@@ -88,30 +110,11 @@ std::string GetCurrentDisplayInfoFromCache() {
         return "Failed to get display info from cache";
     }
     
-    // Format the display info using cache data with high-precision refresh rate
-    std::ostringstream oss;
+    // Use the new comprehensive display info method that shows current vs supported modes
     std::string friendly_name(display->friendly_name.begin(), display->friendly_name.end());
-    oss << friendly_name << " - " << display->GetCurrentResolutionString() 
-        << " @ ";
-    
-    // Format refresh rate with high precision (up to 10 digits, no trailing zeros)
-    oss << std::setprecision(10) << display->current_refresh_rate.ToHz();
-    std::string rate_str = oss.str();
-    
-    // Remove trailing zeros after decimal point
-    size_t decimal_pos = rate_str.find('.');
-    if (decimal_pos != std::string::npos) {
-        size_t last_nonzero = rate_str.find_last_not_of('0');
-        if (last_nonzero == decimal_pos) {
-            // All zeros after decimal, remove decimal point too
-            rate_str = rate_str.substr(0, decimal_pos);
-        } else if (last_nonzero > decimal_pos) {
-            // Remove trailing zeros but keep some precision
-            rate_str = rate_str.substr(0, last_nonzero + 1);
-        }
-    }
-    
-    return rate_str + "Hz";
+    std::ostringstream oss;
+    oss << friendly_name << " - " << display->GetCurrentDisplayInfoString();
+    return oss.str();
 }
 
 // Legacy functions for backward compatibility (can be removed later)
@@ -125,6 +128,233 @@ float GetMaxMonitorIndex() {
 
 std::string GetCurrentDisplayInfo() {
     return GetCurrentDisplayInfoFromCache();
+}
+
+// Handle monitor settings UI (extracted from on_draw lambda)
+bool HandleMonitorSettingsUI() {
+    // Reset display cache every 60 frames to keep it fresh
+    static int frame_counter = 0;
+    frame_counter++;
+    if (frame_counter >= 60) {
+        renodx::display_cache::g_displayCache.Refresh();
+        frame_counter = 0;
+        
+        // Debug: Log current display info after refresh
+        HWND hwnd = g_last_swapchain_hwnd.load();
+        if (hwnd) {
+            HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            if (current_monitor) {
+                const auto* display = renodx::display_cache::g_displayCache.GetDisplayByHandle(current_monitor);
+                if (display) {
+                    std::ostringstream debug_oss;
+                    debug_oss << "Cache refreshed - Current: " << display->GetCurrentResolutionString() 
+                              << " @ " << display->GetCurrentRefreshRateString()
+                              << " [Raw: " << display->current_refresh_rate.numerator << "/" 
+                              << display->current_refresh_rate.denominator << "]";
+                    LogInfo(debug_oss.str().c_str());
+                }
+            }
+        }
+    }
+    
+    // Get current monitor labels
+    auto monitor_labels = GetMonitorLabelsFromCache();
+    if (monitor_labels.empty()) {
+        ImGui::Text("No monitors detected");
+        return false;
+    }
+    
+    // Auto-detect current display resolution and set as default if not already set
+    static bool first_run = true;
+    if (first_run) {
+        first_run = false;
+        
+        // Get current display info for the selected monitor
+        HWND hwnd = g_last_swapchain_hwnd.load();
+        if (hwnd) {
+            HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            if (current_monitor) {
+                // Find which monitor index this corresponds to
+                for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
+                    const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i);
+                    if (display && display->monitor_handle == current_monitor) {
+                        s_selected_monitor_index = static_cast<float>(i);
+                        
+                        // Use the new methods to find closest supported modes to current settings
+                        auto closest_resolution_index = display->FindClosestResolutionIndex();
+                        if (closest_resolution_index.has_value()) {
+                            s_selected_resolution_index = static_cast<float>(closest_resolution_index.value());
+                            
+                            // Find closest refresh rate within this resolution
+                            auto closest_refresh_rate_index = display->FindClosestRefreshRateIndex(closest_resolution_index.value());
+                            if (closest_refresh_rate_index.has_value()) {
+                                s_selected_refresh_rate_index = static_cast<float>(closest_refresh_rate_index.value());
+                                
+                                // Debug: Log what we found
+                                std::ostringstream found_oss;
+                                found_oss << "Auto-detected: Resolution " << s_selected_resolution_index 
+                                          << " (closest to current " << display->GetCurrentResolutionString() 
+                                          << "), Refresh Rate " << s_selected_refresh_rate_index 
+                                          << " (closest to current " << display->GetCurrentRefreshRateString() << ")";
+                                LogInfo(found_oss.str().c_str());
+                            } else {
+                                // Fallback to first refresh rate if no match found
+                                s_selected_refresh_rate_index = 0.0f;
+                                LogWarn("No refresh rate match found, using first available");
+                            }
+                        } else {
+                            // Fallback to first resolution if no match found
+                            s_selected_resolution_index = 0.0f;
+                            s_selected_refresh_rate_index = 0.0f;
+                            LogWarn("No resolution match found, using first available");
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Monitor selection
+    if (ImGui::BeginCombo("Monitor", monitor_labels[static_cast<int>(s_selected_monitor_index)].c_str())) {
+        for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
+            const bool is_selected = (i == static_cast<int>(s_selected_monitor_index));
+            if (ImGui::Selectable(monitor_labels[i].c_str(), is_selected)) {
+                s_selected_monitor_index = static_cast<float>(i);
+                s_selected_resolution_index = 0.f; // Reset resolution when monitor changes
+                s_selected_refresh_rate_index = 0.f; // Reset refresh rate when monitor changes
+            }
+            if (is_selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    
+    // Resolution selection
+    auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+    if (!resolution_labels.empty()) {
+        if (ImGui::BeginCombo("Resolution", resolution_labels[static_cast<int>(s_selected_resolution_index)].c_str())) {
+            for (int i = 0; i < static_cast<int>(resolution_labels.size()); i++) {
+                const bool is_selected = (i == static_cast<int>(s_selected_resolution_index));
+                if (ImGui::Selectable(resolution_labels[i].c_str(), is_selected)) {
+                    s_selected_resolution_index = static_cast<float>(i);
+                    s_selected_refresh_rate_index = 0.f; // Reset refresh rate when resolution changes
+                }
+                if (is_selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
+    
+    // Refresh rate selection
+    if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+        auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+        if (!refresh_rate_labels.empty()) {
+            if (ImGui::BeginCombo("Refresh Rate", refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)].c_str())) {
+                for (int i = 0; i < static_cast<int>(refresh_rate_labels.size()); i++) {
+                    const bool is_selected = (i == static_cast<int>(s_selected_refresh_rate_index));
+                    if (ImGui::Selectable(refresh_rate_labels[i].c_str(), is_selected)) {
+                        s_selected_refresh_rate_index = static_cast<float>(i);
+                    }
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        }
+    }
+    
+    // Apply Changes Button
+    if (ImGui::Button("Apply Desktop Changes")) {
+        // Apply the changes using the display cache
+        std::thread([](){
+            // Get the selected resolution from the cache
+            auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+            if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+                std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+                int width, height;
+                sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
+                
+                // Get the selected refresh rate from the cache
+                auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+                if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                    std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
+                    
+                    // Try to get rational refresh rate values from the cache
+                    renodx::display_cache::RationalRefreshRate refresh_rate;
+                    bool has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
+                        static_cast<int>(s_selected_monitor_index), 
+                        static_cast<int>(s_selected_resolution_index),
+                        static_cast<int>(s_selected_refresh_rate_index), 
+                        refresh_rate);
+                    
+                    // Always use the reliable legacy API for now, but with high-precision refresh rate from cache
+                    // Get the exact refresh rate from the rational values
+                    double exact_refresh_rate = refresh_rate.ToHz();
+                    
+                    // Log the values we're trying to apply
+                    std::ostringstream debug_oss;
+                    debug_oss << "Attempting to apply display changes: Monitor=" << s_selected_monitor_index 
+                              << ", Resolution=" << width << "x" << height 
+                              << ", Refresh Rate=" << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz"
+                              << " (Rational: " << refresh_rate.numerator << "/" << refresh_rate.denominator << ")";
+                    LogInfo(debug_oss.str().c_str());
+                    
+                    // Get monitor handle from the display cache
+                    const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
+                    if (display) {
+                        // Get monitor handle
+                        HMONITOR hmon = display->monitor_handle;
+                        
+                        MONITORINFOEXW mi;
+                        mi.cbSize = sizeof(mi);
+                        if (GetMonitorInfoW(hmon, &mi)) {
+                            std::wstring device_name = mi.szDevice;
+                            
+                            // Create DEVMODE structure with selected resolution and refresh rate
+                            DEVMODEW dm;
+                            dm.dmSize = sizeof(dm);
+                            dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+                            dm.dmPelsWidth = width;
+                            dm.dmPelsHeight = height;
+                            
+                            // Round the refresh rate to the nearest integer for DEVMODE
+                            // This gives us the closest refresh rate rather than just truncating
+                            dm.dmDisplayFrequency = static_cast<DWORD>(std::round(exact_refresh_rate));
+                            
+                            // Apply the changes
+                            LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+                            
+                            if (result == DISP_CHANGE_SUCCESSFUL) {
+                                std::ostringstream oss;
+                                oss << "Display changes applied successfully: " << width << "x" << height 
+                                    << " @ " << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz";
+                                LogInfo(oss.str().c_str());
+                                
+                                // Log a note about rounding if the refresh rate was rounded
+                                if (exact_refresh_rate != static_cast<double>(dm.dmDisplayFrequency)) {
+                                    std::ostringstream info_oss;
+                                    info_oss << "Note: Refresh rate was rounded from " << std::fixed << std::setprecision(3) 
+                                             << exact_refresh_rate << "Hz to " << dm.dmDisplayFrequency << "Hz for compatibility";
+                                    LogInfo(info_oss.str().c_str());
+                                }
+                            } else {
+                                std::ostringstream oss;
+                                oss << "Failed to apply display changes. Error code: " << result;
+                                LogWarn(oss.str().c_str());
+                            }
+                        }
+                    }
+                }
+            }
+        }).detach();
+    }
+    
+    return false; // No value change
 }
 
 void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
@@ -156,205 +386,13 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .section = "Display",
         .tooltip = "Interactive monitor, resolution, and refresh rate selection with real-time updates.",
         .on_draw = []() -> bool {
-            // Reset display cache every 60 frames to keep it fresh
-            static int frame_counter = 0;
-            frame_counter++;
-            if (frame_counter >= 60) {
-                renodx::display_cache::g_displayCache.Refresh();
-                frame_counter = 0;
-            }
+            // Call the new function for the main logic
+            bool result = HandleMonitorSettingsUI();
             
-            // Get current monitor labels
-            auto monitor_labels = GetMonitorLabelsFromCache();
-            if (monitor_labels.empty()) {
-                ImGui::Text("No monitors detected");
-                return false;
-            }
+            // Keep any additional logic that was in the original lambda
+            // ...
             
-            // Auto-detect current display resolution and set as default if not already set
-            static bool first_run = true;
-            if (first_run) {
-                first_run = false;
-                
-                // Get current display info for the selected monitor
-                HWND hwnd = g_last_swapchain_hwnd.load();
-                if (hwnd) {
-                    HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-                    if (current_monitor) {
-                                                 // Find which monitor index this corresponds to
-                         for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
-                             const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i);
-                             if (display && display->monitor_handle == current_monitor) {
-                                 s_selected_monitor_index = static_cast<float>(i);
-                                 
-                                 // Get current resolution and find its index
-                                 std::string current_resolution = display->GetCurrentResolutionString();
-                                 auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(i);
-                                 
-                                 for (int j = 0; j < static_cast<int>(resolution_labels.size()); j++) {
-                                     if (resolution_labels[j] == current_resolution) {
-                                         s_selected_resolution_index = static_cast<float>(j);
-                                         break;
-                                     }
-                                 }
-                                 
-                                 // Get current refresh rate and find its index
-                                 std::string current_refresh_rate = display->GetCurrentRefreshRateString();
-                                 auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(i, s_selected_resolution_index);
-                                 
-                                 for (int j = 0; j < static_cast<int>(refresh_rate_labels.size()); j++) {
-                                     if (refresh_rate_labels[j] == current_refresh_rate) {
-                                         s_selected_refresh_rate_index = static_cast<float>(j);
-                                         break;
-                                     }
-                                 }
-                                 break;
-                             }
-                         }
-                    }
-                }
-            }
-            
-            // Monitor selection
-            if (ImGui::BeginCombo("Monitor", monitor_labels[static_cast<int>(s_selected_monitor_index)].c_str())) {
-                for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
-                    const bool is_selected = (i == static_cast<int>(s_selected_monitor_index));
-                    if (ImGui::Selectable(monitor_labels[i].c_str(), is_selected)) {
-                        s_selected_monitor_index = static_cast<float>(i);
-                        s_selected_resolution_index = 0.f; // Reset resolution when monitor changes
-                        s_selected_refresh_rate_index = 0.f; // Reset refresh rate when monitor changes
-                    }
-                    if (is_selected) {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            
-            // Resolution selection
-            auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
-            if (!resolution_labels.empty()) {
-                if (ImGui::BeginCombo("Resolution", resolution_labels[static_cast<int>(s_selected_resolution_index)].c_str())) {
-                    for (int i = 0; i < static_cast<int>(resolution_labels.size()); i++) {
-                        const bool is_selected = (i == static_cast<int>(s_selected_resolution_index));
-                        if (ImGui::Selectable(resolution_labels[i].c_str(), is_selected)) {
-                            s_selected_resolution_index = static_cast<float>(i);
-                            s_selected_refresh_rate_index = 0.f; // Reset refresh rate when resolution changes
-                        }
-                        if (is_selected) {
-                            ImGui::SetItemDefaultFocus();
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
-            }
-            
-            // Refresh rate selection
-            if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
-                auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
-                if (!refresh_rate_labels.empty()) {
-                    if (ImGui::BeginCombo("Refresh Rate", refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)].c_str())) {
-                        for (int i = 0; i < static_cast<int>(refresh_rate_labels.size()); i++) {
-                            const bool is_selected = (i == static_cast<int>(s_selected_refresh_rate_index));
-                            if (ImGui::Selectable(refresh_rate_labels[i].c_str(), is_selected)) {
-                                s_selected_refresh_rate_index = static_cast<float>(i);
-                            }
-                            if (is_selected) {
-                                ImGui::SetItemDefaultFocus();
-                            }
-                        }
-                        ImGui::EndCombo();
-                    }
-                }
-            }
-            
-            // Apply Changes Button
-            if (ImGui::Button("Apply Desktop Changes")) {
-                // Apply the changes using the display cache
-                std::thread([](){
-                    // Get the selected resolution from the cache
-                    auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
-                    if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
-                        std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
-                        int width, height;
-                        sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
-                        
-                        // Get the selected refresh rate from the cache
-                        auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
-                        if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
-                            std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
-                            
-                            // Try to get rational refresh rate values from the cache
-                            renodx::display_cache::RationalRefreshRate refresh_rate;
-                            bool has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
-                                static_cast<int>(s_selected_monitor_index), 
-                                static_cast<int>(s_selected_resolution_index),
-                                static_cast<int>(s_selected_refresh_rate_index), 
-                                refresh_rate);
-                            
-                            // Always use the reliable legacy API for now, but with high-precision refresh rate from cache
-                            // Get the exact refresh rate from the rational values
-                            double exact_refresh_rate = refresh_rate.ToHz();
-                            
-                            // Log the values we're trying to apply
-                            std::ostringstream debug_oss;
-                            debug_oss << "Attempting to apply display changes: Monitor=" << s_selected_monitor_index 
-                                      << ", Resolution=" << width << "x" << height 
-                                      << ", Refresh Rate=" << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz"
-                                      << " (Rational: " << refresh_rate.numerator << "/" << refresh_rate.denominator << ")";
-                            LogInfo(debug_oss.str().c_str());
-                            
-                            // Get monitor handle from the display cache
-                            const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
-                            if (display) {
-                                // Get monitor handle
-                                HMONITOR hmon = display->monitor_handle;
-                                
-                                MONITORINFOEXW mi;
-                                mi.cbSize = sizeof(mi);
-                                if (GetMonitorInfoW(hmon, &mi)) {
-                                    std::wstring device_name = mi.szDevice;
-                                    
-                                    // Create DEVMODE structure with selected resolution and refresh rate
-                                    DEVMODEW dm;
-                                    dm.dmSize = sizeof(dm);
-                                    dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-                                    dm.dmPelsWidth = width;
-                                    dm.dmPelsHeight = height;
-                                    
-                                    // Round the refresh rate to the nearest integer for DEVMODE
-                                    // This gives us the closest refresh rate rather than just truncating
-                                    dm.dmDisplayFrequency = static_cast<DWORD>(std::round(exact_refresh_rate));
-                                    
-                                    // Apply the changes
-                                    LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
-                                    
-                                    if (result == DISP_CHANGE_SUCCESSFUL) {
-                                        std::ostringstream oss;
-                                        oss << "Display changes applied successfully: " << width << "x" << height 
-                                            << " @ " << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz";
-                                        LogInfo(oss.str().c_str());
-                                        
-                                        // Log a note about rounding if the refresh rate was rounded
-                                        if (exact_refresh_rate != static_cast<double>(dm.dmDisplayFrequency)) {
-                                            std::ostringstream info_oss;
-                                            info_oss << "Note: Refresh rate was rounded from " << std::fixed << std::setprecision(3) 
-                                                     << exact_refresh_rate << "Hz to " << dm.dmDisplayFrequency << "Hz for compatibility";
-                                            LogInfo(info_oss.str().c_str());
-                                        }
-                                    } else {
-                                        std::ostringstream oss;
-                                        oss << "Failed to apply display changes. Error code: " << result;
-                                        LogWarn(oss.str().c_str());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }).detach();
-            }
-            
-            return false; // No value change
+            return result;
         },
         .is_visible = []() { return is_basic_tab(s_ui_mode) || is_display_tab(s_ui_mode); } // Show in Simple and Display modes
     });
@@ -367,7 +405,7 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .default_value = 0.f,
         .label = "Current Display Info",
         .section = "Display",
-        .tooltip = "Shows the current resolution and refresh rate of the display where the game is running.",
+        .tooltip = "Shows the current resolution and refresh rate of the display where the game is running, with closest supported mode if different.",
         .on_draw = []() -> bool {
             std::string display_info = GetCurrentDisplayInfoFromCache();
             ImGui::TextUnformatted(display_info.c_str());
