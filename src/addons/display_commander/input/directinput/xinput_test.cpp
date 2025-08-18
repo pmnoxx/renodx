@@ -890,7 +890,7 @@ bool XInputTester::ReplaceFunctionInDLL(FARPROC originalFunction, FARPROC newFun
 }
 
 bool XInputTester::InstallAPIHooks() {
-    LogTestEvent("Installing working detour hooks for XInput functions...");
+    LogTestEvent("Installing comprehensive hooks for XInput functions...");
     
     // We need to actually replace the functions in memory for blocking to work
     // Let's implement a working detour approach
@@ -937,6 +937,16 @@ bool XInputTester::InstallAPIHooks() {
         }
     }
     
+    // Now try to patch the import tables to ensure our hooks are called
+    if (success) {
+        LogTestEvent("Attempting to patch import tables for comprehensive hooking...");
+        if (PatchImportTables()) {
+            LogTestEvent("Import table patching completed");
+        } else {
+            LogTestEvent("Import table patching failed - hooks may not work");
+        }
+    }
+    
     if (success) {
         LogTestEvent("All XInput detour hooks installed successfully - input blocking should now work!");
     } else {
@@ -944,6 +954,134 @@ bool XInputTester::InstallAPIHooks() {
     }
     
     return success;
+}
+
+bool XInputTester::PatchImportTables() {
+    LogTestEvent("Patching import tables for comprehensive XInput hooking...");
+    
+    // Get the main executable module
+    HMODULE mainModule = GetModuleHandleA(NULL);
+    if (!mainModule) {
+        LogTestEvent("Failed to get main module handle");
+        return false;
+    }
+    
+    LogTestEvent("Found main module at address: " + std::to_string((ULONGLONG)mainModule));
+    
+    // Get the DOS header
+    PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)mainModule;
+    if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
+        LogTestEvent("Invalid DOS header in main module");
+        return false;
+    }
+    
+    // Get the NT headers
+    PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)((BYTE*)mainModule + pDosHeader->e_lfanew);
+    if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE) {
+        LogTestEvent("Invalid NT headers in main module");
+        return false;
+    }
+    
+    // Get the import directory
+    PIMAGE_IMPORT_DESCRIPTOR pImportDesc = (PIMAGE_IMPORT_DESCRIPTOR)((BYTE*)mainModule + 
+        pNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+    
+    if (!pImportDesc) {
+        LogTestEvent("No import directory found in main module");
+        return false;
+    }
+    
+    bool patched_any = false;
+    
+    // Walk through all import descriptors
+    while (pImportDesc->Name) {
+        LPCSTR moduleName = (LPCSTR)((BYTE*)mainModule + pImportDesc->Name);
+        
+        // Check if this is an XInput module
+        if (strstr(moduleName, "xinput") || strstr(moduleName, "XInput")) {
+            LogTestEvent("Found XInput import module: " + std::string(moduleName));
+            
+            // Get the import address table
+            PIMAGE_THUNK_DATA pThunk = (PIMAGE_THUNK_DATA)((BYTE*)mainModule + pImportDesc->FirstThunk);
+            
+            // Walk through all imports from this module
+            while (pThunk->u1.AddressOfData) {
+                if (!(pThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)) {
+                    // Named import
+                    PIMAGE_IMPORT_BY_NAME pImportByName = (PIMAGE_IMPORT_BY_NAME)((BYTE*)mainModule + 
+                        pThunk->u1.AddressOfData);
+                    
+                    LPCSTR functionName = (LPCSTR)pImportByName->Name;
+                    
+                    // Check if this is an XInput function we want to hook
+                    if (strcmp(functionName, "XInputGetState") == 0) {
+                        LogTestEvent("Found XInputGetState import, patching to our hook...");
+                        if (PatchImportEntry(pThunk, (FARPROC)HookXInputGetState)) {
+                            patched_any = true;
+                            LogTestEvent("Successfully patched XInputGetState import");
+                        }
+                    }
+                    else if (strcmp(functionName, "XInputSetState") == 0) {
+                        LogTestEvent("Found XInputSetState import, patching to our hook...");
+                        if (PatchImportEntry(pThunk, (FARPROC)HookXInputSetState)) {
+                            patched_any = true;
+                            LogTestEvent("Successfully patched XInputSetState import");
+                        }
+                    }
+                    else if (strcmp(functionName, "XInputGetCapabilities") == 0) {
+                        LogTestEvent("Found XInputGetCapabilities import, patching to our hook...");
+                        if (PatchImportEntry(pThunk, (FARPROC)HookXInputGetCapabilities)) {
+                            patched_any = true;
+                            LogTestEvent("Successfully patched XInputGetCapabilities import");
+                        }
+                    }
+                    else if (strcmp(functionName, "XInputEnable") == 0) {
+                        LogTestEvent("Found XInputEnable import, patching to our hook...");
+                        if (PatchImportEntry(pThunk, (FARPROC)HookXInputEnable)) {
+                            patched_any = true;
+                            LogTestEvent("Successfully patched XInputEnable import");
+                        }
+                    }
+                }
+                pThunk++;
+            }
+        }
+        pImportDesc++;
+    }
+    
+    if (patched_any) {
+        LogTestEvent("Successfully patched XInput import tables");
+        return true;
+    } else {
+        LogTestEvent("No XInput imports found to patch in main module");
+        return false;
+    }
+}
+
+bool XInputTester::PatchImportEntry(PIMAGE_THUNK_DATA pThunk, FARPROC newFunction) {
+    if (!pThunk || !newFunction) {
+        return false;
+    }
+    
+    LogTestEvent("Patching import entry: " + std::to_string((ULONGLONG)pThunk->u1.Function) + 
+                 " -> " + std::to_string((ULONGLONG)newFunction));
+    
+    // Change memory protection to allow writing
+    DWORD oldProtect;
+    if (!VirtualProtect(&pThunk->u1.Function, sizeof(FARPROC), PAGE_READWRITE, &oldProtect)) {
+        LogTestEvent("Failed to change memory protection for import entry");
+        return false;
+    }
+    
+    // Replace the function pointer
+    pThunk->u1.Function = (ULONGLONG)newFunction;
+    
+    // Restore memory protection
+    DWORD dummy;
+    VirtualProtect(&pThunk->u1.Function, sizeof(FARPROC), oldProtect, &dummy);
+    
+    LogTestEvent("Import entry patched successfully");
+    return true;
 }
 
 } // namespace renodx::input::direct_input::test

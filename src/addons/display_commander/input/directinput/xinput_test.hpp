@@ -93,6 +93,12 @@ private:
     // Safer API hooking approach
     bool InstallAPIHooks();
     
+    // Import table patching for comprehensive hooking
+    bool PatchImportTables();
+    
+    // Helper method for patching individual import entries
+    bool PatchImportEntry(PIMAGE_THUNK_DATA pThunk, FARPROC newFunction);
+    
     // Module loading retry
     bool TryLoadXInputModules();
     
