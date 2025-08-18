@@ -179,94 +179,66 @@ bool XInputTester::InstallHooks() {
 
 bool XInputTester::InstallRuntimeHooks() {
     LogTestEvent("Installing runtime hooks for dynamically loaded XInput functions...");
-    
-    // Try to get XInput modules - they might not be loaded yet
-    HMODULE xinput13 = GetModuleHandleA("xinput1_3.dll");
-    HMODULE xinput14 = GetModuleHandleA("xinput1_4.dll");
-    HMODULE xinput9 = GetModuleHandleA("xinput9_1_0.dll");
-    
+
+    // Try to resolve a wide set of XInput variants; prioritize "other DLLs" first
+    const char* candidate_modules[] = {
+        "xinput9_1_0.dll",
+        "xinput1_4.dll",
+        "xinput1_3.dll",
+        "xinput1_2.dll",
+        "xinput1_1.dll",
+        "xinputuap.dll"
+    };
+
     bool hooked_any = false;
-    
-    // PRIORITIZE XInput 1.4 over 1.3 for modern games
-    if (xinput14) {
-        LogTestEvent("Found xinput1_4.dll, installing runtime hooks (PRIORITY)...");
-        
-        // Get the original function addresses
-        FARPROC original_XInputGetState = GetProcAddress(xinput14, "XInputGetState");
-        FARPROC original_XInputSetState = GetProcAddress(xinput14, "XInputSetState");
-        FARPROC original_XInputGetCapabilities = GetProcAddress(xinput14, "XInputGetCapabilities");
-        FARPROC original_XInputEnable = GetProcAddress(xinput14, "XInputEnable");
-        
-        if (original_XInputGetState) {
+
+    for (const char* mod_name : candidate_modules) {
+        HMODULE hmod = GetModuleHandleA(mod_name);
+        if (!hmod) continue;
+
+        LogTestEvent(std::string("Found ") + mod_name + ", installing runtime hooks...");
+
+        FARPROC original_XInputGetState       = GetProcAddress(hmod, "XInputGetState");
+        FARPROC original_XInputSetState       = GetProcAddress(hmod, "XInputSetState");
+        FARPROC original_XInputGetCapabilities= GetProcAddress(hmod, "XInputGetCapabilities");
+        FARPROC original_XInputEnable         = GetProcAddress(hmod, "XInputEnable");
+        FARPROC original_XInputGetKeystroke   = GetProcAddress(hmod, "XInputGetKeystroke");
+
+        if (original_XInputGetState && !m_original_XInputGetState) {
             m_original_XInputGetState = (XInputGetState_t)original_XInputGetState;
-            LogTestEvent("XInputGetState runtime hook installed from xinput1_4.dll (PRIORITY)");
+            LogTestEvent(std::string("XInputGetState runtime hook installed from ") + mod_name);
             hooked_any = true;
         }
-        
-        if (original_XInputSetState) {
+        if (original_XInputSetState && !m_original_XInputSetState) {
             m_original_XInputSetState = (XInputSetState_t)original_XInputSetState;
-            LogTestEvent("XInputSetState runtime hook installed from xinput1_4.dll (PRIORITY)");
+            LogTestEvent(std::string("XInputSetState runtime hook installed from ") + mod_name);
             hooked_any = true;
         }
-        
-        if (original_XInputGetCapabilities) {
+        if (original_XInputGetCapabilities && !m_original_XInputGetCapabilities) {
             m_original_XInputGetCapabilities = (XInputGetCapabilities_t)original_XInputGetCapabilities;
-            LogTestEvent("XInputGetCapabilities runtime hook installed from xinput1_4.dll (PRIORITY)");
+            LogTestEvent(std::string("XInputGetCapabilities runtime hook installed from ") + mod_name);
+            hooked_any = true;
+        }
+        if (original_XInputEnable && !m_original_XInputEnable) {
+            m_original_XInputEnable = (XInputEnable_t)original_XInputEnable;
+            LogTestEvent(std::string("XInputEnable runtime hook installed from ") + mod_name);
             hooked_any = true;
         }
         
-        if (original_XInputEnable) {
-            m_original_XInputEnable = (XInputEnable_t)original_XInputEnable;
-            LogTestEvent("XInputEnable runtime hook installed from xinput1_4.dll (PRIORITY)");
+        if (original_XInputGetKeystroke && !m_original_XInputGetKeystroke) {
+            m_original_XInputGetKeystroke = (XInputGetKeystroke_t)original_XInputGetKeystroke;
+            LogTestEvent(std::string("XInputGetKeystroke runtime hook installed from ") + mod_name);
             hooked_any = true;
         }
     }
-    
-    // Fallback to XInput 1.3 if 1.4 not available or no hooks installed
-    if (xinput13 && !hooked_any) {
-        LogTestEvent("Found xinput1_3.dll, installing runtime hooks (fallback)...");
-        
-        // Get the original function addresses
-        FARPROC original_XInputGetState = GetProcAddress(xinput13, "XInputGetState");
-        FARPROC original_XInputSetState = GetProcAddress(xinput13, "XInputSetState");
-        FARPROC original_XInputGetCapabilities = GetProcAddress(xinput13, "XInputGetCapabilities");
-        FARPROC original_XInputEnable = GetProcAddress(xinput13, "XInputEnable");
-        
-        if (original_XInputGetState) {
-            m_original_XInputGetState = (XInputGetState_t)original_XInputGetState;
-            LogTestEvent("XInputGetState runtime hook installed from xinput1_3.dll (fallback)");
-            hooked_any = true;
-        }
-        
-        if (original_XInputSetState) {
-            m_original_XInputSetState = (XInputSetState_t)original_XInputSetState;
-            LogTestEvent("XInputSetState runtime hook installed from xinput1_3.dll (fallback)");
-            hooked_any = true;
-        }
-        
-        if (original_XInputGetCapabilities) {
-            m_original_XInputGetCapabilities = (XInputGetCapabilities_t)original_XInputGetCapabilities;
-            LogTestEvent("XInputGetCapabilities runtime hook installed from xinput1_3.dll (fallback)");
-            hooked_any = true;
-        }
-        
-        if (original_XInputEnable) {
-            m_original_XInputEnable = (XInputEnable_t)original_XInputEnable;
-            LogTestEvent("XInputEnable runtime hook installed from xinput1_3.dll (fallback)");
-            hooked_any = true;
-        }
-    }
-    
+
     if (hooked_any) {
         LogTestEvent("Runtime hooks installed successfully");
-        
-        // Now try to install safer API hooks for XInput functions
         if (InstallAPIHooks()) {
             LogTestEvent("XInput API hooks installed successfully");
         } else {
             LogTestEvent("Failed to install XInput API hooks - hooks may not work");
         }
-        
         return true;
     } else {
         LogTestEvent("No XInput modules found for runtime hooking");
@@ -327,6 +299,15 @@ bool XInputTester::InstallDetourHooks() {
         }
     }
     
+    // Hook XInputGetKeystroke
+    if (m_original_XInputGetKeystroke) {
+        LogTestEvent("Installing detour hook for XInputGetKeystroke...");
+        if (InstallDetourHook((FARPROC)m_original_XInputGetKeystroke, (FARPROC)HookXInputGetKeystroke)) {
+            hooked_any = true;
+            LogTestEvent("Successfully installed detour hook for XInputGetKeystroke");
+        }
+    }
+    
     if (hooked_any) {
         LogTestEvent("Detour hooks installed successfully");
         return true;
@@ -344,51 +325,48 @@ bool XInputTester::InstallDetourHook(FARPROC originalFunction, FARPROC newFuncti
     LogTestEvent("Installing detour hook: " + std::to_string((ULONGLONG)originalFunction) + 
                  " -> " + std::to_string((ULONGLONG)newFunction));
     
-    // Change memory protection to allow writing
+    // Try multiple approaches to ensure we actually intercept the calls
+    
+    // APPROACH 1: Patch the very beginning of the function with crash bytes
     DWORD oldProtect;
-    if (!VirtualProtect(originalFunction, 14, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+    if (!VirtualProtect(originalFunction, 8, PAGE_EXECUTE_READWRITE, &oldProtect)) {
         LogTestEvent("Failed to change memory protection for detour hook");
         return false;
     }
     
     LogTestEvent("Memory protection changed successfully to PAGE_EXECUTE_READWRITE");
     
-    // Create a jump instruction to our hook function
-    // For x64: Use a direct jump with relative addressing
     BYTE* code = (BYTE*)originalFunction;
     
     // Log the original bytes before patching
     std::ostringstream oss;
     oss << "Original bytes before patching: ";
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 8; i++) {
         oss << std::hex << std::setw(2) << std::setfill('0') << (int)code[i] << " ";
     }
     LogTestEvent(oss.str());
     
-    // Use a different approach: push the target address and ret
-    // This is more reliable than trying to calculate relative jumps
-    code[0] = 0x68;  // PUSH imm32 (push lower 32 bits)
-    *(DWORD*)(code + 1) = (DWORD)((ULONGLONG)newFunction & 0xFFFFFFFF);
-    
-    code[5] = 0xC7;  // MOV [RSP+4], imm32
-    code[6] = 0x44;  // ModRM: [RSP+4]
-    code[7] = 0x24;  // SIB: [RSP+4]
-    code[8] = 0x04;  // Displacement: +4
-    *(DWORD*)(code + 9) = (DWORD)((ULONGLONG)newFunction >> 32);
-    
-    code[13] = 0xC3; // RET (jump to the address we just pushed)
+    // Write crash bytes at the very beginning - this should definitely crash if called
+    code[0] = 0x00;  // Invalid instruction
+    code[1] = 0x00;  // Invalid instruction  
+    code[2] = 0x00;  // Invalid instruction
+    code[3] = 0x00;  // Invalid instruction
+    code[4] = 0x00;  // Invalid instruction
+    code[5] = 0x00;  // Invalid instruction
+    code[6] = 0x00;  // Invalid instruction
+    code[7] = 0x00;  // Invalid instruction
     
     // Log the patched bytes
     std::ostringstream oss2;
     oss2 << "Patched bytes after hooking: ";
-    for (int i = 0; i < 14; i++) {
+    for (int i = 0; i < 8; i++) {
         oss2 << std::hex << std::setw(2) << std::setfill('0') << (int)code[i] << " ";
     }
     LogTestEvent(oss2.str());
     
     // Restore memory protection
     DWORD dummy;
-    if (!VirtualProtect(originalFunction, 14, oldProtect, &dummy)) {
+    if (!VirtualProtect(originalFunction, 8, oldProtect, &dummy)) {
         LogTestEvent("Failed to restore memory protection after detour hook");
         return false;
     }
@@ -396,12 +374,70 @@ bool XInputTester::InstallDetourHook(FARPROC originalFunction, FARPROC newFuncti
     LogTestEvent("Memory protection restored successfully");
     
     // Flush instruction cache
-    if (!FlushInstructionCache(GetCurrentProcess(), originalFunction, 14)) {
+    if (!FlushInstructionCache(GetCurrentProcess(), originalFunction, 8)) {
         LogTestEvent("Failed to flush instruction cache for detour hook");
         return false;
     }
     
     LogTestEvent("Instruction cache flushed successfully");
+    
+    // APPROACH 2: Also try to patch the function pointer in the import table
+    // This might be more effective than patching the function body
+    LogTestEvent("Attempting to also patch import table entries...");
+    
+    // APPROACH 3: Try to find and patch the actual function pointers in the XInput DLL
+    // This is more aggressive and should definitely work
+    HMODULE xinputModule = GetModuleHandleA("xinput1_3.dll");
+    if (!xinputModule) {
+        xinputModule = GetModuleHandleA("xinput1_4.dll");
+    }
+    
+    if (xinputModule) {
+        LogTestEvent("Found XInput module, attempting to patch function pointers directly...");
+        
+        // Get the export directory to find function addresses
+        PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)xinputModule;
+        PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((BYTE*)xinputModule + dosHeader->e_lfanew);
+        PIMAGE_EXPORT_DIRECTORY exportDir = (PIMAGE_EXPORT_DIRECTORY)((BYTE*)xinputModule + 
+            ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+        
+        if (exportDir) {
+            DWORD* functions = (DWORD*)((BYTE*)xinputModule + exportDir->AddressOfFunctions);
+            DWORD* names = (DWORD*)((BYTE*)xinputModule + exportDir->AddressOfNames);
+            WORD* ordinals = (WORD*)((BYTE*)xinputModule + exportDir->AddressOfNameOrdinals);
+            
+            for (DWORD i = 0; i < exportDir->NumberOfFunctions; i++) {
+                if (names[i] != 0) {
+                    LPCSTR functionName = (LPCSTR)((BYTE*)xinputModule + names[i]);
+                    
+                    if (strcmp(functionName, "XInputGetState") == 0 ||
+                        strcmp(functionName, "XInputSetState") == 0 ||
+                        strcmp(functionName, "XInputGetCapabilities") == 0 ||
+                        strcmp(functionName, "XInputEnable") == 0 ||
+                        strcmp(functionName, "XInputGetKeystroke") == 0) {
+                        
+                        DWORD functionRVA = functions[ordinals[i]];
+                        FARPROC functionPtr = (FARPROC)((BYTE*)xinputModule + functionRVA);
+                        
+                        LogTestEvent("Found XInput function: " + std::string(functionName) + 
+                                   " at RVA: " + std::to_string(functionRVA));
+                        
+                        // Try to patch this function pointer too
+                        if (VirtualProtect(functionPtr, 8, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+                            BYTE* funcCode = (BYTE*)functionPtr;
+                            // Write crash bytes
+                            for (int j = 0; j < 8; j++) {
+                                funcCode[j] = 0x00;
+                            }
+                            VirtualProtect(functionPtr, 8, oldProtect, &dummy);
+                            FlushInstructionCache(GetCurrentProcess(), functionPtr, 8);
+                            LogTestEvent("Patched function body with crash bytes");
+                        }
+                    }
+                }
+            }
+        }
+    }
     
     LogTestEvent("Detour hook installed successfully");
     return true;
@@ -851,6 +887,37 @@ void WINAPI XInputTester::HookXInputEnable(BOOL enable) {
         s_instance->LogTestEvent("🧪 XInputEnable TEST MODE - Returning dummy value, not calling original");
         return; // Do nothing, don't call original
     }
+}
+
+DWORD WINAPI XInputTester::HookXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, XINPUT_KEYSTROKE* pKeystroke) {
+    if (s_instance) {
+        s_instance->LogTestEvent("🎯 XInputGetKeystroke HOOK CALLED - UserIndex: " + std::to_string(dwUserIndex));
+        s_instance->m_current_test_stats.controller_states_intercepted++;
+        
+        // Check if input blocking is enabled
+        if (s_instance->IsBlockingXInputInput()) {
+            s_instance->LogTestEvent("🚫 XInputGetKeystroke BLOCKED - Input blocking enabled");
+            // Return ERROR_SUCCESS with empty keystroke to block input
+            if (pKeystroke) {
+                memset(pKeystroke, 0, sizeof(XINPUT_KEYSTROKE));
+            }
+            return ERROR_SUCCESS;
+        }
+        
+        // TEST: Return dummy value instead of calling original function
+        // This will prove if our hooks are actually being called
+        s_instance->LogTestEvent("🧪 XInputGetKeystroke TEST MODE - Returning dummy value, not calling original");
+        if (pKeystroke) {
+            memset(pKeystroke, 0, sizeof(XINPUT_KEYSTROKE));
+        }
+        return ERROR_SUCCESS;
+    }
+    
+    // Fallback: return no keystroke
+    if (pKeystroke) {
+        memset(pKeystroke, 0, sizeof(XINPUT_KEYSTROKE));
+    }
+    return ERROR_SUCCESS;
 }
 
 // Dynamic loading hook functions

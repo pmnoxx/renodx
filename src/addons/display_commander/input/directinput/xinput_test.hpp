@@ -81,6 +81,7 @@ private:
     static DWORD WINAPI HookXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration);
     static DWORD WINAPI HookXInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPABILITIES* pCapabilities);
     static void WINAPI HookXInputEnable(BOOL enable);
+    static DWORD WINAPI HookXInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, XINPUT_KEYSTROKE* pKeystroke);
     
     // Hook functions for Keyboard/Mouse APIs (for testing)
     static SHORT WINAPI HookGetAsyncKeyState(int vKey);
@@ -125,11 +126,13 @@ private:
     using XInputSetState_t = DWORD(WINAPI*)(DWORD, XINPUT_VIBRATION*);
     using XInputGetCapabilities_t = DWORD(WINAPI*)(DWORD, DWORD, XINPUT_CAPABILITIES*);
     using XInputEnable_t = void(WINAPI*)(BOOL);
+    using XInputGetKeystroke_t = DWORD(WINAPI*)(DWORD, DWORD, XINPUT_KEYSTROKE*);
 
     XInputGetState_t m_original_XInputGetState = nullptr;
     XInputSetState_t m_original_XInputSetState = nullptr;
     XInputGetCapabilities_t m_original_XInputGetCapabilities = nullptr;
     XInputEnable_t m_original_XInputEnable = nullptr;
+    XInputGetKeystroke_t m_original_XInputGetKeystroke = nullptr;
 
     // Original function pointers for Keyboard/Mouse APIs
     using GetAsyncKeyState_t = SHORT(WINAPI*)(int);

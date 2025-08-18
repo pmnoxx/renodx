@@ -220,69 +220,66 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .label = "Apply Desktop Changes",
         .section = "Display Tab",
         .tooltip = "Apply the selected resolution and refresh rate to the desktop. This button is only available when Desktop Resolution Override is enabled.",
-        .is_enabled = []() { return s_override_desktop_resolution >= 0.5f; },
         .on_click = []() {
-            if (s_override_desktop_resolution >= 0.5f) {
-                std::thread([](){
-                                    // Get the selected resolution from the dynamic list
-                auto resolution_labels = renodx::resolution::GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
-                if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
-                    std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
-                    int width, height;
-                    sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
-                    
-                    // Get the selected refresh rate from the dynamic list
-                    auto refresh_rate_labels = renodx::resolution::GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), width, height);
-                        if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
-                            std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
-                            float refresh_rate;
-                            sscanf(selected_refresh_rate.c_str(), "%f Hz", &refresh_rate);
+            std::thread([](){
+                                // Get the selected resolution from the dynamic list
+            auto resolution_labels = renodx::resolution::GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+            if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+                std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+                int width, height;
+                sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
+                
+                // Get the selected refresh rate from the dynamic list
+                auto refresh_rate_labels = renodx::resolution::GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), width, height);
+                    if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                        std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
+                        float refresh_rate;
+                        sscanf(selected_refresh_rate.c_str(), "%f Hz", &refresh_rate);
+                        
+                        // Get monitor handle
+                        std::vector<HMONITOR> monitors;
+                        EnumDisplayMonitors(nullptr, nullptr, 
+                            [](HMONITOR hmon, HDC, LPRECT, LPARAM lparam) -> BOOL {
+                                auto* monitors_ptr = reinterpret_cast<std::vector<HMONITOR>*>(lparam);
+                                monitors_ptr->push_back(hmon);
+                                return TRUE;
+                            }, 
+                            reinterpret_cast<LPARAM>(&monitors));
+                        
+                        if (s_selected_monitor_index >= 0 && s_selected_monitor_index < static_cast<int>(monitors.size())) {
+                            HMONITOR hmon = monitors[static_cast<int>(s_selected_monitor_index)];
                             
-                            // Get monitor handle
-                            std::vector<HMONITOR> monitors;
-                            EnumDisplayMonitors(nullptr, nullptr, 
-                                [](HMONITOR hmon, HDC, LPRECT, LPARAM lparam) -> BOOL {
-                                    auto* monitors_ptr = reinterpret_cast<std::vector<HMONITOR>*>(lparam);
-                                    monitors_ptr->push_back(hmon);
-                                    return TRUE;
-                                }, 
-                                reinterpret_cast<LPARAM>(&monitors));
-                            
-                            if (s_selected_monitor_index >= 0 && s_selected_monitor_index < static_cast<int>(monitors.size())) {
-                                HMONITOR hmon = monitors[static_cast<int>(s_selected_monitor_index)];
+                            MONITORINFOEXW mi;
+                            mi.cbSize = sizeof(mi);
+                            if (GetMonitorInfoW(hmon, &mi)) {
+                                std::wstring device_name = mi.szDevice;
                                 
-                                MONITORINFOEXW mi;
-                                mi.cbSize = sizeof(mi);
-                                if (GetMonitorInfoW(hmon, &mi)) {
-                                    std::wstring device_name = mi.szDevice;
-                                    
-                                    // Create DEVMODE structure with selected resolution and refresh rate
-                                    DEVMODEW dm;
-                                    dm.dmSize = sizeof(dm);
-                                    dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-                                    dm.dmPelsWidth = width;
-                                    dm.dmPelsHeight = height;
-                                    dm.dmDisplayFrequency = static_cast<DWORD>(refresh_rate);
-                                    
-                                    // Apply the changes
-                                    LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
-                                    
-                                    if (result == DISP_CHANGE_SUCCESSFUL) {
-                                        std::ostringstream oss;
-                                        oss << "Display changes applied successfully: " << width << "x" << height 
-                                            << " @ " << std::fixed << std::setprecision(2) << refresh_rate << "Hz";
-                                        LogInfo(oss.str().c_str());
-                                    } else {
-                                        std::ostringstream oss;
-                                        oss << "Failed to apply display changes. Error code: " << result;
-                                        LogWarn(oss.str().c_str());
-                                    }
+                                // Create DEVMODE structure with selected resolution and refresh rate
+                                DEVMODEW dm;
+                                dm.dmSize = sizeof(dm);
+                                dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+                                dm.dmPelsWidth = width;
+                                dm.dmPelsHeight = height;
+                                dm.dmDisplayFrequency = static_cast<DWORD>(refresh_rate);
+                                
+                                // Apply the changes
+                                LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+                                
+                                if (result == DISP_CHANGE_SUCCESSFUL) {
+                                    std::ostringstream oss;
+                                    oss << "Display changes applied successfully: " << width << "x" << height 
+                                        << " @ " << std::fixed << std::setprecision(2) << refresh_rate << "Hz";
+                                    LogInfo(oss.str().c_str());
+                                } else {
+                                    std::ostringstream oss;
+                                    oss << "Failed to apply display changes. Error code: " << result;
+                                    LogWarn(oss.str().c_str());
                                 }
                             }
                         }
                     }
-                }).detach();
-            }
+                }
+            }).detach();
             return false;
         },
         .is_visible = []() { return is_display_tab(s_ui_mode); } // Show in Display tab mode
