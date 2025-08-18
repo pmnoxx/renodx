@@ -1,4 +1,10 @@
 #include "resolution_helpers.hpp"
+#include <dxgi1_6.h>
+#include <wrl/client.h>
+#include <iomanip>
+#include <cmath>
+
+using Microsoft::WRL::ComPtr;
 
 namespace renodx::resolution {
 
@@ -28,29 +34,28 @@ std::vector<std::string> GetResolutionLabels(int monitor_index) {
             DEVMODEW dm;
             dm.dmSize = sizeof(dm);
             
-            std::map<int, int> resolution_map; // width -> height mapping to avoid duplicates
+            std::set<std::pair<int, int>> resolution_set; // Use set to avoid duplicates and maintain order
             
             for (int i = 0; EnumDisplaySettingsW(device_name.c_str(), i, &dm); i++) {
-                // Store the highest height for each width (prefer higher resolutions)
-                if (resolution_map.find(dm.dmPelsWidth) == resolution_map.end() || 
-                    dm.dmPelsHeight > resolution_map[dm.dmPelsWidth]) {
-                    resolution_map[dm.dmPelsWidth] = dm.dmPelsHeight;
+                // Only add valid resolutions (width > 0, height > 0)
+                if (dm.dmPelsWidth > 0 && dm.dmPelsHeight > 0) {
+                    resolution_set.insert({dm.dmPelsWidth, dm.dmPelsHeight});
                 }
             }
             
             // Convert to sorted list
-            for (const auto& pair : resolution_map) {
+            for (const auto& pair : resolution_set) {
                 std::ostringstream oss;
                 oss << pair.first << " x " << pair.second;
                 labels.push_back(oss.str());
             }
             
-            // Sort by width (ascending)
+            // Sort by width (ascending - lowest first, regular order)
             std::sort(labels.begin(), labels.end(), [](const std::string& a, const std::string& b) {
                 int width_a, height_a, width_b, height_b;
                 sscanf(a.c_str(), "%d x %d", &width_a, &height_a);
                 sscanf(b.c_str(), "%d x %d", &width_b, &height_b);
-                return width_a < width_b;
+                return width_a < width_b; // Changed back to < for ascending order
             });
         }
     }
@@ -74,36 +79,98 @@ std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int 
     
     if (monitor_index >= 0 && monitor_index < static_cast<int>(monitors.size())) {
         HMONITOR hmon = monitors[monitor_index];
-        
-        MONITORINFOEXW mi;
-        mi.cbSize = sizeof(mi);
-        if (GetMonitorInfoW(hmon, &mi)) {
-            std::wstring device_name = mi.szDevice;
-            
-            // Enumerate all display modes
-            DEVMODEW dm;
-            dm.dmSize = sizeof(dm);
-            
-            for (int i = 0; EnumDisplaySettingsW(device_name.c_str(), i, &dm); i++) {
-                // Only add refresh rates for the selected resolution
-                if (dm.dmPelsWidth == width && dm.dmPelsHeight == height) {
-                    std::ostringstream oss;
-                    oss << dm.dmDisplayFrequency << " Hz";
-                    std::string refresh_rate = oss.str();
-                    
-                    // Check if this refresh rate is already in the list
-                    bool found = false;
-                    for (const auto& existing : labels) {
-                        if (existing == refresh_rate) {
-                            found = true;
-                            break;
+
+        // Try DXGI first for high precision refresh rates
+        bool used_dxgi = false;
+        ComPtr<IDXGIFactory1> factory;
+        if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&factory))) && factory) {
+            for (UINT a = 0; ; ++a) {
+                ComPtr<IDXGIAdapter1> adapter;
+                if (factory->EnumAdapters1(a, &adapter) == DXGI_ERROR_NOT_FOUND) break;
+                for (UINT o = 0; ; ++o) {
+                    ComPtr<IDXGIOutput> output;
+                    if (adapter->EnumOutputs(o, &output) == DXGI_ERROR_NOT_FOUND) break;
+                    DXGI_OUTPUT_DESC desc{};
+                    if (FAILED(output->GetDesc(&desc))) continue;
+                    if (desc.Monitor != hmon) continue;
+
+                    ComPtr<IDXGIOutput1> output1;
+                    if (FAILED(output.As(&output1)) || !output1) continue;
+
+                    UINT num_modes = 0;
+                    if (FAILED(output1->GetDisplayModeList1(
+                            DXGI_FORMAT_R8G8B8A8_UNORM,
+                            0,
+                            &num_modes,
+                            nullptr))) {
+                        continue;
+                    }
+                    std::vector<DXGI_MODE_DESC1> modes(num_modes);
+                    if (FAILED(output1->GetDisplayModeList1(
+                            DXGI_FORMAT_R8G8B8A8_UNORM,
+                            0,
+                            &num_modes,
+                            modes.data()))) {
+                        continue;
+                    }
+
+                    std::vector<double> rates;
+                    for (const auto& m : modes) {
+                        if (static_cast<int>(m.Width) == width && static_cast<int>(m.Height) == height) {
+                            if (m.RefreshRate.Denominator != 0) {
+                                double hz = static_cast<double>(m.RefreshRate.Numerator) / static_cast<double>(m.RefreshRate.Denominator);
+                                // Deduplicate with epsilon (e.g., 59.94 vs 59.9401)
+                                bool exists = false;
+                                for (double r : rates) {
+                                    if (std::fabs(r - hz) < 0.001) { exists = true; break; }
+                                }
+                                if (!exists) rates.push_back(hz);
+                            }
                         }
                     }
-                    
-                    if (!found) {
-                        labels.push_back(refresh_rate);
+
+                    std::sort(rates.begin(), rates.end()); // ascending
+                    for (double r : rates) {
+                        std::ostringstream oss;
+                        oss << std::fixed << std::setprecision(2) << r << " Hz";
+                        labels.push_back(oss.str());
+                    }
+
+                    used_dxgi = true;
+                    break; // matched output found
+                }
+                if (used_dxgi) break;
+            }
+        }
+
+        // Fallback to EnumDisplaySettings if DXGI path failed
+        if (!used_dxgi) {
+            MONITORINFOEXW mi;
+            mi.cbSize = sizeof(mi);
+            if (GetMonitorInfoW(hmon, &mi)) {
+                std::wstring device_name = mi.szDevice;
+                DEVMODEW dm;
+                dm.dmSize = sizeof(dm);
+                for (int i = 0; EnumDisplaySettingsW(device_name.c_str(), i, &dm); i++) {
+                    if (dm.dmPelsWidth == width && dm.dmPelsHeight == height) {
+                        std::ostringstream oss;
+                        // Note: dmDisplayFrequency is integer; present it as xx.00 Hz
+                        oss << std::fixed << std::setprecision(2) << static_cast<double>(dm.dmDisplayFrequency) << " Hz";
+                        std::string refresh_rate = oss.str();
+                        bool found = false;
+                        for (const auto& existing : labels) {
+                            if (existing == refresh_rate) { found = true; break; }
+                        }
+                        if (!found) labels.push_back(refresh_rate);
                     }
                 }
+
+                std::sort(labels.begin(), labels.end(), [](const std::string& a, const std::string& b) {
+                    float freq_a = 0.f, freq_b = 0.f;
+                    sscanf(a.c_str(), "%f Hz", &freq_a);
+                    sscanf(b.c_str(), "%f Hz", &freq_b);
+                    return freq_a < freq_b;
+                });
             }
         }
     }
