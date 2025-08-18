@@ -326,9 +326,19 @@ bool XInputTester::InstallDetourHook(FARPROC originalFunction, FARPROC newFuncti
         return false;
     }
     
+    LogTestEvent("Memory protection changed successfully to PAGE_EXECUTE_READWRITE");
+    
     // Create a jump instruction to our hook function
     // For x64: JMP QWORD PTR [RIP+0] followed by the target address
     BYTE* code = (BYTE*)originalFunction;
+    
+    // Log the original bytes before patching
+    std::ostringstream oss;
+    oss << "Original bytes before patching: ";
+    for (int i = 0; i < 12; i++) {
+        oss << std::hex << std::setw(2) << std::setfill('0') << (int)code[i] << " ";
+    }
+    LogTestEvent(oss.str());
     
     // JMP QWORD PTR [RIP+0] = FF 25 00 00 00 00
     code[0] = 0xFF;  // JMP
@@ -341,12 +351,30 @@ bool XInputTester::InstallDetourHook(FARPROC originalFunction, FARPROC newFuncti
     // Store the target address after the jump instruction
     *(ULONGLONG*)(code + 6) = (ULONGLONG)newFunction;
     
+    // Log the patched bytes
+    std::ostringstream oss2;
+    oss2 << "Patched bytes after hooking: ";
+    for (int i = 0; i < 12; i++) {
+        oss2 << std::hex << std::setw(2) << std::setfill('0') << (int)code[i] << " ";
+    }
+    LogTestEvent(oss2.str());
+    
     // Restore memory protection
     DWORD dummy;
-    VirtualProtect(originalFunction, 12, oldProtect, &dummy);
+    if (!VirtualProtect(originalFunction, 12, oldProtect, &dummy)) {
+        LogTestEvent("Failed to restore memory protection after detour hook");
+        return false;
+    }
+    
+    LogTestEvent("Memory protection restored successfully");
     
     // Flush instruction cache
-    FlushInstructionCache(GetCurrentProcess(), originalFunction, 12);
+    if (!FlushInstructionCache(GetCurrentProcess(), originalFunction, 12)) {
+        LogTestEvent("Failed to flush instruction cache for detour hook");
+        return false;
+    }
+    
+    LogTestEvent("Instruction cache flushed successfully");
     
     LogTestEvent("Detour hook installed successfully");
     return true;
