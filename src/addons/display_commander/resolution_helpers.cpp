@@ -132,8 +132,21 @@ std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int 
                                          std::sort(rates.begin(), rates.end()); // ascending
                      for (double r : rates) {
                          std::ostringstream oss;
-                         oss << std::fixed << std::setprecision(6) << r << " Hz";
-                         labels.push_back(oss.str());
+                         oss << std::fixed << std::setprecision(10) << r << " Hz";
+                         std::string rate_str = oss.str();
+                         // Remove trailing zeros after decimal point
+                         size_t decimal_pos = rate_str.find('.');
+                         if (decimal_pos != std::string::npos) {
+                             size_t last_nonzero = rate_str.find_last_not_of('0');
+                             if (last_nonzero == decimal_pos) {
+                                 // All zeros after decimal, remove decimal point too
+                                 rate_str = rate_str.substr(0, decimal_pos);
+                             } else if (last_nonzero > decimal_pos) {
+                                 // Remove trailing zeros but keep some precision
+                                 rate_str = rate_str.substr(0, last_nonzero + 1);
+                             }
+                         }
+                         labels.push_back(rate_str + " Hz");
                      }
 
                     used_dxgi = true;
@@ -154,9 +167,22 @@ std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int 
                 for (int i = 0; EnumDisplaySettingsW(device_name.c_str(), i, &dm); i++) {
                     if (dm.dmPelsWidth == width && dm.dmPelsHeight == height) {
                                                  std::ostringstream oss;
-                         // Note: dmDisplayFrequency is integer; present it as xx.000000 Hz
-                         oss << std::fixed << std::setprecision(6) << static_cast<double>(dm.dmDisplayFrequency) << " Hz";
-                        std::string refresh_rate = oss.str();
+                         // Note: dmDisplayFrequency is integer; present it as xx Hz (no trailing zeros)
+                         oss << std::fixed << std::setprecision(10) << static_cast<double>(dm.dmDisplayFrequency);
+                         std::string rate_str = oss.str();
+                         // Remove trailing zeros after decimal point
+                         size_t decimal_pos = rate_str.find('.');
+                         if (decimal_pos != std::string::npos) {
+                             size_t last_nonzero = rate_str.find_last_not_of('0');
+                             if (last_nonzero == decimal_pos) {
+                                 // All zeros after decimal, remove decimal point too
+                                 rate_str = rate_str.substr(0, decimal_pos);
+                             } else if (last_nonzero > decimal_pos) {
+                                 // Remove trailing zeros but keep some precision
+                                 rate_str = rate_str.substr(0, last_nonzero + 1);
+                             }
+                         }
+                                                  std::string refresh_rate = rate_str + " Hz";
                         bool found = false;
                         for (const auto& existing : labels) {
                             if (existing == refresh_rate) { found = true; break; }
