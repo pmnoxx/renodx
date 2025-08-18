@@ -1,7 +1,7 @@
 #include "ui_direct_input_status.hpp"
 #include "../input/directinput/direct_input.hpp"
 #include "../input/directinput/direct_input_test_ui.hpp"
-#include "../input/directinput/xinput_test.hpp"
+// #include "../input/directinput/xinput_test.hpp"  // XInput disabled for now
 #include "ui_common.hpp"
 #include "../addon.hpp"
 #include <deps/imgui/imgui.h>
@@ -178,7 +178,8 @@ void AddDirectInputStatusSettings(std::vector<renodx::utils::settings::Setting*>
         .is_visible = []() { return is_direct_input_tab(s_ui_mode); },
     });
 
-    // XInput Input Blocking Controls
+    // XInput Input Blocking Controls - DISABLED FOR NOW
+    /*
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "XInputBlockingControls",
         .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
@@ -186,38 +187,16 @@ void AddDirectInputStatusSettings(std::vector<renodx::utils::settings::Setting*>
         .section = "XInput Input Blocking Controls",
         .tooltip = "Control XInput input blocking",
         .on_draw = []() -> bool {
-            if (!renodx::input::direct_input::test::g_xinputTester) {
-                ImGui::Text("XInput Tester not available");
-                return true;
-            }
-
-            ImGui::Text("=== XInput Input Blocking ===");
+            // XInput functionality disabled for now
+            ImGui::Text("XInput functionality is currently disabled");
+            return true;
             
-            bool block_xinput = renodx::input::direct_input::test::g_xinputTester->IsBlockingXInputInput();
-            if (ImGui::Checkbox("Block XInput Input", &block_xinput)) {
-                renodx::input::direct_input::test::g_xinputTester->SetBlockXInputInput(block_xinput);
-            }
-            
-            ImGui::SameLine();
-            ImGui::TextDisabled("(?)");
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("When enabled, all XInput input will be blocked.\nThis prevents controller input from being processed.");
-            }
-            
-            // Show current blocking status
-            ImGui::Text("Current Status: %s", block_xinput ? "BLOCKING INPUT" : "ALLOWING INPUT");
-            
-            // Instructions
-            ImGui::Text("=== Instructions ===");
-            ImGui::TextWrapped("1. Enable XInput input blocking above to disable controller input");
-            ImGui::TextWrapped("2. The blocking affects all XInput functions: GetState, SetState, GetCapabilities, Enable");
-            ImGui::TextWrapped("3. When blocking is enabled, controllers will appear disconnected to the game");
-            ImGui::TextWrapped("4. Use this to test input blocking functionality or disable controllers temporarily");
-            
+            // XInput functionality disabled for now
             return true;
         },
         .is_visible = []() { return is_direct_input_tab(s_ui_mode); },
     });
+    */
     }
     
     } // namespace renodx::ui
