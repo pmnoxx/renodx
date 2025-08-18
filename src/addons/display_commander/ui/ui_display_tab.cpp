@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <map> // Added for resolution_map
 #include <iomanip> // Added for std::fixed and std::setprecision
+#include <atomic>
 
 namespace renodx::ui {
 
@@ -63,6 +64,52 @@ float GetMaxMonitorIndex() {
         }, 
         reinterpret_cast<LPARAM>(&monitors));
     return static_cast<float>((std::max)(0, static_cast<int>(monitors.size()) - 1));
+}
+
+// Helper function to get current display info based on game position
+std::string GetCurrentDisplayInfo() {
+    HWND hwnd = g_last_swapchain_hwnd.load();
+    
+    if (!hwnd) {
+        return "No game window detected";
+    }
+    
+    // Get window position
+    RECT window_rect;
+    if (!GetWindowRect(hwnd, &window_rect)) {
+        return "Failed to get window position";
+    }
+    
+    // Find which monitor the game is running on
+    HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    if (!monitor) {
+        return "Failed to determine monitor";
+    }
+    
+    // Get monitor information
+    MONITORINFOEXW mi;
+    mi.cbSize = sizeof(mi);
+    if (!GetMonitorInfoW(monitor, &mi)) {
+        return "Failed to get monitor info";
+    }
+    
+    // Get current display settings for this monitor
+    DEVMODEW dm;
+    dm.dmSize = sizeof(dm);
+    if (!EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
+        return "Failed to get display settings";
+    }
+    
+    // Convert device name to string
+    std::wstring device_name = mi.szDevice;
+    std::string device_name_str(device_name.begin(), device_name.end());
+    
+    // Format the display info in one line
+    std::ostringstream oss;
+    oss << device_name_str << " - " << dm.dmPelsWidth << "x" << dm.dmPelsHeight 
+        << " @ " << dm.dmDisplayFrequency << "Hz";
+    
+    return oss.str();
 }
 
 void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
@@ -149,6 +196,22 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .is_visible = []() { return is_display_tab(s_ui_mode); } // Show in Display tab mode
     });
 
+    // Current Display Info
+    settings.push_back(new renodx::utils::settings::Setting{
+        .key = "CurrentDisplayInfo",
+        .binding = nullptr, // No direct binding, just for display
+        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .default_value = 0.f,
+        .label = "Current Display Info",
+        .section = "Display",
+        .tooltip = "Shows the current resolution and refresh rate of the display where the game is running.",
+        .on_draw = []() -> bool {
+            std::string display_info = GetCurrentDisplayInfo();
+            ImGui::TextUnformatted(display_info.c_str());
+            return false; // No value change
+        },
+        .is_visible = []() { return is_basic_tab(s_ui_mode) || is_display_tab(s_ui_mode); } // Show in Simple and Display modes
+    });
 
 
     // Apply Changes Button
