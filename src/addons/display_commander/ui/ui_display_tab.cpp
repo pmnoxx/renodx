@@ -170,22 +170,22 @@ bool HandleMonitorSettingsUI() {
     
     // Get current monitor labels (now with precise refresh rates and raw rational values)
     auto monitor_labels = GetMonitorLabelsFromCache();
-    if (monitor_labels.empty()) {
-        ImGui::Text("No monitors detected");
-        return false;
-    }
-    
-    // Auto-detect current display resolution and set as default if not already set
+            if (monitor_labels.empty()) {
+                ImGui::Text("No monitors detected");
+                return false;
+            }
+            
+            // Auto-detect current display resolution and set as default if not already set
     if (!s_initial_auto_selection_done) {
         s_initial_auto_selection_done = true;
-        
-        // Get current display info for the selected monitor
-        HWND hwnd = g_last_swapchain_hwnd.load();
-        if (hwnd) {
-            HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-            if (current_monitor) {
-                // Find which monitor index this corresponds to
-                for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
+                
+                // Get current display info for the selected monitor
+                HWND hwnd = g_last_swapchain_hwnd.load();
+                if (hwnd) {
+                    HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                    if (current_monitor) {
+                            // Find which monitor index this corresponds to
+                            for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
                     const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i);
                     if (display && display->monitor_handle == current_monitor) {
                         s_selected_monitor_index = static_cast<float>(i);
@@ -220,17 +220,17 @@ bool HandleMonitorSettingsUI() {
                         }
                         break;
                     }
+                        }
+                    }
                 }
             }
-        }
-    }
-    
-    // Monitor selection
-    if (ImGui::BeginCombo("Monitor", monitor_labels[static_cast<int>(s_selected_monitor_index)].c_str())) {
-        for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
-            const bool is_selected = (i == static_cast<int>(s_selected_monitor_index));
-            if (ImGui::Selectable(monitor_labels[i].c_str(), is_selected)) {
-                s_selected_monitor_index = static_cast<float>(i);
+            
+            // Monitor selection
+            if (ImGui::BeginCombo("Monitor", monitor_labels[static_cast<int>(s_selected_monitor_index)].c_str())) {
+                for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
+                    const bool is_selected = (i == static_cast<int>(s_selected_monitor_index));
+                    if (ImGui::Selectable(monitor_labels[i].c_str(), is_selected)) {
+                        s_selected_monitor_index = static_cast<float>(i);
                 
                 // Auto-select closest resolution and refresh rate for the newly selected monitor
                 const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i);
@@ -265,47 +265,47 @@ bool HandleMonitorSettingsUI() {
                         LogWarn("No resolution match found for auto-selection, using first available");
                     }
                 }
-            }
-            if (is_selected) {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
-    }
-    
-    // Resolution selection
-    auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
-    if (!resolution_labels.empty()) {
-        if (ImGui::BeginCombo("Resolution", resolution_labels[static_cast<int>(s_selected_resolution_index)].c_str())) {
-            for (int i = 0; i < static_cast<int>(resolution_labels.size()); i++) {
-                const bool is_selected = (i == static_cast<int>(s_selected_resolution_index));
-                if (ImGui::Selectable(resolution_labels[i].c_str(), is_selected)) {
-                    s_selected_resolution_index = static_cast<float>(i);
-                    s_selected_refresh_rate_index = 0.f; // Reset refresh rate when resolution changes
-                }
-                if (is_selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-    }
-    
-    // Refresh rate selection
-    if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
-        auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
-        if (!refresh_rate_labels.empty()) {
-            if (ImGui::BeginCombo("Refresh Rate", refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)].c_str())) {
-                for (int i = 0; i < static_cast<int>(refresh_rate_labels.size()); i++) {
-                    const bool is_selected = (i == static_cast<int>(s_selected_refresh_rate_index));
-                    if (ImGui::Selectable(refresh_rate_labels[i].c_str(), is_selected)) {
-                        s_selected_refresh_rate_index = static_cast<float>(i);
                     }
                     if (is_selected) {
                         ImGui::SetItemDefaultFocus();
                     }
                 }
                 ImGui::EndCombo();
+            }
+            
+            // Resolution selection
+    auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+            if (!resolution_labels.empty()) {
+                if (ImGui::BeginCombo("Resolution", resolution_labels[static_cast<int>(s_selected_resolution_index)].c_str())) {
+                    for (int i = 0; i < static_cast<int>(resolution_labels.size()); i++) {
+                        const bool is_selected = (i == static_cast<int>(s_selected_resolution_index));
+                        if (ImGui::Selectable(resolution_labels[i].c_str(), is_selected)) {
+                            s_selected_resolution_index = static_cast<float>(i);
+                            s_selected_refresh_rate_index = 0.f; // Reset refresh rate when resolution changes
+                        }
+                        if (is_selected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+            }
+            
+            // Refresh rate selection
+            if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+        auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+                    if (!refresh_rate_labels.empty()) {
+                        if (ImGui::BeginCombo("Refresh Rate", refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)].c_str())) {
+                            for (int i = 0; i < static_cast<int>(refresh_rate_labels.size()); i++) {
+                                const bool is_selected = (i == static_cast<int>(s_selected_refresh_rate_index));
+                                if (ImGui::Selectable(refresh_rate_labels[i].c_str(), is_selected)) {
+                                    s_selected_refresh_rate_index = static_cast<float>(i);
+                                }
+                                if (is_selected) {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
             }
         }
     }
@@ -405,9 +405,13 @@ bool HandleMonitorSettingsUI() {
     
     ImGui::Spacing();
     
+    // API Status Section
+    ImGui::Text("API Status:");
+    ImGui::SameLine();
+    
     // Modern API Status
     bool modern_api_available = renodx::resolution::IsModernDisplayAPIAvailable();
-    ImGui::Text("Modern API Status: ");
+    ImGui::Text("SetDisplayConfig: ");
     ImGui::SameLine();
     if (modern_api_available) {
         ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Available");
@@ -418,6 +422,17 @@ bool HandleMonitorSettingsUI() {
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Modern display API (SetDisplayConfig) is not available on this system.\nThis could be due to:\n- Windows version < 8\n- Graphics driver limitations\n- System policy restrictions");
         }
+    }
+    
+    // DXGI API Status
+    ImGui::SameLine();
+    ImGui::Text("DXGI: ");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Available");
+    ImGui::SameLine();
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("DXGI API is available on all Windows systems with DirectX support.\nThis method creates a temporary swap chain to apply display modes.");
     }
     
     // Modern API Button (Fractional Refresh Rates)
@@ -441,18 +456,18 @@ bool HandleMonitorSettingsUI() {
     
     if (ImGui::Button("Apply with Modern API (Fractional)")) {
         // Apply the changes using the modern API for fractional refresh rates
-        std::thread([](){
+                std::thread([](){
             // Get the selected resolution from the cache
             auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
-            if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
-                std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
-                int width, height;
-                sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
-                
+                    if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+                        std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+                        int width, height;
+                        sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
+                        
                 // Get the selected refresh rate from the cache
                 auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
-                if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
-                    std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
+                        if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                            std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
                     
                     // Get rational refresh rate values from the cache
                     renodx::display_cache::RationalRefreshRate refresh_rate;
@@ -482,55 +497,6 @@ bool HandleMonitorSettingsUI() {
                                 << " @ " << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
                                 << " (Exact fractional refresh rate applied)";
                             LogInfo(oss.str().c_str());
-                            
-                            // Verify the changes were actually applied by checking current settings
-                            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Wait for changes to take effect
-                            
-                            // Force refresh the display cache to get current settings
-                            renodx::display_cache::g_displayCache.Refresh();
-                            
-                            // Also check Windows directly for verification
-                            const auto* current_display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
-                            if (current_display) {
-                                double actual_refresh_rate = current_display->current_refresh_rate.ToHz();
-                                std::ostringstream verify_oss;
-                                verify_oss << "Verification: Current refresh rate is " << std::fixed << std::setprecision(10) << actual_refresh_rate << "Hz";
-                                LogInfo(verify_oss.str().c_str());
-                                
-                                // Check if the change was actually applied
-                                double expected_rate = refresh_rate.ToHz();
-                                double difference = std::abs(actual_refresh_rate - expected_rate);
-                                if (difference < 0.001) {
-                                    LogInfo("Modern API verification: Refresh rate change confirmed!");
-                                } else {
-                                    LogWarn("Modern API verification: Refresh rate change may not have been applied!");
-                                    std::ostringstream warn_oss;
-                                    warn_oss << "Expected: " << expected_rate << "Hz, Actual: " << actual_refresh_rate << "Hz";
-                                    LogWarn(warn_oss.str().c_str());
-                                    
-                                    // Additional debugging: Check if the resolution changed but refresh rate didn't
-                                    if (current_display->current_width == width && current_display->current_height == height) {
-                                        LogWarn("Resolution change was applied, but refresh rate change failed");
-                                    } else {
-                                        LogWarn("Both resolution and refresh rate changes may have failed");
-                                    }
-                                    
-                                    // Try to get Windows display settings directly for additional verification
-                                    HMONITOR hmon = current_display->monitor_handle;
-                                    MONITORINFOEXW mi;
-                                    mi.cbSize = sizeof(mi);
-                                    if (GetMonitorInfoW(hmon, &mi)) {
-                                        DEVMODEW dm;
-                                        dm.dmSize = sizeof(dm);
-                                        if (EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
-                                            std::ostringstream windows_oss;
-                                            windows_oss << "Windows direct check: " << dm.dmPelsWidth << "x" << dm.dmPelsHeight 
-                                                       << " @ " << dm.dmDisplayFrequency << "Hz";
-                                            LogInfo(windows_oss.str().c_str());
-                                        }
-                                    }
-                                }
-                            }
                         } else {
                             // Fallback to legacy API if modern API fails
                             LogWarn("Modern API failed, falling back to legacy API");
@@ -599,6 +565,121 @@ bool HandleMonitorSettingsUI() {
     // Restore button colors if modern API is not available
     if (!modern_api_available) {
         ImGui::PopStyleColor(3);
+    }
+    
+    // DXGI API Button (Alternative Fractional Method)
+    ImGui::SameLine();
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Uses DXGI SetFullscreenState + ResizeTarget to set fractional refresh rates.\nThis method creates a temporary swap chain to apply the mode.");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Apply with DXGI API")) {
+        // Apply the changes using the DXGI API for fractional refresh rates
+            std::thread([](){
+            // Get the selected resolution from the cache
+            auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+            if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
+                std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+                int width, height;
+                sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
+                
+                // Get the selected refresh rate from the cache
+                auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+                    if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                        std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
+                    
+                    // Get rational refresh rate values from the cache
+                    renodx::display_cache::RationalRefreshRate refresh_rate;
+                    bool has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
+                        static_cast<int>(s_selected_monitor_index), 
+                        static_cast<int>(s_selected_resolution_index),
+                        static_cast<int>(s_selected_refresh_rate_index), 
+                        refresh_rate);
+                    
+                    if (has_rational) {
+                        // Log the values we're trying to apply with DXGI API
+                        std::ostringstream debug_oss;
+                        debug_oss << "Attempting to apply display changes with DXGI API: Monitor=" << s_selected_monitor_index 
+                                  << ", Resolution=" << width << "x" << height 
+                                  << ", Refresh Rate=" << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
+                                  << " (Rational: " << refresh_rate.numerator << "/" << refresh_rate.denominator << ")";
+                        LogInfo(debug_oss.str().c_str());
+                        
+                        // Try DXGI API for fractional refresh rates
+                        if (renodx::resolution::ApplyDisplaySettingsDXGI(
+                            static_cast<int>(s_selected_monitor_index),
+                            width, height,
+                            refresh_rate.numerator, refresh_rate.denominator)) {
+                            
+                            std::ostringstream oss;
+                            oss << "DXGI API SUCCESS: " << width << "x" << height 
+                                << " @ " << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
+                                << " (Exact fractional refresh rate applied via DXGI)";
+                            LogInfo(oss.str().c_str());
+                        } else {
+                            // DXGI API failed, fall back to legacy API
+                            LogWarn("DXGI API failed, falling back to legacy API");
+                            
+                            // Get the last Windows error for debugging
+                            DWORD error = GetLastError();
+                            if (error != 0) {
+                                LPSTR messageBuffer = nullptr;
+                                size_t size = FormatMessageA(
+                                    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                    NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+                                
+                                if (size > 0) {
+                                    std::ostringstream error_oss;
+                                    error_oss << "DXGI API error details: " << std::string(messageBuffer, size);
+                                    LogWarn(error_oss.str().c_str());
+                                    LocalFree(messageBuffer);
+                                }
+                            }
+                            
+                            // Fallback to legacy API
+                            const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
+                            if (display) {
+                                HMONITOR hmon = display->monitor_handle;
+                            
+                            MONITORINFOEXW mi;
+                            mi.cbSize = sizeof(mi);
+                            if (GetMonitorInfoW(hmon, &mi)) {
+                                std::wstring device_name = mi.szDevice;
+                                
+                                // Create DEVMODE structure with selected resolution and refresh rate
+                                DEVMODEW dm;
+                                dm.dmSize = sizeof(dm);
+                                dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+                                dm.dmPelsWidth = width;
+                                dm.dmPelsHeight = height;
+                                    
+                                    // Round the refresh rate to the nearest integer for DEVMODE fallback
+                                    dm.dmDisplayFrequency = static_cast<DWORD>(std::round(refresh_rate.ToHz()));
+                                
+                                    // Apply the changes using legacy API
+                                LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+                                
+                                if (result == DISP_CHANGE_SUCCESSFUL) {
+                                    std::ostringstream oss;
+                                        oss << "Legacy API fallback SUCCESS: " << width << "x" << height 
+                                            << " @ " << std::fixed << std::setprecision(3) << refresh_rate.ToHz() << "Hz"
+                                            << " (Note: Refresh rate was rounded for compatibility)";
+                                    LogInfo(oss.str().c_str());
+                                } else {
+                                    std::ostringstream oss;
+                                        oss << "Legacy API fallback also failed. Error code: " << result;
+                                    LogWarn(oss.str().c_str());
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        LogWarn("Failed to get rational refresh rate from cache for DXGI API");
+                        }
+                    }
+                }
+            }).detach();
     }
     
     return false; // No value change
