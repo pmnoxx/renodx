@@ -81,8 +81,17 @@ private:
     // Runtime hooking for dynamically loaded functions
     bool InstallRuntimeHooks();
     void UninstallRuntimeHooks();
-    bool ReplaceXInputFunctions();
-    bool ReplaceFunctionInIAT(PIMAGE_THUNK_DATA pThunk, FARPROC newFunction);
+    
+    // Function replacement in loaded DLLs
+    bool ReplaceXInputFunctionsInDLL();
+    bool ReplaceFunctionInDLL(FARPROC originalFunction, FARPROC newFunction);
+    
+    // Proper detour-style hooking
+    bool InstallDetourHooks();
+    bool InstallDetourHook(FARPROC originalFunction, FARPROC newFunction);
+    
+    // Safer API hooking approach
+    bool InstallAPIHooks();
     
     // Module loading retry
     bool TryLoadXInputModules();

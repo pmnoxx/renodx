@@ -1,0 +1,41 @@
+23:51:52:204 [ 7144] | INFO  | [Display Commander] [XInput Test] No XInput modules found yet - will retry later
+23:51:52:204 [ 7144] | INFO  | [Display Commander] [XInput Test] GetAsyncKeyState function found and stored from user32.dll
+23:51:52:204 [ 7144] | INFO  | [Display Commander] [XInput Test] GetKeyState function found and stored from user32.dll
+23:51:52:204 [ 7144] | INFO  | [Display Commander] [XInput Test] GetKeyboardState function found and stored from user32.dll
+23:51:52:204 [ 7144] | INFO  | [Display Commander] [XInput Test] GetCursorPos function found and stored from user32.dll
+23:51:52:204 [ 7144] | INFO  | [Display Commander] [XInput Test] SetCursorPos function found and stored from user32.dll
+23:51:52:204 [ 7144] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
+23:51:52:204 [ 7144] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
+23:51:52:204 [ 7144] | INFO  | [Display Commander] [XInput Test] XInput runtime hooks prepared - will activate when modules are loaded
+23:51:52:204 [ 7144] | INFO  | [Display Commander] XInput tester initialized successfully
+23:51:52:204 [50708] | INFO  | [Display Commander] [XInput Test] XInput background retry thread started
+23:51:52:204 [50708] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 1 - checking for XInput modules
+23:51:52:204 [50708] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
+23:51:52:204 [50708] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
+23:51:52:204 [50708] | INFO  | [Display Commander] [XInput Test] No XInput modules found in process
+23:51:52:467 [50708] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 2 - checking for XInput modules
+23:51:52:467 [50708] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
+23:51:52:467 [50708] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
+23:51:52:467 [50708] | INFO  | [Display Commander] [XInput Test] No XInput modules found in process
+23:51:52:733 [50708] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 3 - checking for XInput modules
+23:51:52:733 [50708] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
+23:51:52:733 [50708] | INFO  | [Display Commander] [XInput Test] No XInput modules found for runtime hooking
+23:51:52:733 [50708] | INFO  | [Display Commander] [XInput Test] No XInput modules found in process
+23:51:52:993 [50708] | INFO  | [Display Commander] [XInput Test] XInput retry attempt 4 - checking for XInput modules
+23:51:52:993 [50708] | INFO  | [Display Commander] [XInput Test] Installing runtime hooks for dynamically loaded XInput functions...
+23:51:52:994 [50708] | INFO  | [Display Commander] [XInput Test] Found xinput1_3.dll, installing runtime hooks...
+23:51:52:994 [50708] | INFO  | [Display Commander] [XInput Test] XInputGetState runtime hook installed from xinput1_3.dll
+23:51:52:994 [50708] | INFO  | [Display Commander] [XInput Test] XInputSetState runtime hook installed from xinput1_3.dll
+23:51:52:994 [50708] | INFO  | [Display Commander] [XInput Test] XInputGetCapabilities runtime hook installed from xinput1_3.dll
+23:51:52:994 [50708] | INFO  | [Display Commander] [XInput Test] XInputEnable runtime hook installed from xinput1_3.dll
+23:51:52:994 [50708] | INFO  | [Display Commander] [XInput Test] Runtime hooks installed successfully
+23:51:52:994 [50708] | INFO  | [Display Commander] [XInput Test] Installing safer API hooks using trampoline approach...
+23:51:52:995 [50708] | INFO  | [Display Commander] [XInput Test] Creating trampoline for XInputGetState...
+23:51:52:995 [50708] | INFO  | [Display Commander] [XInput Test] Creating trampoline for XInputSetState...
+23:51:52:995 [50708] | INFO  | [Display Commander] [XInput Test] Creating trampoline for XInputGetCapabilities...
+23:51:52:995 [50708] | INFO  | [Display Commander] [XInput Test] Creating trampoline for XInputEnable...
+23:51:52:995 [50708] | INFO  | [Display Commander] [XInput Test] API hooks prepared using trampoline approach
+23:51:52:995 [50708] | INFO  | [Display Commander] [XInput Test] XInput API hooks installed successfully
+23:51:52:995 [50708] | INFO  | [Display Commander] [XInput Test] Successfully installed XInput runtime hooks on retry
+23:51:52:995 [50708] | INFO  | [Display Commander] [XInput Test] Found XInput modules on retry 4
+23:51:52:995 [50708] | INFO  | [Display Commander] [XInput Test] XInput hooks became active
