@@ -77,6 +77,10 @@ private:
     // Install hooks
     bool InstallHooks();
     void UninstallHooks();
+    
+    // Runtime hooking for dynamically loaded functions
+    bool InstallRuntimeHooks();
+    void UninstallRuntimeHooks();
     bool ReplaceXInputFunctions();
     bool ReplaceFunctionInIAT(PIMAGE_THUNK_DATA pThunk, FARPROC newFunction);
     

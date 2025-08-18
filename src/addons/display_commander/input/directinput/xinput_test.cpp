@@ -142,27 +142,124 @@ bool XInputTester::InstallHooks() {
     // Mark hooks as installed even if some modules aren't loaded yet
     m_hooks_installed = true;
     
-    if (m_original_XInputGetState || m_original_XInputSetState || 
-        m_original_XInputGetCapabilities || m_original_XInputEnable) {
-        LogTestEvent("XInput hooks installed successfully");
-        
-        // Now try to replace the functions in memory so our hooks are actually called
-        if (ReplaceXInputFunctions()) {
-            LogTestEvent("XInput functions successfully replaced in memory");
-        } else {
-            LogTestEvent("Failed to replace XInput functions in memory - hooks may not work");
-        }
+    // Try to install runtime hooks for XInput functions
+    bool xinput_hooks_installed = InstallRuntimeHooks();
+    
+    if (xinput_hooks_installed) {
+        LogTestEvent("XInput runtime hooks installed successfully");
     } else {
-        LogTestEvent("XInput hooks prepared - will activate when modules are loaded");
+        LogTestEvent("XInput runtime hooks prepared - will activate when modules are loaded");
     }
     
     return true;
+}
+
+bool XInputTester::InstallRuntimeHooks() {
+    LogTestEvent("Installing runtime hooks for dynamically loaded XInput functions...");
+    
+    // Try to get XInput modules - they might not be loaded yet
+    HMODULE xinput13 = GetModuleHandleA("xinput1_3.dll");
+    HMODULE xinput14 = GetModuleHandleA("xinput1_4.dll");
+    HMODULE xinput9 = GetModuleHandleA("xinput9_1_0.dll");
+    
+    bool hooked_any = false;
+    
+    if (xinput13) {
+        LogTestEvent("Found xinput1_3.dll, installing runtime hooks...");
+        
+        // Get the original function addresses
+        FARPROC original_XInputGetState = GetProcAddress(xinput13, "XInputGetState");
+        FARPROC original_XInputSetState = GetProcAddress(xinput13, "XInputSetState");
+        FARPROC original_XInputGetCapabilities = GetProcAddress(xinput13, "XInputGetCapabilities");
+        FARPROC original_XInputEnable = GetProcAddress(xinput13, "XInputEnable");
+        
+        if (original_XInputGetState) {
+            m_original_XInputGetState = (XInputGetState_t)original_XInputGetState;
+            LogTestEvent("XInputGetState runtime hook installed from xinput1_3.dll");
+            hooked_any = true;
+        }
+        
+        if (original_XInputSetState) {
+            m_original_XInputSetState = (XInputSetState_t)original_XInputSetState;
+            LogTestEvent("XInputSetState runtime hook installed from xinput1_3.dll");
+            hooked_any = true;
+        }
+        
+        if (original_XInputGetCapabilities) {
+            m_original_XInputGetCapabilities = (XInputGetCapabilities_t)original_XInputGetCapabilities;
+            LogTestEvent("XInputGetCapabilities runtime hook installed from xinput1_3.dll");
+            hooked_any = true;
+        }
+        
+        if (original_XInputEnable) {
+            m_original_XInputEnable = (XInputEnable_t)original_XInputEnable;
+            LogTestEvent("XInputEnable runtime hook installed from xinput1_3.dll");
+            hooked_any = true;
+        }
+    }
+    
+    if (xinput14 && !hooked_any) {
+        LogTestEvent("Found xinput1_4.dll, installing runtime hooks...");
+        
+        // Get the original function addresses
+        FARPROC original_XInputGetState = GetProcAddress(xinput14, "XInputGetState");
+        FARPROC original_XInputSetState = GetProcAddress(xinput14, "XInputSetState");
+        FARPROC original_XInputGetCapabilities = GetProcAddress(xinput14, "XInputGetCapabilities");
+        FARPROC original_XInputEnable = GetProcAddress(xinput14, "XInputEnable");
+        
+        if (original_XInputGetState) {
+            m_original_XInputGetState = (XInputGetState_t)original_XInputGetState;
+            LogTestEvent("XInputGetState runtime hook installed from xinput1_4.dll");
+            hooked_any = true;
+        }
+        
+        if (original_XInputSetState) {
+            m_original_XInputSetState = (XInputSetState_t)original_XInputSetState;
+            LogTestEvent("XInputSetState runtime hook installed from xinput1_4.dll");
+            hooked_any = true;
+        }
+        
+        if (original_XInputGetCapabilities) {
+            m_original_XInputGetCapabilities = (XInputGetCapabilities_t)original_XInputGetCapabilities;
+            LogTestEvent("XInputGetCapabilities runtime hook installed from xinput1_4.dll");
+            hooked_any = true;
+        }
+        
+        if (original_XInputEnable) {
+            m_original_XInputEnable = (XInputEnable_t)original_XInputEnable;
+            LogTestEvent("XInputEnable runtime hook installed from xinput1_4.dll");
+            hooked_any = true;
+        }
+    }
+    
+    if (hooked_any) {
+        LogTestEvent("Runtime hooks installed successfully");
+        return true;
+    } else {
+        LogTestEvent("No XInput modules found for runtime hooking");
+        return false;
+    }
+}
+
+void XInputTester::UninstallRuntimeHooks() {
+    LogTestEvent("Uninstalling runtime hooks...");
+    
+    // Clear function pointers
+    m_original_XInputGetState = nullptr;
+    m_original_XInputSetState = nullptr;
+    m_original_XInputGetCapabilities = nullptr;
+    m_original_XInputEnable = nullptr;
+    
+    LogTestEvent("Runtime hooks uninstalled");
 }
 
 void XInputTester::UninstallHooks() {
     if (!m_hooks_installed) {
         return;
     }
+    
+    // Uninstall runtime hooks
+    UninstallRuntimeHooks();
     
     // Restore original functions
     m_original_XInputGetState = nullptr;
@@ -348,88 +445,16 @@ bool XInputTester::ReplaceXInputFunctions() {
 bool XInputTester::TryLoadXInputModules() {
     bool found_any = false;
     
-    // Try to load XInput modules
-    HMODULE xinput13 = GetModuleHandleA("xinput1_3.dll");
-    HMODULE xinput14 = GetModuleHandleA("xinput1_4.dll");
-    HMODULE xinput9 = GetModuleHandleA("xinput9_1_0.dll");
-    
-    // Try XInputGetState
-    if (!m_original_XInputGetState) {
-        if (xinput13) {
-            m_original_XInputGetState = (XInputGetState_t)GetProcAddress(xinput13, "XInputGetState");
-            if (m_original_XInputGetState) {
-                LogTestEvent("XInputGetState function loaded on retry from xinput1_3.dll");
-                found_any = true;
-            }
-        }
-        if (xinput14 && !m_original_XInputGetState) {
-            m_original_XInputGetState = (XInputGetState_t)GetProcAddress(xinput14, "XInputGetState");
-            if (m_original_XInputGetState) {
-                LogTestEvent("XInputGetState function loaded on retry from xinput1_4.dll");
-                found_any = true;
-            }
-        }
-    }
-    
-    // Try XInputSetState
-    if (!m_original_XInputSetState) {
-        if (xinput13) {
-            m_original_XInputSetState = (XInputSetState_t)GetProcAddress(xinput13, "XInputSetState");
-            if (m_original_XInputSetState) {
-                LogTestEvent("XInputSetState function loaded on retry from xinput1_3.dll");
-                found_any = true;
-            }
-        }
-        if (xinput14 && !m_original_XInputSetState) {
-            m_original_XInputSetState = (XInputSetState_t)GetProcAddress(xinput14, "XInputSetState");
-            if (m_original_XInputSetState) {
-                LogTestEvent("XInputSetState function loaded on retry from xinput1_4.dll");
-                found_any = true;
-            }
-        }
-    }
-    
-    // Try XInputGetCapabilities
-    if (!m_original_XInputGetCapabilities) {
-        if (xinput13) {
-            m_original_XInputGetCapabilities = (XInputGetCapabilities_t)GetProcAddress(xinput13, "XInputGetCapabilities");
-            if (m_original_XInputGetCapabilities) {
-                LogTestEvent("XInputGetCapabilities function loaded on retry from xinput1_3.dll");
-                found_any = true;
-            }
-        }
-        if (xinput14 && !m_original_XInputGetCapabilities) {
-            m_original_XInputGetCapabilities = (XInputGetCapabilities_t)GetProcAddress(xinput14, "XInputGetCapabilities");
-            if (m_original_XInputGetCapabilities) {
-                LogTestEvent("XInputGetCapabilities function loaded on retry from xinput1_4.dll");
-                found_any = true;
-            }
-        }
-    }
-    
-    // Try XInputEnable
-    if (!m_original_XInputEnable) {
-        if (xinput13) {
-            m_original_XInputEnable = (XInputEnable_t)GetProcAddress(xinput13, "XInputEnable");
-            if (m_original_XInputEnable) {
-                LogTestEvent("XInputEnable function loaded on retry from xinput1_3.dll");
-                found_any = true;
-            }
-        }
-        if (xinput14 && !m_original_XInputEnable) {
-            m_original_XInputEnable = (XInputEnable_t)GetProcAddress(xinput14, "XInputEnable");
-            if (m_original_XInputEnable) {
-                LogTestEvent("XInputEnable function loaded on retry from xinput1_4.dll");
-                found_any = true;
-            }
-        }
-    }
-    
-    // Enhanced debugging: Log what we found
-    if (found_any) {
-        LogTestEvent("Successfully loaded XInput functions on retry");
+    // Try to install runtime hooks for XInput modules
+    if (InstallRuntimeHooks()) {
+        found_any = true;
+        LogTestEvent("Successfully installed XInput runtime hooks on retry");
     } else {
         // Log module status for debugging
+        HMODULE xinput13 = GetModuleHandleA("xinput1_3.dll");
+        HMODULE xinput14 = GetModuleHandleA("xinput1_4.dll");
+        HMODULE xinput9 = GetModuleHandleA("xinput9_1_0.dll");
+        
         if (!xinput13 && !xinput14 && !xinput9) {
             LogTestEvent("No XInput modules found in process");
         } else if (xinput13 || xinput14 || xinput9) {
