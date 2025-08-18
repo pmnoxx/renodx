@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <map> // Added for resolution_map
 #include <iomanip> // Added for std::fixed and std::setprecision
+#include <cmath> // Added for std::round
 #include <atomic>
 
 namespace renodx::ui {
@@ -321,9 +322,9 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
                                     dm.dmPelsWidth = width;
                                     dm.dmPelsHeight = height;
                                     
-                                    // Use the exact refresh rate from rational values, but convert to DWORD for DEVMODE
-                                    // Note: This will truncate to integer, but we'll log the exact value
-                                    dm.dmDisplayFrequency = static_cast<DWORD>(exact_refresh_rate);
+                                    // Round the refresh rate to the nearest integer for DEVMODE
+                                    // This gives us the closest refresh rate rather than just truncating
+                                    dm.dmDisplayFrequency = static_cast<DWORD>(std::round(exact_refresh_rate));
                                     
                                     // Apply the changes
                                     LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
@@ -334,12 +335,12 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
                                             << " @ " << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz";
                                         LogInfo(oss.str().c_str());
                                         
-                                        // Log a warning about precision loss if the refresh rate was truncated
+                                        // Log a note about rounding if the refresh rate was rounded
                                         if (exact_refresh_rate != static_cast<double>(dm.dmDisplayFrequency)) {
-                                            std::ostringstream warn_oss;
-                                            warn_oss << "Note: Refresh rate was truncated from " << std::fixed << std::setprecision(3) 
-                                                     << exact_refresh_rate << "Hz to " << dm.dmDisplayFrequency << "Hz due to legacy API limitation";
-                                            LogWarn(warn_oss.str().c_str());
+                                            std::ostringstream info_oss;
+                                            info_oss << "Note: Refresh rate was rounded from " << std::fixed << std::setprecision(3) 
+                                                     << exact_refresh_rate << "Hz to " << dm.dmDisplayFrequency << "Hz for compatibility";
+                                            LogInfo(info_oss.str().c_str());
                                         }
                                     } else {
                                         std::ostringstream oss;
