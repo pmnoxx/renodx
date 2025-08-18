@@ -82,7 +82,33 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
           dm.dmPelsWidth = static_cast<DWORD>(desc.texture.width);
           dm.dmPelsHeight = static_cast<DWORD>(desc.texture.height);
           
-          // Use the new dynamic refresh rate system
+          // Use the new dynamic refresh rate system with rational values
+          UINT32 refresh_numerator = 60, refresh_denominator = 1; // Default fallback
+          bool has_rational = renodx::resolution::GetSelectedRefreshRateRational(
+              static_cast<int>(s_selected_monitor_index), 
+              static_cast<int>(desc.texture.width), 
+              static_cast<int>(desc.texture.height),
+              static_cast<int>(s_selected_refresh_rate_index), 
+              refresh_numerator, refresh_denominator);
+          
+          if (has_rational) {
+            // Try modern API first
+            if (renodx::resolution::ApplyDisplaySettingsModern(
+                static_cast<int>(s_selected_monitor_index),
+                static_cast<int>(desc.texture.width),
+                static_cast<int>(desc.texture.height),
+                refresh_numerator, refresh_denominator)) {
+              
+              double refresh_rate_hz = static_cast<double>(refresh_numerator) / static_cast<double>(refresh_denominator);
+              std::ostringstream oss2;
+              oss2 << "OnInitSwapchain: Auto-applied desktop resolution override for game using modern API: " 
+                   << desc.texture.width << "x" << desc.texture.height << " @ " << std::fixed << std::setprecision(3) << refresh_rate_hz << "Hz on monitor " << s_selected_monitor_index;
+              LogInfo(oss2.str().c_str());
+              return; // Success with modern API
+            }
+          }
+          
+          // Fallback to legacy API
           float refresh_rate = 60.0f; // Default fallback
           if (renodx::resolution::GetSelectedRefreshRate(static_cast<int>(s_selected_monitor_index), 
                                    static_cast<int>(desc.texture.width), 
@@ -95,7 +121,7 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
             dm.dmDisplayFrequency = 60; // Default to 60Hz
           }
           
-          // Apply the changes for the game
+          // Apply the changes for the game using legacy API
           LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
           
           if (result == DISP_CHANGE_SUCCESSFUL) {
