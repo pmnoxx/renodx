@@ -1,0 +1,231 @@
+#pragma once
+
+#include <windows.h>
+#include <vector>
+#include <string>
+#include <map>
+#include <memory>
+#include <optional>
+#include <sstream> // Added for std::ostringstream
+#include <iomanip> // Added for std::setprecision
+
+namespace renodx::display_cache {
+
+// Rational refresh rate structure
+struct RationalRefreshRate {
+    UINT32 numerator;
+    UINT32 denominator;
+    
+    RationalRefreshRate() : numerator(0), denominator(1) {}
+    RationalRefreshRate(UINT32 num, UINT32 den) : numerator(num), denominator(den) {}
+    
+    // Convert to double for display
+    double ToHz() const {
+        if (denominator == 0) return 0.0;
+        return static_cast<double>(numerator) / static_cast<double>(denominator);
+    }
+    
+    // Convert to string representation
+    std::string ToString() const {
+        if (denominator == 0) return "0Hz";
+        
+        double hz = ToHz();
+        std::ostringstream oss;
+        oss << std::setprecision(10) << hz;
+        std::string rate_str = oss.str();
+        
+        // Remove trailing zeros after decimal point
+        size_t decimal_pos = rate_str.find('.');
+        if (decimal_pos != std::string::npos) {
+            size_t last_nonzero = rate_str.find_last_not_of('0');
+            if (last_nonzero == decimal_pos) {
+                // All zeros after decimal, remove decimal point too
+                rate_str = rate_str.substr(0, decimal_pos);
+            } else if (last_nonzero > decimal_pos) {
+                // Remove trailing zeros but keep some precision
+                rate_str = rate_str.substr(0, last_nonzero + 1);
+            }
+        }
+        
+        return rate_str + "Hz";
+    }
+    
+    // Comparison operators for sorting
+    bool operator<(const RationalRefreshRate& other) const {
+        return ToHz() < other.ToHz();
+    }
+    
+    bool operator==(const RationalRefreshRate& other) const {
+        return numerator == other.numerator && denominator == other.denominator;
+    }
+};
+
+// Resolution structure
+struct Resolution {
+    int width;
+    int height;
+    std::vector<RationalRefreshRate> refresh_rates;
+    
+    Resolution() : width(0), height(0) {}
+    Resolution(int w, int h) : width(w), height(h) {}
+    
+    // Convert to string representation
+    std::string ToString() const {
+        std::ostringstream oss;
+        oss << width << " x " << height;
+        return oss.str();
+    }
+    
+    // Comparison operators for sorting
+    bool operator<(const Resolution& other) const {
+        if (width != other.width) return width < other.width;
+        return height < other.height;
+    }
+    
+    bool operator==(const Resolution& other) const {
+        return width == other.width && height == other.height;
+    }
+};
+
+// Display information structure
+struct DisplayInfo {
+    HMONITOR monitor_handle;
+    std::wstring device_name;
+    std::wstring friendly_name;
+    std::vector<Resolution> resolutions;
+    
+    // Current settings
+    int current_width;
+    int current_height;
+    RationalRefreshRate current_refresh_rate;
+    
+    // Display capabilities
+    bool supports_hdr;
+    bool supports_vrr;
+    
+    DisplayInfo() : monitor_handle(nullptr), current_width(0), current_height(0), 
+                    supports_hdr(false), supports_vrr(false) {}
+    
+    // Get current resolution as string
+    std::string GetCurrentResolutionString() const {
+        std::ostringstream oss;
+        oss << current_width << " x " << current_height;
+        return oss.str();
+    }
+    
+    // Get current refresh rate as string
+    std::string GetCurrentRefreshRateString() const {
+        return current_refresh_rate.ToString();
+    }
+    
+    // Find resolution by dimensions
+    std::optional<size_t> FindResolutionIndex(int width, int height) const {
+        for (size_t i = 0; i < resolutions.size(); ++i) {
+            if (resolutions[i].width == width && resolutions[i].height == height) {
+                return i;
+            }
+        }
+        return std::nullopt;
+    }
+    
+    // Find refresh rate index within a resolution
+    std::optional<size_t> FindRefreshRateIndex(size_t resolution_index, const RationalRefreshRate& refresh_rate) const {
+        if (resolution_index >= resolutions.size()) return std::nullopt;
+        
+        const auto& res = resolutions[resolution_index];
+        for (size_t i = 0; i < res.refresh_rates.size(); ++i) {
+            if (res.refresh_rates[i] == refresh_rate) {
+                return i;
+            }
+        }
+        return std::nullopt;
+    }
+    
+    // Get resolution labels for UI
+    std::vector<std::string> GetResolutionLabels() const {
+        std::vector<std::string> labels;
+        labels.reserve(resolutions.size());
+        
+        for (const auto& res : resolutions) {
+            labels.push_back(res.ToString());
+        }
+        
+        return labels;
+    }
+    
+    // Get refresh rate labels for a specific resolution
+    std::vector<std::string> GetRefreshRateLabels(size_t resolution_index) const {
+        if (resolution_index >= resolutions.size()) return {};
+        
+        const auto& res = resolutions[resolution_index];
+        std::vector<std::string> labels;
+        labels.reserve(res.refresh_rates.size());
+        
+        for (const auto& rate : res.refresh_rates) {
+            labels.push_back(rate.ToString());
+        }
+        
+        return labels;
+    }
+};
+
+// Main display cache class
+class DisplayCache {
+private:
+    std::vector<std::unique_ptr<DisplayInfo>> displays;
+    bool is_initialized;
+    
+public:
+    DisplayCache() : is_initialized(false) {}
+    
+    // Initialize the cache by enumerating all displays
+    bool Initialize();
+    
+    // Refresh the cache (re-enumerate displays)
+    bool Refresh();
+    
+    // Get number of displays
+    size_t GetDisplayCount() const { return displays.size(); }
+    
+    // Get display by index
+    const DisplayInfo* GetDisplay(size_t index) const {
+        if (index >= displays.size()) return nullptr;
+        return displays[index].get();
+    }
+    
+    // Get display by monitor handle
+    const DisplayInfo* GetDisplayByHandle(HMONITOR monitor) const;
+    
+    // Get display by device name
+    const DisplayInfo* GetDisplayByDeviceName(const std::wstring& device_name) const;
+    
+    // Get resolution labels for a specific display
+    std::vector<std::string> GetResolutionLabels(size_t display_index) const;
+    
+    // Get refresh rate labels for a specific display and resolution
+    std::vector<std::string> GetRefreshRateLabels(size_t display_index, size_t resolution_index) const;
+    
+    // Get current resolution for a display
+    bool GetCurrentResolution(size_t display_index, int& width, int& height) const;
+    
+    // Get current refresh rate for a display
+    bool GetCurrentRefreshRate(size_t display_index, RationalRefreshRate& refresh_rate) const;
+    
+    // Get rational refresh rate for a specific display, resolution, and refresh rate index
+    bool GetRationalRefreshRate(size_t display_index, size_t resolution_index, size_t refresh_rate_index,
+                               RationalRefreshRate& refresh_rate) const;
+    
+    // Check if cache is initialized
+    bool IsInitialized() const { return is_initialized; }
+    
+    // Clear the cache
+    void Clear() {
+        displays.clear();
+        is_initialized = false;
+    }
+};
+
+// Global instance
+extern DisplayCache g_displayCache;
+
+} // namespace renodx::display_cache
