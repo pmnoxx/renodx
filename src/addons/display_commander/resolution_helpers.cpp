@@ -132,7 +132,7 @@ std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int 
                                          std::sort(rates.begin(), rates.end()); // ascending
                      for (double r : rates) {
                          std::ostringstream oss;
-                         oss << std::fixed << std::setprecision(10) << r << " Hz";
+                         oss << std::setprecision(10) << r;
                          std::string rate_str = oss.str();
                          // Remove trailing zeros after decimal point
                          size_t decimal_pos = rate_str.find('.');
@@ -168,7 +168,7 @@ std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int 
                     if (dm.dmPelsWidth == width && dm.dmPelsHeight == height) {
                                                                           std::ostringstream oss;
                          // Note: dmDisplayFrequency is integer; present it as xx Hz (no trailing zeros)
-                         oss << std::fixed << std::setprecision(10) << static_cast<double>(dm.dmDisplayFrequency);
+                         oss << std::setprecision(10) << static_cast<double>(dm.dmDisplayFrequency);
                          std::string rate_str = oss.str();
                          // Remove trailing zeros after decimal point
                          size_t decimal_pos = rate_str.find('.');
