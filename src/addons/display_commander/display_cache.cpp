@@ -1,8 +1,10 @@
 #include "display_cache.hpp"
 #include <dxgi1_6.h>
 #include <wrl/client.h>
+#include <cmath>
 #include <algorithm>
 #include <set>
+#include <limits>
 
 using Microsoft::WRL::ComPtr;
 
@@ -45,6 +47,14 @@ bool CheckVRRSupport(HMONITOR monitor) {
     return false; // Placeholder
 }
 
+// Helper function to get current refresh rate using modern Display Configuration API
+bool GetCurrentRefreshRateModern(const std::wstring& device_name, RationalRefreshRate& refresh_rate) {
+    // For now, return false to indicate this method is not available
+    // The Windows Display Configuration API requires specific SDK headers that may not be available
+    // We'll fall back to the DXGI approach which is more reliable
+    return false;
+}
+
 // Helper function to get current display settings
 bool GetCurrentDisplaySettings(HMONITOR monitor, int& width, int& height, RationalRefreshRate& refresh_rate) {
     MONITORINFOEXW mi;
@@ -53,6 +63,107 @@ bool GetCurrentDisplaySettings(HMONITOR monitor, int& width, int& height, Ration
         return false;
     }
     
+    // First try to get current refresh rate using modern Display Configuration API
+    if (GetCurrentRefreshRateModern(mi.szDevice, refresh_rate)) {
+        // Get current resolution from DEVMODE
+        DEVMODEW dm;
+        dm.dmSize = sizeof(dm);
+        if (EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
+            width = static_cast<int>(dm.dmPelsWidth);
+            height = static_cast<int>(dm.dmPelsHeight);
+            
+            // Debug: Log what we found via modern API
+            OutputDebugStringA(("Modern API: Current mode " + std::to_string(width) + "x" + 
+                               std::to_string(height) + " @ " + std::to_string(refresh_rate.numerator) + 
+                               "/" + std::to_string(refresh_rate.denominator) + "Hz\n").c_str());
+            return true;
+        }
+    }
+    
+    // Fallback: Try to get current settings using DXGI for precise refresh rate
+    ComPtr<IDXGIFactory1> factory;
+    if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&factory))) && factory) {
+        for (UINT a = 0; ; ++a) {
+            ComPtr<IDXGIAdapter1> adapter;
+            if (factory->EnumAdapters1(a, &adapter) == DXGI_ERROR_NOT_FOUND) break;
+            
+            for (UINT o = 0; ; ++o) {
+                ComPtr<IDXGIOutput> output;
+                if (adapter->EnumOutputs(o, &output) == DXGI_ERROR_NOT_FOUND) break;
+                
+                DXGI_OUTPUT_DESC desc{};
+                if (FAILED(output->GetDesc(&desc))) continue;
+                if (desc.Monitor != monitor) continue;
+                
+                // Get current display mode using DXGI
+                // We need to enumerate modes and find the one closest to current settings
+                UINT num_modes = 0;
+                if (SUCCEEDED(output->GetDisplayModeList(
+                        DXGI_FORMAT_R8G8B8A8_UNORM,
+                        0,
+                        &num_modes,
+                        nullptr)) && num_modes > 0) {
+                    
+                    std::vector<DXGI_MODE_DESC> modes(num_modes);
+                    if (SUCCEEDED(output->GetDisplayModeList(
+                            DXGI_FORMAT_R8G8B8A8_UNORM,
+                            0,
+                            &num_modes,
+                            modes.data()))) {
+                        
+                        // Get current settings from DEVMODE for comparison
+                        DEVMODEW dm;
+                        dm.dmSize = sizeof(dm);
+                        if (EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
+                            // Among modes with the current resolution, pick the refresh closest to current setting
+                            const double current_hz = static_cast<double>(dm.dmDisplayFrequency);
+                            double best_diff = std::numeric_limits<double>::infinity();
+                            DXGI_MODE_DESC best_mode{};
+                            bool have_best = false;
+
+                            for (const auto& mode : modes) {
+                                if (mode.Width == static_cast<UINT>(dm.dmPelsWidth) &&
+                                    mode.Height == static_cast<UINT>(dm.dmPelsHeight) &&
+                                    mode.RefreshRate.Denominator > 0) {
+                                    const double mode_hz = static_cast<double>(mode.RefreshRate.Numerator) /
+                                                           static_cast<double>(mode.RefreshRate.Denominator);
+                                    const double diff = std::abs(mode_hz - current_hz);
+                                    if (diff < best_diff) {
+                                        best_diff = diff;
+                                        best_mode = mode;
+                                        have_best = true;
+                                    }
+                                }
+                            }
+
+                            if (have_best) {
+                                width = static_cast<int>(best_mode.Width);
+                                height = static_cast<int>(best_mode.Height);
+                                refresh_rate.numerator = best_mode.RefreshRate.Numerator;
+                                refresh_rate.denominator = best_mode.RefreshRate.Denominator;
+
+                                // Debug: Log what we found via DXGI
+                                OutputDebugStringA(("DXGI: Chose closest current mode " + std::to_string(width) + "x" +
+                                                   std::to_string(height) + " @ " + std::to_string(refresh_rate.numerator) +
+                                                   "/" + std::to_string(refresh_rate.denominator) + "Hz (target " +
+                                                   std::to_string(current_hz) + "Hz)\n").c_str());
+                                return true;
+                            }
+
+                            // Debug: Log that we didn't find a DXGI match
+                            OutputDebugStringA(("DXGI: No resolution match found for current mode " +
+                                               std::to_string(dm.dmPelsWidth) + "x" + std::to_string(dm.dmPelsHeight) +
+                                               " @ ~" + std::to_string(dm.dmDisplayFrequency) + "Hz\n").c_str());
+                        }
+                    }
+                }
+                break; // Found our monitor
+            }
+            break; // Found our adapter
+        }
+    }
+    
+    // Fallback to legacy API if DXGI fails
     DEVMODEW dm;
     dm.dmSize = sizeof(dm);
     if (!EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
@@ -67,6 +178,11 @@ bool GetCurrentDisplaySettings(HMONITOR monitor, int& width, int& height, Ration
     // to get the exact rational refresh rate
     refresh_rate.numerator = static_cast<UINT32>(dm.dmDisplayFrequency);
     refresh_rate.denominator = 1;
+    
+    // Debug: Log what we got from legacy API
+    OutputDebugStringA(("Legacy API: Current mode " + std::to_string(width) + "x" + 
+                       std::to_string(height) + " @ " + std::to_string(refresh_rate.numerator) + 
+                       "/" + std::to_string(refresh_rate.denominator) + "Hz\n").c_str());
     
     return true;
 }
@@ -297,6 +413,24 @@ bool DisplayCache::GetRationalRefreshRate(size_t display_index, size_t resolutio
     if (refresh_rate_index >= res.refresh_rates.size()) return false;
     
     refresh_rate = res.refresh_rates[refresh_rate_index];
+    return true;
+}
+
+bool DisplayCache::GetCurrentDisplayInfo(size_t display_index, int& width, int& height, RationalRefreshRate& refresh_rate) const {
+    const auto* display = GetDisplay(display_index);
+    if (!display) return false;
+    
+    width = display->current_width;
+    height = display->current_height;
+    refresh_rate = display->current_refresh_rate;
+    return true;
+}
+
+bool DisplayCache::GetSupportedModes(size_t display_index, std::vector<Resolution>& resolutions) const {
+    const auto* display = GetDisplay(display_index);
+    if (!display) return false;
+    
+    resolutions = display->resolutions;
     return true;
 }
 
