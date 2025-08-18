@@ -17,6 +17,7 @@ std::unique_ptr<XInputTester> g_xinputTester = std::make_unique<XInputTester>();
 
 XInputTester::XInputTester() {
     s_instance = this;
+    m_block_xinput_input = true;  // Enable blocking by default
 }
 
 XInputTester::~XInputTester() {
