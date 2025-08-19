@@ -8,7 +8,6 @@ std::thread renodx::background::g_background_tasks_thread;
 
 // Include individual background task headers
 #include "audio_management_task.hpp"
-#include "window_position_task.hpp"
 #include "hooks_monitor_task.hpp"
 
 // Main background task coordinator thread function
@@ -18,7 +17,6 @@ void BackgroundTasksThread() {
     while (renodx::background::g_background_tasks_running.load()) {
         // Run all background tasks
         RunAudioManagementTask();
-        RunWindowPositionTask();
         renodx::background::RunHooksMonitorTask();
         
         // Sleep for 300ms between task cycles
