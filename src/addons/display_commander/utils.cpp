@@ -23,8 +23,8 @@ extern bool s_initial_auto_selection_done;
 extern std::vector<MonitorInfo> g_monitors;
 
 // Constant definitions
-const int WIDTH_OPTIONS[] = {1280, 1366, 1600, 1920, 2560, 3440, 3840};
-const int HEIGHT_OPTIONS[] = {720, 900, 1080, 1200, 1440, 1600, 2160};
+const int WIDTH_OPTIONS[] = {0, 1280, 1366, 1600, 1920, 2560, 3440, 3840}; // 0 = current monitor width
+const int HEIGHT_OPTIONS[] = {0, 720, 900, 1080, 1200, 1440, 1600, 2160}; // 0 = current monitor height
 const AspectRatio ASPECT_OPTIONS[] = {
   {3, 2},    // 1.5:1
   {4, 3},    // 1.333:1
@@ -35,6 +35,47 @@ const AspectRatio ASPECT_OPTIONS[] = {
   {21, 9},   // 2.333:1
   {32, 9},   // 3.556:1
 };
+
+// Helper functions to get current monitor dimensions
+int GetCurrentMonitorWidth() {
+    // Get the current monitor where the game window is located
+    extern std::atomic<HWND> g_last_swapchain_hwnd;
+    HWND hwnd = g_last_swapchain_hwnd.load();
+    if (hwnd == nullptr) {
+        // Fallback to primary monitor
+        return GetSystemMetrics(SM_CXSCREEN);
+    }
+    
+    HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    MONITORINFOEXW mi{};
+    mi.cbSize = sizeof(mi);
+    if (GetMonitorInfoW(hmon, &mi)) {
+        return mi.rcMonitor.right - mi.rcMonitor.left;
+    }
+    
+    // Fallback to primary monitor
+    return GetSystemMetrics(SM_CXSCREEN);
+}
+
+int GetCurrentMonitorHeight() {
+    // Get the current monitor where the game window is located
+    extern std::atomic<HWND> g_last_swapchain_hwnd;
+    HWND hwnd = g_last_swapchain_hwnd.load();
+    if (hwnd == nullptr) {
+        // Fallback to primary monitor
+        return GetSystemMetrics(SM_CYSCREEN);
+    }
+    
+    HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    MONITORINFOEXW mi{};
+    mi.cbSize = sizeof(mi);
+    if (GetMonitorInfoW(hmon, &mi)) {
+        return mi.rcMonitor.bottom - mi.rcMonitor.top;
+    }
+    
+    // Fallback to primary monitor
+        return GetSystemMetrics(SM_CYSCREEN);
+}
 
 // Helper function implementations
 RECT RectFromWH(int width, int height) {

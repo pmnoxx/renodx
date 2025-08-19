@@ -54,6 +54,8 @@ std::vector<std::string> MakeLabels(const int* values, size_t count);
 int FindClosestIndex(int value, const int* values, size_t count);
 std::vector<std::string> MakeAspectLabels();
 AspectRatio GetAspectByIndex(int index);
+int GetCurrentMonitorWidth();
+int GetCurrentMonitorHeight();
 
 // Monitor enumeration callback
 BOOL CALLBACK MonitorEnumProc(HMONITOR hmon, HDC hdc, LPRECT rect, LPARAM lparam);

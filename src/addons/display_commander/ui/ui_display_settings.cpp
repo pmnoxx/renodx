@@ -21,12 +21,18 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .default_value = 3.f, // default to 1920
         .label = "Window Width",
         .section = "Display",
-        .labels = MakeLabels(WIDTH_OPTIONS, 7),
+        .labels = {"Current Monitor", "1280", "1366", "1600", "1920", "2560", "3440", "3840"},
         .parse = [](float index) {
           int i = static_cast<int>(index);
           i = (std::max)(i, 0);
-          int max_i = 6;
+          int max_i = 7; // Now 7 (0-7)
           i = (std::min)(i, max_i);
+          
+          // If option 0 is selected, return current monitor width
+          if (i == 0) {
+            return static_cast<float>(GetCurrentMonitorWidth());
+          }
+          
           return static_cast<float>(WIDTH_OPTIONS[i]);
         },
         .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
@@ -40,13 +46,19 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .default_value = 2.f, // default to 1080
         .label = "Window Height",
         .section = "Display",
-        .labels = MakeLabels(HEIGHT_OPTIONS, 7),
+        .labels = {"Current Monitor", "720", "900", "1080", "1200", "1440", "1600", "2160"},
         .is_enabled = [](){ return s_resize_mode < 0.5f; },
         .parse = [](float index) {
           int i = static_cast<int>(index);
           i = (std::max)(i, 0);
-          int max_i = 6;
+          int max_i = 7; // Now 7 (0-7)
           i = (std::min)(i, max_i);
+          
+          // If option 0 is selected, return current monitor height
+          if (i == 0) {
+            return static_cast<float>(GetCurrentMonitorHeight());
+          }
+          
           return static_cast<float>(HEIGHT_OPTIONS[i]);
         },
         .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode

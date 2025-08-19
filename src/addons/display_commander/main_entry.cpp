@@ -71,7 +71,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
           renodx::display_commander::events::OnSetFullscreenState);
 
       renodx::proxy::SetUsePresets(false);
-      renodx::proxy::SetGlobalName("ResolutionOverride");
+      renodx::proxy::SetGlobalName("DisplayCommander");
       g_attach_time = std::chrono::steady_clock::now();
       g_shutdown.store(false);
       std::thread(RunBackgroundAudioMonitor).detach();

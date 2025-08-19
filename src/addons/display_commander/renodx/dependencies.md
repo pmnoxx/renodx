@@ -72,7 +72,7 @@ These are currently called directly and should be moved to the proxy:
 ```cpp
 // In main_entry.cpp
 renodx::utils::settings::use_presets = false;
-renodx::utils::settings::global_name = "ResolutionOverride";
+renodx::utils::settings::global_name = "DisplayComander";
 renodx::background::StartBackgroundTasks();
 renodx::hooks::InstallAllHooks();
 renodx::utils::swapchain::fps_limit
