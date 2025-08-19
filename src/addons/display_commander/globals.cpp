@@ -17,6 +17,7 @@ float s_windowed_width = 3440.f; // 21:9 ultrawide width
 float s_windowed_height = 1440.f; // 21:9 ultrawide height
 float s_remove_top_bar = 1.f; // Suppress top bar/border messages enabled by default for borderless windows
 float s_suppress_move_resize_messages = 1.f; // Suppress move/resize messages by default
+float s_suppress_move_resize_delay_sec = 1.f; // 1 second delay before suppressing move/resize messages
 float s_suppress_maximize = 1.f; // Suppress maximize messages by default
 float s_resize_mode = 0.f;
 float s_aspect_index = 4.f; // 21:9 ultrawide

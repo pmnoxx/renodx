@@ -277,81 +277,92 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 
     // Check if we should suppress move/resize messages
     if (s_suppress_move_resize_messages >= 0.5f) {
-        switch (uMsg) {
-            case WM_MOVE: {
-                LogDebug("Window style hook: WM_MOVE - lParam = " + std::to_string(lParam));
-                // Intercept window move messages
-                int new_x = static_cast<int>(static_cast<short>(LOWORD(lParam)));
-                int new_y = static_cast<int>(static_cast<short>(HIWORD(lParam)));
-                
-                // Calculate desired window state to get current target position
-                CalculateWindowState(hwnd, "hook_move_check");
-                
-                // Get our desired position from global window state
-                int desired_x = g_window_state.target_x;
-                int desired_y = g_window_state.target_y;
-                
-                lParam = MAKELONG(desired_x, desired_y);
-                break;
-            }
-            
-            case WM_SIZE: {
-                LogDebug("Window style hook: WM_SIZE - lParam = " + std::to_string(lParam));
-                // Intercept window size messages
-                int new_w = static_cast<int>(LOWORD(lParam));
-                int new_h = static_cast<int>(HIWORD(lParam));
-                WPARAM size_type = wParam;
-                
-                // Check if we should suppress maximize
-                if (s_suppress_maximize >= 0.5f && size_type == SIZE_MAXIMIZED) {
-                    LogDebug("Window style hook: SUPPRESSED maximize size message - blocking maximize completely");
-                    // Block maximize completely - don't even process the message
-                    return 0; // Don't call default handler
+        // Check if enough time has passed since window creation
+        static std::chrono::steady_clock::time_point window_creation_time = std::chrono::steady_clock::now();
+        auto current_time = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - window_creation_time).count() / 1000.0f;
+        
+        if (elapsed >= s_suppress_move_resize_delay_sec) {
+            // Delay period has passed - suppress messages
+            switch (uMsg) {
+                case WM_MOVE: {
+                    LogDebug("Window style hook: WM_MOVE - lParam = " + std::to_string(lParam));
+                    // Intercept window move messages
+                    int new_x = static_cast<int>(static_cast<short>(LOWORD(lParam)));
+                    int new_y = static_cast<int>(static_cast<short>(HIWORD(lParam)));
+                    
+                    // Calculate desired window state to get current target position
+                    CalculateWindowState(hwnd, "hook_move_check");
+                    
+                    // Get our desired position from global window state
+                    int desired_x = g_window_state.target_x;
+                    int desired_y = g_window_state.target_y;
+                    
+                    lParam = MAKELONG(desired_x, desired_y);
+                    break;
                 }
                 
-                // Allow restore from maximized state (SIZE_RESTORED)
-                
-                // Calculate desired window state to get current target size
-                CalculateWindowState(hwnd, "hook_size_check");
-                
-                lParam = MAKELONG(g_window_state.target_w, g_window_state.target_h);
-                if (size_type == SIZE_RESTORED) {
-                    LogDebug("Window style hook: ALLOWED SIZE_RESTORED - Window restoring from maximized/minimized state");
-                    // Allow the restore message to process normally
-                 //   break;
-                }
-                break;
-            }
-            
-            case WM_WINDOWPOSCHANGED: {
-                // Intercept window position/size change confirmations
-                WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
-                LogDebug("Window style hook: WM_WINDOWPOSCHANGED - wp = " + std::to_string(wp->cx) + ", " + std::to_string(wp->cy) + ", " + std::to_string(wp->x) + ", " + std::to_string(wp->y) + ", " + std::to_string(wp->flags));
-                if (wp) {
+                case WM_SIZE: {
+                    LogDebug("Window style hook: WM_SIZE - lParam = " + std::to_string(lParam));
+                    // Intercept window size messages
+                    int new_w = static_cast<int>(LOWORD(lParam));
+                    int new_h = static_cast<int>(HIWORD(lParam));
+                    WPARAM size_type = wParam;
+                    
+                    // Check if we should suppress maximize
+                    if (s_suppress_maximize >= 0.5f && size_type == SIZE_MAXIMIZED) {
+                        LogDebug("Window style hook: SUPPRESSED maximize size message - blocking maximize completely");
+                        // Block maximize completely - don't even process the message
+                        return 0; // Don't call default handler
+                    }
+                    
+                    // Allow restore from maximized state (SIZE_RESTORED)
+                    
                     // Calculate desired window state to get current target size
-                    CalculateWindowState(hwnd, "hook_windowpos_check");
+                    CalculateWindowState(hwnd, "hook_size_check");
                     
-                    LogDebug("Window style hook: WM_WINDOWPOSCHANGED old wp.(cx, cy, x, y, flags) = (" + std::to_string(wp->cx) + ", " + std::to_string(wp->cy) + ", " + std::to_string(wp->x) + ", " + std::to_string(wp->y) + ", " + std::to_string(wp->flags ) + ")");
-           
-                    wp -> cx = g_window_state.target_w;
-                    wp -> cy = g_window_state.target_h;   
-                    wp -> x = g_window_state.target_x;
-                    wp -> y = g_window_state.target_y;
-
-                    // TODO: which flags should be changed in wp -> flags?
-                    
-                    // Update flags to reflect that we're changing position and size
-                    // Remove flags that indicate no changes, since we ARE making changes
-                    wp->flags &= ~(SWP_NOMOVE | SWP_NOSIZE);
-                    
-                    // Add flags to indicate our changes are intentional
-                    wp->flags |= SWP_NOZORDER | SWP_NOACTIVATE;
-
-
-                    LogDebug("Window style hook: WM_WINDOWPOSCHANGED new wp.(cx, cy, x, y, flags) = (" + std::to_string(wp->cx) + ", " + std::to_string(wp->cy) + ", " + std::to_string(wp->x) + ", " + std::to_string(wp->y) + ", " + std::to_string(wp->flags ) + ")");
+                    lParam = MAKELONG(g_window_state.target_w, g_window_state.target_h);
+                    if (size_type == SIZE_RESTORED) {
+                        LogDebug("Window style hook: ALLOWED SIZE_RESTORED - Window restoring from maximized/minimized state");
+                        // Allow the restore message to process normally
+                     //   break;
+                    }
+                    break;
                 }
-                break;
+                
+                case WM_WINDOWPOSCHANGED: {
+                    // Intercept window position/size change confirmations
+                    WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
+                    LogDebug("Window style hook: WM_WINDOWPOSCHANGED - wp = " + std::to_string(wp->cx) + ", " + std::to_string(wp->cy) + ", " + std::to_string(wp->x) + ", " + std::to_string(wp->y) + ", " + std::to_string(wp->flags));
+                    if (wp) {
+                        // Calculate desired window state to get current target size
+                        CalculateWindowState(hwnd, "hook_windowpos_check");
+                        
+                        LogDebug("Window style hook: WM_WINDOWPOSCHANGED old wp.(cx, cy, x, y, flags) = (" + std::to_string(wp->cx) + ", " + std::to_string(wp->cy) + ", " + std::to_string(wp->x) + ", " + std::to_string(wp->y) + ", " + std::to_string(wp->flags ) + ")");
+               
+                        wp -> cx = g_window_state.target_w;
+                        wp -> cy = g_window_state.target_h;   
+                        wp -> x = g_window_state.target_x;
+                        wp -> y = g_window_state.target_y;
+
+                        // TODO: which flags should be changed in wp -> flags?
+                        
+                        // Update flags to reflect that we're changing position and size
+                        // Remove flags that indicate no changes, since we ARE making changes
+                        wp->flags &= ~(SWP_NOMOVE | SWP_NOSIZE);
+                        
+                        // Add flags to indicate our changes are intentional
+                        wp->flags |= SWP_NOZORDER | SWP_NOACTIVATE;
+
+
+                        LogDebug("Window style hook: WM_WINDOWPOSCHANGED new wp.(cx, cy, x, y, flags) = (" + std::to_string(wp->cx) + ", " + std::to_string(wp->cy) + ", " + std::to_string(wp->x) + ", " + std::to_string(wp->y) + ", " + std::to_string(wp->flags ) + ")");
+                    }
+                    break;
+                }
             }
+        } else {
+            // Still in delay period - don't suppress messages yet
+            LogDebug("Window style hook: In delay period (" + std::to_string(elapsed) + "s < " + std::to_string(s_suppress_move_resize_delay_sec) + "s) - allowing move/resize messages");
         }
     }
     
