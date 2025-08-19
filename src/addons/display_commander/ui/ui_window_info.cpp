@@ -1,6 +1,5 @@
 #include "ui_window_info.hpp"
 #include "ui_common.hpp"
-#include "../window_management/window_state_calculator.hpp"
 #include "../addon.hpp"
 #include "../window_management/window_management.hpp"
 
@@ -92,14 +91,13 @@ void AddWindowInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
                 ImGui::Text("  Zoomed (Maximized): %s", is_zoomed ? "Yes" : "No");
                 ImGui::Text("  Enabled: %s", is_enabled ? "Yes" : "No");
                 
-                // Calculate desired state
-                auto desired_state = renodx::window::CalculateDesiredWindowState(hwnd, "ui_display");
-                if (desired_state.is_valid()) {
-                    ImGui::Separator();
-                    ImGui::Text("Desired State:");
-                    ImGui::Text("  Size: %dx%d", desired_state.width, desired_state.height);
-                    ImGui::Text("  Position: (%d,%d)", desired_state.pos_x, desired_state.pos_y);
-                }
+                // Calculate window state first to ensure g_window_state is up to date
+                CalculateWindowState(hwnd, "ui_display");
+                
+                ImGui::Separator();
+                ImGui::Text("Desired State:");
+                ImGui::Text("  Size: %dx%d", g_window_state.target_w, g_window_state.target_h);
+                ImGui::Text("  Position: (%d,%d)", g_window_state.target_x, g_window_state.target_y);
                 
                 // Global Window State Information
                 ImGui::Separator();
