@@ -296,24 +296,6 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
     LogInfo(log_oss.str().c_str());
   }
   
-  // AUTO-RESTORE: If window is maximized and we're suppressing maximize, restore it automatically
-  if (s_suppress_maximize >= 0.5f && g_window_state.is_maximized) {
-    LogInfo("CalculateWindowState: AUTO-RESTORE - Window is maximized, sending restore command");
-    
-    // Post a restore command to bring it back to normal
-    PostMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
-    
-    // Also try to force the window size to our desired state
-    SetWindowPos(hwnd, nullptr, 
-               g_window_state.target_x, g_window_state.target_y,
-               g_window_state.target_w, g_window_state.target_h,
-               SWP_NOZORDER | SWP_NOACTIVATE);
-    
-    std::ostringstream restore_oss;
-    restore_oss << "CalculateWindowState: AUTO-RESTORE - Forced window to target size " 
-               << g_window_state.target_w << "x" << g_window_state.target_h;
-    LogInfo(restore_oss.str().c_str());
-  }
 }
 
 // Second function: Apply the calculated window changes
@@ -379,8 +361,29 @@ void ApplyWindowChange(HWND hwnd, const char* reason) {
     LogWarn(oss.str().c_str());
     return;
   }
+  // AUTO-RESTORE: If window is maximized and we're suppressing maximize, restore it automatically
+ // if (s_suppress_maximize >= 0.5f && g_window_state.is_maximized) {
+   // LogInfo("CalculateWindowState: AUTO-RESTORE - Window is maximized, sending restore command");
+    
+    // Post a restore command to bring it back to normal
+   // PostMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
+    
+    // Also try to force the window size to our desired state
+   // SetWindowPos(hwnd, nullptr, 
+    //           g_window_state.target_x, g_window_state.target_y,
+    //           g_window_state.target_w, g_window_state.target_h,
+    //           SWP_NOZORDER | SWP_NOACTIVATE);
+    
+    //std::ostringstream restore_oss;
+   /// restore_oss << "CalculateWindowState: AUTO-RESTORE - Forced window to target size " 
+   //            << g_window_state.target_w << "x" << g_window_state.target_h;
+   // LogInfo(restore_oss.str().c_str());
+
+   // flags |= SWP_NOZORDER | SWP_NOACTIVATE;
+ // }
   // Apply position and size changes
-  SetWindowPos(hwnd, nullptr, g_window_state.target_x, g_window_state.target_y, g_window_state.target_w, g_window_state.target_h, flags);
+  SetWindowPos(hwnd, nullptr, g_window_state.target_x, g_window_state.target_y, 
+    g_window_state.target_w, g_window_state.target_h, flags);
 }
 
 bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h) {

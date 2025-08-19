@@ -269,7 +269,7 @@ bool IsBorderless(HWND hwnd) {
     LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
     return IsBorderlessStyleBits(style);
 }
-
+/*
 void RemoveWindowBorderLocal(HWND window) {
     if (!window) return;
     
@@ -309,7 +309,7 @@ void ForceWindowToMonitorOriginThreaded(HWND hwnd) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         ForceWindowToMonitorOrigin(hwnd);
     }).detach();
-}
+}*/
 
 std::vector<std::string> MakeLabels(const int* values, size_t count) {
     std::vector<std::string> labels;

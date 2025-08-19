@@ -28,13 +28,13 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 // Suppress focus loss messages to keep the game rendering
                 LogDebug("Window style hook: SUPPRESSED WM_KILLFOCUS - Preventing game from knowing it lost focus");
                 
-        
+        /*
                 if (s_prevent_always_on_top >= 0.5f) {
                     // Try to release any captured input devices
                     ReleaseCapture(); // Release mouse capture
                     ClipCursor(nullptr); // Release cursor clipping
                     LogDebug("Window style hook: Released mouse capture and cursor clipping to prevent confinement");
-                }
+                }*/
                 
                 return 0; // Block the message completely
                 
@@ -43,12 +43,12 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                     // Suppress deactivation messages to keep the game active
                     LogDebug("Window style hook: SUPPRESSED WM_ACTIVATE(WA_INACTIVE) - Keeping game active");
                     
-            
+            /*
                     if (s_prevent_always_on_top >= 0.5f) {
                         ReleaseCapture(); // Release mouse capture
                         ClipCursor(nullptr); // Release cursor clipping
                         LogDebug("Window style hook: Released mouse capture and cursor clipping on deactivation");
-                    }
+                    } */
                     
                     return 0; // Block the message completely
                 }
@@ -141,7 +141,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                     
                     // Remove window styles that add borders
                     style->styleNew &= ~remove_styles;
-                    style->styleOld &= ~remove_styles;
+                //    style->styleOld &= ~remove_styles;
                 }
                 
                 // PREVENT ALWAYS ON TOP: Block WS_EX_TOPMOST and WS_EX_TOOLWINDOW styles
@@ -159,7 +159,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                         
                         // Remove always on top extended styles
                         style->styleNew &= ~remove_ex_styles;
-                        style->styleOld &= ~remove_ex_styles;
+                      //  style->styleOld &= ~remove_ex_styles;
                     }
                 }
                 break;
@@ -173,6 +173,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                     // The background task will enforce the borderless style
                     DWORD remove_styles = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
                     DWORD current_style = style->styleNew;
+                    style->styleNew &= ~remove_styles;
                     
                     if (current_style & remove_styles) {
                         std::ostringstream oss;
@@ -207,12 +208,12 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                         } else {
                             // Window is already normal - block unnecessary restore
                             LogDebug("Window style hook: Blocked SC_RESTORE - Window is already in normal state");
-                            return 0; // Block the command
+                       //     return 0; // Block the command
                         }
                     } else {
                         // Couldn't get window state - block to be safe
                         LogDebug("Window style hook: Blocked SC_RESTORE - Couldn't determine window state");
-                        return 0; // Block the command
+                       // return 0; // Block the command
                     }
                 }
                 
@@ -278,14 +279,9 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                             << ") to (" << params->rgrc[0].right << "," << params->rgrc[0].bottom << ") [TOP BORDER REMOVED with global position!]";
                         LogInfo(oss.str().c_str());
                         
-                        return 0; // Don't call default handler
+                      //  return 0; // Don't call default handler
                     }
-                } else {
-                    // Log when NCCALCSIZE is not handled
-                    if (s_remove_top_bar < 0.5f) {
-                        LogDebug("Window style hook: WM_NCCALCSIZE not handled - s_remove_top_bar is " + std::to_string(s_remove_top_bar));
-                    }
-                }
+                } 
                 break;
             }
         }
@@ -306,6 +302,8 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 int desired_x = g_window_state.target_x;
                 int desired_y = g_window_state.target_y;
                 
+                lParam = MAKELONG(desired_x, desired_y);
+                /*
                 // Check if this move matches our desired state
                 if (new_x != desired_x || new_y != desired_y) {
                     std::ostringstream oss;
@@ -317,7 +315,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                     return 0; // Don't call default handler
                 } else {
                     LogDebug("Window style hook: Move message matches desired state");
-                }
+                }*/
                 break;
             }
             
@@ -344,10 +342,13 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 // Calculate desired window state to get current target size
                 CalculateWindowState(hwnd, "hook_size_check");
                 
+                
                 // Get our desired size from global window state
                 int desired_w = g_window_state.target_w;
                 int desired_h = g_window_state.target_h;
-                
+
+                lParam = MAKELONG(desired_w, desired_h);
+                /*
                 // Check if this resize matches our desired state
                 if (new_w != desired_w || new_h != desired_h) {
                     std::ostringstream oss;
@@ -370,7 +371,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                                          static_cast<short>(client_rect.bottom - client_rect.top));
                     }
                     return 0; // Don't call default handler
-                }
+                }*/
                 break;
             }
             
@@ -381,37 +382,24 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                     // Calculate desired window state to get current target size
                     CalculateWindowState(hwnd, "hook_windowpos_check");
                     
-                    // Get our desired size from global window state
-                    int desired_w = g_window_state.target_w;
-                    int desired_h = g_window_state.target_h;
+                    LogDebug("Window style hook: WM_WINDOWPOSCHANGED old wp.(cx, cy, x, y, flags) = (" + std::to_string(wp->cx) + ", " + std::to_string(wp->cy) + ", " + std::to_string(wp->x) + ", " + std::to_string(wp->y) + ", " + std::to_string(wp->flags ) + ")");
+           
+                    wp -> cx = g_window_state.target_w;
+                    wp -> cy = g_window_state.target_h;   
+                    wp -> x = g_window_state.target_x;
+                    wp -> y = g_window_state.target_y;
+
+                    // TODO: which flags should be changed in wp -> flags?
                     
-                    // Check if this change matches our desired state (size only)
-                    bool size_mismatch = (wp->cx != desired_w || wp->cy != desired_h);
+                    // Update flags to reflect that we're changing position and size
+                    // Remove flags that indicate no changes, since we ARE making changes
+                    wp->flags &= ~(SWP_NOMOVE | SWP_NOSIZE);
                     
-                    if (size_mismatch) {
-                        std::ostringstream oss;
-                        oss << "Window style hook: Suppressed windowpos change - size mismatch detected. Game wants size(" << wp->cx << "x" << wp->cy << "), we want size(" << desired_w << "x" << desired_h << "). Background task will fix this later.";
-                        
-                        // Add continuous monitoring status to the log
-                        if (s_continuous_monitoring_enabled >= 0.5f) {
-                            oss << " [Continuous monitoring: ENABLED]";
-                        } else {
-                            oss << " [Continuous monitoring: DISABLED]";
-                        }
-                        
-                        LogDebug(oss.str());
-                        
-                        // Modify the message to keep current size (suppress the resize)
-                        RECT client_rect;
-                        if (GetClientRect(hwnd, &client_rect)) {
-                            wp->cx = client_rect.right - client_rect.left;
-                            wp->cy = client_rect.bottom - client_rect.top;
-                        }
-                        return 0; // Don't call default handler
-                    }
-                    
-                    // Position is managed automatically - allow all position changes
-                    LogDebug("Window style hook: Position change allowed - managed automatically");
+                    // Add flags to indicate our changes are intentional
+                    wp->flags |= SWP_NOZORDER | SWP_NOACTIVATE;
+
+
+                    LogDebug("Window style hook: WM_WINDOWPOSCHANGED new wp.(cx, cy, x, y, flags) = (" + std::to_string(wp->cx) + ", " + std::to_string(wp->cy) + ", " + std::to_string(wp->x) + ", " + std::to_string(wp->y) + ", " + std::to_string(wp->flags ) + ")");
                 }
                 break;
             }
@@ -464,47 +452,6 @@ void InstallWindowStyleHooks() {
     std::ostringstream oss;
     oss << "Window style hooks installed for window " << hwnd;
     LogInfo(oss.str().c_str());
-    
-    // Force immediate style application
-    if (s_remove_top_bar >= 0.5f) {
-      /* DWORD current_style = GetWindowLong(hwnd, GWL_STYLE);
-        DWORD remove_styles = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
-        DWORD new_style = current_style & ~remove_styles;
-        
-        if (current_style != new_style) {
-            SetWindowLong(hwnd, GWL_STYLE, new_style);
-            SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-            LogInfo("Window style hooks: Applied borderless style immediately");
-        }*/
-    }
-    
-    // Force immediate focus application if continuous rendering is enabled
-    if (s_force_continuous_rendering >= 0.5f) {
-        // ENHANCED LOGGING: Log focus forcing attempts
-        std::ostringstream oss;
-        oss << "Window style hooks: Applying focus forcing - Window: " << hwnd 
-            << ", Current foreground: " << GetForegroundWindow() 
-            << ", Current active: " << GetActiveWindow();
-        LogInfo(oss.str().c_str());
-        
-        // Force the window to be the foreground and active window
-        SetForegroundWindow(hwnd);
-        SetActiveWindow(hwnd);
-        SetFocus(hwnd);
-        
-        // Verify the focus forcing worked
-        HWND new_foreground = GetForegroundWindow();
-        HWND new_active = GetActiveWindow();
-        
-        if (new_foreground == hwnd && new_active == hwnd) {
-            LogInfo("Window style hooks: Focus forcing SUCCESSFUL - Game window now has focus");
-        } else {
-            std::ostringstream oss2;
-            oss2 << "Window style hooks: Focus forcing FAILED - Foreground: " << new_foreground 
-                 << ", Active: " << new_active << ", Target: " << hwnd;
-            LogWarn(oss2.str().c_str());
-        }
-    }
 }
 
 void UninstallWindowStyleHooks() {

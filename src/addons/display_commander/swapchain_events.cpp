@@ -191,6 +191,37 @@ static void OnPresentUpdate(
     reshade::api::command_queue* /*queue*/, reshade::api::swapchain* swapchain,
     const reshade::api::rect* /*source_rect*/, const reshade::api::rect* /*dest_rect*/,
     uint32_t /*dirty_rect_count*/, const reshade::api::rect* /*dirty_rects*/) {
+  
+  // Track swap chain buffer size changes
+  static uint32_t last_width = 0;
+  static uint32_t last_height = 0;
+  
+  if (swapchain != nullptr) {
+    uint32_t current_width = 0;
+    uint32_t current_height = 0;
+    
+    // Get the current back buffer dimensions
+    if (swapchain->get_back_buffer_count() > 0) {
+      auto back_buffer = swapchain->get_back_buffer(0);
+      if (back_buffer != 0) {
+        auto desc = swapchain->get_device()->get_resource_desc(back_buffer);
+        current_width = desc.texture.width;
+        current_height = desc.texture.height;
+      }
+    }
+    
+    // Log if dimensions changed
+    if (current_width != last_width || current_height != last_height) {
+      if (last_width != 0 || last_height != 0) { // Don't log on first call
+        std::ostringstream oss;
+        oss << "Swap chain buffer size changed: " << last_width << "x" << last_height << " -> " << current_width << "x" << current_height;
+        LogInfo(oss.str().c_str());
+      }
+      last_width = current_width;
+      last_height = current_height;
+    }
+  }
+  
   // Throttle queries to ~every 30 presents
   int c = ++g_comp_query_counter;
   
