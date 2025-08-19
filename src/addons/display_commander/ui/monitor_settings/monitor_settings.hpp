@@ -20,6 +20,9 @@ void HandleResolutionSelection(int selected_monitor_index);
 // Handle refresh rate selection UI
 void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolution_index);
 
+// Handle custom refresh rate input
+void HandleCustomRefreshRate();
+
 // Handle the "Apply Desktop Changes (Legacy)" button
 void HandleLegacyApplyButton();
 

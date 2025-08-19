@@ -14,6 +14,8 @@ extern float s_selected_monitor_index;
 extern float s_selected_resolution_index;
 extern float s_selected_refresh_rate_index;
 extern bool s_initial_auto_selection_done;
+extern bool s_use_custom_refresh_rate;
+extern float s_custom_refresh_rate;
 
 namespace renodx::ui::monitor_settings {
 
@@ -178,11 +180,36 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
         if (s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
             auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(selected_monitor_index, selected_resolution_index);
             if (!refresh_rate_labels.empty()) {
-                if (ImGui::BeginCombo("Refresh Rate", refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)].c_str())) {
-                    for (int i = 0; i < static_cast<int>(refresh_rate_labels.size()); i++) {
-                        const bool is_selected = (i == static_cast<int>(s_selected_refresh_rate_index));
-                        if (ImGui::Selectable(refresh_rate_labels[i].c_str(), is_selected)) {
-                            s_selected_refresh_rate_index = static_cast<float>(i);
+                // Create a combined list with Custom as index 0 if enabled
+                std::vector<std::string> combined_labels;
+                if (s_use_custom_refresh_rate) {
+                    combined_labels.push_back("Custom");
+                    combined_labels.insert(combined_labels.end(), refresh_rate_labels.begin(), refresh_rate_labels.end());
+                } else {
+                    combined_labels = refresh_rate_labels;
+                }
+                
+                // Adjust the selected index to account for Custom being added
+                int display_index = static_cast<int>(s_selected_refresh_rate_index);
+                if (s_use_custom_refresh_rate && display_index >= 0) {
+                    display_index++; // Shift index by 1 since Custom is now at index 0
+                }
+                
+                if (ImGui::BeginCombo("Refresh Rate", combined_labels[display_index].c_str())) {
+                    for (int i = 0; i < static_cast<int>(combined_labels.size()); i++) {
+                        const bool is_selected = (i == display_index);
+                        if (ImGui::Selectable(combined_labels[i].c_str(), is_selected)) {
+                            if (s_use_custom_refresh_rate) {
+                                if (i == 0) {
+                                    // Custom selected
+                                    s_selected_refresh_rate_index = 0.0f;
+                                } else {
+                                    // Regular refresh rate selected, adjust index back
+                                    s_selected_refresh_rate_index = static_cast<float>(i - 1);
+                                }
+                            } else {
+                                s_selected_refresh_rate_index = static_cast<float>(i);
+                            }
                         }
                         if (is_selected) {
                             ImGui::SetItemDefaultFocus();
@@ -191,6 +218,35 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
                     ImGui::EndCombo();
                 }
             }
+        }
+    }
+}
+
+// Handle custom refresh rate input
+void HandleCustomRefreshRate() {
+    ImGui::Checkbox("Custom refresh rate", &s_use_custom_refresh_rate);
+    
+    if (s_use_custom_refresh_rate) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Enable to input a custom refresh rate value.\nWhen enabled, this value will be used instead of the selected refresh rate from the list.\nThe value is assumed to have a denominator of 1000 for precise calculations.");
+        }
+        
+        ImGui::SameLine();
+        if (ImGui::InputFloat("Hz", &s_custom_refresh_rate, 0.1f, 1.0f, "%.3f")) {
+            // Clamp the value to reasonable bounds
+            if (s_custom_refresh_rate < 1.0f) {
+                s_custom_refresh_rate = 1.0f;
+            } else if (s_custom_refresh_rate > 1000.0f) {
+                s_custom_refresh_rate = 1000.0f;
+            }
+        }
+        
+        // Show the rational representation
+        if (s_custom_refresh_rate > 0.0f) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("(Rational: %.0f/1000)", s_custom_refresh_rate * 1000.0f);
         }
     }
 }
@@ -207,74 +263,109 @@ void HandleLegacyApplyButton() {
                 int width, height;
                 sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
                 
-                // Get the selected refresh rate from the cache
-                auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
-                if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
-                    std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
+                // Get the selected refresh rate from the cache or use custom refresh rate
+                double exact_refresh_rate;
+                renodx::display_cache::RationalRefreshRate refresh_rate;
+                
+                if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
+                    // Use custom refresh rate with assumed denominator of 1000
+                    exact_refresh_rate = s_custom_refresh_rate;
+                    refresh_rate.numerator = static_cast<int>(std::round(s_custom_refresh_rate * 1000.0f));
+                    refresh_rate.denominator = 1000;
                     
-                    // Try to get rational refresh rate values from the cache
-                    renodx::display_cache::RationalRefreshRate refresh_rate;
-                    bool has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
-                        static_cast<int>(s_selected_monitor_index), 
-                        static_cast<int>(s_selected_resolution_index),
-                        static_cast<int>(s_selected_refresh_rate_index), 
-                        refresh_rate);
-                    
-                    // Always use the reliable legacy API for now, but with high-precision refresh rate from cache
-                    // Get the exact refresh rate from the rational values
-                    double exact_refresh_rate = refresh_rate.ToHz();
-                    
-                    // Log the values we're trying to apply
-                    std::ostringstream debug_oss;
-                    debug_oss << "Attempting to apply display changes: Monitor=" << s_selected_monitor_index 
-                              << ", Resolution=" << width << "x" << height 
-                              << ", Refresh Rate=" << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz"
-                              << " (Rational: " << refresh_rate.numerator << "/" << refresh_rate.denominator << ")";
-                    LogInfo(debug_oss.str().c_str());
-                    
-                    // Get monitor handle from the display cache
-                    const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
-                    if (display) {
-                        // Get monitor handle
-                        HMONITOR hmon = display->monitor_handle;
+                    std::ostringstream custom_oss;
+                    custom_oss << "Using custom refresh rate: " << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz";
+                    LogInfo(custom_oss.str().c_str());
+                } else {
+                    // Use selected refresh rate from cache
+                    auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+                    if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                        std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
                         
-                        MONITORINFOEXW mi;
-                        mi.cbSize = sizeof(mi);
-                        if (GetMonitorInfoW(hmon, &mi)) {
-                            std::wstring device_name = mi.szDevice;
-                            
-                            // Create DEVMODE structure with selected resolution and refresh rate
-                            DEVMODEW dm;
-                            dm.dmSize = sizeof(dm);
-                            dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-                            dm.dmPelsWidth = width;
-                            dm.dmPelsHeight = height;
-                            
+                        // Try to get rational refresh rate values from the cache
+                        bool has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
+                            static_cast<int>(s_selected_monitor_index), 
+                            static_cast<int>(s_selected_resolution_index),
+                            static_cast<int>(s_selected_refresh_rate_index), 
+                            refresh_rate);
+                        
+                        if (has_rational) {
+                            exact_refresh_rate = refresh_rate.ToHz();
+                        } else {
+                            // Fallback to first refresh rate if no match found
+                            exact_refresh_rate = 60.0; // Default fallback
+                            LogWarn("Failed to get rational refresh rate from cache, using default 60Hz");
+                        }
+                    } else {
+                        // Fallback to default refresh rate
+                        exact_refresh_rate = 60.0;
+                        LogWarn("No refresh rate labels available, using default 60Hz");
+                    }
+                }
+                
+                // Log the values we're trying to apply
+                std::ostringstream debug_oss;
+                debug_oss << "Attempting to apply display changes: Monitor=" << s_selected_monitor_index 
+                          << ", Resolution=" << width << "x" << height 
+                          << ", Refresh Rate=" << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz"
+                          << " (Rational: " << refresh_rate.numerator << "/" << refresh_rate.denominator << ")";
+                LogInfo(debug_oss.str().c_str());
+                
+                // Get monitor handle from the display cache
+                const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
+                if (display) {
+                    // Get monitor handle
+                    HMONITOR hmon = display->monitor_handle;
+                    
+                    MONITORINFOEXW mi;
+                    mi.cbSize = sizeof(mi);
+                    if (GetMonitorInfoW(hmon, &mi)) {
+                        std::wstring device_name = mi.szDevice;
+                        
+                        // Create DEVMODE structure with selected resolution and refresh rate
+                        DEVMODEW dm;
+                        dm.dmSize = sizeof(dm);
+                        dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+                        dm.dmPelsWidth = width;
+                        dm.dmPelsHeight = height;
+                        
+                        // For custom refresh rate, try to pass it as-is to see if system supports it
+                        if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
+                            // Try to pass the exact custom refresh rate without rounding
+                            dm.dmDisplayFrequency = static_cast<DWORD>(std::round(exact_refresh_rate));
+                        } else {
                             // Round the refresh rate to the nearest integer for DEVMODE
                             // This gives us the closest refresh rate rather than just truncating
                             dm.dmDisplayFrequency = static_cast<DWORD>(std::round(exact_refresh_rate));
+                        }
+                        
+                        // Apply the changes
+                        LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+                        
+                        if (result == DISP_CHANGE_SUCCESSFUL) {
+                            std::ostringstream oss;
+                            oss << "Display changes applied successfully: " << width << "x" << height 
+                                << " @ " << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz";
+                            LogInfo(oss.str().c_str());
                             
-                            // Apply the changes
-                            LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
-                            
-                            if (result == DISP_CHANGE_SUCCESSFUL) {
-                                std::ostringstream oss;
-                                oss << "Display changes applied successfully: " << width << "x" << height 
-                                    << " @ " << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz";
-                                LogInfo(oss.str().c_str());
-                                
-                                // Log a note about rounding if the refresh rate was rounded
-                                if (exact_refresh_rate != static_cast<double>(dm.dmDisplayFrequency)) {
-                                    std::ostringstream info_oss;
-                                    info_oss << "Note: Refresh rate was rounded from " << std::fixed << std::setprecision(3) 
-                                             << exact_refresh_rate << "Hz to " << dm.dmDisplayFrequency << "Hz for compatibility";
-                                    LogInfo(info_oss.str().c_str());
-                                }
-                            } else {
-                                std::ostringstream oss;
-                                oss << "Failed to apply display changes. Error code: " << result;
-                                LogWarn(oss.str().c_str());
-                            }
+                                                         // Log a note about rounding if the refresh rate was rounded
+                             if (exact_refresh_rate != static_cast<double>(dm.dmDisplayFrequency)) {
+                                 if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
+                                     std::ostringstream info_oss;
+                                     info_oss << "Note: Custom refresh rate " << std::fixed << std::setprecision(3) 
+                                              << exact_refresh_rate << "Hz was rounded to " << dm.dmDisplayFrequency << "Hz by system";
+                                     LogInfo(info_oss.str().c_str());
+                                 } else {
+                                     std::ostringstream info_oss;
+                                     info_oss << "Note: Refresh rate was rounded from " << std::fixed << std::setprecision(3) 
+                                              << exact_refresh_rate << "Hz to " << dm.dmDisplayFrequency << "Hz for compatibility";
+                                     LogInfo(info_oss.str().c_str());
+                                 }
+                             }
+                        } else {
+                            std::ostringstream oss;
+                            oss << "Failed to apply display changes. Error code: " << result;
+                            LogWarn(oss.str().c_str());
                         }
                     }
                 }
@@ -303,99 +394,119 @@ void HandleModernAPIApplyButton() {
                 int width, height;
                 sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
                 
-                // Get the selected refresh rate from the cache
-                auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
-                if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
-                    std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
+                // Get the selected refresh rate from the cache or use custom refresh rate
+                renodx::display_cache::RationalRefreshRate refresh_rate;
+                bool has_rational = false;
+                
+                if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
+                    // Use custom refresh rate with assumed denominator of 1000
+                    refresh_rate.numerator = static_cast<int>(std::round(s_custom_refresh_rate * 1000.0f));
+                    refresh_rate.denominator = 1000;
+                    has_rational = true;
                     
-                    // Get rational refresh rate values from the cache
-                    renodx::display_cache::RationalRefreshRate refresh_rate;
-                    bool has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
-                        static_cast<int>(s_selected_monitor_index), 
-                        static_cast<int>(s_selected_resolution_index),
-                        static_cast<int>(s_selected_refresh_rate_index), 
-                        refresh_rate);
-                    
-                    if (has_rational) {
-                        // Log the values we're trying to apply with modern API
-                        std::ostringstream debug_oss;
-                        debug_oss << "Attempting to apply display changes with MODERN API: Monitor=" << s_selected_monitor_index 
-                                  << ", Resolution=" << width << "x" << height 
-                                  << ", Refresh Rate=" << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
-                                  << " (Rational: " << refresh_rate.numerator << "/" << refresh_rate.denominator << ")";
-                        LogInfo(debug_oss.str().c_str());
+                    std::ostringstream custom_oss;
+                    custom_oss << "Using custom refresh rate with Modern API: " << std::fixed << std::setprecision(3) << s_custom_refresh_rate << "Hz";
+                    LogInfo(custom_oss.str().c_str());
+                } else {
+                    // Use selected refresh rate from cache
+                    auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+                    if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                        std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
                         
-                        // Try modern API first for fractional refresh rates
-                        if (renodx::resolution::ApplyDisplaySettingsModern(
-                            static_cast<int>(s_selected_monitor_index),
-                            width, height,
-                            refresh_rate.numerator, refresh_rate.denominator)) {
+                        // Get rational refresh rate values from the cache
+                        has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
+                            static_cast<int>(s_selected_monitor_index), 
+                            static_cast<int>(s_selected_resolution_index),
+                            static_cast<int>(s_selected_refresh_rate_index), 
+                            refresh_rate);
+                    }
+                }
+                
+                if (has_rational) {
+                    // Log the values we're trying to apply with modern API
+                    std::ostringstream debug_oss;
+                    debug_oss << "Attempting to apply display changes with MODERN API: Monitor=" << s_selected_monitor_index 
+                              << ", Resolution=" << width << "x" << height 
+                              << ", Refresh Rate=" << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
+                              << " (Rational: " << refresh_rate.numerator << "/" << refresh_rate.denominator << ")";
+                    LogInfo(debug_oss.str().c_str());
+                    
+                    // Try modern API first for fractional refresh rates
+                    if (renodx::resolution::ApplyDisplaySettingsModern(
+                        static_cast<int>(s_selected_monitor_index),
+                        width, height,
+                        refresh_rate.numerator, refresh_rate.denominator)) {
+                        
+                        std::ostringstream oss;
+                        oss << "Modern API SUCCESS: " << width << "x" << height 
+                            << " @ " << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
+                            << " (Exact fractional refresh rate applied)";
+                        LogInfo(oss.str().c_str());
+                    } else {
+                        // Fallback to legacy API if modern API fails
+                        LogWarn("Modern API failed, falling back to legacy API");
+                        
+                        // Get the last Windows error for debugging
+                        DWORD error = GetLastError();
+                        if (error != 0) {
+                            LPSTR messageBuffer = nullptr;
+                            size_t size = FormatMessageA(
+                                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
                             
-                            std::ostringstream oss;
-                            oss << "Modern API SUCCESS: " << width << "x" << height 
-                                << " @ " << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
-                                << " (Exact fractional refresh rate applied)";
-                            LogInfo(oss.str().c_str());
-                        } else {
-                            // Fallback to legacy API if modern API fails
-                            LogWarn("Modern API failed, falling back to legacy API");
-                            
-                            // Get the last Windows error for debugging
-                            DWORD error = GetLastError();
-                            if (error != 0) {
-                                LPSTR messageBuffer = nullptr;
-                                size_t size = FormatMessageA(
-                                    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                                    NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
-                                
-                                if (size > 0) {
-                                    std::ostringstream error_oss;
-                                    error_oss << "Modern API error details: " << std::string(messageBuffer, size);
-                                    LogWarn(error_oss.str().c_str());
-                                    LocalFree(messageBuffer);
-                                }
+                            if (size > 0) {
+                                std::ostringstream error_oss;
+                                error_oss << "Modern API error details: " << std::string(messageBuffer, size);
+                                LogWarn(error_oss.str().c_str());
+                                LocalFree(messageBuffer);
                             }
+                        }
+                        
+                        // Get monitor handle from the display cache
+                        const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
+                        if (display) {
+                            HMONITOR hmon = display->monitor_handle;
                             
-                            // Get monitor handle from the display cache
-                            const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
-                            if (display) {
-                                HMONITOR hmon = display->monitor_handle;
+                            MONITORINFOEXW mi;
+                            mi.cbSize = sizeof(mi);
+                            if (GetMonitorInfoW(hmon, &mi)) {
+                                std::wstring device_name = mi.szDevice;
                                 
-                                MONITORINFOEXW mi;
-                                mi.cbSize = sizeof(mi);
-                                if (GetMonitorInfoW(hmon, &mi)) {
-                                    std::wstring device_name = mi.szDevice;
-                                    
-                                    // Create DEVMODE structure with selected resolution and refresh rate
-                                    DEVMODEW dm;
-                                    dm.dmSize = sizeof(dm);
-                                    dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-                                    dm.dmPelsWidth = width;
-                                    dm.dmPelsHeight = height;
-                                    
+                                // Create DEVMODE structure with selected resolution and refresh rate
+                                DEVMODEW dm;
+                                dm.dmSize = sizeof(dm);
+                                dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+                                dm.dmPelsWidth = width;
+                                dm.dmPelsHeight = height;
+                                
+                                // For custom refresh rate, try to pass it as-is to see if system supports it
+                                if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
+                                    // Try to pass the exact custom refresh rate without rounding
+                                    dm.dmDisplayFrequency = static_cast<DWORD>(s_custom_refresh_rate);
+                                } else {
                                     // Round the refresh rate to the nearest integer for DEVMODE fallback
                                     dm.dmDisplayFrequency = static_cast<DWORD>(std::round(refresh_rate.ToHz()));
-                                    
-                                    // Apply the changes using legacy API
-                                    LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
-                                    
-                                    if (result == DISP_CHANGE_SUCCESSFUL) {
-                                        std::ostringstream oss;
-                                        oss << "Legacy API fallback SUCCESS: " << width << "x" << height 
-                                            << " @ " << std::fixed << std::setprecision(3) << refresh_rate.ToHz() << "Hz"
-                                            << " (Note: Refresh rate was rounded for compatibility)";
-                                        LogInfo(oss.str().c_str());
-                                    } else {
-                                        std::ostringstream oss;
-                                        oss << "Legacy API fallback also failed. Error code: " << result;
-                                        LogWarn(oss.str().c_str());
-                                    }
+                                }
+                                
+                                // Apply the changes using legacy API
+                                LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+                                
+                                if (result == DISP_CHANGE_SUCCESSFUL) {
+                                    std::ostringstream oss;
+                                    oss << "Legacy API fallback SUCCESS: " << width << "x" << height 
+                                        << " @ " << std::fixed << std::setprecision(3) << refresh_rate.ToHz() << "Hz"
+                                        << " (Note: Refresh rate was rounded for compatibility)";
+                                    LogInfo(oss.str().c_str());
+                                } else {
+                                    std::ostringstream oss;
+                                    oss << "Legacy API fallback also failed. Error code: " << result;
+                                    LogWarn(oss.str().c_str());
                                 }
                             }
                         }
-                    } else {
-                        LogWarn("Failed to get rational refresh rate from cache for modern API");
                     }
+                } else {
+                    LogWarn("Failed to get rational refresh rate from cache for modern API");
                 }
             }
         }).detach();
@@ -426,99 +537,119 @@ void HandleDXGIAPIApplyButton() {
                 int width, height;
                 sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
                 
-                // Get the selected refresh rate from the cache
-                auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
-                if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
-                    std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
+                // Get the selected refresh rate from the cache or use custom refresh rate
+                renodx::display_cache::RationalRefreshRate refresh_rate;
+                bool has_rational = false;
+                
+                if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
+                    // Use custom refresh rate with assumed denominator of 1000
+                    refresh_rate.numerator = static_cast<int>(std::round(s_custom_refresh_rate * 1000.0f));
+                    refresh_rate.denominator = 1000;
+                    has_rational = true;
                     
-                    // Get rational refresh rate values from the cache
-                    renodx::display_cache::RationalRefreshRate refresh_rate;
-                    bool has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
-                        static_cast<int>(s_selected_monitor_index), 
-                        static_cast<int>(s_selected_resolution_index),
-                        static_cast<int>(s_selected_refresh_rate_index), 
-                        refresh_rate);
-                    
-                    if (has_rational) {
-                        // Log the values we're trying to apply with DXGI API
-                        std::ostringstream debug_oss;
-                        debug_oss << "Attempting to apply display changes with DXGI API: Monitor=" << s_selected_monitor_index 
-                                  << ", Resolution=" << width << "x" << height 
-                                  << ", Refresh Rate=" << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
-                                  << " (Rational: " << refresh_rate.numerator << "/" << refresh_rate.denominator << ")";
-                        LogInfo(debug_oss.str().c_str());
+                    std::ostringstream custom_oss;
+                    custom_oss << "Using custom refresh rate with DXGI API: " << std::fixed << std::setprecision(3) << s_custom_refresh_rate << "Hz";
+                    LogInfo(custom_oss.str().c_str());
+                } else {
+                    // Use selected refresh rate from cache
+                    auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+                    if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                        std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
                         
-                        // Try DXGI API for fractional refresh rates
-                        if (renodx::resolution::ApplyDisplaySettingsDXGI(
-                            static_cast<int>(s_selected_monitor_index),
-                            width, height,
-                            refresh_rate.numerator, refresh_rate.denominator)) {
+                        // Get rational refresh rate values from the cache
+                        has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
+                            static_cast<int>(s_selected_monitor_index), 
+                            static_cast<int>(s_selected_resolution_index),
+                            static_cast<int>(s_selected_refresh_rate_index), 
+                            refresh_rate);
+                    }
+                }
+                
+                if (has_rational) {
+                    // Log the values we're trying to apply with DXGI API
+                    std::ostringstream debug_oss;
+                    debug_oss << "Attempting to apply display changes with DXGI API: Monitor=" << s_selected_monitor_index 
+                              << ", Resolution=" << width << "x" << height 
+                              << ", Refresh Rate=" << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
+                              << " (Rational: " << refresh_rate.numerator << "/" << refresh_rate.denominator << ")";
+                    LogInfo(debug_oss.str().c_str());
+                    
+                    // Try DXGI API for fractional refresh rates
+                    if (renodx::resolution::ApplyDisplaySettingsDXGI(
+                        static_cast<int>(s_selected_monitor_index),
+                        width, height,
+                        refresh_rate.numerator, refresh_rate.denominator)) {
+                        
+                        std::ostringstream oss;
+                        oss << "DXGI API SUCCESS: " << width << "x" << height 
+                            << " @ " << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
+                            << " (Exact fractional refresh rate applied via DXGI)";
+                        LogInfo(oss.str().c_str());
+                    } else {
+                        // DXGI API failed, fall back to legacy API
+                        LogWarn("DXGI API failed, falling back to legacy API");
+                        
+                        // Get the last Windows error for debugging
+                        DWORD error = GetLastError();
+                        if (error != 0) {
+                            LPSTR messageBuffer = nullptr;
+                            size_t size = FormatMessageA(
+                                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
                             
-                            std::ostringstream oss;
-                            oss << "DXGI API SUCCESS: " << width << "x" << height 
-                                << " @ " << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
-                                << " (Exact fractional refresh rate applied via DXGI)";
-                            LogInfo(oss.str().c_str());
-                        } else {
-                            // DXGI API failed, fall back to legacy API
-                            LogWarn("DXGI API failed, falling back to legacy API");
-                            
-                            // Get the last Windows error for debugging
-                            DWORD error = GetLastError();
-                            if (error != 0) {
-                                LPSTR messageBuffer = nullptr;
-                                size_t size = FormatMessageA(
-                                    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                                    NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
-                                
-                                if (size > 0) {
-                                    std::ostringstream error_oss;
-                                    error_oss << "DXGI API error details: " << std::string(messageBuffer, size);
-                                    LogWarn(error_oss.str().c_str());
-                                    LocalFree(messageBuffer);
-                                }
+                            if (size > 0) {
+                                std::ostringstream error_oss;
+                                error_oss << "DXGI API error details: " << std::string(messageBuffer, size);
+                                LogWarn(error_oss.str().c_str());
+                                LocalFree(messageBuffer);
                             }
+                        }
+                        
+                        // Fallback to legacy API
+                        const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
+                        if (display) {
+                            HMONITOR hmon = display->monitor_handle;
                             
-                            // Fallback to legacy API
-                            const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
-                            if (display) {
-                                HMONITOR hmon = display->monitor_handle;
+                            MONITORINFOEXW mi;
+                            mi.cbSize = sizeof(mi);
+                            if (GetMonitorInfoW(hmon, &mi)) {
+                                std::wstring device_name = mi.szDevice;
                                 
-                                MONITORINFOEXW mi;
-                                mi.cbSize = sizeof(mi);
-                                if (GetMonitorInfoW(hmon, &mi)) {
-                                    std::wstring device_name = mi.szDevice;
-                                    
-                                    // Create DEVMODE structure with selected resolution and refresh rate
-                                    DEVMODEW dm;
-                                    dm.dmSize = sizeof(dm);
-                                    dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-                                    dm.dmPelsWidth = width;
-                                    dm.dmPelsHeight = height;
-                                    
+                                // Create DEVMODE structure with selected resolution and refresh rate
+                                DEVMODEW dm;
+                                dm.dmSize = sizeof(dm);
+                                dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+                                dm.dmPelsWidth = width;
+                                dm.dmPelsHeight = height;
+                                
+                                // For custom refresh rate, try to pass it as-is to see if system supports it
+                                if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
+                                    // Try to pass the exact custom refresh rate without rounding
+                                    dm.dmDisplayFrequency = static_cast<DWORD>(s_custom_refresh_rate);
+                                } else {
                                     // Round the refresh rate to the nearest integer for DEVMODE fallback
                                     dm.dmDisplayFrequency = static_cast<DWORD>(std::round(refresh_rate.ToHz()));
-                                    
-                                    // Apply the changes using legacy API
-                                    LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
-                                    
-                                    if (result == DISP_CHANGE_SUCCESSFUL) {
-                                        std::ostringstream oss;
-                                        oss << "Legacy API fallback SUCCESS: " << width << "x" << height 
-                                            << " @ " << std::fixed << std::setprecision(3) << refresh_rate.ToHz() << "Hz"
-                                            << " (Note: Refresh rate was rounded for compatibility)";
-                                        LogInfo(oss.str().c_str());
-                                    } else {
-                                        std::ostringstream oss;
-                                        oss << "Legacy API fallback also failed. Error code: " << result;
-                                        LogWarn(oss.str().c_str());
-                                    }
+                                }
+                                
+                                // Apply the changes using legacy API
+                                LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+                                
+                                if (result == DISP_CHANGE_SUCCESSFUL) {
+                                    std::ostringstream oss;
+                                    oss << "Legacy API fallback SUCCESS: " << width << "x" << height 
+                                        << " @ " << std::fixed << std::setprecision(3) << refresh_rate.ToHz() << "Hz"
+                                        << " (Note: Refresh rate was rounded for compatibility)";
+                                    LogInfo(oss.str().c_str());
+                                } else {
+                                    std::ostringstream oss;
+                                    oss << "Legacy API fallback also failed. Error code: " << result;
+                                    LogWarn(oss.str().c_str());
                                 }
                             }
                         }
-                    } else {
-                        LogWarn("Failed to get rational refresh rate from cache for DXGI API");
                     }
+                } else {
+                    LogWarn("Failed to get rational refresh rate from cache for DXGI API");
                 }
             }
         }).detach();
