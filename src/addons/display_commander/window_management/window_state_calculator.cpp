@@ -34,14 +34,40 @@ DesiredWindowState CalculateDesiredSize(HWND hwnd) {
     int current_w = window_rect.right - window_rect.left;
     int current_h = window_rect.bottom - window_rect.top;
     
-    // Get desired size from settings (global namespace)
+    // Get desired width from settings (global namespace)
     int desired_w = static_cast<int>(s_windowed_width);
-    int desired_h = static_cast<int>(s_windowed_height);
     
-    // Validate desired size
-    if (desired_w <= 0 || desired_h <= 0) {
-        LogWarn("CalculateDesiredSize: Invalid desired size from settings");
+    // Validate desired width
+    if (desired_w <= 0) {
+        LogWarn("CalculateDesiredSize: Invalid desired width from settings");
         return state;
+    }
+    
+    // Calculate desired height based on resize mode
+    int desired_h;
+    if (s_resize_mode < 0.5f) {
+        // Manual mode - use stored height setting
+        desired_h = static_cast<int>(s_windowed_height);
+        
+        // Validate manual height
+        if (desired_h <= 0) {
+            LogWarn("CalculateDesiredSize: Invalid manual height from settings");
+            return state;
+        }
+    } else {
+        // Aspect ratio mode - compute height from width and selected aspect ratio
+        desired_h = ComputeHeightFromWidth(desired_w);
+        
+        // Validate computed height
+        if (desired_h <= 0) {
+            LogWarn("CalculateDesiredSize: Invalid computed height from aspect ratio");
+            return state;
+        }
+        
+        // Log the aspect ratio calculation
+        std::ostringstream aspect_oss;
+        aspect_oss << "CalculateDesiredSize: Aspect ratio mode - computed height " << desired_h << " from width " << desired_w;
+        LogDebug(aspect_oss.str().c_str());
     }
     
     // Check if resize is needed
