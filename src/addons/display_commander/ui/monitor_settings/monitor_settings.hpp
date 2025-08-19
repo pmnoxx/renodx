@@ -22,11 +22,7 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
 
 
 
-// Handle the "Apply Desktop Changes (Legacy)" button
-void HandleLegacyApplyButton();
 
-// Handle the "Apply with Modern API (Fractional)" button
-void HandleModernAPIApplyButton();
 
 // Handle the "Apply with DXGI API" button
 void HandleDXGIAPIApplyButton();

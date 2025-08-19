@@ -147,11 +147,11 @@ bool HandleMonitorSettingsUI() {
     
     // Get current monitor labels (now with precise refresh rates and raw rational values)
     auto monitor_labels = GetMonitorLabelsFromCache();
-    if (monitor_labels.empty()) {
-        ImGui::Text("No monitors detected");
-        return false;
-    }
-    
+            if (monitor_labels.empty()) {
+                ImGui::Text("No monitors detected");
+                return false;
+            }
+            
         // Handle auto-detection of current display settings
     renodx::ui::monitor_settings::HandleAutoDetection();
     
@@ -175,15 +175,14 @@ bool HandleMonitorSettingsUI() {
     }
     
     // Handle the Legacy Apply Button
-    renodx::ui::monitor_settings::HandleLegacyApplyButton();
+
     
     ImGui::Spacing();
     
     // Display API Status
     renodx::ui::monitor_settings::DisplayAPIStatus();
     
-    // Handle the Modern API Apply Button
-    renodx::ui::monitor_settings::HandleModernAPIApplyButton();
+
     
     // Handle the DXGI API Apply Button
     renodx::ui::monitor_settings::HandleDXGIAPIApplyButton();
