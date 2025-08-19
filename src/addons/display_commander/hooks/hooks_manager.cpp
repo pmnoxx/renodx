@@ -17,12 +17,7 @@ void InstallAllHooks() {
     LogInfo("Installing all hooks...");
 
     // Install window style hooks if remove top bar is enabled
-    if (s_remove_top_bar >= 0.5f) {
-        InstallWindowStyleHooks();
-    }
-
-    // Install window style hooks if suppress move/resize messages is enabled
-    if (s_suppress_move_resize_messages >= 0.5f) {
+    if (s_remove_top_bar >= 0.5f || s_suppress_move_resize_messages >= 0.5f) {
         InstallWindowStyleHooks();
     }
 

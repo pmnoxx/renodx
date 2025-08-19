@@ -467,8 +467,7 @@ void InstallWindowStyleHooks() {
     
     // Force immediate style application
     if (s_remove_top_bar >= 0.5f) {
-        /*
-        DWORD current_style = GetWindowLong(hwnd, GWL_STYLE);
+      /* DWORD current_style = GetWindowLong(hwnd, GWL_STYLE);
         DWORD remove_styles = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
         DWORD new_style = current_style & ~remove_styles;
         
@@ -476,8 +475,7 @@ void InstallWindowStyleHooks() {
             SetWindowLong(hwnd, GWL_STYLE, new_style);
             SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
             LogInfo("Window style hooks: Applied borderless style immediately");
-        }
-        */
+        }*/
     }
     
     // Force immediate focus application if continuous rendering is enabled
