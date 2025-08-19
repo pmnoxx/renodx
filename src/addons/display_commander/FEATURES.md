@@ -16,11 +16,20 @@
 
 ## 2. Input Handling
 - ❌ **DirectInput/XInput Support** - Waiting for ReShade addon support to enable suspending mouse/keyboard/gamepad input in background
+- ❌ **Mouse support** - features such as disable in background / restrict to window
+- ❌ **Keyboard support** - alt-tab restoration
+- ❌ **Gamepad support**
+- ❌ **SteamAPI support**
 
 ## 3. Display Management
 - ✅ **Fullscreen Borderless** - Fully functional
 - ✅ **Display Resolution/Refresh Rate Changing** - Fully functional
 - ✅ **NVAPI HDR Fullscreen Borderless** - Fully functional
+- ❌ **VSync**
+- ❌ **Audio Device**
+- ❌ **Dithering**
+- ❌ **Turning off screensaver**
+- ❌ **Automatic display resolution restoration after game closes**
 
 
 ## 4. Advanced Features
@@ -43,6 +52,16 @@
 ## 8. Fps limiter
 - ✅ **Basic version** - Waits on present - prioritizes fps stability over latency
 - ❌ **Latency optimized version** - Not implemented
+
+## 9. Percept boost / FakeHDR
+- ❌ **Not implemented**
+
+## 10. Latency monitoring
+- ⚠️ **Partially implemented in UI** 00 neweds some work
+
+## 11. Overlays
+- ❌ **Latency overlay**
+- ❌ **Auto overlay**
 
 ---
 
