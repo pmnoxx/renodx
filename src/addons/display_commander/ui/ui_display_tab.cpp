@@ -164,26 +164,9 @@ bool HandleMonitorSettingsUI() {
     // Handle refresh rate selection UI
     renodx::ui::monitor_settings::HandleRefreshRateSelection(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
     
-
-    
-    // Apply Changes Button
-    ImGui::Text("Apply Display Changes:");
-    ImGui::SameLine();
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Legacy API: Rounds refresh rates to integers (e.g., 143.999Hz → 144Hz)\nModern API: Preserves exact fractional refresh rates (e.g., 143.999Hz → 143.999Hz)");
-    }
-    
-    // Handle the Legacy Apply Button
-
-    
-    ImGui::Spacing();
-    
     // Display API Status
     renodx::ui::monitor_settings::DisplayAPIStatus();
-    
 
-    
     // Handle the DXGI API Apply Button
     renodx::ui::monitor_settings::HandleDXGIAPIApplyButton();
     

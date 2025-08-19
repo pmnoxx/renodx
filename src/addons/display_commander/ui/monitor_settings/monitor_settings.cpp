@@ -219,7 +219,7 @@ void HandleDXGIAPIApplyButton() {
             if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
                 std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
                 int width, height;
-                sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
+                sscanf_s(selected_resolution.c_str(), "%d x %d", &width, &height);
                 
                 // Get the selected refresh rate from the cache
                 renodx::display_cache::RationalRefreshRate refresh_rate;
@@ -328,21 +328,6 @@ void DisplayAPIStatus() {
     // API Status Section
     ImGui::Text("API Status:");
     ImGui::SameLine();
-    
-    // Modern API Status
-    bool modern_api_available = renodx::resolution::IsModernDisplayAPIAvailable();
-    ImGui::Text("SetDisplayConfig: ");
-    ImGui::SameLine();
-    if (modern_api_available) {
-        ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Available");
-    } else {
-        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Not Available");
-        ImGui::SameLine();
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Modern display API (SetDisplayConfig) is not available on this system.\nThis could be due to:\n- Windows version < 8\n- Graphics driver limitations\n- System policy restrictions");
-        }
-    }
     
     // DXGI API Status
     ImGui::SameLine();

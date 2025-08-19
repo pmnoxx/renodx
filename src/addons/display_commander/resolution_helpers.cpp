@@ -55,8 +55,8 @@ std::vector<std::string> GetResolutionLabels(int monitor_index) {
             // Sort by width (ascending - lowest first, regular order)
             std::sort(labels.begin(), labels.end(), [](const std::string& a, const std::string& b) {
                 int width_a, height_a, width_b, height_b;
-                sscanf(a.c_str(), "%d x %d", &width_a, &height_a);
-                sscanf(b.c_str(), "%d x %d", &width_b, &height_b);
+                    sscanf_s(a.c_str(), "%d x %d", &width_a, &height_a);
+    sscanf_s(b.c_str(), "%d x %d", &width_b, &height_b);
                 return width_a < width_b; // Changed back to < for ascending order
             });
         }
@@ -220,8 +220,8 @@ std::vector<std::string> GetRefreshRateLabels(int monitor_index, int width, int 
 
                 std::sort(labels.begin(), labels.end(), [](const std::string& a, const std::string& b) {
                     float freq_a = 0.f, freq_b = 0.f;
-                    sscanf(a.c_str(), "%fHz", &freq_a);
-                    sscanf(b.c_str(), "%fHz", &freq_b);
+                        sscanf_s(a.c_str(), "%fHz", &freq_a);
+    sscanf_s(b.c_str(), "%fHz", &freq_b);
                     return freq_a < freq_b;
                 });
             }
@@ -236,7 +236,7 @@ bool GetSelectedResolution(int monitor_index, int resolution_index, int& out_wid
     auto labels = GetResolutionLabels(monitor_index);
     if (resolution_index >= 0 && resolution_index < static_cast<int>(labels.size())) {
         std::string selected_resolution = labels[resolution_index];
-        if (sscanf(selected_resolution.c_str(), "%d x %d", &out_width, &out_height) == 2) {
+        if (sscanf_s(selected_resolution.c_str(), "%d x %d", &out_width, &out_height) == 2) {
             return true;
         }
     }
@@ -248,7 +248,7 @@ bool GetSelectedRefreshRate(int monitor_index, int width, int height, int refres
     auto labels = GetRefreshRateLabels(monitor_index, width, height);
     if (refresh_rate_index >= 0 && refresh_rate_index < static_cast<int>(labels.size())) {
         std::string selected_refresh_rate = labels[refresh_rate_index];
-        if (sscanf(selected_refresh_rate.c_str(), "%fHz", &out_refresh_rate) == 1) {
+        if (sscanf_s(selected_refresh_rate.c_str(), "%fHz", &out_refresh_rate) == 1) {
             return true;
         }
     }
