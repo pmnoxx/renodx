@@ -33,7 +33,7 @@
 
 
 ## 4. Advanced Features
-- ⚠️ **DXGI Independent Flip State** - Previously working, currently broken in this version
+- ⚠️ **DXGI Independent Flip State** - Used to work, currently broken.
 
 ## 5. Audio Control
 - ✅ **Mute** - Fully functional
