@@ -325,7 +325,7 @@ void ApplyWindowChange(HWND hwnd, const char* reason) {
   
   // Check if any changes are needed
   if (!g_window_state.needs_resize && !g_window_state.needs_move && !g_window_state.style_changed) {
-    LogDebug("ApplyWindowChange: No changes needed");
+    //LogDebug("ApplyWindowChange: No changes needed");
     return;
   }
   
