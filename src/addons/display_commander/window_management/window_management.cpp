@@ -1,5 +1,6 @@
 #include "../addon.hpp"
 #include "../utils.hpp"
+#include "../resolution_helpers.hpp"
 #include "window_management.hpp"
 #include <thread>
 #include <algorithm>
@@ -68,8 +69,81 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
   
   g_window_state.style_mode = WindowStyleMode::BORDERLESS;
 
+  // First, determine the target monitor based on game's intended display
+  HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+  MONITORINFOEXW mi{};
+  mi.cbSize = sizeof(mi);
+  
+  // Use target monitor if specified, or Display tab monitor if desktop resolution override is enabled
+  if (s_override_desktop_resolution >= 0.5f) {
+    // Use the monitor selected in the Display tab
+    const int index = static_cast<int>(s_selected_monitor_index);
+    g_monitors.clear();
+    EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&g_monitors));
+    if (index >= 0 && index < static_cast<int>(g_monitors.size())) {
+      hmon = g_monitors[index].handle;
+      mi = g_monitors[index].info;
+      
+      std::ostringstream oss;
+      oss << "CalculateWindowState: Using Display tab monitor " << index << " for desktop resolution override";
+      LogDebug(oss.str());
+    }
+  } else if (s_target_monitor_index > 0.5f) {
+    // Use the legacy target monitor setting
+    const int index = static_cast<int>(s_target_monitor_index) - 1;
+    g_monitors.clear();
+    EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&g_monitors));
+    if (index >= 0 && index < static_cast<int>(g_monitors.size())) {
+      hmon = g_monitors[index].handle;
+      mi = g_monitors[index].info;
+    }
+  }
+  
+  if (mi.cbSize != sizeof(mi)) {
+    GetMonitorInfoW(hmon, &mi);
+  }
+  
   // Get desired dimensions and position from global settings
-  ComputeDesiredSize(g_window_state.desired_width, g_window_state.desired_height);
+  if (s_override_desktop_resolution >= 0.5f) {
+    // Use the new dynamic resolution system for desktop resolution override
+    int width, height;
+    if (renodx::resolution::GetSelectedResolution(static_cast<int>(s_selected_monitor_index), 
+                                 static_cast<int>(s_selected_resolution_index), 
+                                 width, height)) {
+      g_window_state.desired_width = width;
+      g_window_state.desired_height = height;
+      
+      std::ostringstream oss;
+      oss << "CalculateWindowState: Desktop resolution override enabled - using " << width << "x" << height;
+      LogDebug(oss.str());
+    } else {
+      // Log the failure and use default values
+      LogWarn("CalculateWindowState: Failed to get resolution from new system, using default 1920x1080");
+      g_window_state.desired_width = 1920;
+      g_window_state.desired_height = 1080;
+    }
+  } else {
+    // Use manual or aspect ratio mode
+    ComputeDesiredSize(g_window_state.desired_width, g_window_state.desired_height);
+  }
+  
+  // Clamp desired size to fit within the target monitor's dimensions
+  const int monitor_width = mi.rcMonitor.right - mi.rcMonitor.left;
+  const int monitor_height = mi.rcMonitor.bottom - mi.rcMonitor.top;
+  
+  if (g_window_state.desired_width > monitor_width) {
+    std::ostringstream oss;
+    oss << "CalculateWindowState: Desired width " << g_window_state.desired_width << " exceeds monitor width " << monitor_width << ", clamping";
+    LogInfo(oss.str().c_str());
+    g_window_state.desired_width = monitor_width;
+  }
+  
+  if (g_window_state.desired_height > monitor_height) {
+    std::ostringstream oss;
+    oss << "CalculateWindowState: Desired height " << g_window_state.desired_height << " exceeds monitor height " << monitor_height << ", clamping";
+    LogInfo(oss.str().c_str());
+    g_window_state.desired_height = monitor_height;
+  }
   
   // Calculate target dimensions
   RECT client_rect = RectFromWH(g_window_state.desired_width, g_window_state.desired_height);
@@ -79,48 +153,6 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
   }
   g_window_state.target_w = client_rect.right - client_rect.left;
   g_window_state.target_h = client_rect.bottom - client_rect.top;
-
-  // Get monitor info efficiently - always use the selected monitor for positioning
-  HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-  MONITORINFOEXW mi{};
-  mi.cbSize = sizeof(mi);
-  
-  // Always use the monitor selected in the Display tab for positioning
-  const int index = static_cast<int>(s_selected_monitor_index);
-  g_monitors.clear();
-  EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&g_monitors));
-  if (index >= 0 && index < static_cast<int>(g_monitors.size())) {
-    hmon = g_monitors[index].handle;
-    mi = g_monitors[index].info;
-    
-    std::ostringstream oss;
-    oss << "CalculateWindowState: Using selected monitor " << index << " for positioning";
-    LogDebug(oss.str());
-  } else {
-    // Fallback to current window's monitor if selection is invalid
-    GetMonitorInfoW(hmon, &mi);
-    LogWarn("CalculateWindowState: Invalid monitor selection, using current window's monitor");
-  }
-  
-  // Clamp window size to selected monitor dimensions if they exceed the display
-  if (mi.cbSize == sizeof(mi)) {
-    const int monitor_width = mi.rcMonitor.right - mi.rcMonitor.left;
-    const int monitor_height = mi.rcMonitor.bottom - mi.rcMonitor.top;
-    
-    if (g_window_state.target_w > monitor_width) {
-      std::ostringstream oss;
-      oss << "CalculateWindowState: Window width " << g_window_state.target_w << " exceeds monitor width " << monitor_width << ", clamping to monitor size";
-      LogInfo(oss.str().c_str());
-      g_window_state.target_w = monitor_width;
-    }
-    
-    if (g_window_state.target_h > monitor_height) {
-      std::ostringstream oss;
-      oss << "CalculateWindowState: Window height " << g_window_state.target_h << " exceeds monitor height " << monitor_height << ", clamping to monitor size";
-      LogInfo(oss.str().c_str());
-      g_window_state.target_h = monitor_height;
-    }
-  }
   
   // Calculate target position - start with monitor top-left
   g_window_state.target_x = mi.rcMonitor.left;

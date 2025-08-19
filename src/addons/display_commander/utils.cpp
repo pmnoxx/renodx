@@ -318,30 +318,6 @@ AspectRatio GetAspectByIndex(int index) {
 }
 
 void ComputeDesiredSize(int& out_w, int& out_h) {
-    // Check if desktop resolution override is enabled
-    if (s_override_desktop_resolution >= 0.5f) {
-        // Use the new dynamic resolution system
-        int width, height;
-        if (renodx::resolution::GetSelectedResolution(static_cast<int>(s_selected_monitor_index), 
-                                 static_cast<int>(s_selected_resolution_index), 
-                                 width, height)) {
-            out_w = width;
-            out_h = height;
-            
-            // Log the override
-            std::ostringstream oss;
-            oss << "ComputeDesiredSize: Desktop resolution override enabled - using " << out_w << "x" << out_h;
-            LogDebug(oss.str());
-            return;
-        } else {
-            // Log the failure and use default values
-            LogWarn("ComputeDesiredSize: Failed to get resolution from new system, using default 1920x1080");
-            out_w = 1920;
-            out_h = 1080;
-            return;
-        }
-    }
-    
     // Original logic for manual or aspect ratio mode
     const int want_w = static_cast<int>(s_windowed_width);
     if (s_resize_mode < 0.5f) {
