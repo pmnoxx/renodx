@@ -9,6 +9,7 @@
 #include <sstream> // Added for std::ostringstream
 #include <iomanip> // Added for std::setprecision
 #include <cmath> // Added for std::round
+#include <algorithm> // Added for std::max_element
 
 namespace renodx::display_cache {
 
@@ -244,8 +245,20 @@ struct DisplayInfo {
         
         const auto& res = resolutions[resolution_index];
         std::vector<std::string> labels;
-        labels.reserve(res.refresh_rates.size());
+        labels.reserve(res.refresh_rates.size() + 1); // +1 for option 0
         
+        // Add option 0: "Max supported refresh rate"
+        if (!res.refresh_rates.empty()) {
+            // Find the maximum refresh rate
+            auto max_rate = std::max_element(res.refresh_rates.begin(), res.refresh_rates.end());
+            if (max_rate != res.refresh_rates.end()) {
+                labels.push_back("Max supported refresh rate (" + max_rate->ToString() + ")");
+            } else {
+                labels.push_back("Max supported refresh rate");
+            }
+        }
+        
+        // Add all available refresh rates
         for (const auto& rate : res.refresh_rates) {
             labels.push_back(rate.ToString());
         }
