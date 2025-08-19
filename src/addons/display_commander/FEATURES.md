@@ -22,6 +22,7 @@
 - ✅ **Display Resolution/Refresh Rate Changing** - Fully functional
 - ✅ **NVAPI HDR Fullscreen Borderless** - Fully functional
 
+
 ## 4. Advanced Features
 - ⚠️ **DXGI Independent Flip State** - Previously working, currently broken in this version
 
@@ -33,6 +34,15 @@
 ## 6. Continous rendering
 - ✅ **FullScreenMode sproofing** - Fully functional
 - ❌ **Disable input** - Waiting for DirectInput / Xinput Support.
+
+## 7. Window manager
+- ✅ **Custom window size support** - Fully functional. Width/Height or Width/Aspect Mode
+- ✅ **Screen alignmnet** - Center + corners
+- ✅ **Monitor selection** - Fully functional
+
+## 8. Fps limiter
+- ✅ **Basic version** - Waits on present - prioritizes fps stability over latency
+- ❌ **Latency optimized version** - Not implemented
 
 ---
 
