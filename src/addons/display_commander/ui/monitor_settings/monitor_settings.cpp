@@ -14,8 +14,7 @@ extern float s_selected_monitor_index;
 extern float s_selected_resolution_index;
 extern float s_selected_refresh_rate_index;
 extern bool s_initial_auto_selection_done;
-extern bool s_use_custom_refresh_rate;
-extern float s_custom_refresh_rate;
+
 
 namespace renodx::ui::monitor_settings {
 
@@ -180,36 +179,11 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
         if (s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
             auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(selected_monitor_index, selected_resolution_index);
             if (!refresh_rate_labels.empty()) {
-                // Create a combined list with Custom as index 0 if enabled
-                std::vector<std::string> combined_labels;
-                if (s_use_custom_refresh_rate) {
-                    combined_labels.push_back("Custom");
-                    combined_labels.insert(combined_labels.end(), refresh_rate_labels.begin(), refresh_rate_labels.end());
-                } else {
-                    combined_labels = refresh_rate_labels;
-                }
-                
-                // Adjust the selected index to account for Custom being added
-                int display_index = static_cast<int>(s_selected_refresh_rate_index);
-                if (s_use_custom_refresh_rate && display_index >= 0) {
-                    display_index++; // Shift index by 1 since Custom is now at index 0
-                }
-                
-                if (ImGui::BeginCombo("Refresh Rate", combined_labels[display_index].c_str())) {
-                    for (int i = 0; i < static_cast<int>(combined_labels.size()); i++) {
-                        const bool is_selected = (i == display_index);
-                        if (ImGui::Selectable(combined_labels[i].c_str(), is_selected)) {
-                            if (s_use_custom_refresh_rate) {
-                                if (i == 0) {
-                                    // Custom selected
-                                    s_selected_refresh_rate_index = 0.0f;
-                                } else {
-                                    // Regular refresh rate selected, adjust index back
-                                    s_selected_refresh_rate_index = static_cast<float>(i - 1);
-                                }
-                            } else {
-                                s_selected_refresh_rate_index = static_cast<float>(i);
-                            }
+                if (ImGui::BeginCombo("Refresh Rate", refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)].c_str())) {
+                    for (int i = 0; i < static_cast<int>(refresh_rate_labels.size()); i++) {
+                        const bool is_selected = (i == static_cast<int>(s_selected_refresh_rate_index));
+                        if (ImGui::Selectable(refresh_rate_labels[i].c_str(), is_selected)) {
+                            s_selected_refresh_rate_index = static_cast<float>(i);
                         }
                         if (is_selected) {
                             ImGui::SetItemDefaultFocus();
@@ -222,37 +196,11 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
     }
 }
 
-// Handle custom refresh rate input
-void HandleCustomRefreshRate() {
-    ImGui::Checkbox("Custom refresh rate", &s_use_custom_refresh_rate);
-    
-    if (s_use_custom_refresh_rate) {
-        ImGui::SameLine();
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Enable to input a custom refresh rate value.\nWhen enabled, this value will be used instead of the selected refresh rate from the list.\nThe value is assumed to have a denominator of 1000 for precise calculations.");
-        }
-        
-        ImGui::SameLine();
-        if (ImGui::InputFloat("Hz", &s_custom_refresh_rate, 0.1f, 1.0f, "%.3f")) {
-            // Clamp the value to reasonable bounds
-            if (s_custom_refresh_rate < 1.0f) {
-                s_custom_refresh_rate = 1.0f;
-            } else if (s_custom_refresh_rate > 1000.0f) {
-                s_custom_refresh_rate = 1000.0f;
-            }
-        }
-        
-        // Show the rational representation
-        if (s_custom_refresh_rate > 0.0f) {
-            ImGui::SameLine();
-            ImGui::TextDisabled("(Rational: %.0f/1000)", s_custom_refresh_rate * 1000.0f);
-        }
-    }
-}
+
 
 // Handle the "Apply Desktop Changes (Legacy)" button
 void HandleLegacyApplyButton() {
+    /*
     if (ImGui::Button("Apply Desktop Changes (Legacy)")) {
         // Apply the changes using the display cache
         std::thread([](){
@@ -267,16 +215,7 @@ void HandleLegacyApplyButton() {
                 double exact_refresh_rate;
                 renodx::display_cache::RationalRefreshRate refresh_rate;
                 
-                if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
-                    // Use custom refresh rate with assumed denominator of 1000
-                    exact_refresh_rate = s_custom_refresh_rate;
-                    refresh_rate.numerator = static_cast<int>(std::round(s_custom_refresh_rate * 1000.0f));
-                    refresh_rate.denominator = 1000;
-                    
-                    std::ostringstream custom_oss;
-                    custom_oss << "Using custom refresh rate: " << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz";
-                    LogInfo(custom_oss.str().c_str());
-                } else {
+
                     // Use selected refresh rate from cache
                     auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
                     if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
@@ -329,15 +268,9 @@ void HandleLegacyApplyButton() {
                         dm.dmPelsWidth = width;
                         dm.dmPelsHeight = height;
                         
-                        // For custom refresh rate, try to pass it as-is to see if system supports it
-                        if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
-                            // Try to pass the exact custom refresh rate without rounding
-                            dm.dmDisplayFrequency = static_cast<DWORD>(std::round(exact_refresh_rate));
-                        } else {
-                            // Round the refresh rate to the nearest integer for DEVMODE
-                            // This gives us the closest refresh rate rather than just truncating
-                            dm.dmDisplayFrequency = static_cast<DWORD>(std::round(exact_refresh_rate));
-                        }
+                        // Round the refresh rate to the nearest integer for DEVMODE
+                        // This gives us the closest refresh rate rather than just truncating
+                        dm.dmDisplayFrequency = static_cast<DWORD>(std::round(exact_refresh_rate));
                         
                         // Apply the changes
                         LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
@@ -348,19 +281,12 @@ void HandleLegacyApplyButton() {
                                 << " @ " << std::fixed << std::setprecision(3) << exact_refresh_rate << "Hz";
                             LogInfo(oss.str().c_str());
                             
-                                                         // Log a note about rounding if the refresh rate was rounded
+                                                                                      // Log a note about rounding if the refresh rate was rounded
                              if (exact_refresh_rate != static_cast<double>(dm.dmDisplayFrequency)) {
-                                 if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
-                                     std::ostringstream info_oss;
-                                     info_oss << "Note: Custom refresh rate " << std::fixed << std::setprecision(3) 
-                                              << exact_refresh_rate << "Hz was rounded to " << dm.dmDisplayFrequency << "Hz by system";
-                                     LogInfo(info_oss.str().c_str());
-                                 } else {
-                                     std::ostringstream info_oss;
-                                     info_oss << "Note: Refresh rate was rounded from " << std::fixed << std::setprecision(3) 
-                                              << exact_refresh_rate << "Hz to " << dm.dmDisplayFrequency << "Hz for compatibility";
-                                     LogInfo(info_oss.str().c_str());
-                                 }
+                                 std::ostringstream info_oss;
+                                 info_oss << "Note: Refresh rate was rounded from " << std::fixed << std::setprecision(3) 
+                                          << exact_refresh_rate << "Hz to " << dm.dmDisplayFrequency << "Hz for compatibility";
+                                 LogInfo(info_oss.str().c_str());
                              }
                         } else {
                             std::ostringstream oss;
@@ -372,10 +298,12 @@ void HandleLegacyApplyButton() {
             }
         }).detach();
     }
+        */
 }
 
 // Handle the "Apply with Modern API (Fractional)" button
 void HandleModernAPIApplyButton() {
+    /*
     // Check if modern API is available and show button state
     bool modern_api_available = renodx::resolution::IsModernDisplayAPIAvailable();
     if (!modern_api_available) {
@@ -394,32 +322,21 @@ void HandleModernAPIApplyButton() {
                 int width, height;
                 sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
                 
-                // Get the selected refresh rate from the cache or use custom refresh rate
+                // Get the selected refresh rate from the cache
                 renodx::display_cache::RationalRefreshRate refresh_rate;
                 bool has_rational = false;
                 
-                if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
-                    // Use custom refresh rate with assumed denominator of 1000
-                    refresh_rate.numerator = static_cast<int>(std::round(s_custom_refresh_rate * 1000.0f));
-                    refresh_rate.denominator = 1000;
-                    has_rational = true;
+                // Use selected refresh rate from cache
+                auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+                if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                    std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
                     
-                    std::ostringstream custom_oss;
-                    custom_oss << "Using custom refresh rate with Modern API: " << std::fixed << std::setprecision(3) << s_custom_refresh_rate << "Hz";
-                    LogInfo(custom_oss.str().c_str());
-                } else {
-                    // Use selected refresh rate from cache
-                    auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
-                    if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
-                        std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
-                        
-                        // Get rational refresh rate values from the cache
-                        has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
-                            static_cast<int>(s_selected_monitor_index), 
-                            static_cast<int>(s_selected_resolution_index),
-                            static_cast<int>(s_selected_refresh_rate_index), 
-                            refresh_rate);
-                    }
+                    // Get rational refresh rate values from the cache
+                    has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
+                        static_cast<int>(s_selected_monitor_index), 
+                        static_cast<int>(s_selected_resolution_index),
+                        static_cast<int>(s_selected_refresh_rate_index), 
+                        refresh_rate);
                 }
                 
                 if (has_rational) {
@@ -479,14 +396,8 @@ void HandleModernAPIApplyButton() {
                                 dm.dmPelsWidth = width;
                                 dm.dmPelsHeight = height;
                                 
-                                // For custom refresh rate, try to pass it as-is to see if system supports it
-                                if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
-                                    // Try to pass the exact custom refresh rate without rounding
-                                    dm.dmDisplayFrequency = static_cast<DWORD>(s_custom_refresh_rate);
-                                } else {
-                                    // Round the refresh rate to the nearest integer for DEVMODE fallback
-                                    dm.dmDisplayFrequency = static_cast<DWORD>(std::round(refresh_rate.ToHz()));
-                                }
+                                // Round the refresh rate to the nearest integer for DEVMODE fallback
+                                dm.dmDisplayFrequency = static_cast<DWORD>(std::round(refresh_rate.ToHz()));
                                 
                                 // Apply the changes using legacy API
                                 LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
@@ -516,6 +427,7 @@ void HandleModernAPIApplyButton() {
     if (!modern_api_available) {
         ImGui::PopStyleColor(3);
     }
+        */
 }
 
 // Handle the "Apply with DXGI API" button
@@ -537,32 +449,21 @@ void HandleDXGIAPIApplyButton() {
                 int width, height;
                 sscanf(selected_resolution.c_str(), "%d x %d", &width, &height);
                 
-                // Get the selected refresh rate from the cache or use custom refresh rate
+                // Get the selected refresh rate from the cache
                 renodx::display_cache::RationalRefreshRate refresh_rate;
                 bool has_rational = false;
                 
-                if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
-                    // Use custom refresh rate with assumed denominator of 1000
-                    refresh_rate.numerator = static_cast<int>(std::round(s_custom_refresh_rate * 1000.0f));
-                    refresh_rate.denominator = 1000;
-                    has_rational = true;
+                // Use selected refresh rate from cache
+                auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+                if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
+                    std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
                     
-                    std::ostringstream custom_oss;
-                    custom_oss << "Using custom refresh rate with DXGI API: " << std::fixed << std::setprecision(3) << s_custom_refresh_rate << "Hz";
-                    LogInfo(custom_oss.str().c_str());
-                } else {
-                    // Use selected refresh rate from cache
-                    auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
-                    if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
-                        std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
-                        
-                        // Get rational refresh rate values from the cache
-                        has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
-                            static_cast<int>(s_selected_monitor_index), 
-                            static_cast<int>(s_selected_resolution_index),
-                            static_cast<int>(s_selected_refresh_rate_index), 
-                            refresh_rate);
-                    }
+                    // Get rational refresh rate values from the cache
+                    has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
+                        static_cast<int>(s_selected_monitor_index), 
+                        static_cast<int>(s_selected_resolution_index),
+                        static_cast<int>(s_selected_refresh_rate_index), 
+                        refresh_rate);
                 }
                 
                 if (has_rational) {
@@ -622,14 +523,8 @@ void HandleDXGIAPIApplyButton() {
                                 dm.dmPelsWidth = width;
                                 dm.dmPelsHeight = height;
                                 
-                                // For custom refresh rate, try to pass it as-is to see if system supports it
-                                if ((s_use_custom_refresh_rate && s_custom_refresh_rate > 0.0f) || s_selected_refresh_rate_index == 0.0f) {
-                                    // Try to pass the exact custom refresh rate without rounding
-                                    dm.dmDisplayFrequency = static_cast<DWORD>(s_custom_refresh_rate);
-                                } else {
-                                    // Round the refresh rate to the nearest integer for DEVMODE fallback
-                                    dm.dmDisplayFrequency = static_cast<DWORD>(std::round(refresh_rate.ToHz()));
-                                }
+                                // Round the refresh rate to the nearest integer for DEVMODE fallback
+                                dm.dmDisplayFrequency = static_cast<DWORD>(std::round(refresh_rate.ToHz()));
                                 
                                 // Apply the changes using legacy API
                                 LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);

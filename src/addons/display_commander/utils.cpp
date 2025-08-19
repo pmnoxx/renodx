@@ -17,8 +17,7 @@ extern float s_override_desktop_resolution;
 extern float s_selected_monitor_index;
 extern float s_selected_resolution_index;
 extern float s_selected_refresh_rate_index;
-extern bool s_use_custom_refresh_rate;
-extern float s_custom_refresh_rate;
+
 extern bool s_initial_auto_selection_done;
 
 extern std::vector<MonitorInfo> g_monitors;

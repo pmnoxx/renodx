@@ -164,8 +164,7 @@ bool HandleMonitorSettingsUI() {
     // Handle refresh rate selection UI
     renodx::ui::monitor_settings::HandleRefreshRateSelection(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
     
-    // Handle custom refresh rate input
-    renodx::ui::monitor_settings::HandleCustomRefreshRate();
+
     
     // Apply Changes Button
     ImGui::Text("Apply Display Changes:");
