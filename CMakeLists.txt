@@ -554,7 +554,15 @@ foreach(FILE ${ADDON_FILES})
   
   # For display_commander, include all source files
   if(${ADDON} STREQUAL "display_commander")
-    file(GLOB ADDON_SOURCE_FILES CONFIGURE_DEPENDS ${ADDON_PATH}/*.cpp ${ADDON_PATH}/**/*.cpp ${ADDON_PATH}/**/**/*.cpp)
+    file(GLOB ADDON_SOURCE_FILES CONFIGURE_DEPENDS 
+      ${ADDON_PATH}/*.cpp 
+      ${ADDON_PATH}/**/*.cpp 
+      ${ADDON_PATH}/**/**/*.cpp 
+      ${ADDON_PATH}/**/**/**/*.cpp
+      ${ADDON_PATH}/**/**/**/**/*.cpp
+      ${ADDON_PATH}/**/**/**/**/**/*.cpp
+      ${ADDON_PATH}/**/**/**/**/**/**/*.cpp
+      )
     list(REMOVE_ITEM ADDON_SOURCE_FILES ${FILE}) # Remove addon.cpp from the list
     list(APPEND ADDON_SOURCES ${ADDON_SOURCE_FILES})
   endif()
