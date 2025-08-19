@@ -97,6 +97,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
     if (s_remove_top_bar >= 0.5f) {
         switch (uMsg) {
             case WM_WINDOWPOSCHANGING: {
+                LogDebug("Window style hook: WM_WINDOWPOSCHANGING - lParam = " + std::to_string(lParam));
                 // Intercept window position/style changes
                 WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
                 if (wp) {
@@ -118,6 +119,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
             }
             
             case WM_STYLECHANGING: {
+                LogDebug("Window style hook: WM_STYLECHANGING - lParam = " + std::to_string(lParam));
                 // Intercept style change requests
                 STYLESTRUCT* style = reinterpret_cast<STYLESTRUCT*>(lParam);
                 if (style) {
@@ -166,6 +168,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
             }
             
             case WM_STYLECHANGED: {
+                LogDebug("Window style hook: WM_STYLECHANGED - lParam = " + std::to_string(lParam));
                 // Intercept style change confirmations
                 STYLESTRUCT* style = reinterpret_cast<STYLESTRUCT*>(lParam);
                 if (style) {
@@ -188,6 +191,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
             }
             
             case WM_SYSCOMMAND: {
+                LogDebug("Window style hook: WM_SYSCOMMAND - wParam = " + std::to_string(wParam));
                 // AGGRESSIVE: Block ALL maximize commands when s_suppress_maximize is enabled
                 if (s_suppress_maximize >= 0.5f && wParam == SC_MAXIMIZE) {
                     LogDebug("Window style hook: AGGRESSIVELY BLOCKED SC_MAXIMIZE - No maximize allowed at all");
@@ -226,36 +230,20 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
             }
 
             case WM_GETMINMAXINFO: {
+                LogDebug("Window style hook: WM_GETMINMAXINFO - lParam = " + std::to_string(lParam));
                 // Prevent the window from being maximized or restored
                 MINMAXINFO* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
                 if (mmi) {
-                    RECT window_rect;
-                    if (GetWindowRect(hwnd, &window_rect)) {
-                        // AGGRESSIVE: Always prevent maximize when s_suppress_maximize is enabled
-                        if (s_suppress_maximize >= 0.5f) {
-                            // Force the window to stay at current size - no maximize allowed
-                            mmi->ptMaxSize.x = window_rect.right - window_rect.left;
-                            mmi->ptMaxSize.y = window_rect.bottom - window_rect.top;
-                            mmi->ptMaxPosition.x = window_rect.left;
-                            mmi->ptMaxPosition.y = window_rect.top;
-                            LogDebug("Window style hook: AGGRESSIVE maximize prevention - locked to current size");
-                        }
-                        
-                        // Additional prevention when removing top bar
-                        if (s_remove_top_bar >= 0.5f) {
-                            // Set max position to current position to prevent maximize
-                            mmi->ptMaxPosition.x = window_rect.left;
-                            mmi->ptMaxPosition.y = window_rect.top;
-                            mmi->ptMaxSize.x = window_rect.right - window_rect.left;
-                            mmi->ptMaxSize.y = window_rect.bottom - window_rect.top;
-                            LogDebug("Window style hook: Modified minmax info to prevent maximize");
-                        }
-                    }
+                    mmi->ptMaxPosition.x = g_window_state.target_x;
+                    mmi->ptMaxPosition.y = g_window_state.target_y;
+                    mmi->ptMaxSize.x = g_window_state.target_w;
+                    mmi->ptMaxSize.y = g_window_state.target_h;
                 }
                 break;
             }
 
             case WM_NCCALCSIZE: {
+                LogDebug("Window style hook: WM_NCCALCSIZE - lParam = " + std::to_string(lParam));
                 // Prevent non-client area calculation (title bar, borders)
                 if (s_remove_top_bar >= 0.5f && wParam == TRUE) {
                     NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
@@ -291,6 +279,7 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
     if (s_suppress_move_resize_messages >= 0.5f) {
         switch (uMsg) {
             case WM_MOVE: {
+                LogDebug("Window style hook: WM_MOVE - lParam = " + std::to_string(lParam));
                 // Intercept window move messages
                 int new_x = static_cast<int>(static_cast<short>(LOWORD(lParam)));
                 int new_y = static_cast<int>(static_cast<short>(HIWORD(lParam)));
@@ -303,23 +292,11 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 int desired_y = g_window_state.target_y;
                 
                 lParam = MAKELONG(desired_x, desired_y);
-                /*
-                // Check if this move matches our desired state
-                if (new_x != desired_x || new_y != desired_y) {
-                    std::ostringstream oss;
-                    oss << "Window style hook: Move message mismatch detected. Game wants (" << new_x << "," << new_y << "), we want (" << desired_x << "," << desired_y << "). Background task will fix this later.";
-                    LogDebug(oss.str());
-                    
-                    // For now, allow the move but log the mismatch
-                    // Background tasks will handle position enforcement
-                    return 0; // Don't call default handler
-                } else {
-                    LogDebug("Window style hook: Move message matches desired state");
-                }*/
                 break;
             }
             
             case WM_SIZE: {
+                LogDebug("Window style hook: WM_SIZE - lParam = " + std::to_string(lParam));
                 // Intercept window size messages
                 int new_w = static_cast<int>(LOWORD(lParam));
                 int new_h = static_cast<int>(HIWORD(lParam));
@@ -333,51 +310,23 @@ LRESULT CALLBACK WindowStyleHookProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
                 }
                 
                 // Allow restore from maximized state (SIZE_RESTORED)
-                if (size_type == SIZE_RESTORED) {
-                    LogDebug("Window style hook: ALLOWED SIZE_RESTORED - Window restoring from maximized/minimized state");
-                    // Allow the restore message to process normally
-                    break;
-                }
                 
                 // Calculate desired window state to get current target size
                 CalculateWindowState(hwnd, "hook_size_check");
                 
-                
-                // Get our desired size from global window state
-                int desired_w = g_window_state.target_w;
-                int desired_h = g_window_state.target_h;
-
-                lParam = MAKELONG(desired_w, desired_h);
-                /*
-                // Check if this resize matches our desired state
-                if (new_w != desired_w || new_h != desired_h) {
-                    std::ostringstream oss;
-                    oss << "Window style hook: Suppressed resize message - size mismatch. Game wants " << new_w << "x" << new_h << ", we want " << desired_w << "x" << desired_h << ". Background task will fix this later.";
-                    
-                    // Add continuous monitoring status to the log
-                    if (s_continuous_monitoring_enabled >= 0.5f) {
-                        oss << " [Continuous monitoring: ENABLED]";
-                    } else {
-                        oss << " [Continuous monitoring: DISABLED]";
-                    }
-                    
-                    LogDebug(oss.str());
-                    
-                    // Modify the message to keep current size (suppress the resize)
-                    // We'll use the current window size as the "new" size
-                    RECT client_rect;
-                    if (GetClientRect(hwnd, &client_rect)) {
-                        lParam = MAKELONG(static_cast<short>(client_rect.right - client_rect.left), 
-                                         static_cast<short>(client_rect.bottom - client_rect.top));
-                    }
-                    return 0; // Don't call default handler
-                }*/
+                lParam = MAKELONG(g_window_state.target_w, g_window_state.target_h);
+                if (size_type == SIZE_RESTORED) {
+                    LogDebug("Window style hook: ALLOWED SIZE_RESTORED - Window restoring from maximized/minimized state");
+                    // Allow the restore message to process normally
+                 //   break;
+                }
                 break;
             }
             
             case WM_WINDOWPOSCHANGED: {
                 // Intercept window position/size change confirmations
                 WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
+                LogDebug("Window style hook: WM_WINDOWPOSCHANGED - wp = " + std::to_string(wp->cx) + ", " + std::to_string(wp->cy) + ", " + std::to_string(wp->x) + ", " + std::to_string(wp->y) + ", " + std::to_string(wp->flags));
                 if (wp) {
                     // Calculate desired window state to get current target size
                     CalculateWindowState(hwnd, "hook_windowpos_check");

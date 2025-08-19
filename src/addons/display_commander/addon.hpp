@@ -261,7 +261,7 @@ extern std::atomic<bool> g_reflex_active;
 // Function declarations
 const char* DxgiBypassModeToString(DxgiBypassMode mode);
 bool SetIndependentFlipState(reshade::api::swapchain* swapchain);
-void ApplyWindowChange(HWND hwnd, const char* reason = "unknown");
+void ApplyWindowChange(HWND hwnd, const char* reason = "unknown", bool force_apply = false);
 bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h);
 void ScheduleAutoApplyOnInit(HWND hwnd);
 void LogIndependentFlipConditions(reshade::api::swapchain* swapchain);

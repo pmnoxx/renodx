@@ -299,14 +299,14 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
 }
 
 // Second function: Apply the calculated window changes
-void ApplyWindowChange(HWND hwnd, const char* reason) {
+void ApplyWindowChange(HWND hwnd, const char* reason, bool force_apply) {
   if (hwnd == nullptr) return;
   
   // First calculate the desired window state
   CalculateWindowState(hwnd, reason);
   
   // Check if any changes are needed
-  if (!g_window_state.needs_resize && !g_window_state.needs_move && !g_window_state.style_changed) {
+  if (!g_window_state.needs_resize && !g_window_state.needs_move && !g_window_state.style_changed && !force_apply) {
     //LogDebug("ApplyWindowChange: No changes needed");
     return;
   }
@@ -382,8 +382,22 @@ void ApplyWindowChange(HWND hwnd, const char* reason) {
    // flags |= SWP_NOZORDER | SWP_NOACTIVATE;
  // }
   // Apply position and size changes
-  SetWindowPos(hwnd, nullptr, g_window_state.target_x, g_window_state.target_y, 
-    g_window_state.target_w, g_window_state.target_h, flags);
+  flags &= ~(SWP_NOMOVE | SWP_NOSIZE);
+  flags |= SWP_NOZORDER | SWP_NOACTIVATE;
+  if (force_apply)  {
+    // force one pixel off the screen to trigger resize event&& g_window_state.target_w == wr_current.right - wr_current.left && g_window_state.target_h == wr_current.bottom - wr_current.top)
+    // Fixes issue with games starting in fullscreen size, but not getting resize event.
+    // This happens because game assumes it changed size, but we suppress the resize event.
+    LogDebug("ApplyWindowChange: FORCE APPLY on init");
+    ShowWindow(hwnd, SW_RESTORE);
+    SetWindowLongPtrW(hwnd, GWL_STYLE, new_style);
+    SetWindowLongPtrW(hwnd, GWL_EXSTYLE, new_ex_style);
+    SetWindowPos(hwnd, nullptr, g_window_state.target_x, g_window_state.target_y, 
+      g_window_state.target_w  - 1, g_window_state.target_h - 1, flags);
+  } else {
+    SetWindowPos(hwnd, nullptr, g_window_state.target_x, g_window_state.target_y, 
+      g_window_state.target_w, g_window_state.target_h, flags);
+  }
 }
 
 bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h) {
@@ -420,10 +434,12 @@ void ScheduleAutoApplyOnInit(HWND hwnd) {
     const int bb_h = g_last_backbuffer_height.load();
     // Apply if size differs (style is always borderless now)
     const bool size_matches = (bb_w == want_w && bb_h == want_h);
-    if (size_matches) {
-      LogDebug("AutoApply skipped: backbuffer matches desired state");
-      return;
-    }
-    ApplyWindowChange(hwnd, "schedule_auto_apply_on_init");
+ //   if (size_matches) {
+ //     LogDebug("AutoApply skipped: backbuffer matches desired state");
+ //     return;
+ //   }
+    // Aplways do it once
+    // Some games start window in fullscreen size, but if they don't get resize event their internal buffers are not updated.
+    ApplyWindowChange(hwnd, "schedule_auto_apply_on_init", true);
   }).detach();
 }
