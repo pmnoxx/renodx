@@ -15,7 +15,7 @@ const std::vector<std::string> TAB_LABELS = {
     "Developer",   // 2 - Advanced settings
     "Device Info", // 3 - Device information
     "Window Info", // 4 - Window debugging
-    "DirectInput"  // 5 - DirectInput status
+    
 };
 
 // Helper functions for tab visibility
@@ -24,8 +24,8 @@ inline bool is_display_tab(float ui_mode) { return static_cast<int>(ui_mode) == 
 inline bool is_developer_tab(float ui_mode) { return static_cast<int>(ui_mode) == 2; }
 inline bool is_device_tab(float ui_mode) { return static_cast<int>(ui_mode) == 3; }
 inline bool is_window_info_tab(float ui_mode) { return static_cast<int>(ui_mode) == 4; }
-inline bool is_direct_input_tab(float ui_mode) { return static_cast<int>(ui_mode) == 5; }
-inline bool is_main_tab(float ui_mode) { return static_cast<int>(ui_mode) < 3; } // Show in Simple (0), Display (1), and Developer (2) modes, but not Device Info (3), Window Info (4), or DirectInput (5)
+
+inline bool is_main_tab(float ui_mode) { return static_cast<int>(ui_mode) < 3; } // Show in Simple (0), Display (1), and Developer (2) modes, but not Device Info (3) or Window Info (4)
 
 // Forward declarations for settings sections
 namespace renodx::ui {

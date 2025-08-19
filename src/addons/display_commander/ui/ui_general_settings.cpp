@@ -29,7 +29,7 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .default_value = 0.f, // Basic mode by default
         .label = "UI Mode",
         .section = "General",
-        .tooltip = "Choose between Simple (minimal features), Display (desktop resolution override), Developer (all features), Device Info (DXGI device information), Window Info (window creation details), and DirectInput (input blocking controls) modes.",
+        .tooltip = "Choose between Simple (minimal features), Display (desktop resolution override), Developer (all features), Device Info (DXGI device information), and Window Info (window creation details) modes.",
         .labels = TAB_LABELS,
         .min = 0.f,
         .max = static_cast<float>(TAB_LABELS.size() - 1),

@@ -149,7 +149,7 @@ void ContinuousMonitoringThread() {
                     continue; // Skip normal ApplyWindowChange since we just fixed the issue
                 }
                 
-                // PROACTIVE MOUSE CONFINEMENT RELEASE: Prevent DirectInput from keeping mouse confined
+            
                 // Check if mouse is currently captured or cursor is clipped
                 HWND captured_window = GetCapture();
                 if (captured_window == hwnd) {
