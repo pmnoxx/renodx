@@ -53,8 +53,6 @@ void ForceWindowToMonitorOriginThreaded(HWND hwnd);
 std::vector<std::string> MakeLabels(const int* values, size_t count);
 int FindClosestIndex(int value, const int* values, size_t count);
 std::vector<std::string> MakeAspectLabels();
-std::vector<std::string> MakeWidthLabelsWithRatios();
-std::vector<std::string> MakeHeightLabelsWithRatios();
 AspectRatio GetAspectByIndex(int index);
 int GetCurrentMonitorWidth();
 int GetCurrentMonitorHeight();

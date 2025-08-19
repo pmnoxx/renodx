@@ -8,6 +8,7 @@
 #include <optional>
 #include <sstream> // Added for std::ostringstream
 #include <iomanip> // Added for std::setprecision
+#include <cmath> // Added for std::round
 
 namespace renodx::display_cache {
 
@@ -73,6 +74,16 @@ struct Resolution {
     std::string ToString() const {
         std::ostringstream oss;
         oss << width << " x " << height;
+        
+        // Calculate and add aspect ratio
+        if (height > 0) {
+            double aspect_ratio = static_cast<double>(width) / static_cast<double>(height);
+            // Round to 3 decimal places and format as "X : 9" where X is the ratio * 9
+            double rounded_ratio = std::round(aspect_ratio * 1000.0) / 1000.0;
+            int ratio_numerator = static_cast<int>(std::round(rounded_ratio * 9.0));
+            oss << " (" << ratio_numerator << " : 9)";
+        }
+        
         return oss.str();
     }
     

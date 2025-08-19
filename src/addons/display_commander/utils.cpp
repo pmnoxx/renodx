@@ -3,7 +3,6 @@
 #include "resolution_helpers.hpp"
 #include <map>
 #include <algorithm>
-#include <iomanip>
 
 // External declarations needed by utility functions
 extern float s_windowed_width;
@@ -349,40 +348,6 @@ std::vector<std::string> MakeAspectLabels() {
     labels.push_back("19.5:9");
     labels.push_back("21:9");
     labels.push_back("32:9");
-    return labels;
-}
-
-std::vector<std::string> MakeWidthLabelsWithRatios() {
-    std::vector<std::string> labels;
-    labels.push_back("Current Monitor");
-    
-    for (int i = 1; i < 8; i++) { // Skip index 0, start from 1
-        int width = WIDTH_OPTIONS[i];
-        int height = HEIGHT_OPTIONS[i];
-        float ratio = static_cast<float>(width) / static_cast<float>(height);
-        float ratio_9 = ratio * 9.0f; // Convert to 9-based ratio
-        
-        std::ostringstream oss;
-        oss << width << " (" << std::fixed << std::setprecision(2) << ratio_9 << ":9)";
-        labels.push_back(oss.str());
-    }
-    return labels;
-}
-
-std::vector<std::string> MakeHeightLabelsWithRatios() {
-    std::vector<std::string> labels;
-    labels.push_back("Current Monitor");
-    
-    for (int i = 1; i < 8; i++) { // Skip index 0, start from 1
-        int width = WIDTH_OPTIONS[i];
-        int height = HEIGHT_OPTIONS[i];
-        float ratio = static_cast<float>(width) / static_cast<float>(height);
-        float ratio_9 = ratio * 9.0f; // Convert to 9-based ratio
-        
-        std::ostringstream oss;
-        oss << height << " (" << std::fixed << std::setprecision(2) << ratio_9 << ":9)";
-        labels.push_back(oss.str());
-    }
     return labels;
 }
 

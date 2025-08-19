@@ -21,7 +21,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .default_value = 3.f, // default to 1920
         .label = "Window Width",
         .section = "Display",
-        .labels = MakeWidthLabelsWithRatios(),
+        .labels = {"Current Monitor", "1280", "1366", "1600", "1920", "2560", "3440", "3840"},
         .parse = [](float index) {
           int i = static_cast<int>(index);
           i = (std::max)(i, 0);
@@ -46,7 +46,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
         .default_value = 2.f, // default to 1080
         .label = "Window Height",
         .section = "Display",
-        .labels = MakeHeightLabelsWithRatios(),
+        .labels = {"Current Monitor", "720", "900", "1080", "1200", "1440", "1600", "2160"},
         .is_enabled = [](){ return s_resize_mode < 0.5f; },
         .parse = [](float index) {
           int i = static_cast<int>(index);
