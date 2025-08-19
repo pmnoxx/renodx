@@ -68,39 +68,8 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
   
   g_window_state.style_mode = WindowStyleMode::BORDERLESS;
 
-  // Get monitor info efficiently - always use the monitor the game is actually running on
-  HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-  MONITORINFOEXW mi{};
-  mi.cbSize = sizeof(mi);
-  
-  // Get monitor info for the actual display the game is running on
-  if (GetMonitorInfoW(hmon, &mi) == FALSE) {
-    LogWarn("CalculateWindowState: Failed to get monitor info");
-    return;
-  }
-  
   // Get desired dimensions and position from global settings
   ComputeDesiredSize(g_window_state.desired_width, g_window_state.desired_height);
-  
-  // Store original desired dimensions for logging
-  const int original_width = g_window_state.desired_width;
-  const int original_height = g_window_state.desired_height;
-  
-  // Constrain desired dimensions to fit within the actual monitor bounds
-  const int monitor_width = mi.rcMonitor.right - mi.rcMonitor.left;
-  const int monitor_height = mi.rcMonitor.bottom - mi.rcMonitor.top;
-  
-  // Clamp desired dimensions to monitor bounds
-  g_window_state.desired_width = (std::min)(g_window_state.desired_width, monitor_width);
-  g_window_state.desired_height = (std::min)(g_window_state.desired_height, monitor_height);
-  
-  // Log the constrained dimensions
-  std::ostringstream constraint_oss;
-  constraint_oss << "CalculateWindowState: Constrained desired size to monitor bounds - "
-                << "Original: " << original_width << "x" << original_height
-                << ", Constrained: " << g_window_state.desired_width << "x" << g_window_state.desired_height
-                << ", Monitor: " << monitor_width << "x" << monitor_height;
-  LogDebug(constraint_oss.str());
   
   // Calculate target dimensions
   RECT client_rect = RectFromWH(g_window_state.desired_width, g_window_state.desired_height);
@@ -110,6 +79,48 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
   }
   g_window_state.target_w = client_rect.right - client_rect.left;
   g_window_state.target_h = client_rect.bottom - client_rect.top;
+
+  // Get monitor info efficiently - always use the selected monitor for positioning
+  HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+  MONITORINFOEXW mi{};
+  mi.cbSize = sizeof(mi);
+  
+  // Always use the monitor selected in the Display tab for positioning
+  const int index = static_cast<int>(s_selected_monitor_index);
+  g_monitors.clear();
+  EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&g_monitors));
+  if (index >= 0 && index < static_cast<int>(g_monitors.size())) {
+    hmon = g_monitors[index].handle;
+    mi = g_monitors[index].info;
+    
+    std::ostringstream oss;
+    oss << "CalculateWindowState: Using selected monitor " << index << " for positioning";
+    LogDebug(oss.str());
+  } else {
+    // Fallback to current window's monitor if selection is invalid
+    GetMonitorInfoW(hmon, &mi);
+    LogWarn("CalculateWindowState: Invalid monitor selection, using current window's monitor");
+  }
+  
+  // Clamp window size to selected monitor dimensions if they exceed the display
+  if (mi.cbSize == sizeof(mi)) {
+    const int monitor_width = mi.rcMonitor.right - mi.rcMonitor.left;
+    const int monitor_height = mi.rcMonitor.bottom - mi.rcMonitor.top;
+    
+    if (g_window_state.target_w > monitor_width) {
+      std::ostringstream oss;
+      oss << "CalculateWindowState: Window width " << g_window_state.target_w << " exceeds monitor width " << monitor_width << ", clamping to monitor size";
+      LogInfo(oss.str().c_str());
+      g_window_state.target_w = monitor_width;
+    }
+    
+    if (g_window_state.target_h > monitor_height) {
+      std::ostringstream oss;
+      oss << "CalculateWindowState: Window height " << g_window_state.target_h << " exceeds monitor height " << monitor_height << ", clamping to monitor size";
+      LogInfo(oss.str().c_str());
+      g_window_state.target_h = monitor_height;
+    }
+  }
   
   // Calculate target position - start with monitor top-left
   g_window_state.target_x = mi.rcMonitor.left;
