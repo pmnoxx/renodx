@@ -79,12 +79,12 @@ struct Resolution {
         // Calculate and add aspect ratio
         if (height > 0) {
             double aspect_ratio = static_cast<double>(width) / static_cast<double>(height);
-            // Round to 3 decimal places and format as "X : 9" where X is the ratio * 9
+            // Round to 2 decimal places and format as "X : 9" where X is the ratio * 9
             double ratio_numerator = aspect_ratio * 9.0;
-            if (ratio_numerator == static_cast<int>(ratio_numerator)) {
+            if (round(ratio_numerator * 100.0) == static_cast<int>(ratio_numerator) * 100) {
                 oss << " (" << static_cast<int>(ratio_numerator) << ":9)";
             } else {
-                oss << " (" << std::fixed << std::setprecision(3) << ratio_numerator << ":9)";
+                oss << " (" << std::fixed << std::setprecision(2) << ratio_numerator << ":9)";
             }
         }
         
