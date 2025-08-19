@@ -97,6 +97,42 @@ void CalculateWindowState(HWND hwnd, const char* reason) {
       hmon = g_monitors[index].handle;
       mi = g_monitors[index].info;
     }
+  } else {
+    // When target monitor is 0, find the monitor where the game is currently on
+    // by comparing window position against each monitor's dimensions
+    g_monitors.clear();
+    EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&g_monitors));
+    
+    // Find which monitor contains the game window
+    const int window_center_x = (wr_current.left + wr_current.right) / 2;
+    const int window_center_y = (wr_current.top + wr_current.bottom) / 2;
+    
+    bool found_monitor = false;
+    for (const auto& monitor : g_monitors) {
+      const RECT& mr = monitor.info.rcMonitor;
+      if (window_center_x >= mr.left && window_center_x < mr.right &&
+          window_center_y >= mr.top && window_center_y < mr.bottom) {
+        hmon = monitor.handle;
+        mi = monitor.info;
+        found_monitor = true;
+        
+        std::ostringstream oss;
+        oss << "CalculateWindowState: Game window is on monitor " << (&monitor - &g_monitors[0]) 
+            << " (position: " << window_center_x << "," << window_center_y << ")";
+        LogDebug(oss.str());
+        break;
+      }
+    }
+    
+    if (!found_monitor) {
+      // Fallback: use the monitor closest to the window
+      hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+      GetMonitorInfoW(hmon, &mi);
+      
+      std::ostringstream oss;
+      oss << "CalculateWindowState: Could not determine exact monitor, using closest monitor as fallback";
+      LogWarn(oss.str().c_str());
+    }
   }
   
   if (mi.cbSize != sizeof(mi)) {
@@ -337,6 +373,12 @@ void ApplyWindowChange(HWND hwnd, const char* reason) {
     SetWindowLongPtrW(hwnd, GWL_EXSTYLE, new_ex_style);
   }
   
+  if (g_window_state.target_w <= 0 || g_window_state.target_h <= 0) {
+    std::ostringstream oss;
+    oss << "ApplyWindowChange: Invalid target size " << g_window_state.target_w << "x" << g_window_state.target_h << ", skipping";
+    LogWarn(oss.str().c_str());
+    return;
+  }
   // Apply position and size changes
   SetWindowPos(hwnd, nullptr, g_window_state.target_x, g_window_state.target_y, g_window_state.target_w, g_window_state.target_h, flags);
 }
