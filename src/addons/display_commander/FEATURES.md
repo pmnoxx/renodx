@@ -41,7 +41,7 @@
 - ✅ **Background Mute** - Fully functional
 
 ## 6. Continous rendering
-- ✅ **FullScreenMode sproofing** - Fully functional
+- ✅ **FullScreenMode spoofing** - Fully functional
 - ❌ **Disable input** - Waiting for DirectInput / Xinput Support.
 
 ## 7. Window manager
