@@ -48,6 +48,7 @@
 - ✅ **Custom window size support** - Fully functional. Width/Height or Width/Aspect Mode
 - ✅ **Screen alignmnet** - Center + corners
 - ✅ **Monitor selection** - Fully functional
+- ✅ **Black curtain** - Covers remaning part of the screen with black background while game is running in borderless windowed mode. (Useful when running game in wide screen aspect ratio such as 21:9).
 
 ## 8. Fps limiter
 - ✅ **Basic version** - Waits on present - prioritizes fps stability over latency
