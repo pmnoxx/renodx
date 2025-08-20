@@ -126,16 +126,16 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       break;
   }
 
-  // Initialize UI settings before registering the overlay
-  InitializeUISettings();
-  
-  renodx::proxy::InitializeSettings(fdw_reason, &settings);
-  // InitializeSwapchain removed from proxy
 
   // Initialize hooks if settings are enabled on startup (after settings are loaded)
   if (fdw_reason == DLL_PROCESS_ATTACH) {
 
 
+    // Initialize UI settings before registering the overlay
+    InitializeUISettings();
+    
+    renodx::proxy::InitializeSettings(fdw_reason, &settings);
+    // InitializeSwapchain removed from proxy
     
     // Check if continuous monitoring should be enabled
     if (s_continuous_monitoring_enabled >= 0.5f) {
