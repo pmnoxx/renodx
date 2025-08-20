@@ -44,6 +44,7 @@ void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings)
         .section = "Performance",
         .tooltip = "Enable low latency mode for reduced input lag.",
         .labels = {"Disabled", "Enabled"},
+        .is_enabled = []() { return false; }, // Disabled
         .on_change_value = [](float previous, float current) {
             // Mark that Reflex settings have changed to force sleep mode update
             extern std::atomic<bool> g_reflex_settings_changed;
@@ -62,6 +63,7 @@ void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings)
         .section = "Performance",
         .tooltip = "Request maximum GPU clock frequency for lower latency in CPU-limited scenarios.",
         .labels = {"Disabled", "Enabled"},
+        .is_enabled = []() { return false; }, // Disabled
         .on_change_value = [](float previous, float current) {
             // Mark that Reflex settings have changed to force sleep mode update
             extern std::atomic<bool> g_reflex_settings_changed;
@@ -80,6 +82,7 @@ void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings)
         .section = "Performance",
         .tooltip = "Allow latency markers to be used for runtime optimizations.",
         .labels = {"Disabled", "Enabled"},
+        .is_enabled = []() { return false; }, // Disabled
         .on_change_value = [](float previous, float current) {
             // Mark that Reflex settings have changed to force sleep mode update
             extern std::atomic<bool> g_reflex_settings_changed;

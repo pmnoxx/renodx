@@ -144,7 +144,12 @@ void CustomFpsLimiter::ApplySleepAndSpinLock()
 
 void CustomFpsLimiter::SetTargetFps(float fps)
 {
-    m_target_fps = fps;
+    // Ensure FPS limits > 0 and < 1 are treated as 1
+    if (fps > 0.0f && fps < 1.0f) {
+        m_target_fps = 1.0f;
+    } else {
+        m_target_fps = fps;
+    }
     // Note: LogWarn not available, using printf-style logging
     // LogWarn("Custom FPS Limiter: Target FPS set to %f", fps);
 }
