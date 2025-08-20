@@ -57,7 +57,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .key = "SpoofWindowFocus",
         .binding = &s_spoof_window_focus,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 0.f,
+        .default_value = 1.f,
         .label = "Spoof Window Focus",
         .section = "Display",
         .tooltip = "Spoof window focus state for applications that query focus status. Useful for games that change behavior based on focus state.",
@@ -96,25 +96,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
     });
 
-    // Suppress Move/Resize Delay
-    settings.push_back(new renodx::utils::settings::Setting{
-        .key = "SuppressMoveResizeDelay",
-        .binding = &s_suppress_move_resize_delay_sec,
-        .value_type = renodx::utils::settings::SettingValueType::FLOAT,
-        .default_value = 0.f,
-        .label = "Suppress Move/Resize Delay (seconds)",
-        .section = "Display",
-        .tooltip = "Delay before suppressing move/resize messages. During this time, messages are not suppressed to allow games to initialize properly.",
-        .min = 0.f,
-        .max = 10.f,
-        .format = "%.1f",
-        .on_change_value = [](float previous, float current){ 
-            std::ostringstream oss;
-            oss << "Suppress move/resize delay changed from " << previous << "s to " << current << "s";
-            LogInfo(oss.str().c_str());
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    });
+
 
     // Suppress Top Bar/Border Messages
     settings.push_back(new renodx::utils::settings::Setting{

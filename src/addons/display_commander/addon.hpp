@@ -172,7 +172,7 @@ extern float s_windowed_width;
 extern float s_windowed_height;
 extern float s_remove_top_bar;
 extern float s_suppress_move_resize_messages;
-extern float s_suppress_move_resize_delay_sec;
+
 extern float s_suppress_maximize;
 extern float s_resize_mode;
 extern float s_aspect_index;
