@@ -88,6 +88,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .section = "Display",
         .tooltip = "Suppress window move/resize messages that don't match our desired state. Prevents games from overriding window positioning.",
         .labels = {"Disabled", "Enabled"},
+        .is_enabled = []() { return false; }, // Disabled
         .on_change_value = [](float previous, float current){ 
             std::ostringstream oss;
             oss << "Suppress move/resize messages changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
@@ -108,6 +109,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .section = "Display",
         .tooltip = "Suppress window messages that would add title bars and borders. Prevents games from restoring unwanted window decorations. ⚠️ WARNING: This feature has bugs and is disabled by default.",
         .labels = {"Disabled", "Enabled"},
+        .is_enabled = []() { return false; }, // Disabled
         .on_change_value = [](float previous, float current){ 
             std::ostringstream oss;
             oss << "Suppress top bar/border messages changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
@@ -126,6 +128,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .section = "Display",
         .tooltip = "Suppress window maximize messages. Prevents games from maximizing their windows unexpectedly.",
         .labels = {"Disabled", "Enabled"},
+        .is_enabled = []() { return false; }, // Disabled
         .on_change_value = [](float previous, float current){ 
             std::ostringstream oss;
             oss << "Suppress maximize messages changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
