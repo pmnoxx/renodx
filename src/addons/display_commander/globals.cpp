@@ -24,7 +24,7 @@ float s_aspect_index = 4.f; // 21:9 ultrawide
 
 // Window alignment when repositioning is needed (0 = None, 1 = Top Left, 2 = Top Right, 3 = Bottom Left, 4 = Bottom Right, 5 = Center)
 float s_move_to_zero_if_out = 2.f; // default to top right
-float s_force_borderless = 1.f; // Force borderless mode enabled
+
 
 // Prevent Fullscreen
 float s_prevent_fullscreen = 0.f;

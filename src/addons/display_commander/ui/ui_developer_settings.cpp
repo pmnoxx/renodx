@@ -6,26 +6,14 @@
 namespace renodx::ui {
 
 void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
-    // Force Borderless (global)
-    settings.push_back(new renodx::utils::settings::Setting{
-        .key = "ForceBorderless",
-        .binding = &s_force_borderless,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f,
-        .label = "Force Borderless",
-        .section = "Display",
-        .tooltip = "Force window to be borderless. Useful for games that don't support borderless mode.",
-        .labels = {"Off", "On"},
-        .on_change_value = [](float previous, float current){ /* SetForceBorderless removed from proxy */ },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    });
+
 
     // Prevent Fullscreen (global)
     settings.push_back(new renodx::utils::settings::Setting{
         .key = "PreventFullscreen",
         .binding = &s_prevent_fullscreen,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Prevent Fullscreen",
         .section = "Display",
         .tooltip = "Prevent exclusive fullscreen; keep borderless/windowed for stability and HDR.",
@@ -69,7 +57,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .key = "SpoofWindowFocus",
         .binding = &s_spoof_window_focus,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Spoof Window Focus",
         .section = "Display",
         .tooltip = "Spoof window focus state for applications that query focus status. Useful for games that change behavior based on focus state.",
@@ -95,7 +83,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .key = "SuppressMoveResizeMessages",
         .binding = &s_suppress_move_resize_messages,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Suppress Move/Resize Messages",
         .section = "Display",
         .tooltip = "Suppress window move/resize messages that don't match our desired state. Prevents games from overriding window positioning.",
@@ -113,7 +101,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .key = "SuppressMoveResizeDelay",
         .binding = &s_suppress_move_resize_delay_sec,
         .value_type = renodx::utils::settings::SettingValueType::FLOAT,
-        .default_value = 1.f,
+        .default_value = 0.f,
         .label = "Suppress Move/Resize Delay (seconds)",
         .section = "Display",
         .tooltip = "Delay before suppressing move/resize messages. During this time, messages are not suppressed to allow games to initialize properly.",
@@ -133,7 +121,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
         .key = "SuppressTopBarBorderMessages",
         .binding = &s_remove_top_bar,
         .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
-        .default_value = 1.f, // Disabled by default due to bug
+        .default_value = 0.f, // Disabled by default due to bug
         .label = "Suppress Top Bar/Border Messages",
         .section = "Display",
         .tooltip = "Suppress window messages that would add title bars and borders. Prevents games from restoring unwanted window decorations. ⚠️ WARNING: This feature has bugs and is disabled by default.",

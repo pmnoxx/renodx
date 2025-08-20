@@ -178,7 +178,7 @@ extern float s_resize_mode;
 extern float s_aspect_index;
 // Window alignment when repositioning is needed (0 = None, 1 = Top Left, 2 = Top Right, 3 = Bottom Left, 4 = Bottom Right)
 extern float s_move_to_zero_if_out;
-extern float s_force_borderless;
+
 // Prevent Fullscreen
 extern float s_prevent_fullscreen;
 

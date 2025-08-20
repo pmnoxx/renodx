@@ -23,7 +23,7 @@ extern float s_windowed_width;
 extern float s_windowed_height;
 extern float s_resize_mode;
 extern float s_move_to_zero_if_out;
-extern float s_force_borderless;
+
 extern float s_nvapi_fullscreen_prevention;
 extern float s_audio_volume_percent;
 extern float s_audio_mute;
