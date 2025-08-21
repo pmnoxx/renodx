@@ -5,8 +5,7 @@
 #include "dxgi/dxgi_device_info.hpp"
 
 // Global variables
-// UI mode (0 = Basic, 1 = Developer)
-float s_ui_tab = 0.f; // Basic tab by default
+// UI mode removed - now using new tab system
 
 // Window settings
 float s_windowed_width = 3440.f; // 21:9 ultrawide width

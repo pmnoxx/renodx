@@ -14,7 +14,7 @@ void AddLatencyDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& 
         .label = "=== Latency Information ===",
         .section = "Performance",
         .tooltip = "Real-time latency and Reflex status information",
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
     });
     
     // Current Latency Display
@@ -37,7 +37,7 @@ void AddLatencyDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& 
             
             return false; // No value change
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
     });
     
     // PCL AV Latency Display (Most Important)
@@ -62,7 +62,7 @@ void AddLatencyDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& 
             
             return false; // No value change
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
     });
     
     // Reflex Status Display
@@ -91,7 +91,7 @@ void AddLatencyDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& 
             
             return false; // No value change
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
     });
 
     // CONTINUOUS RENDERING UI REMOVED - Focus spoofing is now handled by Win32 hooks
@@ -132,7 +132,7 @@ void AddLatencyDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& 
             
             return false; // No value change
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
     });
 }
 

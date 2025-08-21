@@ -22,7 +22,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings2::Setting*>& setti
             // The setting is handled by our event handler in reshade_events/fullscreen_prevention.cpp
             // We do NOT set the RenoDX variable to avoid conflicts
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
     });
 
     // Spoof Fullscreen State
@@ -49,7 +49,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings2::Setting*>& setti
             }
             LogInfo(oss.str().c_str());
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
     });
 
     // Spoof Window Focus
@@ -75,7 +75,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings2::Setting*>& setti
             }
             LogInfo(oss.str().c_str());
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
     });
 
 }

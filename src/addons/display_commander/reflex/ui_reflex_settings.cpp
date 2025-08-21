@@ -31,7 +31,7 @@ void AddReflexSettings(std::vector<renodx::utils::settings2::Setting*>& settings
             extern std::atomic<bool> g_reflex_settings_changed;
             ::g_reflex_settings_changed.store(true);
         },
-        .is_visible = []() { return is_basic_tab(s_ui_tab); }, // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(); }, // Show in Basic mode
     });
 
     // Reflex Low Latency Mode
@@ -50,7 +50,7 @@ void AddReflexSettings(std::vector<renodx::utils::settings2::Setting*>& settings
             extern std::atomic<bool> g_reflex_settings_changed;
             ::g_reflex_settings_changed.store(true);
         },
-        .is_visible = []() { return is_basic_tab(s_ui_tab) && s_reflex_enabled >= 0.5f; }, // Show when Reflex is enabled
+        .is_visible = []() { return is_basic_tab() && s_reflex_enabled >= 0.5f; }, // Show when Reflex is enabled
     });
 
     // Reflex Low Latency Boost
@@ -69,7 +69,7 @@ void AddReflexSettings(std::vector<renodx::utils::settings2::Setting*>& settings
             extern std::atomic<bool> g_reflex_settings_changed;
             ::g_reflex_settings_changed.store(true);
         },
-        .is_visible = []() { return is_basic_tab(s_ui_tab) && s_reflex_enabled >= 0.5f; }, // Show when Reflex is enabled
+        .is_visible = []() { return is_basic_tab() && s_reflex_enabled >= 0.5f; }, // Show when Reflex is enabled
     });
 
     // Reflex Use Markers
@@ -88,7 +88,7 @@ void AddReflexSettings(std::vector<renodx::utils::settings2::Setting*>& settings
             extern std::atomic<bool> g_reflex_settings_changed;
             ::g_reflex_settings_changed.store(true);
         },
-        .is_visible = []() { return is_basic_tab(s_ui_tab) && s_reflex_enabled >= 0.5f; }, // Show when Reflex is enabled
+        .is_visible = []() { return is_basic_tab() && s_reflex_enabled >= 0.5f; }, // Show when Reflex is enabled
     });
 
     // Reflex Debug Output (keep in developer tab)
@@ -101,7 +101,7 @@ void AddReflexSettings(std::vector<renodx::utils::settings2::Setting*>& settings
         .section = "Performance",
         .tooltip = "Enable or disable Reflex debug messages in the log.",
         .labels = {"Disabled", "Enabled"},
-        .is_visible = []() { return is_developer_tab(s_ui_tab) && s_reflex_enabled >= 0.5f; }, // Keep in Developer mode
+        .is_visible = []() { return is_developer_tab() && s_reflex_enabled >= 0.5f; }, // Keep in Developer mode
     });
 }
 

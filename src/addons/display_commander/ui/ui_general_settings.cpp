@@ -11,21 +11,8 @@ extern float s_background_feature_enabled; // Added this line
 namespace renodx::ui {
 
 void AddGeneralSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
-    // UI Mode selector
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "UITab",
-        .binding = &s_ui_tab,
-        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
-        .default_value = 0.f, // Basic mode by default
-        .label = "UI Tab",
-        .section = "General",
-        .tooltip = "Choose between Simple (minimal features), Display (desktop resolution override), Developer (all features), Device Info (DXGI device information), and Window Info (window creation details) modes.",
-        .labels = TAB_LABELS,
-        .min = 0.f,
-        .max = static_cast<float>(TAB_LABELS.size() - 1),
-        .is_visible = []() { return true; }, // Always visible
-    });
-
+    // UI Mode selector removed - now using new tab system
+    
     // Continuous monitoring toggle
     settings.push_back(new renodx::utils::settings2::Setting{
         .key = "ContinuousMonitoring",
@@ -36,7 +23,7 @@ void AddGeneralSettings(std::vector<renodx::utils::settings2::Setting*>& setting
         .section = "Display",
         .tooltip = "Continuously monitor and automatically fix window position, size, and style every second.",
         .labels = {"Off", "On"},
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
     });
 
     // Prevent Always On Top toggle
@@ -49,7 +36,7 @@ void AddGeneralSettings(std::vector<renodx::utils::settings2::Setting*>& setting
         .section = "Display",
         .tooltip = "Prevents windows from becoming always on top, even if they are moved or resized.",
         .labels = {"Off", "On"},
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
         // .on_change_value removed due to linter errors, functionality handled by continuous monitoring
     });
 
@@ -65,7 +52,7 @@ void AddGeneralSettings(std::vector<renodx::utils::settings2::Setting*>& setting
         .section = "Display",
         .tooltip = "Creates a black background window behind the game when it doesn't cover the full screen.",
         .labels = {"Off", "On"},
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Only show in Developer mode
     });
 
     // CONTINUOUS RENDERING UI SETTINGS REMOVED - Focus spoofing is now handled by Win32 hooks

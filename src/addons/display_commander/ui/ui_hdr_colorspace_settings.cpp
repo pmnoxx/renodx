@@ -15,7 +15,7 @@ void AddHdrColorspaceSettings(std::vector<renodx::utils::settings2::Setting*>& s
         .section = "NVAPI",
         .tooltip = "Automatically fix HDR10 colorspace when swapchain format is RGB10A2 and colorspace is currently sRGB. Only works when the game is using sRGB colorspace.",
         .labels = {"Off", "On"},
-        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Show in Developer mode
+        .is_visible = []() { return is_developer_tab(); }, // Show in Developer mode
     });
 }
 

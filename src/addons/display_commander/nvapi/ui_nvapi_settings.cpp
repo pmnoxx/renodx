@@ -20,7 +20,7 @@ void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
         .section = "NVAPI",
         .tooltip = "Use NVAPI to prevent fullscreen mode at the driver level.",
         .labels = {"Disabled", "Enabled"},
-        .is_visible = []() { return is_developer_tab(s_ui_tab); },
+        .is_visible = []() { return is_developer_tab(); },
     });
 
     // NVAPI HDR Logging
@@ -39,7 +39,7 @@ void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
                 std::thread(::RunBackgroundNvapiHdrMonitor).detach();
             }
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); },
+        .is_visible = []() { return is_developer_tab(); },
     });
 
     // NVAPI Debug Information Display
@@ -132,7 +132,7 @@ void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
             
             return false;
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); },
+        .is_visible = []() { return is_developer_tab(); },
     });
 
     // Force NVAPI HDR10 (UHDA)
@@ -162,7 +162,7 @@ void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
                 }
             }).detach();
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); },
+        .is_visible = []() { return is_developer_tab(); },
     });
 
     // Single-shot NVAPI HDR log (button)
@@ -175,7 +175,7 @@ void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
             std::thread([](){ LogNvapiHdrOnce(); }).detach();
             return false;
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); },
+        .is_visible = []() { return is_developer_tab(); },
     });
 
     // Dump full NVAPI HDR details
@@ -202,7 +202,7 @@ void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
             }).detach();
             return false;
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); },
+        .is_visible = []() { return is_developer_tab(); },
     });
 
     // HDR Log Interval
@@ -217,7 +217,7 @@ void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
         .min = 1.f,
         .max = 120.f,
         .format = "%d s",
-        .is_visible = []() { return is_developer_tab(s_ui_tab) && s_nvapi_hdr_logging >= 0.5f; },
+        .is_visible = []() { return is_developer_tab() && s_nvapi_hdr_logging >= 0.5f; },
     });
 
     // NVAPI Debug Button
@@ -282,7 +282,7 @@ void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
             
             return false;
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); },
+        .is_visible = []() { return is_developer_tab(); },
     });
 }
 

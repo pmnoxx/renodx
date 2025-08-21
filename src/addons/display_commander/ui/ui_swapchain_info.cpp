@@ -78,7 +78,7 @@ void AddSwapchainInfoSettings(std::vector<renodx::utils::settings2::Setting*>& s
             
             return false;
         },
-        .is_visible = []() { return is_swapchain_tab(s_ui_tab); },
+        .is_visible = []() { return is_swapchain_tab(); },
     });
 
     // Adapter Information Section
@@ -165,7 +165,7 @@ void AddSwapchainInfoSettings(std::vector<renodx::utils::settings2::Setting*>& s
             
             return false;
         },
-        .is_visible = []() { return is_swapchain_tab(s_ui_tab); },
+        .is_visible = []() { return is_swapchain_tab(); },
     });
 }
 

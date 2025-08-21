@@ -186,7 +186,7 @@ void AddWindowInfoSettings(std::vector<renodx::utils::settings2::Setting*>& sett
             
             return true;
         },
-        .is_visible = []() { return is_window_info_tab(s_ui_tab); },
+        .is_visible = []() { return is_window_info_tab(); },
     });
 }
 

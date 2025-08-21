@@ -193,7 +193,7 @@ void AddDxgiDeviceInfoSettings(std::vector<renodx::utils::settings2::Setting*>& 
 
             return false;
         },
-        .is_visible = []() { return is_device_tab(s_ui_tab); }, // Show only in Device Info mode
+        .is_visible = []() { return is_device_tab(); }, // Show only in Device Info mode
     });
 }
 

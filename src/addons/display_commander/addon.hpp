@@ -109,8 +109,7 @@ struct GlobalWindowState {
 };
 
 // Global variables (extern declarations)
-// UI mode (0 = Basic, 1 = Developer)
-extern float s_ui_tab;
+// UI mode removed - now using new tab system
 
 // Reflex settings
 extern float s_reflex_enabled;

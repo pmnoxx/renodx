@@ -8,14 +8,15 @@
 
 #include "ui_hdr_colorspace_settings.hpp"
 #include "../nvapi/ui_nvapi_settings.hpp"
-#include "ui_device_info.hpp"
-#include "ui_window_info.hpp"
+// ui_device_info.hpp removed - moved to new UI system
+// ui_window_info.hpp removed - moved to new UI system
 #include "../reflex/ui_reflex_settings.hpp"
 #include "ui_latency_display.hpp"
-#include "ui_swapchain_info.hpp"
-#include "../dxgi/ui_dxgi_device_info.hpp"
-#include "../dxgi/ui_dxgi_device_info_detailed.hpp"
-#include "../dxgi/ui_dxgi_composition_info.hpp"
+// ui_swapchain_info.hpp removed - moved to new UI system
+// ../dxgi/ui_dxgi_device_info.hpp removed - moved to new UI system
+// ../dxgi/ui_dxgi_device_info_detailed.hpp removed - moved to new UI system
+// ../dxgi/ui_dxgi_composition_info.hpp removed - moved to new UI system
+#include "new_ui/new_ui.hpp"
 
 #include "../renodx/settings.hpp"
 
@@ -34,6 +35,9 @@ void InitializeUISettings() {
     
     // Clear any existing settings to prevent duplicates
     settings.clear();
+    
+    // Add ImGui tabs here, as ::CUSTOM element type
+    new_ui::AddNewUISettings(settings);              // New ImGui-based UI system with tabs
     
     // ============================================================================
     // SIMPLE TAB (0) - Basic settings for everyday use
@@ -56,20 +60,17 @@ void InitializeUISettings() {
     // ============================================================================
     // DEVICE INFO TAB (2) - Graphics device information
     // ============================================================================
-    renodx::ui::AddDeviceInfoSettings(settings);     // Basic device information
-    renodx::ui::AddDxgiDeviceInfoSettings(settings); // DXGI device details
-    renodx::ui::AddDxgiDeviceInfoDetailedSettings(settings); // Detailed DXGI information
+    // Moved to new UI system - no longer using old settings
     
     // ============================================================================
     // WINDOW INFO TAB (3) - Window debugging and state
     // ============================================================================
-    renodx::ui::AddWindowInfoSettings(settings);     // Window state and debugging info
+    // Moved to new UI system - no longer using old settings
     
     // ============================================================================
     // SWAPCHAIN TAB (4) - Swapchain and composition information
     // ============================================================================
-    renodx::ui::AddSwapchainInfoSettings(settings);  // Swapchain and adapter info
-    renodx::ui::AddDxgiCompositionInfoSettings(settings); // DXGI composition details
+    // Moved to new UI system - no longer using old settings
     
     // Mark as initialized
     ui_settings_initialized = true;

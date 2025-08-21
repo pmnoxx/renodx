@@ -56,7 +56,7 @@ void AddDeviceInfoSettings(std::vector<renodx::utils::settings2::Setting*>& sett
             
             return true;
         },
-        .is_visible = []() { return is_device_tab(s_ui_tab); }
+        .is_visible = []() { return is_device_tab(); }
     });
 
     // Refresh Device Info Button
@@ -73,7 +73,7 @@ void AddDeviceInfoSettings(std::vector<renodx::utils::settings2::Setting*>& sett
             LogInfo("Device information refreshed");
             return true;
         },
-        .is_visible = []() { return is_device_tab(s_ui_tab); }
+        .is_visible = []() { return is_device_tab(); }
     });
 
     // Device Debug Mode
@@ -93,7 +93,7 @@ void AddDeviceInfoSettings(std::vector<renodx::utils::settings2::Setting*>& sett
                 LogInfo("Device debug mode disabled");
             }
         },
-        .is_visible = []() { return is_device_tab(s_ui_tab); }
+        .is_visible = []() { return is_device_tab(); }
     });
 }
 

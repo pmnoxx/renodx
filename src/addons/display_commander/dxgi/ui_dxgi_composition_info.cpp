@@ -79,7 +79,7 @@ void AddDxgiCompositionInfoSettings(std::vector<renodx::utils::settings2::Settin
             
             return false;
         },
-        .is_visible = []() { return is_developer_tab(s_ui_tab); } // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(); } // Only show in Developer mode
     });
 }
 

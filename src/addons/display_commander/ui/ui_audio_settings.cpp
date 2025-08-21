@@ -31,7 +31,7 @@ void AddAudioSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
                 LogWarn(oss.str().c_str());
             }
         },
-        .is_visible = []() { return is_basic_tab(s_ui_tab); }, // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(); }, // Show in Basic mode
     });
 
     // Mute (manual)
@@ -58,7 +58,7 @@ void AddAudioSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
                 LogWarn(oss.str().c_str());
             }
         },
-        .is_visible = []() { return is_basic_tab(s_ui_tab); }, // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(); }, // Show in Basic mode
     });
 
     // Mute in Background (placed after Mute; disabled if Mute is ON)
@@ -85,7 +85,7 @@ void AddAudioSettings(std::vector<renodx::utils::settings2::Setting*>& settings)
                 }
             }
         },
-        .is_visible = [](){ return is_basic_tab(s_ui_tab); }, // Show in Basic mode
+        .is_visible = [](){ return is_basic_tab(); }, // Show in Basic mode
     });
 
 
