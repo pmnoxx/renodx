@@ -147,7 +147,7 @@ static Settings* settings = nullptr;
 
 #define RENODX_JOIN_MACRO(x, y) x##y
 
-#define AddDebugSetting(injection, name)                  \
+#define AddDebugSetting2(injection, name)                  \
   new renodx::utils::settings2::Setting {                  \
     .key = "debug" #name,                                 \
     .binding = &RENODX_JOIN_MACRO(injection.debug, name), \
