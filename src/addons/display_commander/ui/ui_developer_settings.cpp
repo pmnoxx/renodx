@@ -22,7 +22,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings2::Setting*>& setti
             // The setting is handled by our event handler in reshade_events/fullscreen_prevention.cpp
             // We do NOT set the RenoDX variable to avoid conflicts
         },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
     });
 
     // Spoof Fullscreen State
@@ -49,7 +49,7 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings2::Setting*>& setti
             }
             LogInfo(oss.str().c_str());
         },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
     });
 
     // Spoof Window Focus
@@ -75,67 +75,9 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings2::Setting*>& setti
             }
             LogInfo(oss.str().c_str());
         },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_tab); }, // Only show in Developer mode
     });
 
-    // Suppress Move/Resize Messages
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "SuppressMoveResizeMessages",
-        .binding = &s_suppress_move_resize_messages,
-        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Suppress Move/Resize Messages",
-        .section = "Display",
-        .tooltip = "Suppress window move/resize messages that don't match our desired state. Prevents games from overriding window positioning.",
-        .labels = {"Disabled", "Enabled"},
-        .is_enabled = []() { return false; }, // Disabled
-        .on_change_value = [](float previous, float current){ 
-            std::ostringstream oss;
-            oss << "Suppress move/resize messages changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
-            LogInfo(oss.str().c_str());
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    });
-
-
-
-    // Suppress Top Bar/Border Messages
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "SuppressTopBarBorderMessages",
-        .binding = &s_remove_top_bar,
-        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
-        .default_value = 0.f, // Disabled by default due to bug
-        .label = "Suppress Top Bar/Border Messages",
-        .section = "Display",
-        .tooltip = "Suppress window messages that would add title bars and borders. Prevents games from restoring unwanted window decorations. ⚠️ WARNING: This feature has bugs and is disabled by default.",
-        .labels = {"Disabled", "Enabled"},
-        .is_enabled = []() { return false; }, // Disabled
-        .on_change_value = [](float previous, float current){ 
-            std::ostringstream oss;
-            oss << "Suppress top bar/border messages changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
-            LogInfo(oss.str().c_str());
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    });
-
-    // Suppress Maximize Messages
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "SuppressMaximizeMessages",
-        .binding = &s_suppress_maximize,
-        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
-        .default_value = 1.f,
-        .label = "Suppress Maximize Messages",
-        .section = "Display",
-        .tooltip = "Suppress window maximize messages. Prevents games from maximizing their windows unexpectedly.",
-        .labels = {"Disabled", "Enabled"},
-        .is_enabled = []() { return false; }, // Disabled
-        .on_change_value = [](float previous, float current){ 
-            std::ostringstream oss;
-            oss << "Suppress maximize messages changed from " << (previous >= 0.5f ? "enabled" : "disabled") << " to " << (current >= 0.5f ? "enabled" : "disabled");
-            LogInfo(oss.str().c_str());
-        },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
-    });
 }
 
 } // namespace renodx::ui

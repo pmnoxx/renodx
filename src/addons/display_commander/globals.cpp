@@ -6,7 +6,7 @@
 
 // Global variables
 // UI mode (0 = Basic, 1 = Developer)
-float s_ui_mode = 0.f; // Basic mode by default
+float s_ui_tab = 0.f; // Basic tab by default
 
 // Window settings
 float s_windowed_width = 3440.f; // 21:9 ultrawide width
@@ -67,9 +67,6 @@ float s_prevent_windows_minimize = 0.f;
 // Prevent always on top behavior
 float s_prevent_always_on_top = 1.f; // Prevent games from staying on top by default
 
-// Block input when in background
-float s_block_input_in_background = 1.f; // Block input when in background by default
-
 // Background feature - show black window behind game when not fullscreen
 float s_background_feature_enabled = 0.f; // Disabled by default
 
@@ -97,7 +94,6 @@ float s_reflex_debug_output = 1.f; // Debug output enabled by default
 std::atomic<int> g_comp_query_counter{0};
 std::atomic<int> g_comp_last_logged{0};
 std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr{nullptr};
-std::atomic<IndependentFlipFailures*> g_if_failures{nullptr};
 std::atomic<uint64_t> g_init_apply_generation{0};
 std::chrono::steady_clock::time_point g_attach_time{std::chrono::steady_clock::now()};
 std::atomic<HWND> g_last_swapchain_hwnd{nullptr};
@@ -161,21 +157,3 @@ std::vector<MonitorInfo> g_monitors;
 reshade::api::color_space g_current_colorspace = reshade::api::color_space::unknown;
 std::string g_hdr10_override_status = "Not applied";
 std::string g_hdr10_override_timestamp = "Never";
-
-// Function implementations
-void IndependentFlipFailures::reset() {
-  swapchain_null.store(false);
-  device_null.store(false);
-  non_dxgi_api.store(false);
-  swapchain_media_failed.store(false);
-  frame_stats_failed.store(false);
-  not_flip_model.store(false);
-  backbuffer_size_mismatch.store(false);
-  window_size_mismatch.store(false);
-  window_not_at_origin.store(false);
-  window_layered.store(false);
-  window_topmost.store(false);
-  window_maximized.store(false);
-  window_minimized.store(false);
-  hwnd_null.store(false);
-}

@@ -70,7 +70,7 @@ void AddWindowControls(std::vector<renodx::utils::settings2::Setting*>& settings
             
             return changed;
         },
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Only show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_tab); }, // Only show in Basic mode
     });
 }
 

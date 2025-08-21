@@ -15,7 +15,7 @@ namespace renodx::utils::settings2 {
 extern float s_reflex_debug_output;
 extern float s_remove_top_bar;
 extern float s_suppress_maximize;
-extern float s_ui_mode;
+extern float s_ui_tab;
 extern float s_auto_apply_enabled;
 extern float s_auto_apply_delay_sec;
 extern float s_windowed_width;
@@ -31,10 +31,10 @@ extern float s_fps_limit_background;
 extern float s_window_info_display;
 
 // Helper functions for tab visibility
-inline bool is_basic_tab(float ui_mode);
-inline bool is_developer_tab(float ui_mode);
-inline bool is_device_tab(float ui_mode);
-inline bool is_window_info_tab(float ui_mode);
+inline bool is_basic_tab(float ui_tab);
+inline bool is_developer_tab(float ui_tab);
+inline bool is_device_tab(float ui_tab);
+inline bool is_window_info_tab(float ui_tab);
 
 // Settings vector declaration
 extern std::vector<renodx::utils::settings2::Setting*> settings;

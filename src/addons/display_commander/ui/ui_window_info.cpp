@@ -186,44 +186,7 @@ void AddWindowInfoSettings(std::vector<renodx::utils::settings2::Setting*>& sett
             
             return true;
         },
-        .is_visible = []() { return is_window_info_tab(s_ui_mode); },
-    });
-
-    // Refresh Window Info Button
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "RefreshWindowInfo",
-        .binding = nullptr,
-        .value_type = renodx::utils::settings2::SettingValueType::BUTTON,
-        .default_value = 0.f,
-        .label = "Refresh Window Info",
-        .section = "Window Info",
-        .tooltip = "Refresh window information display",
-        .on_click = []() -> bool {
-            // Force refresh of window information
-            LogInfo("Window information refreshed");
-            return true;
-        },
-        .is_visible = []() { return is_window_info_tab(s_ui_mode); },
-    });
-
-    // Window Debug Mode
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "WindowDebugMode",
-        .binding = nullptr,
-        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Window Debug Mode",
-        .section = "Window Info",
-        .tooltip = "Enable detailed window debugging information",
-        .labels = {"Disabled", "Enabled"},
-        .on_change_value = [](float previous, float current) {
-            if (current >= 0.5f) {
-                LogInfo("Window debug mode enabled");
-            } else {
-                LogInfo("Window debug mode disabled");
-            }
-        },
-        .is_visible = []() { return is_window_info_tab(s_ui_mode); }
+        .is_visible = []() { return is_window_info_tab(s_ui_tab); },
     });
 }
 

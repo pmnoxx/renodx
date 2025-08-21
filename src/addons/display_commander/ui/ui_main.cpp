@@ -16,7 +16,6 @@
 #include "../dxgi/ui_dxgi_device_info.hpp"
 #include "../dxgi/ui_dxgi_device_info_detailed.hpp"
 #include "../dxgi/ui_dxgi_composition_info.hpp"
-#include "ui_independent_flip_failures.hpp"
 
 #include "../renodx/settings.hpp"
 
@@ -36,35 +35,41 @@ void InitializeUISettings() {
     // Clear any existing settings to prevent duplicates
     settings.clear();
     
-    // Add all settings sections
-    renodx::ui::AddGeneralSettings(settings);
-    renodx::ui::AddDisplaySettings(settings);
-    renodx::ui::AddDisplayTabSettings(settings);
-    renodx::ui::AddAudioSettings(settings);
-    renodx::ui::AddWindowControls(settings);
-    renodx::ui::AddDeveloperSettings(settings);
-
-    renodx::ui::AddHdrColorspaceSettings(settings);
-    renodx::ui::AddNvapiSettings(settings);
-    renodx::ui::AddDeviceInfoSettings(settings);
-    renodx::ui::AddWindowInfoSettings(settings);
-    renodx::ui::AddReflexSettings(settings);
-    renodx::ui::AddLatencyDisplaySettings(settings);
-    renodx::ui::AddSwapchainInfoSettings(settings);
+    // ============================================================================
+    // SIMPLE TAB (0) - Basic settings for everyday use
+    // ============================================================================
+    renodx::ui::AddGeneralSettings(settings);        // UI Tab selector (always visible)
+    renodx::ui::AddDisplaySettings(settings);        // Basic display controls
+    renodx::ui::AddDisplayTabSettings(settings);     // Display tab specific settings
+    renodx::ui::AddAudioSettings(settings);          // Audio volume and mute controls
+    renodx::ui::AddWindowControls(settings);         // Minimize/Restore buttons
     
-    // Add DXGI device info settings
-    renodx::ui::AddDxgiDeviceInfoSettings(settings);
+    // ============================================================================
+    // DEVELOPER TAB (1) - Advanced features and debugging
+    // ============================================================================
+    renodx::ui::AddDeveloperSettings(settings);      // Developer-specific controls
+    renodx::ui::AddHdrColorspaceSettings(settings);  // HDR and colorspace settings
+    renodx::ui::AddNvapiSettings(settings);          // NVAPI features and HDR logging
+    renodx::ui::AddReflexSettings(settings);         // NVIDIA Reflex settings
+    renodx::ui::AddLatencyDisplaySettings(settings); // Latency monitoring display
     
-    // Add detailed DXGI device info settings
-    renodx::ui::AddDxgiDeviceInfoDetailedSettings(settings);
+    // ============================================================================
+    // DEVICE INFO TAB (2) - Graphics device information
+    // ============================================================================
+    renodx::ui::AddDeviceInfoSettings(settings);     // Basic device information
+    renodx::ui::AddDxgiDeviceInfoSettings(settings); // DXGI device details
+    renodx::ui::AddDxgiDeviceInfoDetailedSettings(settings); // Detailed DXGI information
     
-    // Add DXGI composition info settings
-    renodx::ui::AddDxgiCompositionInfoSettings(settings);
+    // ============================================================================
+    // WINDOW INFO TAB (3) - Window debugging and state
+    // ============================================================================
+    renodx::ui::AddWindowInfoSettings(settings);     // Window state and debugging info
     
-    // Add Independent Flip failures settings
-    renodx::ui::AddIndependentFlipFailuresSettings(settings);
-    
-
+    // ============================================================================
+    // SWAPCHAIN TAB (4) - Swapchain and composition information
+    // ============================================================================
+    renodx::ui::AddSwapchainInfoSettings(settings);  // Swapchain and adapter info
+    renodx::ui::AddDxgiCompositionInfoSettings(settings); // DXGI composition details
     
     // Mark as initialized
     ui_settings_initialized = true;

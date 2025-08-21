@@ -20,7 +20,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
         .default_value = 3.f, // default to 1920
         .label = "Window Width",
         .section = "Display",
-        .labels = {"Current Monitor", "1280", "1366", "1600", "1920", "2560", "3440", "3840"},
+        .labels = {"Current Display", "1280", "1366", "1600", "1920", "2560", "3440", "3840"},
         .parse = [](float index) {
           int i = static_cast<int>(index);
           i = (std::max)(i, 0);
@@ -34,7 +34,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
           
           return static_cast<float>(WIDTH_OPTIONS[i]);
         },
-        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_tab); } // Show in Basic mode
     });
 
     // Window height preset slider with labels
@@ -45,7 +45,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
         .default_value = 2.f, // default to 1080
         .label = "Window Height",
         .section = "Display",
-        .labels = {"Current Monitor", "720", "900", "1080", "1200", "1440", "1600", "2160"},
+        .labels = {"Current Display", "720", "900", "1080", "1200", "1440", "1600", "2160"},
         .is_enabled = [](){ return s_resize_mode < 0.5f; },
         .parse = [](float index) {
           int i = static_cast<int>(index);
@@ -60,7 +60,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
           
           return static_cast<float>(HEIGHT_OPTIONS[i]);
         },
-        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_tab); } // Show in Basic mode
     });
 
     // Resize mode: width/height vs aspect ratio
@@ -73,7 +73,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
         .section = "Display",
         .tooltip = "Choose between manual width/height or aspect ratio-based resizing.",
         .labels = {"Width/Height", "Aspect Ratio"},
-        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_tab); } // Show in Basic mode
     });
 
     // Aspect Ratio (only when in Aspect mode)
@@ -88,7 +88,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
         .labels = {"3:2", "4:3", "16:10", "16:9", "19:9", "19.5:9", "21:9", "32:9"},
         .min = 0.f,
         .max = 7.f,
-        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_tab); } // Show in Basic mode
     });
 
     // Target Monitor
@@ -101,7 +101,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
         .section = "Display",
         .tooltip = "Choose which monitor to apply size/pos to. 'Auto' uses the current window monitor.",
         .labels = MakeMonitorLabels(),
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_tab); }, // Show in Basic mode
     });
 
     // Window alignment when repositioning is needed
@@ -114,7 +114,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
         .section = "Display",
         .tooltip = "Choose how to align the window when repositioning is needed. 1=Top Left, 2=Top Right, 3=Bottom Left, 4=Bottom Right, 5=Center.",
         .labels = {"None", "Top Left", "Top Right", "Bottom Left", "Bottom Right", "Center"},
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_tab); }, // Show in Basic mode
     });
 
     // Apply Changes button
@@ -132,7 +132,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
             LogInfo("Apply Changes button clicked - forcing immediate window update");
             return true;
         },
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_tab); }, // Show in Basic mode
     });
 
     
@@ -183,7 +183,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
             s_fps_limit = g_default_fps_limit.load();
             return false;
         },
-        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_tab); } // Show in Basic mode
     });
 
 
@@ -238,7 +238,7 @@ void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& setting
                 }
             }
         },
-        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Basic mode
+        .is_visible = []() { return is_basic_tab(s_ui_tab); } // Show in Basic mode
     });
 
 }

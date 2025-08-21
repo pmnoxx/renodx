@@ -1,6 +1,6 @@
 #include "ui_dxgi_composition_info.hpp"
 #include "../ui/ui_common.hpp"
-#include "../../../utils/settings.hpp"
+#include "../renodx/settings.hpp"
 #include "../utils.hpp"
 #include <windows.h>
 
@@ -76,42 +76,10 @@ void AddDxgiCompositionInfoSettings(std::vector<renodx::utils::settings2::Settin
             // Display HDR10 override status
             ImGui::Text("HDR10 Colorspace Override: %s (Last: %s)", g_hdr10_override_status.c_str(), g_hdr10_override_timestamp.c_str());
             
-            // Display current window position and size
-            if (hwnd != nullptr) {
-                RECT wr{};
-                RECT cr{};
-                if (GetWindowRect(hwnd, &wr) != FALSE && GetClientRect(hwnd, &cr) != FALSE) {
-                    int window_width = wr.right - wr.left;
-                    int window_height = wr.bottom - wr.top;
-                    int client_width = cr.right - cr.left;
-                    int client_height = cr.bottom - cr.top;
-                    
-                    // Convert client coordinates to screen coordinates
-                    POINT client_origin = {cr.left, cr.top};
-                    ClientToScreen(hwnd, &client_origin);
-                    
-                    ImGui::Text("Window Frame: %dx%d at (%ld, %ld)", window_width, window_height, wr.left, wr.top);
-                    ImGui::Text("Client Area: %dx%d at (%ld, %ld)", client_width, client_height, client_origin.x, client_origin.y);
-                    ImGui::Text("Decorations: %dx%d offset", window_width - client_width, window_height - client_height);
-                }
-                
-                // Display current monitor resolution
-                HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-                if (hmon != nullptr) {
-                    MONITORINFOEXW mi{};
-                    mi.cbSize = sizeof(mi);
-                    if (GetMonitorInfoW(hmon, &mi) != FALSE) {
-                        int monitor_width = mi.rcMonitor.right - mi.rcMonitor.left;
-                        int monitor_height = mi.rcMonitor.bottom - mi.rcMonitor.top;
-                        ImGui::Text("Monitor: %dx%d at (%ld, %ld)", 
-                                   monitor_width, monitor_height, mi.rcMonitor.left, mi.rcMonitor.top);
-                    }
-                }
-            }
             
             return false;
         },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); } // Only show in Developer mode
+        .is_visible = []() { return is_developer_tab(s_ui_tab); } // Only show in Developer mode
     });
 }
 

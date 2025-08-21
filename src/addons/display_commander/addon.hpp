@@ -108,30 +108,9 @@ struct GlobalWindowState {
   }
 };
 
-struct IndependentFlipFailures {
-  std::atomic<bool> swapchain_null{false};
-  std::atomic<bool> device_null{false};
-  std::atomic<bool> non_dxgi_api{false};
-  std::atomic<bool> swapchain_media_failed{false};
-  std::atomic<bool> frame_stats_failed{false};
-  std::atomic<bool> not_flip_model{false};
-  std::atomic<bool> backbuffer_size_mismatch{false};
-  std::atomic<bool> window_size_mismatch{false};
-  std::atomic<bool> window_not_at_origin{false};
-  std::atomic<bool> window_layered{false};
-  std::atomic<bool> window_topmost{false};
-  std::atomic<bool> window_maximized{false};
-  std::atomic<bool> window_minimized{false};
-  std::atomic<bool> hwnd_null{false};
-  
-  void reset();
-};
-
-// Note: AspectRatio and MonitorInfo structs are defined in utils.hpp
-
 // Global variables (extern declarations)
 // UI mode (0 = Basic, 1 = Developer)
-extern float s_ui_mode;
+extern float s_ui_tab;
 
 // Reflex settings
 extern float s_reflex_enabled;
@@ -179,7 +158,6 @@ extern std::atomic<int> g_comp_query_counter;
 extern std::atomic<int> g_comp_last_logged;
 // Last known swapchain pointer (for composition state queries)
 extern std::atomic<reshade::api::swapchain*> g_last_swapchain_ptr;
-extern std::atomic<IndependentFlipFailures*> g_if_failures;
 extern std::atomic<uint64_t> g_init_apply_generation;
 extern std::atomic<reshade::api::effect_runtime*> g_reshade_runtime;
 extern std::chrono::steady_clock::time_point g_attach_time;
@@ -234,7 +212,6 @@ const char* DxgiBypassModeToString(DxgiBypassMode mode);
 bool SetIndependentFlipState(reshade::api::swapchain* swapchain);
 void ApplyWindowChange(HWND hwnd, const char* reason = "unknown", bool force_apply = false);
 bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h);
-void LogIndependentFlipConditions(reshade::api::swapchain* swapchain);
 
 // Continuous monitoring functions
 void StartContinuousMonitoring();

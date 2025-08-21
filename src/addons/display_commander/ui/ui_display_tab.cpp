@@ -184,7 +184,7 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& sett
         .section = "Display",
         .tooltip = "Interactive monitor, resolution, and refresh rate selection with real-time updates.",
         .on_draw = HandleMonitorSettingsUI,
-        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Simple and Display modes
+        .is_visible = []() { return is_basic_tab(s_ui_tab); } // Show in Simple and Display modes
     });
 
     // Current Display Info
@@ -201,7 +201,7 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& sett
             ImGui::TextUnformatted(display_info.c_str());
             return false; // No value change
         },
-        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Simple and Display modes
+        .is_visible = []() { return is_basic_tab(s_ui_tab); } // Show in Simple and Display modes
     });
 
 }

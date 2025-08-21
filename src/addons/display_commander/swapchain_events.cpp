@@ -77,7 +77,6 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
   }
   
   // Log Independent Flip conditions to update failure tracking
-  LogIndependentFlipConditions(swapchain);
   LogDebug(resize ? "Schedule auto-apply on swapchain init (resize)"
                   : "Schedule auto-apply on swapchain init");
   

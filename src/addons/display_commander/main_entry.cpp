@@ -86,14 +86,6 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       reshade::register_event<reshade::addon_event::end_render_pass>(OnEndRenderPass);
       break;
     case DLL_PROCESS_DETACH:
-      // Clean up the failure tracking structure
-      IndependentFlipFailures* failures = g_if_failures.load();
-      if (failures != nullptr) {
-        delete failures;
-        g_if_failures.store(nullptr);
-      }
-      
-
       
             // Clean up continuous monitoring if it's running
       StopContinuousMonitoring();
