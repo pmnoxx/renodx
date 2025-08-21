@@ -12,7 +12,6 @@
 #include "ui_window_info.hpp"
 #include "../reflex/ui_reflex_settings.hpp"
 #include "ui_latency_display.hpp"
-#include "ui_debug_settings.hpp"
 #include "ui_swapchain_info.hpp"
 #include "../dxgi/ui_dxgi_device_info.hpp"
 #include "../dxgi/ui_dxgi_device_info_detailed.hpp"
@@ -51,7 +50,6 @@ void InitializeUISettings() {
     renodx::ui::AddWindowInfoSettings(settings);
     renodx::ui::AddReflexSettings(settings);
     renodx::ui::AddLatencyDisplaySettings(settings);
-    renodx::ui::AddDebugSettings(settings);
     renodx::ui::AddSwapchainInfoSettings(settings);
     
     // Add DXGI device info settings
