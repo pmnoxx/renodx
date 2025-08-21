@@ -92,6 +92,10 @@ void LogWarn(const char* msg) {
     reshade::log::message(reshade::log::level::warning, msg); 
 }
 
+void LogError(const char* msg) { 
+    reshade::log::message(reshade::log::level::error, msg); 
+}
+
 void LogDebug(const std::string& s) { 
     reshade::log::message(reshade::log::level::debug, s.c_str()); 
 }

@@ -36,6 +36,7 @@ extern const AspectRatio ASPECT_OPTIONS[];
 RECT RectFromWH(int width, int height);
 void LogInfo(const char* msg);
 void LogWarn(const char* msg);
+void LogError(const char* msg);
 void LogDebug(const std::string& s);
 std::string FormatLastError();
 // Window state detection
