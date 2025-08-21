@@ -106,9 +106,9 @@ void AddWindowInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
                 // Get current global window state (already declared in addon.hpp)
                 
                 ImGui::Text("Current State:");
-                ImGui::Text("  Is Maximized: %s", g_window_state.is_maximized ? "YES" : "No");
-                ImGui::Text("  Is Minimized: %s", g_window_state.is_minimized ? "YES" : "No");
-                ImGui::Text("  Is Restored: %s", g_window_state.is_restored ? "YES" : "No");
+                ImGui::Text("  Is Maximized: %s", g_window_state.show_cmd == SW_SHOWMAXIMIZED ? "YES" : "No");
+                ImGui::Text("  Is Minimized: %s", g_window_state.show_cmd == SW_SHOWMINIMIZED ? "YES" : "No");
+                ImGui::Text("  Is Restored: %s", g_window_state.show_cmd == SW_SHOWNORMAL ? "YES" : "No");
                 
                 // Additional window properties that affect mouse behavior
                 bool is_topmost = (GetWindowLongPtr(hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;

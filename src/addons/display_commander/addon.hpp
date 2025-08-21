@@ -110,9 +110,10 @@ struct GlobalWindowState {
   std::string reason = "unknown";
   
   // Window state detection
-  bool is_maximized = false;
-  bool is_minimized = false;
-  bool is_restored = false;
+ // bool is_maximized = false;
+ // bool is_minimized = false;
+//  bool is_restored = false;
+  int show_cmd = 0;
   
   void reset() {
     desired_width = 0;
@@ -128,9 +129,9 @@ struct GlobalWindowState {
     reason = "unknown";
     
     // Reset window state detection
-    is_maximized = false;
-    is_minimized = false;
-    is_restored = false;
+   // is_maximized = false;
+  //  is_minimized = false;
+   // is_restored = false;
   }
 };
 
