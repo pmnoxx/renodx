@@ -86,6 +86,8 @@ struct GlobalWindowState {
   bool needs_resize = false;
   bool needs_move = false;
   bool style_changed = false;
+  int new_style = 0;
+  int new_ex_style = 0;
   WindowStyleMode style_mode = WindowStyleMode::BORDERLESS;
   std::string reason = "unknown";
   
