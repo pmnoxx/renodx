@@ -2,7 +2,6 @@
 #include "ui_common.hpp"
 #include "../renodx/settings.hpp"
 #include "../addon.hpp"
-#include "../../../utils/swapchain.hpp"
 #include "../dxgi/custom_fps_limiter.hpp"
 #include "../dxgi/custom_fps_limiter_manager.hpp"
 #include <sstream>
