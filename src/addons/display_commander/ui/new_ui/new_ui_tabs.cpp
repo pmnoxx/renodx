@@ -3,6 +3,7 @@
 #include "window_info_tab.hpp"
 #include "device_info_tab.hpp"
 #include "developer_new_tab.hpp"
+#include "main_new_tab.hpp"
 #include "../../addon.hpp"
 #include <sstream>
 
@@ -49,6 +50,7 @@ void TabManager::Draw() {
 // Initialize the new UI system
 void InitializeNewUI() {
     // Add tabs with their content
+    
     g_tab_manager.AddTab("Main", "main", []() {
    /*     ImGui::Text("Main Tab - Basic Settings");
         ImGui::Separator();
@@ -66,6 +68,9 @@ void InitializeNewUI() {
         //renodx::ui::new_ui::DrawDeveloperTab();
     });
     
+    g_tab_manager.AddTab("MainNew", "main_new", []() {
+        renodx::ui::new_ui::DrawMainNewTab();
+    });
     g_tab_manager.AddTab("DeveloperNew", "developer_new", []() {
         renodx::ui::new_ui::DrawDeveloperNewTab();
     });
