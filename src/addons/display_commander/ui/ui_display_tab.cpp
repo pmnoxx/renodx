@@ -1,17 +1,14 @@
 #include "ui_display_tab.hpp"
 #include "ui_common.hpp"
 #include "monitor_settings/monitor_settings.hpp"
-#include "../../../utils/settings.hpp"
+#include "../renodx/settings.hpp"
 #include "../addon.hpp"
-#include "../resolution_helpers.hpp"
 #include "../display_cache.hpp"
 #include <windows.h>
 #include <vector>
 #include <sstream>
 #include <algorithm>
-#include <map> // Added for resolution_map
-#include <iomanip> // Added for std::fixed and std::setprecision
-#include <cmath> // Added for std::round
+#include <iomanip>
 #include <atomic>
 
 // External variables
@@ -173,7 +170,7 @@ bool HandleMonitorSettingsUI() {
     return false; // No value change
 }
 
-void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // Initialize the display cache when the display tab is first accessed
     static bool cache_initialized = false;
     if (!cache_initialized) {
@@ -182,10 +179,10 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
     }
     
     // Desktop Resolution Override Checkbox
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "OverrideDesktopResolution",
         .binding = &s_override_desktop_resolution,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f, // Disabled by default
         .label = "Override Desktop Resolution",
         .section = "Display Tab",
@@ -193,10 +190,10 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
         .is_visible = []() { return is_display_tab(s_ui_mode); } // Show in Display tab mode
     });
 
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "MonitorSettingsCustom",
         .binding = nullptr, // No direct binding, just for display
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "Dynamic Monitor Settings",
         .section = "Display",
@@ -214,10 +211,10 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& setti
     });
 
     // Current Display Info
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "CurrentDisplayInfo",
         .binding = nullptr, // No direct binding, just for display
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "Current Display Info",
         .section = "Display",

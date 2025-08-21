@@ -30,7 +30,7 @@ This guide outlines the steps to replace RenoDX dependencies with alternative im
 ## Phase 2: Alternative Implementation
 
 ### 2.1 Settings System Replacement
-**Current**: `renodx::utils::settings`
+**Current**: `renodx::utils::settings2`
 **Alternative**: Custom configuration system
 
 ```cpp

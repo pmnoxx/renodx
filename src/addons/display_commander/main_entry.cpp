@@ -8,8 +8,9 @@
 #include "reshade_events/fullscreen_prevention.hpp"
 #include "renodx/proxy.hpp"
 #include "dxgi/custom_fps_limiter_manager.hpp"
-
-
+#include "dxgi/dxgi_device_info.hpp"
+#include "nvapi/nvapi_fullscreen_prevention.hpp"
+#include "hooks/hooks_manager.hpp"
 
 // Forward declarations for continuous monitoring functions
 void StartContinuousMonitoring();

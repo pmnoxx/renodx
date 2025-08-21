@@ -1,6 +1,6 @@
 #include "ui_display_settings.hpp"
 #include "ui_common.hpp"
-#include "../../../utils/settings.hpp"
+#include "../renodx/settings.hpp"
 #include "../addon.hpp"
 #include "../../../utils/swapchain.hpp"
 #include "../dxgi/custom_fps_limiter.hpp"
@@ -12,12 +12,12 @@ extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_cus
 
 namespace renodx::ui {
 
-void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // Window width preset slider with labels
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "WindowWidth",
         .binding = &s_windowed_width,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 3.f, // default to 1920
         .label = "Window Width",
         .section = "Display",
@@ -39,10 +39,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Window height preset slider with labels
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "WindowHeight",
         .binding = &s_windowed_height,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 2.f, // default to 1080
         .label = "Window Height",
         .section = "Display",
@@ -65,10 +65,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Resize mode: width/height vs aspect ratio
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "ResizeMode",
         .binding = &s_resize_mode,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 0.f,
         .label = "Resize Mode",
         .section = "Display",
@@ -78,10 +78,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Aspect Ratio (only when in Aspect mode)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "AspectRatio",
         .binding = &s_aspect_index,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 3.f,
         .label = "Aspect Ratio",
         .section = "Display",
@@ -93,10 +93,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Target Monitor
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "TargetMonitor",
         .binding = &s_target_monitor_index,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 0.f,
         .label = "Target Monitor",
         .section = "Display",
@@ -106,10 +106,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Window alignment when repositioning is needed
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "Alignment",
         .binding = &s_move_to_zero_if_out,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 2.f, // default to top right
         .label = "Alignment",
         .section = "Display",
@@ -119,9 +119,9 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Apply Changes button
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "ApplyChanges",
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .value_type = renodx::utils::settings2::SettingValueType::BUTTON,
         .default_value = 0.f,
         .label = "Apply Changes",
         .section = "Display",
@@ -138,10 +138,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
 
     
     // FPS Limit (Now uses Custom FPS Limiter)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "FPSLimit",
         .binding = &s_fps_limit,
-        .value_type = renodx::utils::settings::SettingValueType::FLOAT,
+        .value_type = renodx::utils::settings2::SettingValueType::FLOAT,
         .default_value = 0.f,
         .label = "FPS Limit",
         .section = "Performance",
@@ -192,10 +192,10 @@ void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings
 
 
     // Background FPS Limit (Now uses Custom FPS Limiter)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "FPSLimitBackground",
         .binding = &s_fps_limit_background,
-        .value_type = renodx::utils::settings::SettingValueType::FLOAT,
+        .value_type = renodx::utils::settings2::SettingValueType::FLOAT,
         .default_value = 30.f,
         .label = "Background FPS Limit",
         .section = "Performance",

@@ -1,18 +1,18 @@
 #include "ui_developer_settings.hpp"
 #include "ui_common.hpp"
-#include "../../../utils/settings.hpp"
+#include "../renodx/settings.hpp"
 #include "../renodx/proxy.hpp"
 
 namespace renodx::ui {
 
-void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddDeveloperSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
 
 
     // Prevent Fullscreen (global)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "PreventFullscreen",
         .binding = &s_prevent_fullscreen,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Prevent Fullscreen",
         .section = "Display",
@@ -26,10 +26,10 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
     });
 
     // Spoof Fullscreen State
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "SpoofFullscreenState",
         .binding = &s_spoof_fullscreen_state,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 1.f,
         .label = "Spoof Fullscreen State",
         .section = "Display",
@@ -53,10 +53,10 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
     });
 
     // Spoof Window Focus
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "SpoofWindowFocus",
         .binding = &s_spoof_window_focus,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 1.f,
         .label = "Spoof Window Focus",
         .section = "Display",
@@ -79,10 +79,10 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
     });
 
     // Suppress Move/Resize Messages
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "SuppressMoveResizeMessages",
         .binding = &s_suppress_move_resize_messages,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Suppress Move/Resize Messages",
         .section = "Display",
@@ -100,10 +100,10 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
 
 
     // Suppress Top Bar/Border Messages
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "SuppressTopBarBorderMessages",
         .binding = &s_remove_top_bar,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f, // Disabled by default due to bug
         .label = "Suppress Top Bar/Border Messages",
         .section = "Display",
@@ -119,10 +119,10 @@ void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settin
     });
 
     // Suppress Maximize Messages
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "SuppressMaximizeMessages",
         .binding = &s_suppress_maximize,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 1.f,
         .label = "Suppress Maximize Messages",
         .section = "Display",

@@ -12,12 +12,12 @@ extern std::vector<MonitorInfo> g_monitors;
 
 namespace renodx::ui {
 
-void AddDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddDeviceInfoSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // Device Information Section
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "DeviceInfoHeader",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "=== Device Information ===",
         .section = "Device Info",
@@ -60,10 +60,10 @@ void AddDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
     });
 
     // Refresh Device Info Button
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "RefreshDeviceInfo",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .value_type = renodx::utils::settings2::SettingValueType::BUTTON,
         .default_value = 0.f,
         .label = "Refresh Device Info",
         .section = "Device Info",
@@ -77,10 +77,10 @@ void AddDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
     });
 
     // Device Debug Mode
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "DeviceDebugMode",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Device Debug Mode",
         .section = "Device Info",

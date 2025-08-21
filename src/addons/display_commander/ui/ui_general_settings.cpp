@@ -1,6 +1,6 @@
 #include "ui_general_settings.hpp"
 #include "ui_common.hpp"
-#include "../../../utils/settings.hpp"
+#include "../renodx/settings.hpp"
 #include "../addon.hpp"
 
 // External declarations for general settings
@@ -20,12 +20,12 @@ extern float s_background_feature_enabled; // Added this line
 
 namespace renodx::ui {
 
-void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddGeneralSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // UI Mode selector
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "UIMode",
         .binding = &s_ui_mode,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 0.f, // Basic mode by default
         .label = "UI Mode",
         .section = "General",
@@ -37,10 +37,10 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Auto-apply toggle and delay (seconds)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "AutoApply",
         .binding = &s_auto_apply_enabled,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Auto Apply",
         .section = "Display",
@@ -49,10 +49,10 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
     });
 
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "AutoApplyDelay",
         .binding = &s_auto_apply_delay_sec,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 10.f,
         .label = "App Start Delay (s)",
         .section = "Display",
@@ -63,10 +63,10 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
         .is_visible = [](){ return is_basic_tab(s_ui_mode); },
     });
 
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "InitApplyDelay",
         .binding = &s_auto_apply_init_delay_sec,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 1.f,
         .label = "SwapChain Init Delay (s)",
         .section = "Display",
@@ -78,10 +78,10 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Continuous monitoring toggle
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "ContinuousMonitoring",
         .binding = &s_continuous_monitoring_enabled,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 1.f, // Enabled by default to match globals.cpp
         .label = "Continuous Monitoring",
         .section = "Display",
@@ -91,10 +91,10 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Prevent Always On Top toggle
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "PreventAlwaysOnTop",
         .binding = &s_prevent_always_on_top,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 1.f, // Enabled by default to match globals.cpp
         .label = "Prevent Always On Top",
         .section = "Display",
@@ -105,10 +105,10 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Block Input When In Background toggle
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "BlockInputInBackground",
         .binding = &s_block_input_in_background,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 1.f, // Enabled by default
         .label = "Block Input When In Background",
         .section = "Display",
@@ -118,10 +118,10 @@ void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings
     });
 
     // Background Feature toggle
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "BackgroundFeature",
         .binding = &s_background_feature_enabled,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f, // Disabled by default
         .label = "Background Feature",
         .section = "Display",

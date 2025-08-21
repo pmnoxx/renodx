@@ -6,11 +6,11 @@
 
 namespace renodx::ui {
 
-void AddDxgiCompositionInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddDxgiCompositionInfoSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // DXGI Composition and Backbuffer Information
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "DxgiCompositionInfo",
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "",
         .section = "DXGI",

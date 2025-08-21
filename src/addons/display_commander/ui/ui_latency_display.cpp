@@ -4,12 +4,12 @@
 
 namespace renodx::ui {
 
-void AddLatencyDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddLatencyDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // Latency Display Section
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "LatencyDisplaySection",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .value_type = renodx::utils::settings2::SettingValueType::TEXT,
         .default_value = 0.f,
         .label = "=== Latency Information ===",
         .section = "Performance",
@@ -18,10 +18,10 @@ void AddLatencyDisplaySettings(std::vector<renodx::utils::settings::Setting*>& s
     });
     
     // Current Latency Display
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "CurrentLatency",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "Current Latency: ",
         .section = "Performance",
@@ -41,10 +41,10 @@ void AddLatencyDisplaySettings(std::vector<renodx::utils::settings::Setting*>& s
     });
     
     // PCL AV Latency Display (Most Important)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "PCLLatency",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "PCL AV Latency: ",
         .section = "Performance",
@@ -66,10 +66,10 @@ void AddLatencyDisplaySettings(std::vector<renodx::utils::settings::Setting*>& s
     });
     
     // Reflex Status Display
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "ReflexStatus",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "Reflex Status: ",
         .section = "Performance",
@@ -97,10 +97,10 @@ void AddLatencyDisplaySettings(std::vector<renodx::utils::settings::Setting*>& s
     // CONTINUOUS RENDERING UI REMOVED - Focus spoofing is now handled by Win32 hooks
     
     // Debug Button to show atomic variable values
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "DebugLatency",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "Debug: Show All Latency Values",
         .section = "Performance",

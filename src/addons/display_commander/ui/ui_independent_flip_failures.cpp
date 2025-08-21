@@ -1,15 +1,15 @@
 #include "ui_independent_flip_failures.hpp"
 #include "ui_common.hpp"
-#include "../../../utils/settings.hpp"
+#include "../renodx/settings.hpp"
 #include "../utils.hpp"
 
 namespace renodx::ui {
 
-void AddIndependentFlipFailuresSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddIndependentFlipFailuresSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // Independent Flip failure reasons (text only)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "IndependentFlipFailures",
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "",
         .section = "Performance",

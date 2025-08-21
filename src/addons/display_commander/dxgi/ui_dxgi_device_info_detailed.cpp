@@ -1,16 +1,16 @@
 #include "ui_dxgi_device_info_detailed.hpp"
 #include "../ui/ui_common.hpp"
-#include "../../../utils/settings.hpp"
+#include "../renodx/settings.hpp"
 #include "dxgi_device_info.hpp"
 #include "../utils.hpp"
 
 namespace renodx::ui {
 
-void AddDxgiDeviceInfoDetailedSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddDxgiDeviceInfoDetailedSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // DXGI Device Information Tab
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "DxgiDeviceInfo",
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "",
         .section = "DXGI",

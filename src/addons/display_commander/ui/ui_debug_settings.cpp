@@ -2,12 +2,12 @@
 
 namespace renodx::ui {
 
-void AddDebugSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddDebugSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // Simple always-visible debug element to test UI rendering
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "UIRenderTest",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .value_type = renodx::utils::settings2::SettingValueType::TEXT,
         .default_value = 0.f,
         .label = "UI Test - If you see this, UI is working",
         .section = "Debug",
@@ -16,10 +16,10 @@ void AddDebugSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
     });
     
     // Simple test of atomic variables (always visible)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "AtomicTest",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM, // only custom supports ImGui::Text
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM, // only custom supports ImGui::Text
         .default_value = 0.f,
         .label = "Atomic Test - Direct Value Display",
         .section = "Debug2",

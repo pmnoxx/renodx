@@ -4,13 +4,13 @@ This document provides a comprehensive list of all RenoDX components and APIs th
 
 ## Core Utilities (`renodx::utils`)
 
-### Settings System (`renodx::utils::settings`)
+### Settings System (`renodx::utils::settings2`)
 **Purpose**: Configuration management and persistence
 **Usage**: 
-- `renodx::utils::settings::use_presets` - Enable/disable preset system
-- `renodx::utils::settings::global_name` - Global settings namespace
-- `renodx::utils::settings::Use()` - Initialize settings system
-- `renodx::utils::settings::Setting` - Individual setting definition
+- `renodx::utils::settings2::use_presets` - Enable/disable preset system
+- `renodx::utils::settings2::global_name` - Global settings namespace
+- `renodx::utils::settings2::Use()` - Initialize settings system
+- `renodx::utils::settings2::Setting` - Individual setting definition
 
 **Files**: `src/utils/settings.hpp`
 
@@ -71,8 +71,8 @@ These are currently called directly and should be moved to the proxy:
 
 ```cpp
 // In main_entry.cpp
-renodx::utils::settings::use_presets = false;
-renodx::utils::settings::global_name = "DisplayComander";
+renodx::utils::settings2::use_presets = false;
+renodx::utils::settings2::global_name = "DisplayComander";
 renodx::background::StartBackgroundTasks();
 renodx::hooks::InstallAllHooks();
 renodx::utils::swapchain::fps_limit

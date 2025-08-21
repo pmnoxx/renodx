@@ -10,12 +10,12 @@ extern float s_reflex_debug_output;
 
 namespace renodx::ui {
 
-void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddReflexSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // Enable NVIDIA Reflex
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "ReflexEnabled",
         .binding = &s_reflex_enabled,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 1.f, // Enabled by default
         .label = "Enable NVIDIA Reflex",
         .section = "Performance",
@@ -35,10 +35,10 @@ void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings)
     });
 
     // Reflex Low Latency Mode
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "ReflexLowLatencyMode",
         .binding = &s_reflex_low_latency_mode,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Reflex Low Latency Mode",
         .section = "Performance",
@@ -54,10 +54,10 @@ void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings)
     });
 
     // Reflex Low Latency Boost
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "ReflexLowLatencyBoost",
         .binding = &s_reflex_low_latency_boost,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Reflex Low Latency Boost",
         .section = "Performance",
@@ -73,10 +73,10 @@ void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings)
     });
 
     // Reflex Use Markers
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "ReflexUseMarkers",
         .binding = &s_reflex_use_markers,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Reflex Use Markers",
         .section = "Performance",
@@ -92,10 +92,10 @@ void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings)
     });
 
     // Reflex Debug Output (keep in developer tab)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "ReflexDebugOutput",
         .binding = &s_reflex_debug_output,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 1.f,
         .label = "Reflex Debug Output",
         .section = "Performance",

@@ -4,5 +4,5 @@
 #include "../addon.hpp"
 
 namespace renodx::ui {
-    void AddWindowControls(std::vector<renodx::utils::settings::Setting*>& settings);
+    void AddWindowControls(std::vector<renodx::utils::settings2::Setting*>& settings);
 }

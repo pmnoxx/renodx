@@ -29,21 +29,21 @@ inline bool is_main_tab(float ui_mode) { return static_cast<int>(ui_mode) < 3; }
 
 // Forward declarations for settings sections
 namespace renodx::ui {
-    void AddGeneralSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddDisplaySettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddWindowControls(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddWindowPositionSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddHdrColorspaceSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddWindowInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddDxgiDeviceInfoDetailedSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddDxgiCompositionInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddIndependentFlipFailuresSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddReflexSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings);
-    void AddDxgiDeviceInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings);
+    void AddGeneralSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddDisplaySettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddAudioSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddWindowControls(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddDeveloperSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddWindowPositionSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddHdrColorspaceSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddDeviceInfoSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddWindowInfoSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddDxgiDeviceInfoDetailedSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddDxgiCompositionInfoSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddIndependentFlipFailuresSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddReflexSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
+    void AddDxgiDeviceInfoSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
 }

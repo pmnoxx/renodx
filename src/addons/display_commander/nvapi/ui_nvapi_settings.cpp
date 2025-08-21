@@ -9,12 +9,12 @@ extern float s_nvapi_hdr_interval_sec;
 
 namespace renodx::ui {
 
-void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // NVAPI Fullscreen Prevention
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "NvapiFullscreenPrevention",
         .binding = &s_nvapi_fullscreen_prevention,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "NVAPI Fullscreen Prevention",
         .section = "NVAPI",
@@ -24,10 +24,10 @@ void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
     });
 
     // NVAPI HDR Logging
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "NvapiHdrLogging",
         .binding = &s_nvapi_hdr_logging,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "NVAPI HDR Logging",
         .section = "NVAPI",
@@ -43,10 +43,10 @@ void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
     });
 
     // NVAPI Debug Information Display
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "NvapiDebugInfo",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "NVAPI Debug Information",
         .section = "NVAPI",
@@ -136,10 +136,10 @@ void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
     });
 
     // Force NVAPI HDR10 (UHDA)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "NvapiForceHDR10",
         .binding = &s_nvapi_force_hdr10,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Force HDR10 Output (NVAPI)",
         .section = "NVAPI",
@@ -166,8 +166,8 @@ void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
     });
 
     // Single-shot NVAPI HDR log (button)
-    settings.push_back(new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+    settings.push_back(new renodx::utils::settings2::Setting{
+        .value_type = renodx::utils::settings2::SettingValueType::BUTTON,
         .label = "Log HDR Status Now (NVAPI)",
         .section = "NVAPI",
         .tooltip = "Immediately query NVAPI HDR status and log a single line.",
@@ -179,8 +179,8 @@ void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
     });
 
     // Dump full NVAPI HDR details
-    settings.push_back(new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+    settings.push_back(new renodx::utils::settings2::Setting{
+        .value_type = renodx::utils::settings2::SettingValueType::BUTTON,
         .label = "Dump Full HDR Details (NVAPI)",
         .section = "NVAPI",
         .tooltip = "Print full HDR parameters (caps, ST2086) for connected displays.",
@@ -206,10 +206,10 @@ void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
     });
 
     // HDR Log Interval
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "NvapiHdrIntervalSec",
         .binding = &s_nvapi_hdr_interval_sec,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 5.f,
         .label = "HDR Log Interval (s)",
         .section = "NVAPI",
@@ -221,8 +221,8 @@ void AddNvapiSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
     });
 
     // NVAPI Debug Button
-    settings.push_back(new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+    settings.push_back(new renodx::utils::settings2::Setting{
+        .value_type = renodx::utils::settings2::SettingValueType::BUTTON,
         .label = "Test NVAPI Functions",
         .section = "NVAPI",
         .tooltip = "Manually test NVAPI initialization and show detailed function status. Useful for debugging.",

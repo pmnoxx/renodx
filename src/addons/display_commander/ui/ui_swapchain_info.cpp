@@ -3,12 +3,12 @@
 
 namespace renodx::ui {
 
-void AddSwapchainInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddSwapchainInfoSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // Swapchain Information Section
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "SwapchainInfoSection",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "Swapchain Information",
         .section = "Device Info",
@@ -82,10 +82,10 @@ void AddSwapchainInfoSettings(std::vector<renodx::utils::settings::Setting*>& se
     });
 
     // Adapter Information Section
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "AdapterInfoSection",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "Adapter Information",
         .section = "Device Info",

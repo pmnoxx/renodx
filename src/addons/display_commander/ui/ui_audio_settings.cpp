@@ -1,17 +1,17 @@
 #include "ui_audio_settings.hpp"
 #include "ui_common.hpp"
-#include "../../../utils/settings.hpp"
+#include "../renodx/settings.hpp"
 #include "../addon.hpp"
 #include <sstream>
 
 namespace renodx::ui {
 
-void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddAudioSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // Volume (0-100)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "AudioVolume",
         .binding = &s_audio_volume_percent,
-        .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
         .default_value = 100.f,
         .label = "Audio Volume (%)",
         .section = "Audio",
@@ -35,10 +35,10 @@ void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
     });
 
     // Mute (manual)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "AudioMute",
         .binding = &s_audio_mute,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Audio Mute",
         .section = "Audio",
@@ -62,10 +62,10 @@ void AddAudioSettings(std::vector<renodx::utils::settings::Setting*>& settings) 
     });
 
     // Mute in Background (placed after Mute; disabled if Mute is ON)
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "MuteInBackground",
         .binding = &s_mute_in_background,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Mute In Background",
         .section = "Audio",

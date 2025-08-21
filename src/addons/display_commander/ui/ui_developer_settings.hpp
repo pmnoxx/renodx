@@ -2,10 +2,10 @@
 
 #include <vector>
 
-namespace renodx::utils::settings {
+namespace renodx::utils::settings2 {
     class Setting;
 }
 
 namespace renodx::ui {
-    void AddDeveloperSettings(std::vector<renodx::utils::settings::Setting*>& settings);
+    void AddDeveloperSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
 }

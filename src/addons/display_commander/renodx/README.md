@@ -10,7 +10,7 @@ This folder contains a proxy layer that abstracts all RenoDX dependencies for Di
 ## What We Use From RenoDX
 
 ### Core Systems
-- **Settings System** (`renodx::utils::settings`) - Configuration management
+- **Settings System** (`renodx::utils::settings2`) - Configuration management
 - **Swapchain Utilities** (`renodx::utils::swapchain`) - FPS limiting and swapchain operations
 - **Background Tasks** (`renodx::background`) - Task coordination system
 

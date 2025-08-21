@@ -13,22 +13,16 @@
 #include <deps/imgui/imgui.h>
 #include <include/reshade.hpp>
 
-#include <sstream>
 #include <thread>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
-#include <cmath>
 #include <vector>
 
-#include "../../utils/settings.hpp"
-#include "../../utils/swapchain.hpp"
-#include "../../mods/swapchain.hpp"
 #include "utils.hpp"
-#include "nvapi/nvapi_fullscreen_prevention.hpp"
 #include "reflex/reflex_management.hpp"
-#include "dxgi/dxgi_device_info.hpp"
-#include "hooks/hooks_manager.hpp"
+#include "renodx/settings.hpp"
+
 
 // WASAPI per-app volume control
 #include <mmdeviceapi.h>

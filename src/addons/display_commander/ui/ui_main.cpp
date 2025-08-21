@@ -19,10 +19,10 @@
 #include "../dxgi/ui_dxgi_composition_info.hpp"
 #include "ui_independent_flip_failures.hpp"
 
-#include "../settings.hpp"
+#include "../renodx/settings.hpp"
 
 // UI/settings - main vector that includes all sections
-renodx::utils::settings::Settings settings = {};
+renodx::utils::settings2::Settings settings = {};
 
 // Flag to prevent multiple initializations
 static bool ui_settings_initialized = false;

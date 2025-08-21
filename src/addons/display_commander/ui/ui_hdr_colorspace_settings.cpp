@@ -1,15 +1,15 @@
 #include "ui_hdr_colorspace_settings.hpp"
 #include "ui_common.hpp"
-#include "../../../utils/settings.hpp"
+#include "../renodx/settings.hpp"
 
 namespace renodx::ui {
 
-void AddHdrColorspaceSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddHdrColorspaceSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // HDR10 Colorspace Fix
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "Hdr10ColorspaceFix",
         .binding = &s_fix_hdr10_colorspace,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Fix HDR10 Colorspace",
         .section = "HDR",

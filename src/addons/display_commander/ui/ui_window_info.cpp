@@ -11,12 +11,12 @@ extern std::atomic<int> g_last_backbuffer_height;
 
 namespace renodx::ui {
 
-void AddWindowInfoSettings(std::vector<renodx::utils::settings::Setting*>& settings) {
+void AddWindowInfoSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
     // Window Information Section
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "WindowInfoHeader",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
         .default_value = 0.f,
         .label = "=== Window Information ===",
         .section = "Window Info",
@@ -189,10 +189,10 @@ void AddWindowInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
     });
 
     // Refresh Window Info Button
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "RefreshWindowInfo",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::BUTTON,
+        .value_type = renodx::utils::settings2::SettingValueType::BUTTON,
         .default_value = 0.f,
         .label = "Refresh Window Info",
         .section = "Window Info",
@@ -205,10 +205,10 @@ void AddWindowInfoSettings(std::vector<renodx::utils::settings::Setting*>& setti
     });
 
     // Window Debug Mode
-    settings.push_back(new renodx::utils::settings::Setting{
+    settings.push_back(new renodx::utils::settings2::Setting{
         .key = "WindowDebugMode",
         .binding = nullptr,
-        .value_type = renodx::utils::settings::SettingValueType::BOOLEAN,
+        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
         .default_value = 0.f,
         .label = "Window Debug Mode",
         .section = "Window Info",

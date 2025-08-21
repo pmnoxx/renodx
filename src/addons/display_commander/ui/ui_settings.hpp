@@ -5,7 +5,7 @@
 #include <string>
 
 // Forward declarations
-namespace renodx::utils::settings {
+namespace renodx::utils::settings2 {
     struct Setting;
 }
 
@@ -38,7 +38,7 @@ inline bool is_device_tab(float ui_mode);
 inline bool is_window_info_tab(float ui_mode);
 
 // Settings vector declaration
-extern std::vector<renodx::utils::settings::Setting*> settings;
+extern std::vector<renodx::utils::settings2::Setting*> settings;
 
 // Helper functions for labels
 std::vector<std::string> MakeLabels(const std::vector<int>& options, int default_index);

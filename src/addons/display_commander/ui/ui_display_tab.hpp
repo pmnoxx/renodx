@@ -1,11 +1,11 @@
 #pragma once
 
 #include <vector>
-#include "../../../utils/settings.hpp"
+#include "../renodx/settings.hpp"
 #include "../display_cache.hpp"
 
 namespace renodx::ui {
-    void AddDisplayTabSettings(std::vector<renodx::utils::settings::Setting*>& settings);
+    void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
     
     // Initialize the display cache for the UI
     void InitializeDisplayCache();
