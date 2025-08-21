@@ -21,6 +21,7 @@ void AddWindowInfoSettings(std::vector<renodx::utils::settings2::Setting*>& sett
         .label = "=== Window Information ===",
         .section = "Window Info",
         .tooltip = "Current window state and information",
+        .is_visible = []() { return is_window_info_tab(s_ui_mode); },
         .on_draw = []() {
             // Get current window info
             HWND hwnd = g_last_swapchain_hwnd.load();
@@ -197,6 +198,7 @@ void AddWindowInfoSettings(std::vector<renodx::utils::settings2::Setting*>& sett
         .label = "Refresh Window Info",
         .section = "Window Info",
         .tooltip = "Refresh window information display",
+        .is_visible = []() { return is_window_info_tab(s_ui_mode); },
         .on_click = []() -> bool {
             // Force refresh of window information
             LogInfo("Window information refreshed");
