@@ -8,11 +8,6 @@
 // UI mode (0 = Basic, 1 = Developer)
 float s_ui_mode = 0.f; // Basic mode by default
 
-// Auto-apply settings
-float s_auto_apply_enabled = 1.f; // Enabled by default
-float s_auto_apply_delay_sec = 1.f; // Changed from 10.f to 1.f
-float s_auto_apply_init_delay_sec = 1.f;
-
 // Window settings
 float s_windowed_width = 3440.f; // 21:9 ultrawide width
 float s_windowed_height = 1440.f; // 21:9 ultrawide height
@@ -82,7 +77,6 @@ float s_background_feature_enabled = 0.f; // Disabled by default
 float s_enforce_desired_window = 1.f; // Enable window enforcement
 
 // Desktop Resolution Override
-float s_override_desktop_resolution = 0.f; // Disabled by default
 float s_selected_monitor_index = 0.f; // Primary monitor by default
 
 // Display Tab Enhanced Settings

@@ -160,9 +160,6 @@ bool HandleMonitorSettingsUI() {
     
     // Handle refresh rate selection UI
     renodx::ui::monitor_settings::HandleRefreshRateSelection(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
-    
-    // Display API Status
-    renodx::ui::monitor_settings::DisplayAPIStatus();
 
     // Handle the DXGI API Apply Button
     renodx::ui::monitor_settings::HandleDXGIAPIApplyButton();
@@ -177,18 +174,6 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& sett
         InitializeDisplayCache();
         cache_initialized = true;
     }
-    
-    // Desktop Resolution Override Checkbox
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "OverrideDesktopResolution",
-        .binding = &s_override_desktop_resolution,
-        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
-        .default_value = 0.f, // Disabled by default
-        .label = "Override Desktop Resolution",
-        .section = "Display Tab",
-        .tooltip = "Enable to apply the selected resolution and refresh rate to the desktop. When disabled, you can still browse available options.",
-        .is_visible = []() { return is_display_tab(s_ui_mode); } // Show in Display tab mode
-    });
 
     settings.push_back(new renodx::utils::settings2::Setting{
         .key = "MonitorSettingsCustom",
@@ -198,16 +183,8 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& sett
         .label = "Dynamic Monitor Settings",
         .section = "Display",
         .tooltip = "Interactive monitor, resolution, and refresh rate selection with real-time updates.",
-        .on_draw = []() -> bool {
-            // Call the new function for the main logic
-            bool result = HandleMonitorSettingsUI();
-            
-            // Keep any additional logic that was in the original lambda
-            // ...
-            
-            return result;
-        },
-        .is_visible = []() { return is_basic_tab(s_ui_mode) || is_display_tab(s_ui_mode); } // Show in Simple and Display modes
+        .on_draw = HandleMonitorSettingsUI,
+        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Simple and Display modes
     });
 
     // Current Display Info
@@ -224,7 +201,7 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& sett
             ImGui::TextUnformatted(display_info.c_str());
             return false; // No value change
         },
-        .is_visible = []() { return is_basic_tab(s_ui_mode) || is_display_tab(s_ui_mode); } // Show in Simple and Display modes
+        .is_visible = []() { return is_basic_tab(s_ui_mode); } // Show in Simple and Display modes
     });
 
 }

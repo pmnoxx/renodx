@@ -6,11 +6,10 @@
 #include "ui/ui_main.hpp"
 #include "background_tasks/background_task_coordinator.hpp"
 #include "reshade_events/fullscreen_prevention.hpp"
-#include "renodx/proxy.hpp"
+
 #include "dxgi/custom_fps_limiter_manager.hpp"
 #include "dxgi/dxgi_device_info.hpp"
 #include "nvapi/nvapi_fullscreen_prevention.hpp"
-#include "hooks/hooks_manager.hpp"
 
 // Forward declarations for continuous monitoring functions
 void StartContinuousMonitoring();
@@ -69,15 +68,12 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       reshade::register_event<reshade::addon_event::set_fullscreen_state>(
           renodx::display_commander::events::OnSetFullscreenState);
 
-      renodx::proxy::SetUsePresets(false);
-      renodx::proxy::SetGlobalName("DisplayCommander");
+      renodx::utils::settings2::use_presets = false;
+      renodx::utils::settings2::global_name = "DisplayCommander";
       g_attach_time = std::chrono::steady_clock::now();
       g_shutdown.store(false);
       std::thread(RunBackgroundAudioMonitor).detach();
       renodx::background::StartBackgroundTasks();
-      
-      // Install window hooks for style management
-      renodx::hooks::InstallAllHooks();
       
       // NVAPI HDR monitor will be started after settings load below if enabled
       // Seed default fps limit snapshot
@@ -102,13 +98,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
             // Clean up continuous monitoring if it's running
       StopContinuousMonitoring();
       
-      // CONTINUOUS RENDERING CLEANUP REMOVED - Focus spoofing is now handled by Win32 hooks
-      
       // Clean up Reflex hooks if they're installed
       UninstallReflexHooks();
-      
-      // Clean up window hooks
-      renodx::hooks::UninstallAllHooks();
       
       // Clean up DXGI Device Info Manager
       g_dxgiDeviceInfoManager.reset();
@@ -135,7 +126,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
     // Initialize UI settings before registering the overlay
     InitializeUISettings();
     
-    renodx::proxy::InitializeSettings(fdw_reason, &settings);
+    renodx::utils::settings2::Use(fdw_reason, &settings);
     // InitializeSwapchain removed from proxy
     
     // Check if continuous monitoring should be enabled
@@ -144,7 +135,6 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       LogInfo("Continuous monitoring started proactively");
     }
 
-    // CONTINUOUS RENDERING INITIALIZATION REMOVED - Focus spoofing is now handled by Win32 hooks
     
     // Initialize NVAPI fullscreen prevention if enabled
     if (s_nvapi_fullscreen_prevention >= 0.5f) {

@@ -27,7 +27,4 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
 // Handle the "Apply with DXGI API" button
 void HandleDXGIAPIApplyButton();
 
-// Display API status information
-void DisplayAPIStatus();
-
 } // namespace renodx::ui::monitor_settings

@@ -1,7 +1,7 @@
 #include "ui_developer_settings.hpp"
 #include "ui_common.hpp"
 #include "../renodx/settings.hpp"
-#include "../renodx/proxy.hpp"
+
 
 namespace renodx::ui {
 

@@ -4,15 +4,6 @@
 #include "../addon.hpp"
 
 // External declarations for general settings
-extern float s_ui_mode;
-extern float s_auto_apply_enabled;
-extern float s_auto_apply_delay_sec;
-extern float s_auto_apply_init_delay_sec;
-extern float s_continuous_monitoring_enabled;
-extern float s_continuous_rendering_enabled;
-extern float s_continuous_rendering_throttle;
-extern float s_force_continuous_rendering;
-extern float s_prevent_always_on_top;
 extern float s_block_input_in_background;
 extern float s_background_feature_enabled; // Added this line
 
@@ -34,47 +25,6 @@ void AddGeneralSettings(std::vector<renodx::utils::settings2::Setting*>& setting
         .min = 0.f,
         .max = static_cast<float>(TAB_LABELS.size() - 1),
         .is_visible = []() { return true; }, // Always visible
-    });
-
-    // Auto-apply toggle and delay (seconds)
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "AutoApply",
-        .binding = &s_auto_apply_enabled,
-        .value_type = renodx::utils::settings2::SettingValueType::BOOLEAN,
-        .default_value = 0.f,
-        .label = "Auto Apply",
-        .section = "Display",
-        .tooltip = "Automatically apply window changes after swapchain initialization.",
-        .labels = {"Off", "On"},
-        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Show in Basic mode
-    });
-
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "AutoApplyDelay",
-        .binding = &s_auto_apply_delay_sec,
-        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
-        .default_value = 10.f,
-        .label = "App Start Delay (s)",
-        .section = "Display",
-        .tooltip = "Delay after application start before applying window changes.",
-        .min = 1.f,
-        .max = 60.f,
-        .format = "%d s",
-        .is_visible = [](){ return is_basic_tab(s_ui_mode); },
-    });
-
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "InitApplyDelay",
-        .binding = &s_auto_apply_init_delay_sec,
-        .value_type = renodx::utils::settings2::SettingValueType::INTEGER,
-        .default_value = 1.f,
-        .label = "SwapChain Init Delay (s)",
-        .section = "Display",
-        .tooltip = "Delay after swapchain initialization before applying window changes.",
-        .min = 1.f,
-        .max = 60.f,
-        .format = "%d s",
-        .is_visible = [](){ return is_developer_tab(s_ui_mode); },
     });
 
     // Continuous monitoring toggle

@@ -31,7 +31,7 @@ void AddWindowControls(std::vector<renodx::utils::settings2::Setting*>& settings
             }).detach();
             return false;
         },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Only show in Basic mode
     });
 
     // Restore Window
@@ -60,7 +60,7 @@ void AddWindowControls(std::vector<renodx::utils::settings2::Setting*>& settings
             }).detach();
             return false;
         },
-        .is_visible = []() { return is_developer_tab(s_ui_mode); }, // Only show in Developer mode
+        .is_visible = []() { return is_basic_tab(s_ui_mode); }, // Only show in Basic mode
     });
 }
 

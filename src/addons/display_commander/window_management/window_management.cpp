@@ -14,12 +14,12 @@ HMONITOR FindTargetMonitor(HWND hwnd, const RECT& wr_current, float target_monit
   
   if (target_monitor_index > 0.5f) {
     // Use the legacy target monitor setting
-    const int index = static_cast<int>(target_monitor_index) - 1;
+    int index = static_cast<int>(target_monitor_index) - 1;
     g_monitors.clear();
     EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, reinterpret_cast<LPARAM>(&g_monitors));
-    if (!(index >= 0 && index < static_cast<int>(g_monitors.size()))) {
+    if (index < 0 || index >= static_cast<int>(g_monitors.size())) {
       LogError("FindTargetMonitor: Invalid target monitor index, using default (0)");
-      index = 0;  
+      index = 0;
     }
     hmon = g_monitors[index].handle;
     mi = g_monitors[index].info;
@@ -93,6 +93,9 @@ void  CalculateWindowState(HWND hwnd, const char* reason) {
       LogInfo(oss.str().c_str());
     }
   }
+  if (current_style != g_window_state.new_style || current_ex_style != g_window_state.new_ex_style) {
+    g_window_state.style_changed = true;
+  }
   
   // Get current window state
   RECT wr_current{};
@@ -109,15 +112,9 @@ void  CalculateWindowState(HWND hwnd, const char* reason) {
   // First, determine the target monitor based on game's intended display
   HMONITOR hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
   MONITORINFOEXW mi{};
-  mi.cbSize = sizeof(mi);
   
   // Use target monitor if specified
   hmon = FindTargetMonitor(hwnd, wr_current, s_target_monitor_index, mi);
-  
-  // Get monitor info
-  if (mi.cbSize != sizeof(mi)) {
-    GetMonitorInfoW(hmon, &mi);
-  }
   
   
   // Clamp desired size to fit within the target monitor's dimensions
@@ -213,6 +210,7 @@ void ApplyWindowChange(HWND hwnd, const char* reason, bool force_apply) {
       return;
     }
     if (g_window_state.style_changed) {
+      LogDebug("ApplyWindowChange: Setting new style and ex style");
       SetWindowLongPtrW(hwnd, GWL_STYLE, g_window_state.new_style);
       SetWindowLongPtrW(hwnd, GWL_EXSTYLE, g_window_state.new_ex_style);
     }

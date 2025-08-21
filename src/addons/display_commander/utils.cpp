@@ -10,9 +10,6 @@ extern float s_windowed_height;
 extern float s_resize_mode;
 extern float s_aspect_index;
 
-// Desktop resolution override variables
-extern float s_override_desktop_resolution;
-
 // New resolution system variables
 extern float s_selected_monitor_index;
 extern float s_selected_resolution_index;

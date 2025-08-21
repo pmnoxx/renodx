@@ -139,9 +139,6 @@ extern float s_reflex_low_latency_mode;
 extern float s_reflex_low_latency_boost;
 extern float s_reflex_use_markers;
 
-extern float s_auto_apply_enabled;
-extern float s_auto_apply_delay_sec;
-extern float s_auto_apply_init_delay_sec;
 extern float s_windowed_width;
 extern float s_windowed_height;
 extern float s_remove_top_bar;
@@ -207,7 +204,6 @@ extern float s_prevent_always_on_top;
 extern float s_enforce_desired_window;
 
 // Desktop Resolution Override
-extern float s_override_desktop_resolution;
 extern float s_selected_monitor_index;
 
 // Display Tab Enhanced Settings
@@ -238,7 +234,6 @@ const char* DxgiBypassModeToString(DxgiBypassMode mode);
 bool SetIndependentFlipState(reshade::api::swapchain* swapchain);
 void ApplyWindowChange(HWND hwnd, const char* reason = "unknown", bool force_apply = false);
 bool ShouldApplyWindowedForBackbuffer(int desired_w, int desired_h);
-void ScheduleAutoApplyOnInit(HWND hwnd);
 void LogIndependentFlipConditions(reshade::api::swapchain* swapchain);
 
 // Continuous monitoring functions

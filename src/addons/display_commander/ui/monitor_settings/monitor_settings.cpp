@@ -322,35 +322,4 @@ void HandleDXGIAPIApplyButton() {
         }).detach();
     }
 }
-
-// Display API status information
-void DisplayAPIStatus() {
-    // API Status Section
-    ImGui::Text("API Status:");
-    ImGui::SameLine();
-    
-    // DXGI API Status
-    ImGui::SameLine();
-    ImGui::Text("DXGI: ");
-    ImGui::SameLine();
-    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Available");
-    ImGui::SameLine();
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("DXGI API is available on all Windows systems with DirectX support.\nThis method creates a temporary swap chain to apply display modes.");
-    }
-    
-    // Modern API Button (Fractional Refresh Rates)
-    ImGui::SameLine();
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered()) {
-        if (renodx::resolution::IsModernDisplayAPIAvailable()) {
-            ImGui::SetTooltip("Uses SetDisplayConfig API to preserve exact fractional refresh rates.\nFalls back to legacy API if modern API fails.");
-        } else {
-            ImGui::SetTooltip("Modern API not available on this system.\nWill fall back to legacy API automatically.");
-        }
-    }
-    ImGui::SameLine();
-}
-
 } // namespace renodx::ui::monitor_settings

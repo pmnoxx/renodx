@@ -464,30 +464,6 @@ bool ApplyDisplaySettingsModern(int monitor_index, int width, int height, UINT32
     return false;
 }
 
-// Helper function to check if modern display API is available
-bool IsModernDisplayAPIAvailable() {
-    // Check if we can get display config buffer sizes
-    UINT32 path_elements = 0;
-    UINT32 mode_elements = 0;
-    LONG result = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &path_elements, &mode_elements);
-    
-    if (result != ERROR_SUCCESS) {
-        return false;
-    }
-    
-    if (path_elements == 0 || mode_elements == 0) {
-        return false;
-    }
-    
-    // Try to query display config to see if it works
-    std::vector<DISPLAYCONFIG_PATH_INFO> paths(path_elements);
-    std::vector<DISPLAYCONFIG_MODE_INFO> modes(mode_elements);
-    
-    result = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &path_elements, paths.data(), &mode_elements, modes.data(), nullptr);
-    
-    return (result == ERROR_SUCCESS);
-}
-
 // Helper function to apply display settings using DXGI API with fractional refresh rates
 bool ApplyDisplaySettingsDXGI(int monitor_index, int width, int height, UINT32 refresh_numerator, UINT32 refresh_denominator) {
     // Get monitor handle
