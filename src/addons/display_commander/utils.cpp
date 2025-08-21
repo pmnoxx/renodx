@@ -254,62 +254,16 @@ int GetWindowFocusSpoofingMode() {
     return 2;
 }
 
+bool IsBorderlessStyleBits(LONG_PTR style) {
+    // A window is borderless if it lacks the main window decoration styles
+    return !(style & (WS_CAPTION | WS_THICKFRAME | WS_DLGFRAME));
+}
+
 UINT ComputeSWPFlags(HWND hwnd, bool style_changed) {
     UINT flags = SWP_NOZORDER | SWP_NOACTIVATE;
     if (style_changed) flags |= SWP_FRAMECHANGED;
     return flags;
 }
-
-bool IsBorderlessStyleBits(LONG_PTR style) {
-    return (style & WS_CAPTION) == 0 && (style & WS_THICKFRAME) == 0;
-}
-
-bool IsBorderless(HWND hwnd) {
-    if (!hwnd) return false;
-    LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
-    return IsBorderlessStyleBits(style);
-}
-/*
-void RemoveWindowBorderLocal(HWND window) {
-    if (!window) return;
-    
-    LONG_PTR style = GetWindowLongPtr(window, GWL_STYLE);
-    LONG_PTR ex_style = GetWindowLongPtr(window, GWL_EXSTYLE);
-    
-    // Remove title bar and borders
-    style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
-    ex_style &= ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
-    
-    SetWindowLongPtr(window, GWL_STYLE, style);
-    SetWindowLongPtr(window, GWL_EXSTYLE, ex_style);
-    
-    // Force window update
-    SetWindowPos(window, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
-}
-
-void ForceWindowToMonitorOrigin(HWND hwnd) {
-    if (!hwnd) return;
-    
-    RECT window_rect;
-    GetWindowRect(hwnd, &window_rect);
-    
-    int x = window_rect.left;
-    int y = window_rect.top;
-    
-    // Move to origin if out of bounds
-    if (x < 0 || y < 0) {
-        SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
-    }
-}
-
-void ForceWindowToMonitorOriginThreaded(HWND hwnd) {
-    if (!hwnd) return;
-    
-    std::thread([hwnd]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        ForceWindowToMonitorOrigin(hwnd);
-    }).detach();
-}*/
 
 std::vector<std::string> MakeLabels(const int* values, size_t count) {
     std::vector<std::string> labels;
@@ -378,39 +332,7 @@ void ComputeDesiredSize(int& out_w, int& out_h) {
     out_h = (std::max)(want_h, 1);
 }
 
-int ComputeHeightFromWidth(int width) {
-    if (s_resize_mode < 0.5f) {
-        // Manual height mode - return the stored height setting
-        return static_cast<int>(s_windowed_height);
-    }
-    
-    // Aspect mode - compute height from width and aspect ratio
-    int index = static_cast<int>(s_aspect_index);
-    AspectRatio ar = GetAspectByIndex(index);
-    
-    // Prevent division by zero
-    if (ar.w <= 0) ar.w = 1;
-    
-    // height = round(width * h / w)
-    std::int64_t num = static_cast<std::int64_t>(width) * static_cast<std::int64_t>(ar.h);
-    int height = static_cast<int>((num + (ar.w / 2)) / ar.w);
-    
-    // Ensure minimum height of 1
-    return (std::max)(height, 1);
-}
 
-int ComputeHeightFromWidthAndAspect(int width, const AspectRatio& ar) {
-    // Prevent division by zero
-    int w = ar.w;
-    if (w <= 0) w = 1;
-    
-    // height = round(width * h / w)
-    std::int64_t num = static_cast<std::int64_t>(width) * static_cast<std::int64_t>(ar.h);
-    int height = static_cast<int>((num + (w / 2)) / w);
-    
-    // Ensure minimum height of 1
-    return (std::max)(height, 1);
-}
 
 std::vector<std::string> MakeMonitorLabels() {
     g_monitors.clear();

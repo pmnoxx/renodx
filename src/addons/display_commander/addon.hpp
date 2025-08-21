@@ -41,8 +41,7 @@ void RunBackgroundAudioMonitor();
 
 // Forward declarations
 void ComputeDesiredSize(int& out_w, int& out_h);
-int ComputeHeightFromWidth(int width);
-int ComputeHeightFromWidthAndAspect(int width, const struct AspectRatio& ar);
+
 std::vector<std::string> MakeMonitorLabels();
 
 // External declarations
@@ -55,19 +54,6 @@ enum class WindowStyleMode : std::uint8_t { KEEP, BORDERLESS, OVERLAPPED_WINDOW 
 
 // Forward declarations that depend on enums
 DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain);
-
-
-
-// Additional Alt suppression methods
-bool InstallAltSuppressionWindowSubclass();
-void UninstallAltSuppressionWindowSubclass();
-bool InstallAltSuppressionDllInjection();
-void UninstallAltSuppressionDllInjection();
-bool InstallAltSuppressionRawInput();
-void UninstallAltSuppressionRawInput();
-
-
-
 
 // Reflex management functions
 bool InstallReflexHooks();
@@ -109,10 +95,6 @@ struct GlobalWindowState {
   WindowStyleMode style_mode = WindowStyleMode::BORDERLESS;
   std::string reason = "unknown";
   
-  // Window state detection
- // bool is_maximized = false;
- // bool is_minimized = false;
-//  bool is_restored = false;
   int show_cmd = 0;
   
   void reset() {
@@ -127,11 +109,6 @@ struct GlobalWindowState {
     style_changed = false;
     style_mode = WindowStyleMode::BORDERLESS;
     reason = "unknown";
-    
-    // Reset window state detection
-   // is_maximized = false;
-  //  is_minimized = false;
-   // is_restored = false;
   }
 };
 

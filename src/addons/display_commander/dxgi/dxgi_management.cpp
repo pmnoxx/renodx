@@ -1,6 +1,6 @@
 #include "../addon.hpp"
 
-inline DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain) {
+DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain) {
   // Get or create the failure tracking structure
   IndependentFlipFailures* failures = g_if_failures.load();
   if (failures == nullptr) {
@@ -83,7 +83,7 @@ inline DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain
   }
 }
 
-inline const char* DxgiBypassModeToString(DxgiBypassMode mode) {
+const char* DxgiBypassModeToString(DxgiBypassMode mode) {
   switch (mode) {
     case DxgiBypassMode::kComposed: return "Composed";             
     case DxgiBypassMode::kOverlay: return "Hardware Overlay (MPO)";       
@@ -95,7 +95,7 @@ inline const char* DxgiBypassModeToString(DxgiBypassMode mode) {
 
 // Attempt to configure the DXGI swapchain for conditions that allow Independent Flip
 // Only uses DXGI APIs (no Win32 window sizing). Returns true if a change was applied.
-inline bool SetIndependentFlipState(reshade::api::swapchain* swapchain) {
+bool SetIndependentFlipState(reshade::api::swapchain* swapchain) {
   if (swapchain == nullptr) {
     LogWarn("SetIndependentFlipState: null swapchain");
     return false;
@@ -188,7 +188,7 @@ inline bool SetIndependentFlipState(reshade::api::swapchain* swapchain) {
   return changed;
 }
 
-inline void LogIndependentFlipConditions(reshade::api::swapchain* swapchain) {
+void LogIndependentFlipConditions(reshade::api::swapchain* swapchain) {
   // Get or create the failure tracking structure
   IndependentFlipFailures* failures = g_if_failures.load();
   if (failures == nullptr) {

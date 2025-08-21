@@ -168,29 +168,19 @@ std::string g_hdr10_override_status = "Not applied";
 std::string g_hdr10_override_timestamp = "Never";
 
 // Function implementations
-const char* DxgiBypassModeToString(DxgiBypassMode mode) {
-  switch (mode) {
-    case DxgiBypassMode::kUnknown: return "Unknown";
-    case DxgiBypassMode::kComposed: return "Composed";
-    case DxgiBypassMode::kOverlay: return "Overlay";
-    case DxgiBypassMode::kIndependentFlip: return "Independent Flip";
-    default: return "Invalid";
-  }
-}
-
-bool SetIndependentFlipState(reshade::api::swapchain* swapchain) {
-  // This is a placeholder implementation
-  // The actual implementation would be in a separate file
-  return false;
-}
-
-void LogIndependentFlipConditions(reshade::api::swapchain* swapchain) {
-  // This is a placeholder implementation
-  // The actual implementation would be in a separate file
-}
-
-DxgiBypassMode GetIndependentFlipState(reshade::api::swapchain* swapchain) {
-  // This is a placeholder implementation
-  // The actual implementation would be in a separate file
-  return DxgiBypassMode::kUnknown;
+void IndependentFlipFailures::reset() {
+  swapchain_null.store(false);
+  device_null.store(false);
+  non_dxgi_api.store(false);
+  swapchain_media_failed.store(false);
+  frame_stats_failed.store(false);
+  not_flip_model.store(false);
+  backbuffer_size_mismatch.store(false);
+  window_size_mismatch.store(false);
+  window_not_at_origin.store(false);
+  window_layered.store(false);
+  window_topmost.store(false);
+  window_maximized.store(false);
+  window_minimized.store(false);
+  hwnd_null.store(false);
 }
