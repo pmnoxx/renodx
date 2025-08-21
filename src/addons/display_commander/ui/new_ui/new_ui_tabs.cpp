@@ -2,7 +2,7 @@
 #include "swapchain_tab.hpp"
 #include "window_info_tab.hpp"
 #include "device_info_tab.hpp"
-#include "developer_tab.hpp"
+#include "developer_new_tab.hpp"
 #include "../../addon.hpp"
 #include <sstream>
 
@@ -63,7 +63,11 @@ void InitializeNewUI() {
     });
     
     g_tab_manager.AddTab("Developer", "developer", []() {
-        renodx::ui::new_ui::DrawDeveloperTab();
+        //renodx::ui::new_ui::DrawDeveloperTab();
+    });
+    
+    g_tab_manager.AddTab("DeveloperNew", "developer_new", []() {
+        renodx::ui::new_ui::DrawDeveloperNewTab();
     });
     
     g_tab_manager.AddTab("Device Info", "device_info", []() {
