@@ -2,6 +2,7 @@
 #include "swapchain_tab.hpp"
 #include "window_info_tab.hpp"
 #include "device_info_tab.hpp"
+#include "developer_tab.hpp"
 #include "../../addon.hpp"
 #include <sstream>
 
@@ -62,16 +63,7 @@ void InitializeNewUI() {
     });
     
     g_tab_manager.AddTab("Developer", "developer", []() {
-      /*  ImGui::Text("Developer Tab - Advanced Features");
-        ImGui::Separator();
-        
-        // Add your developer tab content here
-        if (ImGui::Button("Debug Info")) {
-            LogInfo("Debug info requested from Developer tab");
-        }
-        
-        ImGui::Text("This is the developer tab with advanced features.");
-        ImGui::Text("Add your developer UI elements here."); */
+        renodx::ui::new_ui::DrawDeveloperTab();
     });
     
     g_tab_manager.AddTab("Device Info", "device_info", []() {
