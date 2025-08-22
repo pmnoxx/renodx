@@ -21,6 +21,7 @@ void TabManager::AddTab(const std::string& name, const std::string& id, std::fun
 }
 
 void TabManager::Draw() {
+    LogInfo("XXX Drawing tabs");
     if (tabs_.empty()) {
         return;
     }

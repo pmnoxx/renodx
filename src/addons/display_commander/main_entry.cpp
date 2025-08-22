@@ -1,9 +1,8 @@
 #include "addon.hpp"
 
-// Include the UI settings header to get the settings vector declaration
-#include "ui_settings.hpp"
-#include "settings.hpp"
+// Include the UI initialization
 #include "ui/ui_main.hpp"
+#include "ui/new_ui/new_ui_main.hpp"
 #include "background_tasks/background_task_coordinator.hpp"
 #include "reshade_events/fullscreen_prevention.hpp"
 
@@ -11,24 +10,12 @@
 #include "dxgi/dxgi_device_info.hpp"
 #include "nvapi/nvapi_fullscreen_prevention.hpp"
 
-// Forward declarations for continuous monitoring functions
-void StartContinuousMonitoring();
-void StopContinuousMonitoring();
-
-// Forward declarations for continuous rendering functions
-void StartContinuousRendering();
-void StopContinuousRendering();
-
 // Forward declarations for ReShade event handlers
 void OnInitEffectRuntime(reshade::api::effect_runtime* runtime);
 bool OnReShadeOverlayOpen(reshade::api::effect_runtime* runtime, bool open, reshade::api::input_source source);
 
 // Forward declarations for frame lifecycle hooks
 void OnBeginRenderPass(reshade::api::command_list* cmd_list);
-void OnEndRenderPass(reshade::api::command_list* cmd_list);
-
-// External declarations for settings
-extern float s_remove_top_bar;
 
 // ReShade effect runtime event handler for input blocking
 void OnInitEffectRuntime(reshade::api::effect_runtime* runtime) {
@@ -52,6 +39,16 @@ bool OnReShadeOverlayOpen(reshade::api::effect_runtime* runtime, bool open, resh
     return false; // Don't prevent ReShade from opening/closing the overlay
 }
 
+// Direct overlay draw callback (no settings2 indirection)
+namespace {
+void OnRegisterOverlayDisplayCommander(reshade::api::effect_runtime* runtime) {
+    // Ensure UI system is initialized
+    renodx::ui::new_ui::InitializeNewUISystem();
+    // Draw the new UI
+    renodx::ui::new_ui::DrawNewUISystem();
+}
+}  // namespace
+
 BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   switch (fdw_reason) {
     case DLL_PROCESS_ATTACH:
@@ -68,8 +65,6 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       reshade::register_event<reshade::addon_event::set_fullscreen_state>(
           renodx::display_commander::events::OnSetFullscreenState);
 
-      renodx::utils::settings2::use_presets = false;
-      renodx::utils::settings2::global_name = "DisplayCommander";
       g_attach_time = std::chrono::steady_clock::now();
       g_shutdown.store(false);
       std::thread(RunBackgroundAudioMonitor).detach();
@@ -84,6 +79,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       // Register frame lifecycle hooks for custom FPS limiter
       reshade::register_event<reshade::addon_event::begin_render_pass>(OnBeginRenderPass);
       reshade::register_event<reshade::addon_event::end_render_pass>(OnEndRenderPass);
+      // Register overlay directly
+      reshade::register_overlay("Display Commander", OnRegisterOverlayDisplayCommander);
       break;
     case DLL_PROCESS_DETACH:
       
@@ -101,6 +98,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       // Unregister frame lifecycle hooks for custom FPS limiter
       reshade::unregister_event<reshade::addon_event::begin_render_pass>(OnBeginRenderPass);
       reshade::unregister_event<reshade::addon_event::end_render_pass>(OnEndRenderPass);
+      // Unregister overlay
+      reshade::unregister_overlay("###settings", OnRegisterOverlayDisplayCommander);
       
       reshade::unregister_event<reshade::addon_event::set_fullscreen_state>(
           renodx::display_commander::events::OnSetFullscreenState);
@@ -115,10 +114,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   if (fdw_reason == DLL_PROCESS_ATTACH) {
 
 
-    // Initialize UI settings before registering the overlay
+    // Initialize UI system before first draw
     InitializeUISettings();
-    
-    renodx::utils::settings2::Use(fdw_reason, &settings);
     // InitializeSwapchain removed from proxy
     
     // Check if continuous monitoring should be enabled
@@ -130,10 +127,9 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
     
     // Initialize NVAPI fullscreen prevention if enabled
     if (s_nvapi_fullscreen_prevention >= 0.5f) {
-      extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
-      if (g_nvapiFullscreenPrevention.Initialize()) {
+      if (::g_nvapiFullscreenPrevention.Initialize()) {
         LogInfo("NVAPI initialized proactively for fullscreen prevention");
-        if (g_nvapiFullscreenPrevention.SetFullscreenPrevention(true)) {
+        if (::g_nvapiFullscreenPrevention.SetFullscreenPrevention(true)) {
           LogInfo("NVAPI fullscreen prevention applied proactively");
         } else {
           LogWarn("Failed to apply NVAPI fullscreen prevention proactively");
@@ -158,13 +154,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
     }
 
     // Initialize Custom FPS Limiter system if any FPS limits are set
-    extern float s_fps_limit;
-    extern float s_fps_limit_background;
     if (s_fps_limit > 0.0f || s_fps_limit_background > 0.0f) {
-      extern const float s_custom_fps_limiter_enabled;
-      extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
-      
-      if (g_customFpsLimiterManager && g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
+      if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager && renodx::dxgi::fps_limiter::g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
         LogInfo("Custom FPS Limiter system auto-initialized at startup (FPS limits detected)");
       } else {
         LogWarn("Failed to initialize Custom FPS Limiter system at startup");

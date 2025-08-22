@@ -15,9 +15,8 @@ void OnBeginRenderPass(reshade::api::command_list* cmd_list, uint32_t count, con
     // Call custom FPS limiter frame begin if enabled
     extern const float s_custom_fps_limiter_enabled;
     if (s_custom_fps_limiter_enabled > 0.5f) {
-        extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
-        if (g_customFpsLimiterManager) {
-            auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+        if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager) {
+            auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager->GetFpsLimiter();
             if (limiter.IsEnabled()) {
                 limiter.OnFrameBegin();
             }
@@ -29,9 +28,8 @@ void OnEndRenderPass(reshade::api::command_list* cmd_list) {
     // Call custom FPS limiter frame end if enabled
     extern const float s_custom_fps_limiter_enabled;
     if (s_custom_fps_limiter_enabled > 0.5f) {
-        extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
-        if (g_customFpsLimiterManager) {
-            auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+        if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager) {
+            auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager->GetFpsLimiter();
             if (limiter.IsEnabled()) {
                 limiter.OnFrameEnd();
             }
@@ -185,9 +183,8 @@ static void OnPresentUpdate(
     }
     
     // Apply the FPS limit to the Custom FPS Limiter
-    extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
-    if (g_customFpsLimiterManager) {
-      auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+    if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager) {
+      auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager->GetFpsLimiter();
       if (target_fps > 0.0f) {
         limiter.SetTargetFps(target_fps);
         limiter.SetEnabled(true);

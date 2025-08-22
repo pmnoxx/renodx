@@ -9,7 +9,7 @@
 #include "../ui_display_tab.hpp"
 
 // Global variable declaration
-extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
+extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> renodx::dxgi::fps_limiter::g_customFpsLimiterManager;
 
 // External constants for width and height options (unused here)
 
@@ -197,7 +197,7 @@ void DrawDisplaySettings() {
         
         if (fps_limit > 0.0f) {
             // Custom FPS Limiter is always enabled, just initialize if needed
-            if (g_customFpsLimiterManager && g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
+            if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager && renodx::dxgi::fps_limiter::g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
                 LogWarn("Custom FPS Limiter system auto-initialized");
             } else {
                 LogWarn("Failed to initialize Custom FPS Limiter system");
@@ -205,8 +205,8 @@ void DrawDisplaySettings() {
             }
             
             // Update the custom FPS limiter
-            if (g_customFpsLimiterManager) {
-                auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+            if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager) {
+                auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager->GetFpsLimiter();
                 limiter.SetTargetFps(fps_limit);
                 limiter.SetEnabled(true);
                 
@@ -216,8 +216,8 @@ void DrawDisplaySettings() {
             }
         } else {
             // FPS limit set to 0, disable the limiter
-            if (g_customFpsLimiterManager) {
-                auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+            if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager) {
+                auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager->GetFpsLimiter();
                 limiter.SetEnabled(false);
                 LogInfo("FPS limit removed (no limit)");
             }
@@ -234,7 +234,7 @@ void DrawDisplaySettings() {
         
         if (fps_limit_bg > 0.0f) {
             // Custom FPS Limiter is always enabled, just initialize if needed
-            if (g_customFpsLimiterManager && g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
+            if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager && renodx::dxgi::fps_limiter::g_customFpsLimiterManager->InitializeCustomFpsLimiterSystem()) {
                 LogWarn("Custom FPS Limiter system auto-initialized");
             } else {
                 LogWarn("Failed to initialize Custom FPS Limiter system");
@@ -247,8 +247,8 @@ void DrawDisplaySettings() {
             const bool is_background = (hwnd != nullptr && GetForegroundWindow() != hwnd);
             
             if (is_background && fps_limit_bg >= 0.f) {
-                if (g_customFpsLimiterManager) {
-                    auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+                if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager) {
+                    auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager->GetFpsLimiter();
                     limiter.SetTargetFps(fps_limit_bg);
                     limiter.SetEnabled(true);
                     
@@ -259,8 +259,8 @@ void DrawDisplaySettings() {
             }
         } else {
             // Background FPS limit set to 0, disable the limiter
-            if (g_customFpsLimiterManager) {
-                auto& limiter = g_customFpsLimiterManager->GetFpsLimiter();
+            if (renodx::dxgi::fps_limiter::g_customFpsLimiterManager) {
+                auto& limiter = renodx::dxgi::fps_limiter::g_customFpsLimiterManager->GetFpsLimiter();
                 limiter.SetEnabled(false);
                 LogInfo("Background FPS limit removed (no limit)");
             }
@@ -429,13 +429,11 @@ void DrawMonitorDisplaySettings() {
 void DrawBasicReflexSettings() {
     ImGui::TextColored(ImVec4(0.8f, 1.0f, 0.8f, 1.0f), "=== Basic Reflex Settings ===");
     
-    // Enable NVIDIA Reflex checkbox
-    bool reflex_enabled = (s_reflex_enabled >= 0.5f);
-    if (ImGui::Checkbox("Enable NVIDIA Reflex", &reflex_enabled)) {
-        s_reflex_enabled = reflex_enabled ? 1.0f : 0.0f;
-        
+    // Enable NVIDIA Reflex checkbox (persistent)
+    if (CheckboxSetting(g_main_new_tab_settings.reflex_enabled, "Enable NVIDIA Reflex")) {
+        s_reflex_enabled = g_main_new_tab_settings.reflex_enabled.GetValue() ? 1.0f : 0.0f;
         std::ostringstream oss;
-        oss << "NVIDIA Reflex " << (reflex_enabled ? "enabled" : "disabled");
+        oss << "NVIDIA Reflex " << (g_main_new_tab_settings.reflex_enabled.GetValue() ? "enabled" : "disabled");
         LogInfo(oss.str().c_str());
     }
     if (ImGui::IsItemHovered()) {
