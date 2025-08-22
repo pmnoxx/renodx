@@ -1,38 +1,54 @@
 #include "main_new_tab.hpp"
+#include "main_new_tab_settings.hpp"
 #include "../../addon.hpp"
 #include "../../dxgi/custom_fps_limiter.hpp"
 #include "../../dxgi/custom_fps_limiter_manager.hpp"
-#include "../ui_common.hpp"
 #include "../ui_display_tab.hpp"
 #include <sstream>
 #include <thread>
 #include <atomic>
 
-// External variable declarations
-extern float s_windowed_width;
-extern float s_windowed_height; 
-extern float s_resize_mode;
-extern float s_aspect_index;
-extern float s_target_monitor_index;
-extern float s_remove_top_bar;
-extern float s_move_to_zero_if_out;
-extern float s_fps_limit;
-extern float s_fps_limit_background;
-extern float s_audio_volume_percent;
-extern float s_audio_mute;
-extern float s_mute_in_background;
-extern float s_reflex_enabled;
-
 // Global variable declaration
 extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
 
-// External constants for width and height options
-extern const int WIDTH_OPTIONS[];
-extern const int HEIGHT_OPTIONS[];
+// External constants for width and height options (unused here)
 
 namespace renodx::ui::new_ui {
 
 void DrawMainNewTab() {
+    // Load saved settings once and sync legacy globals
+    static bool settings_loaded_once = false;
+    if (!settings_loaded_once) {
+        g_main_new_tab_settings.LoadSettings();
+        {
+            int idx = g_main_new_tab_settings.window_width.GetValue();
+            idx = (std::max)(idx, 0);
+            int max_idx = 7;
+            idx = (std::min)(idx, max_idx);
+            s_windowed_width = (idx == 0) ? static_cast<float>(GetCurrentMonitorWidth())
+                                          : static_cast<float>(WIDTH_OPTIONS[idx]);
+        }
+        {
+            int idx = g_main_new_tab_settings.window_height.GetValue();
+            idx = (std::max)(idx, 0);
+            int max_idx = 7;
+            idx = (std::min)(idx, max_idx);
+            s_windowed_height = (idx == 0) ? static_cast<float>(GetCurrentMonitorHeight())
+                                           : static_cast<float>(HEIGHT_OPTIONS[idx]);
+        }
+        s_resize_mode = static_cast<float>(g_main_new_tab_settings.resize_mode.GetValue());
+        s_aspect_index = static_cast<float>(g_main_new_tab_settings.aspect_index.GetValue());
+        s_target_monitor_index = static_cast<float>(g_main_new_tab_settings.target_monitor_index.GetValue());
+        s_remove_top_bar = g_main_new_tab_settings.remove_top_bar.GetValue() ? 1.0f : 0.0f;
+        s_move_to_zero_if_out = static_cast<float>(g_main_new_tab_settings.alignment.GetValue());
+        s_fps_limit = g_main_new_tab_settings.fps_limit.GetValue();
+        s_fps_limit_background = g_main_new_tab_settings.fps_limit_background.GetValue();
+        s_audio_volume_percent = g_main_new_tab_settings.audio_volume_percent.GetValue();
+        s_audio_mute = g_main_new_tab_settings.audio_mute.GetValue() ? 1.0f : 0.0f;
+        s_mute_in_background = g_main_new_tab_settings.mute_in_background.GetValue() ? 1.0f : 0.0f;
+        s_reflex_enabled = g_main_new_tab_settings.reflex_enabled.GetValue() ? 1.0f : 0.0f;
+        settings_loaded_once = true;
+    }
     ImGui::Text("Main Tab - Basic Settings");
     ImGui::Separator();
     
@@ -67,11 +83,14 @@ void DrawMainNewTab() {
 void DrawDisplaySettings() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "=== Display Settings ===");
     
-    // Window Width dropdown
-    const char* width_labels[] = {"Current Display", "1280", "1366", "1600", "1920", "2560", "3440", "3840"};
-    int width_index = static_cast<int>(s_windowed_width);
-    if (ImGui::Combo("Window Width", &width_index, width_labels, 8)) {
-        s_windowed_width = static_cast<float>(width_index);
+    // Window Width dropdown (with persistent setting)
+    if (ComboSettingWrapper(g_main_new_tab_settings.window_width, "Window Width")) {
+        int idx = g_main_new_tab_settings.window_width.GetValue();
+        idx = (std::max)(idx, 0);
+        int max_idx = 7;
+        idx = (std::min)(idx, max_idx);
+        s_windowed_width = (idx == 0) ? static_cast<float>(GetCurrentMonitorWidth())
+                                      : static_cast<float>(WIDTH_OPTIONS[idx]);
         LogInfo("Window width changed");
     }
     if (ImGui::IsItemHovered()) {
@@ -79,14 +98,17 @@ void DrawDisplaySettings() {
     }
     
     // Window Height dropdown (disabled when in aspect ratio mode)
-    const char* height_labels[] = {"Current Display", "720", "900", "1080", "1200", "1440", "1600", "2160"};
-    int height_index = static_cast<int>(s_windowed_height);
     bool height_enabled = (s_resize_mode < 0.5f);
     if (!height_enabled) {
         ImGui::BeginDisabled();
     }
-    if (ImGui::Combo("Window Height", &height_index, height_labels, 8)) {
-        s_windowed_height = static_cast<float>(height_index);
+    if (ComboSettingWrapper(g_main_new_tab_settings.window_height, "Window Height")) {
+        int idx = g_main_new_tab_settings.window_height.GetValue();
+        idx = (std::max)(idx, 0);
+        int max_idx = 7;
+        idx = (std::min)(idx, max_idx);
+        s_windowed_height = (idx == 0) ? static_cast<float>(GetCurrentMonitorHeight())
+                                       : static_cast<float>(HEIGHT_OPTIONS[idx]);
         LogInfo("Window height changed");
     }
     if (ImGui::IsItemHovered()) {
@@ -96,11 +118,9 @@ void DrawDisplaySettings() {
         ImGui::EndDisabled();
     }
     
-    // Resize Mode combo
-    const char* resize_mode_labels[] = {"Width/Height", "Aspect Ratio"};
-    int resize_mode = static_cast<int>(s_resize_mode);
-    if (ImGui::Combo("Resize Mode", &resize_mode, resize_mode_labels, 2)) {
-        s_resize_mode = static_cast<float>(resize_mode);
+    // Resize Mode combo (persistent)
+    if (ComboSettingWrapper(g_main_new_tab_settings.resize_mode, "Resize Mode")) {
+        s_resize_mode = static_cast<float>(g_main_new_tab_settings.resize_mode.GetValue());
         LogInfo("Resize mode changed");
     }
     if (ImGui::IsItemHovered()) {
@@ -109,10 +129,8 @@ void DrawDisplaySettings() {
     
     // Aspect Ratio dropdown (only visible when in Aspect mode)
     if (s_resize_mode >= 0.5f) {
-        const char* aspect_labels[] = {"3:2", "4:3", "16:10", "16:9", "19:9", "19.5:9", "21:9", "32:9"};
-        int aspect_index = static_cast<int>(s_aspect_index);
-        if (ImGui::Combo("Aspect Ratio", &aspect_index, aspect_labels, 8)) {
-            s_aspect_index = static_cast<float>(aspect_index);
+        if (ComboSettingWrapper(g_main_new_tab_settings.aspect_index, "Aspect Ratio")) {
+            s_aspect_index = static_cast<float>(g_main_new_tab_settings.aspect_index.GetValue());
             LogInfo("Aspect ratio changed");
         }
         if (ImGui::IsItemHovered()) {
@@ -123,12 +141,14 @@ void DrawDisplaySettings() {
     // Target Monitor dropdown
     std::vector<std::string> monitor_labels = MakeMonitorLabels();
     std::vector<const char*> monitor_c_labels;
+    monitor_c_labels.reserve(monitor_labels.size());
     for (const auto& label : monitor_labels) {
         monitor_c_labels.push_back(label.c_str());
     }
     int monitor_index = static_cast<int>(s_target_monitor_index);
     if (ImGui::Combo("Target Monitor", &monitor_index, monitor_c_labels.data(), static_cast<int>(monitor_c_labels.size()))) {
         s_target_monitor_index = static_cast<float>(monitor_index);
+        g_main_new_tab_settings.target_monitor_index.SetValue(monitor_index);
         LogInfo("Target monitor changed");
     }
     if (ImGui::IsItemHovered()) {
@@ -136,9 +156,8 @@ void DrawDisplaySettings() {
     }
     
     // Remove Top Bar checkbox
-    bool remove_top_bar = (s_remove_top_bar >= 0.5f);
-    if (ImGui::Checkbox("Remove Top Bar", &remove_top_bar)) {
-        s_remove_top_bar = remove_top_bar ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_main_new_tab_settings.remove_top_bar, "Remove Top Bar")) {
+        s_remove_top_bar = g_main_new_tab_settings.remove_top_bar.GetValue() ? 1.0f : 0.0f;
         LogInfo("Remove top bar setting changed");
     }
     if (ImGui::IsItemHovered()) {
@@ -146,10 +165,8 @@ void DrawDisplaySettings() {
     }
     
     // Window Alignment dropdown
-    const char* alignment_labels[] = {"None", "Top Left", "Top Right", "Bottom Left", "Bottom Right", "Center"};
-    int alignment_index = static_cast<int>(s_move_to_zero_if_out);
-    if (ImGui::Combo("Alignment", &alignment_index, alignment_labels, 6)) {
-        s_move_to_zero_if_out = static_cast<float>(alignment_index);
+    if (ComboSettingWrapper(g_main_new_tab_settings.alignment, "Alignment")) {
+        s_move_to_zero_if_out = static_cast<float>(g_main_new_tab_settings.alignment.GetValue());
         LogInfo("Window alignment changed");
     }
     if (ImGui::IsItemHovered()) {
@@ -162,6 +179,10 @@ void DrawDisplaySettings() {
         extern std::atomic<uint64_t> g_init_apply_generation;
         ::g_init_apply_generation.fetch_add(1);
         LogInfo("Apply Changes button clicked - forcing immediate window update");
+        std::ostringstream oss;
+        // All global settings on this tab are handled by the settings wrapper
+        oss << "Apply Changes button clicked - forcing immediate window update";
+        LogInfo(oss.str().c_str());
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Apply the current window size and position settings immediately.");

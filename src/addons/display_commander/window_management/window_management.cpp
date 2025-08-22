@@ -185,6 +185,8 @@ void  CalculateWindowState(HWND hwnd, const char* reason) {
   g_window_state.needs_resize = (g_window_state.target_w != (wr_current.right - wr_current.left)) || 
                                 (g_window_state.target_h != (wr_current.bottom - wr_current.top));
   g_window_state.needs_move = (g_window_state.target_x != wr_current.left) || (g_window_state.target_y != wr_current.top);
+
+  LogDebug("CalculateWindowState: target_w=" + std::to_string(g_window_state.target_w) + ", target_h=" + std::to_string(g_window_state.target_h));
 }
 
 // Second function: Apply the calculated window changes
@@ -203,7 +205,7 @@ void ApplyWindowChange(HWND hwnd, const char* reason, bool force_apply) {
   // Check if any changes are needed
   if (g_window_state.needs_resize || g_window_state.needs_move || g_window_state.style_changed) {
     //LogDebug("ApplyWindowChange: No changes needed");
-    if (g_window_state.target_w <= 0 || g_window_state.target_h <= 0) {
+    if (g_window_state.target_w <= 16 || g_window_state.target_h <= 16) {
       std::ostringstream oss;
       oss << "ApplyWindowChange: Invalid target size " << g_window_state.target_w << "x" << g_window_state.target_h << ", skipping";
       LogWarn(oss.str().c_str());

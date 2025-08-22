@@ -49,22 +49,8 @@ void TabManager::Draw() {
 
 // Initialize the new UI system
 void InitializeNewUI() {
-    // Add tabs with their content
     
-    g_tab_manager.AddTab("Main", "main", []() {
-   /*     ImGui::Text("Main Tab - Basic Settings");
-        ImGui::Separator();
-        
-        // Add your main tab content here
-        if (ImGui::Button("Test Button")) {
-            LogInfo("Test button clicked from Main tab");
-        }
-        
-        ImGui::Text("This is the main tab with basic settings.");
-        ImGui::Text("Add your main UI elements here."); */
-    });
-    
-    g_tab_manager.AddTab("MainNew", "main_new", []() {
+    g_tab_manager.AddTab("Main", "main_new", []() {
         renodx::ui::new_ui::DrawMainNewTab();
     });
     g_tab_manager.AddTab("Developer", "developer_new", []() {

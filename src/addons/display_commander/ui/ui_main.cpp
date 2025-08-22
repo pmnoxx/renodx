@@ -31,10 +31,10 @@ void InitializeUISettings() {
     // SIMPLE TAB (0) - Basic settings for everyday use
     // ============================================================================
    // renodx::ui::AddGeneralSettings(settings);        // UI Tab selector (always visible)
-    renodx::ui::AddDisplaySettings(settings);        // Basic display controls
-    renodx::ui::AddDisplayTabSettings(settings);     // Display tab specific settings
-    renodx::ui::AddAudioSettings(settings);          // Audio volume and mute controls
-    renodx::ui::AddWindowControls(settings);         // Minimize/Restore buttons
+ //   renodx::ui::AddDisplaySettings(settings);        // Basic display controls
+   // renodx::ui::AddDisplayTabSettings(settings);     // Display tab specific settings
+   // renodx::ui::AddAudioSettings(settings);          // Audio volume and mute controls
+   // renodx::ui::AddWindowControls(settings);         // Minimize/Restore buttons
     
     
     // Mark as initialized
