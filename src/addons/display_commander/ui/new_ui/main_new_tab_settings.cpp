@@ -19,6 +19,7 @@ MainNewTabSettings::MainNewTabSettings()
       audio_volume_percent("audio_volume_percent", 100.0f, 0.0f, 100.0f, "renodx_main_tab"),
       audio_mute("audio_mute", false, "renodx_main_tab"),
       mute_in_background("mute_in_background", false, "renodx_main_tab"),
+      mute_in_background_if_other_audio("mute_in_background_if_other_audio", true, "renodx_main_tab"),
       reflex_enabled("reflex_enabled", false, "renodx_main_tab") {
     
     // Initialize the all_settings_ vector
@@ -35,6 +36,7 @@ MainNewTabSettings::MainNewTabSettings()
         &audio_volume_percent,
         &audio_mute,
         &mute_in_background,
+        &mute_in_background_if_other_audio,
         &reflex_enabled
     };
 }

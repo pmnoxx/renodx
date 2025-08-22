@@ -327,7 +327,7 @@ void HandleAutoRestoreResolutionCheckbox() {
 void HandleAutoApplyCheckboxes() {
     ImGui::Spacing();
     
-    if (ImGui::Checkbox("Auto-apply resolution changes", &s_auto_apply_resolution_change)) {
+    if (ImGui::Checkbox("Auto-apply resolution changes (TODO: implement)", &s_auto_apply_resolution_change)) {
         // Log the setting change
         if (s_auto_apply_resolution_change) {
             LogInfo("Auto-apply resolution changes: ENABLED");
@@ -340,7 +340,7 @@ void HandleAutoApplyCheckboxes() {
         ImGui::SetTooltip("When enabled, automatically applies resolution changes immediately when a new resolution is selected.\nThis provides instant feedback without needing to click the apply button.");
     }
     
-    if (ImGui::Checkbox("Auto-apply refresh rate changes", &s_auto_apply_refresh_rate_change)) {
+    if (ImGui::Checkbox("Auto-apply refresh rate changes (TODO: implement)", &s_auto_apply_refresh_rate_change)) {
         // Log the setting change
         if (s_auto_apply_refresh_rate_change) {
             LogInfo("Auto-apply refresh rate changes: ENABLED");

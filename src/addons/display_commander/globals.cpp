@@ -35,6 +35,7 @@ float s_nvapi_force_hdr10 = 0.f;
 // Spoof Fullscreen State (for applications that query fullscreen status)
 float s_spoof_fullscreen_state = 0.f;
 float s_mute_in_background = 0.f;
+float s_mute_in_background_if_other_audio = 0.f;
 float s_audio_volume_percent = 100.f;
 float s_audio_mute = 0.f;
 

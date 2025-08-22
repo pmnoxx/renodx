@@ -1,6 +1,7 @@
 #include "main_new_tab.hpp"
 #include "main_new_tab_settings.hpp"
 #include "../../addon.hpp"
+#include "../../audio/audio_management.hpp"
 #include "../../dxgi/custom_fps_limiter.hpp"
 #include "../../dxgi/custom_fps_limiter_manager.hpp"
 #include <sstream>
@@ -51,6 +52,7 @@ void InitMainNewTab() {
         s_audio_volume_percent = g_main_new_tab_settings.audio_volume_percent.GetValue();
         s_audio_mute = g_main_new_tab_settings.audio_mute.GetValue() ? 1.0f : 0.0f;
         s_mute_in_background = g_main_new_tab_settings.mute_in_background.GetValue() ? 1.0f : 0.0f;
+        s_mute_in_background_if_other_audio = g_main_new_tab_settings.mute_in_background_if_other_audio.GetValue() ? 1.0f : 0.0f;
         s_reflex_enabled = g_main_new_tab_settings.reflex_enabled.GetValue() ? 1.0f : 0.0f;
         settings_loaded_once = true;
     }
@@ -371,6 +373,34 @@ void DrawAudioSettings() {
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Mute the game's audio when it is not the foreground window.");
+    }
+    if (s_audio_mute >= 0.5f) {
+        ImGui::EndDisabled();
+    }
+
+    // Mute in Background only if other app plays audio
+    bool mute_in_bg_if_other = (s_mute_in_background_if_other_audio >= 0.5f);
+    if (s_audio_mute >= 0.5f) {
+        ImGui::BeginDisabled();
+    }
+    if (ImGui::Checkbox("Mute In Background (only if other app has audio)", &mute_in_bg_if_other)) {
+        s_mute_in_background_if_other_audio = mute_in_bg_if_other ? 1.0f : 0.0f;
+        g_main_new_tab_settings.mute_in_background_if_other_audio.SetValue(mute_in_bg_if_other);
+        ::g_muted_applied.store(false);
+        if (s_audio_mute < 0.5f) {
+            HWND hwnd = g_last_swapchain_hwnd.load();
+            if (hwnd == nullptr) hwnd = GetForegroundWindow();
+            bool is_background = (hwnd != nullptr && GetForegroundWindow() != hwnd);
+            bool want_mute = (mute_in_bg_if_other && is_background && ::IsOtherAppPlayingAudio());
+            if (::SetMuteForCurrentProcess(want_mute)) {
+                ::g_muted_applied.store(want_mute);
+                std::ostringstream oss; oss << "Background mute (if other audio) " << (mute_in_bg_if_other ? "enabled" : "disabled");
+                LogInfo(oss.str().c_str());
+            }
+        }
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Mute only if app is background AND another app outputs audio.");
     }
     if (s_audio_mute >= 0.5f) {
         ImGui::EndDisabled();

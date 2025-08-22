@@ -27,6 +27,7 @@ extern float s_nvapi_fullscreen_prevention;
 extern float s_audio_volume_percent;
 extern float s_audio_mute;
 extern float s_mute_in_background;
+extern float s_mute_in_background_if_other_audio;
 extern float s_fps_limit_background;
 extern float s_window_info_display;
 

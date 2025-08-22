@@ -142,6 +142,7 @@ extern float s_nvapi_force_hdr10;
 // Spoof Fullscreen State (for applications that query fullscreen status)
 extern float s_spoof_fullscreen_state;
 extern float s_mute_in_background;
+extern float s_mute_in_background_if_other_audio;
 extern float s_audio_volume_percent;
 extern float s_audio_mute;
 extern float s_fps_limit_background;

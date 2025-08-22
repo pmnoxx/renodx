@@ -34,6 +34,7 @@ public:
     FloatSetting audio_volume_percent;
     BoolSetting audio_mute;
     BoolSetting mute_in_background;
+    BoolSetting mute_in_background_if_other_audio;
     
     // Reflex Settings
     BoolSetting reflex_enabled;
