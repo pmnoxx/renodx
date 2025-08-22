@@ -1,4 +1,6 @@
 #include "developer_new_tab.hpp"
+#include "developer_new_tab_settings.hpp"
+#include "settings_wrapper.hpp"
 #include "../../addon.hpp"
 #include "../../nvapi/nvapi_fullscreen_prevention.hpp"
 #include "../ui_common.hpp"
@@ -12,6 +14,13 @@ extern float s_background_feature_enabled;
 namespace renodx::ui::new_ui {
 
 void DrawDeveloperNewTab() {
+    // Ensure settings are loaded
+    static bool settings_loaded = false;
+    if (!settings_loaded) {
+        g_developerTabSettings.LoadAll();
+        settings_loaded = true;
+    }
+    
     ImGui::Text("Developer Tab - Advanced Features");
     ImGui::Separator();
     
@@ -47,9 +56,9 @@ void DrawDeveloperSettings() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "=== Developer Settings ===");
     
     // Prevent Fullscreen (global)
-    bool prevent_fullscreen = (s_prevent_fullscreen >= 0.5f);
-    if (ImGui::Checkbox("Prevent Fullscreen", &prevent_fullscreen)) {
-        s_prevent_fullscreen = prevent_fullscreen ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_developerTabSettings.prevent_fullscreen, "Prevent Fullscreen")) {
+        // Update global variable for compatibility
+        s_prevent_fullscreen = g_developerTabSettings.prevent_fullscreen.GetValue() ? 1.0f : 0.0f;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Prevent exclusive fullscreen; keep borderless/windowed for stability and HDR.");
@@ -57,8 +66,9 @@ void DrawDeveloperSettings() {
     
     // Spoof Fullscreen State
     const char* spoof_fullscreen_labels[] = {"Disabled", "Spoof as Fullscreen", "Spoof as Windowed"};
-    int spoof_fullscreen_state = static_cast<int>(s_spoof_fullscreen_state);
+    int spoof_fullscreen_state = static_cast<int>(g_developerTabSettings.spoof_fullscreen_state.GetValue());
     if (ImGui::Combo("Spoof Fullscreen State", &spoof_fullscreen_state, spoof_fullscreen_labels, 3)) {
+        g_developerTabSettings.spoof_fullscreen_state.SetValue(spoof_fullscreen_state != 0);
         s_spoof_fullscreen_state = static_cast<float>(spoof_fullscreen_state);
         
         // Log the change
@@ -80,8 +90,9 @@ void DrawDeveloperSettings() {
     
     // Spoof Window Focus
     const char* spoof_focus_labels[] = {"Disabled", "Spoof as Focused", "Spoof as Unfocused"};
-    int spoof_focus_state = static_cast<int>(s_spoof_window_focus);
+    int spoof_focus_state = static_cast<int>(g_developerTabSettings.spoof_window_focus.GetValue());
     if (ImGui::Combo("Spoof Window Focus", &spoof_focus_state, spoof_focus_labels, 3)) {
+        g_developerTabSettings.spoof_window_focus.SetValue(spoof_focus_state != 0);
         s_spoof_window_focus = static_cast<float>(spoof_focus_state);
         
         // Log the change
@@ -104,11 +115,10 @@ void DrawDeveloperSettings() {
     ImGui::Spacing();
     
     // Continuous Monitoring
-    bool continuous_monitoring = (s_continuous_monitoring_enabled >= 0.5f);
-    if (ImGui::Checkbox("Continuous Monitoring", &continuous_monitoring)) {
-        s_continuous_monitoring_enabled = continuous_monitoring ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_developerTabSettings.continuous_monitoring, "Continuous Monitoring")) {
+        s_continuous_monitoring_enabled = g_developerTabSettings.continuous_monitoring.GetValue() ? 1.0f : 0.0f;
         
-        if (continuous_monitoring) {
+        if (g_developerTabSettings.continuous_monitoring.GetValue()) {
             extern void StartContinuousMonitoring();
             ::StartContinuousMonitoring();
         } else {
@@ -121,18 +131,16 @@ void DrawDeveloperSettings() {
     }
     
     // Prevent Always On Top
-    bool prevent_always_on_top = (s_prevent_always_on_top >= 0.5f);
-    if (ImGui::Checkbox("Prevent Always On Top", &prevent_always_on_top)) {
-        s_prevent_always_on_top = prevent_always_on_top ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_developerTabSettings.prevent_always_on_top, "Prevent Always On Top")) {
+        s_prevent_always_on_top = g_developerTabSettings.prevent_always_on_top.GetValue() ? 1.0f : 0.0f;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Prevents windows from becoming always on top, even if they are moved or resized.");
     }
     
     // Background Feature
-    bool background_feature = (s_background_feature_enabled >= 0.5f);
-    if (ImGui::Checkbox("Background Feature", &background_feature)) {
-        s_background_feature_enabled = background_feature ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_developerTabSettings.background_feature, "Background Feature")) {
+        s_background_feature_enabled = g_developerTabSettings.background_feature.GetValue() ? 1.0f : 0.0f;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Creates a black background window behind the game when it doesn't cover the full screen.");
@@ -143,9 +151,8 @@ void DrawHdrColorspaceSettings() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "=== HDR and Colorspace Settings ===");
     
     // HDR10 Colorspace Fix
-    bool fix_hdr10_colorspace = (s_fix_hdr10_colorspace >= 0.5f);
-    if (ImGui::Checkbox("Fix NVAPI HDR10 Colorspace for reshade addon", &fix_hdr10_colorspace)) {
-        s_fix_hdr10_colorspace = fix_hdr10_colorspace ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_developerTabSettings.fix_hdr10_colorspace, "Fix NVAPI HDR10 Colorspace for reshade addon")) {
+        s_fix_hdr10_colorspace = g_developerTabSettings.fix_hdr10_colorspace.GetValue() ? 1.0f : 0.0f;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Automatically fix HDR10 colorspace when swapchain format is RGB10A2 and colorspace is currently sRGB. Only works when the game is using sRGB colorspace.");
@@ -156,20 +163,18 @@ void DrawNvapiSettings() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "=== NVAPI Settings ===");
     
     // NVAPI Fullscreen Prevention
-    bool nvapi_fullscreen_prevention = (s_nvapi_fullscreen_prevention >= 0.5f);
-    if (ImGui::Checkbox("NVAPI Fullscreen Prevention", &nvapi_fullscreen_prevention)) {
-        s_nvapi_fullscreen_prevention = nvapi_fullscreen_prevention ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_developerTabSettings.nvapi_fullscreen_prevention, "NVAPI Fullscreen Prevention")) {
+        s_nvapi_fullscreen_prevention = g_developerTabSettings.nvapi_fullscreen_prevention.GetValue() ? 1.0f : 0.0f;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Use NVAPI to prevent fullscreen mode at the driver level.");
     }
     
     // NVAPI HDR Logging
-    bool nvapi_hdr_logging = (s_nvapi_hdr_logging >= 0.5f);
-    if (ImGui::Checkbox("NVAPI HDR Logging", &nvapi_hdr_logging)) {
-        s_nvapi_hdr_logging = nvapi_hdr_logging ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_developerTabSettings.nvapi_hdr_logging, "NVAPI HDR Logging")) {
+        s_nvapi_hdr_logging = g_developerTabSettings.nvapi_hdr_logging.GetValue() ? 1.0f : 0.0f;
         
-        if (nvapi_hdr_logging) {
+        if (g_developerTabSettings.nvapi_hdr_logging.GetValue()) {
             extern void RunBackgroundNvapiHdrMonitor();
             std::thread(::RunBackgroundNvapiHdrMonitor).detach();
         }
@@ -179,18 +184,16 @@ void DrawNvapiSettings() {
     }
     
     // NVAPI HDR Interval
-    float hdr_interval = s_nvapi_hdr_interval_sec;
-    if (ImGui::SliderFloat("HDR Logging Interval (seconds)", &hdr_interval, 1.0f, 60.0f, "%.1f")) {
-        s_nvapi_hdr_interval_sec = hdr_interval;
+    if (SliderFloatSetting(g_developerTabSettings.nvapi_hdr_interval_sec, "HDR Logging Interval (seconds)", "%.1f")) {
+        s_nvapi_hdr_interval_sec = g_developerTabSettings.nvapi_hdr_interval_sec.GetValue();
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Interval between HDR monitor information logging.");
     }
     
     // NVAPI Force HDR10
-    bool force_hdr10 = (s_nvapi_force_hdr10 >= 0.5f);
-    if (ImGui::Checkbox("Force HDR10", &force_hdr10)) {
-        s_nvapi_force_hdr10 = force_hdr10 ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_developerTabSettings.nvapi_force_hdr10, "Force HDR10")) {
+        s_nvapi_force_hdr10 = g_developerTabSettings.nvapi_force_hdr10.GetValue() ? 1.0f : 0.0f;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Force HDR10 mode using NVAPI.");
@@ -280,11 +283,10 @@ void DrawReflexSettings() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "=== Reflex Settings ===");
     
     // Enable NVIDIA Reflex
-    bool reflex_enabled = (s_reflex_enabled >= 0.5f);
-    if (ImGui::Checkbox("Enable NVIDIA Reflex", &reflex_enabled)) {
-        s_reflex_enabled = reflex_enabled ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_developerTabSettings.reflex_enabled, "Enable NVIDIA Reflex")) {
+        s_reflex_enabled = g_developerTabSettings.reflex_enabled.GetValue() ? 1.0f : 0.0f;
         
-        if (reflex_enabled) {
+        if (g_developerTabSettings.reflex_enabled.GetValue()) {
             extern void InstallReflexHooks();
             ::InstallReflexHooks();
         } else {
@@ -328,9 +330,8 @@ void DrawReflexSettings() {
     }
     
     // Reflex Debug Output
-    bool debug_output = (s_reflex_debug_output >= 0.5f);
-    if (ImGui::Checkbox("Reflex Debug Output", &debug_output)) {
-        s_reflex_debug_output = debug_output ? 1.0f : 0.0f;
+    if (CheckboxSetting(g_developerTabSettings.reflex_debug_output, "Reflex Debug Output")) {
+        s_reflex_debug_output = g_developerTabSettings.reflex_debug_output.GetValue() ? 1.0f : 0.0f;
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Enable or disable Reflex debug messages in the log.");
