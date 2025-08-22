@@ -5,6 +5,10 @@
 
 namespace renodx::ui::new_ui {
 
+void InitMainNewTab();
+
+void InitDeveloperNewTab();
+
 // Draw the main new tab content
 void DrawMainNewTab();
 

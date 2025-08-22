@@ -15,8 +15,8 @@ extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> renod
 
 namespace renodx::ui::new_ui {
 
-void DrawMainNewTab() {
-    // Load saved settings once and sync legacy globals
+void InitMainNewTab() {
+
     static bool settings_loaded_once = false;
     if (!settings_loaded_once) {
         g_main_new_tab_settings.LoadSettings();
@@ -49,6 +49,10 @@ void DrawMainNewTab() {
         s_reflex_enabled = g_main_new_tab_settings.reflex_enabled.GetValue() ? 1.0f : 0.0f;
         settings_loaded_once = true;
     }
+}
+
+void DrawMainNewTab() {
+    // Load saved settings once and sync legacy globals
     ImGui::Text("Main Tab - Basic Settings");
     ImGui::Separator();
     

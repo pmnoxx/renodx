@@ -29,9 +29,6 @@ bool GetSelectedRefreshRateRational(int monitor_index, int width, int height, in
 // Helper function to apply display settings using modern API with rational refresh rates
 bool ApplyDisplaySettingsModern(int monitor_index, int width, int height, UINT32 refresh_numerator, UINT32 refresh_denominator);
 
-// Helper function to check if modern display API is available
-bool IsModernDisplayAPIAvailable();
-
 // Helper function to apply display settings using DXGI API with fractional refresh rates
 bool ApplyDisplaySettingsDXGI(int monitor_index, int width, int height, UINT32 refresh_numerator, UINT32 refresh_denominator);
 

@@ -42,8 +42,6 @@ bool OnReShadeOverlayOpen(reshade::api::effect_runtime* runtime, bool open, resh
 // Direct overlay draw callback (no settings2 indirection)
 namespace {
 void OnRegisterOverlayDisplayCommander(reshade::api::effect_runtime* runtime) {
-    // Ensure UI system is initialized
-    renodx::ui::new_ui::InitializeNewUISystem();
     // Draw the new UI
     renodx::ui::new_ui::DrawNewUISystem();
 }
@@ -53,6 +51,9 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
   switch (fdw_reason) {
     case DLL_PROCESS_ATTACH:
       if (!reshade::register_addon(h_module)) return FALSE;
+      // Ensure UI system is initialized
+      renodx::ui::new_ui::InitializeNewUISystem();
+      
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
       
       // Register ReShade effect runtime events for input blocking

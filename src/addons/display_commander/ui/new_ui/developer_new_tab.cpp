@@ -13,7 +13,7 @@ extern float s_background_feature_enabled;
 
 namespace renodx::ui::new_ui {
 
-void DrawDeveloperNewTab() {
+void InitDeveloperNewTab() {
     // Ensure settings are loaded
     static bool settings_loaded = false;
     if (!settings_loaded) {
@@ -21,6 +21,9 @@ void DrawDeveloperNewTab() {
         settings_loaded = true;
     }
     
+}
+
+void DrawDeveloperNewTab() {
     ImGui::Text("Developer Tab - Advanced Features");
     ImGui::Separator();
     

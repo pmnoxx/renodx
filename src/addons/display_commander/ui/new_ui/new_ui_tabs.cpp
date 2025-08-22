@@ -5,7 +5,6 @@
 #include "developer_new_tab.hpp"
 #include "main_new_tab.hpp"
 #include "../../addon.hpp"
-#include <sstream>
 
 namespace renodx::ui::new_ui {
 
@@ -21,7 +20,6 @@ void TabManager::AddTab(const std::string& name, const std::string& id, std::fun
 }
 
 void TabManager::Draw() {
-    LogInfo("XXX Drawing tabs");
     if (tabs_.empty()) {
         return;
     }
@@ -50,7 +48,11 @@ void TabManager::Draw() {
 
 // Initialize the new UI system
 void InitializeNewUI() {
-    
+    LogInfo("XXX Initializing new UI");
+    // Ensure settings for main and developer tabs are loaded at UI init time
+    renodx::ui::new_ui::InitMainNewTab();
+    renodx::ui::new_ui::InitDeveloperNewTab();
+
     g_tab_manager.AddTab("Main", "main_new", []() {
         renodx::ui::new_ui::DrawMainNewTab();
     });
@@ -70,7 +72,6 @@ void InitializeNewUI() {
         renodx::ui::new_ui::DrawSwapchainTab();
     });
     
-    LogInfo("New UI system initialized with tabs");
 }
 
 // Draw the new UI

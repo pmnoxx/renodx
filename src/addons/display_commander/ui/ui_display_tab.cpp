@@ -167,14 +167,5 @@ bool HandleMonitorSettingsUI() {
     return false; // No value change
 }
 
-void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& settings) {
-    // Initialize the display cache when the display tab is first accessed
-    static bool cache_initialized = false;
-    if (!cache_initialized) {
-        InitializeDisplayCache();
-        cache_initialized = true;
-    }
-
-}
 
 } // namespace renodx::ui
