@@ -23,7 +23,7 @@ public:
     renodx::ui::new_ui::BoolSetting spoof_window_focus;
     renodx::ui::new_ui::BoolSetting continuous_monitoring;
     renodx::ui::new_ui::BoolSetting prevent_always_on_top;
-    renodx::ui::new_ui::BoolSetting background_feature;
+    renodx::ui::new_ui::BoolSetting remove_top_bar;
     
     // HDR and Colorspace Settings
     renodx::ui::new_ui::BoolSetting fix_hdr10_colorspace;

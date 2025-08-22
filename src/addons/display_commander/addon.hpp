@@ -119,11 +119,11 @@ extern float s_reflex_use_markers;
 
 extern float s_windowed_width;
 extern float s_windowed_height;
+extern float s_window_mode;
 extern float s_remove_top_bar;
 extern float s_suppress_move_resize_messages;
 
 extern float s_suppress_maximize;
-extern float s_resize_mode;
 extern float s_aspect_index;
 // Window alignment when repositioning is needed (0 = None, 1 = Top Left, 2 = Top Right, 3 = Bottom Left, 4 = Bottom Right)
 extern float s_move_to_zero_if_out;
@@ -187,6 +187,9 @@ extern float s_selected_monitor_index;
 extern float s_selected_aspect_ratio;
 extern float s_selected_resolution_index;
 extern float s_selected_refresh_rate_index;
+extern bool s_auto_restore_resolution_on_close;
+extern bool s_auto_apply_resolution_change;
+extern bool s_auto_apply_refresh_rate_change;
 
 // Global Reflex manager instance
 extern std::unique_ptr<ReflexManager> g_reflexManager;

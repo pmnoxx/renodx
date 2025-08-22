@@ -14,6 +14,9 @@ extern float s_selected_monitor_index;
 extern float s_selected_resolution_index;
 extern float s_selected_refresh_rate_index;
 extern bool s_initial_auto_selection_done;
+extern bool s_auto_restore_resolution_on_close;
+extern bool s_auto_apply_resolution_change;
+extern bool s_auto_apply_refresh_rate_change;
 
 
 namespace renodx::ui::monitor_settings {
@@ -56,14 +59,15 @@ void HandleAutoDetection() {
         if (hwnd) {
             HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
             if (current_monitor) {
-                // Get monitor labels to find which monitor index this corresponds to
+                                // Get monitor labels to find which monitor index this corresponds to
                 auto monitor_labels = renodx::ui::GetMonitorLabelsFromCache();
                 
                 // Find which monitor index this corresponds to
                 for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
                     const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i);
                     if (display && display->monitor_handle == current_monitor) {
-                        s_selected_monitor_index = static_cast<float>(i);
+                        // Set to Auto (Current) since that's where this monitor will be
+                        s_selected_monitor_index = 0.0f;
                         
                         // Use the new methods to find closest supported modes to current settings
                         auto closest_resolution_index = display->FindClosestResolutionIndex();
@@ -103,44 +107,101 @@ void HandleAutoDetection() {
 
 // Handle monitor selection UI
 void HandleMonitorSelection(const std::vector<std::string>& monitor_labels) {
+    // Check if current monitor is primary
+    std::string monitor_label = "Monitor";
+    if (s_selected_monitor_index >= 0 && s_selected_monitor_index < static_cast<int>(monitor_labels.size())) {
+        const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
+        if (display && display->monitor_handle) {
+            MONITORINFOEXW mi;
+            mi.cbSize = sizeof(mi);
+            if (GetMonitorInfoW(display->monitor_handle, &mi)) {
+                if (mi.dwFlags & MONITORINFOF_PRIMARY) {
+                    monitor_label = "Monitor (Primary)";
+                }
+            }
+        }
+    }
+    
     // Monitor selection
-    if (ImGui::BeginCombo("Monitor", monitor_labels[static_cast<int>(s_selected_monitor_index)].c_str())) {
+    if (ImGui::BeginCombo(monitor_label.c_str(), monitor_labels[static_cast<int>(s_selected_monitor_index)].c_str())) {
         for (int i = 0; i < static_cast<int>(monitor_labels.size()); i++) {
             const bool is_selected = (i == static_cast<int>(s_selected_monitor_index));
             if (ImGui::Selectable(monitor_labels[i].c_str(), is_selected)) {
                 s_selected_monitor_index = static_cast<float>(i);
                 
-                // Auto-select closest resolution and refresh rate for the newly selected monitor
-                const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i);
-                if (display) {
-                    // Find closest supported resolution to current settings
-                    auto closest_resolution_index = display->FindClosestResolutionIndex();
-                    if (closest_resolution_index.has_value()) {
-                        s_selected_resolution_index = static_cast<float>(closest_resolution_index.value());
-                        
-                        // Find closest refresh rate within this resolution
-                        auto closest_refresh_rate_index = display->FindClosestRefreshRateIndex(closest_resolution_index.value());
-                        if (closest_refresh_rate_index.has_value()) {
-                            s_selected_refresh_rate_index = static_cast<float>(closest_refresh_rate_index.value());
-                            
-                            // Debug: Log what we auto-selected
-                            std::ostringstream auto_select_oss;
-                            auto_select_oss << "Auto-selected for monitor " << i << ": Resolution " 
-                                           << s_selected_resolution_index << " (closest to current " 
-                                           << display->GetCurrentResolutionString() << "), Refresh Rate " 
-                                           << s_selected_refresh_rate_index << " (closest to current " 
-                                           << display->GetCurrentRefreshRateString() << ")";
-                            LogInfo(auto_select_oss.str().c_str());
-                        } else {
-                            // Fallback to first refresh rate if no match found
-                            s_selected_refresh_rate_index = 0.0f;
-                            LogWarn("No refresh rate match found for auto-selection, using first available");
+                if (i == 0) {
+                    // Auto (Current) option selected - find the current monitor where the game is running
+                    HWND hwnd = g_last_swapchain_hwnd.load();
+                    if (hwnd) {
+                        HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                        if (current_monitor) {
+                            // Find which monitor index this corresponds to in the display cache
+                            for (int j = 0; j < static_cast<int>(renodx::display_cache::g_displayCache.GetDisplayCount()); j++) {
+                                const auto* display = renodx::display_cache::g_displayCache.GetDisplay(j);
+                                if (display && display->monitor_handle == current_monitor) {
+                                    // Use this monitor for resolution and refresh rate selection
+                                    auto closest_resolution_index = display->FindClosestResolutionIndex();
+                                    if (closest_resolution_index.has_value()) {
+                                        s_selected_resolution_index = static_cast<float>(closest_resolution_index.value());
+                                        
+                                        auto closest_refresh_rate_index = display->FindClosestRefreshRateIndex(closest_resolution_index.value());
+                                        if (closest_refresh_rate_index.has_value()) {
+                                            s_selected_refresh_rate_index = static_cast<float>(closest_refresh_rate_index.value());
+                                            
+                                            std::ostringstream auto_select_oss;
+                                            auto_select_oss << "Auto (Current) selected - using monitor " << j << ": Resolution " 
+                                                           << s_selected_resolution_index << " (closest to current " 
+                                                           << display->GetCurrentResolutionString() << "), Refresh Rate " 
+                                                           << s_selected_refresh_rate_index << " (closest to current " 
+                                                           << display->GetCurrentRefreshRateString() << ")";
+                                            LogInfo(auto_select_oss.str().c_str());
+                                        } else {
+                                            s_selected_refresh_rate_index = 0.0f;
+                                            LogWarn("No refresh rate match found for Auto (Current), using first available");
+                                        }
+                                    } else {
+                                        s_selected_resolution_index = 0.0f;
+                                        s_selected_refresh_rate_index = 0.0f;
+                                        LogWarn("No resolution match found for Auto (Current), using first available");
+                                    }
+                                    break;
+                                }
+                            }
                         }
-                    } else {
-                        // Fallback to first resolution if no match found
-                        s_selected_resolution_index = 0.0f;
-                        s_selected_refresh_rate_index = 0.0f;
-                        LogWarn("No resolution match found for auto-selection, using first available");
+                    }
+                } else {
+                    // Regular monitor selected - auto-select closest resolution and refresh rate for the newly selected monitor
+                    const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i - 1); // -1 because monitors start at index 1 now
+                    if (display) {
+                        // Find closest supported resolution to current settings
+                        auto closest_resolution_index = display->FindClosestResolutionIndex();
+                        if (closest_resolution_index.has_value()) {
+                            s_selected_resolution_index = static_cast<float>(closest_resolution_index.value());
+                            
+                            // Find closest refresh rate within this resolution
+                            auto closest_refresh_rate_index = display->FindClosestRefreshRateIndex(closest_resolution_index.value());
+                            if (closest_refresh_rate_index.has_value()) {
+                                s_selected_refresh_rate_index = static_cast<float>(closest_refresh_rate_index.value());
+                                
+                                // Debug: Log what we auto-selected
+                                std::ostringstream auto_select_oss;
+                                auto_select_oss << "Auto-selected for monitor " << (i - 1) << ": Resolution " 
+                                               << s_selected_resolution_index << " (closest to current " 
+                                               << display->GetCurrentResolutionString() << "), Refresh Rate " 
+                                               << s_selected_refresh_rate_index << " (closest to current " 
+                                               << display->GetCurrentRefreshRateString() << ")";
+                                LogInfo(auto_select_oss.str().c_str());
+                            } else {
+                                // Fallback to first refresh rate if no match found
+                                s_selected_refresh_rate_index = 0.0f;
+                                LogWarn("No refresh rate match found for auto-selection, using first available");
+                            }
+                        } else {
+                            // Fallback to first resolution if no match found
+                            s_selected_resolution_index = 0.0f;
+                            s_selected_refresh_rate_index = 0.0f;
+                            LogWarn("No resolution match found for auto-selection, using first available");
+                        }
                     }
                 }
             }
@@ -154,7 +215,29 @@ void HandleMonitorSelection(const std::vector<std::string>& monitor_labels) {
 
 // Handle resolution selection UI
 void HandleResolutionSelection(int selected_monitor_index) {
-    auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(selected_monitor_index);
+    // If Auto (Current) is selected, find the current monitor where the game is running
+    int actual_monitor_index = selected_monitor_index;
+    if (selected_monitor_index == 0) {
+        HWND hwnd = g_last_swapchain_hwnd.load();
+        if (hwnd) {
+            HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            if (current_monitor) {
+                // Find which monitor index this corresponds to in the display cache
+                for (int j = 0; j < static_cast<int>(renodx::display_cache::g_displayCache.GetDisplayCount()); j++) {
+                    const auto* display = renodx::display_cache::g_displayCache.GetDisplay(j);
+                    if (display && display->monitor_handle == current_monitor) {
+                        actual_monitor_index = j;
+                        break;
+                    }
+                }
+            }
+        }
+    } else {
+        // Regular monitor selected - adjust index because monitors start at index 1 now
+        actual_monitor_index = selected_monitor_index - 1;
+    }
+    
+    auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(actual_monitor_index);
     if (!resolution_labels.empty()) {
         if (ImGui::BeginCombo("Resolution", resolution_labels[static_cast<int>(s_selected_resolution_index)].c_str())) {
             for (int i = 0; i < static_cast<int>(resolution_labels.size()); i++) {
@@ -175,9 +258,31 @@ void HandleResolutionSelection(int selected_monitor_index) {
 // Handle refresh rate selection UI
 void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolution_index) {
     if (s_selected_resolution_index >= 0) {
-        auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(selected_monitor_index);
+        // If Auto (Current) is selected, find the current monitor where the game is running
+        int actual_monitor_index = selected_monitor_index;
+        if (selected_monitor_index == 0) {
+            HWND hwnd = g_last_swapchain_hwnd.load();
+            if (hwnd) {
+                HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                if (current_monitor) {
+                    // Find which monitor index this corresponds to in the display cache
+                    for (int j = 0; j < static_cast<int>(renodx::display_cache::g_displayCache.GetDisplayCount()); j++) {
+                        const auto* display = renodx::display_cache::g_displayCache.GetDisplay(j);
+                        if (display && display->monitor_handle == current_monitor) {
+                            actual_monitor_index = j;
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            // Regular monitor selected - adjust index because monitors start at index 1 now
+            actual_monitor_index = selected_monitor_index - 1;
+        }
+        
+        auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(actual_monitor_index);
         if (s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
-            auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(selected_monitor_index, selected_resolution_index);
+            auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(actual_monitor_index, selected_resolution_index);
             if (!refresh_rate_labels.empty()) {
                 if (ImGui::BeginCombo("Refresh Rate", refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)].c_str())) {
                     for (int i = 0; i < static_cast<int>(refresh_rate_labels.size()); i++) {
@@ -196,26 +301,91 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
     }
 }
 
+// Handle auto-restore resolution checkbox
+void HandleAutoRestoreResolutionCheckbox() {
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    
+    if (ImGui::Checkbox("Restore display settings when game closes", &s_auto_restore_resolution_on_close)) {
+        // Log the setting change
+        if (s_auto_restore_resolution_on_close) {
+            LogInfo("Restore display settings when game closes: ENABLED");
+        } else {
+            LogInfo("Restore display settings when game closes: DISABLED");
+        }
+    }
+    
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("When enabled, automatically restores the original monitor resolution and refresh rate when the game closes.\nThis ensures your display settings return to normal after gaming sessions.");
+    }
+}
 
-
-
-
-
+// Handle auto-apply resolution and refresh rate checkboxes
+void HandleAutoApplyCheckboxes() {
+    ImGui::Spacing();
+    
+    if (ImGui::Checkbox("Auto-apply resolution changes", &s_auto_apply_resolution_change)) {
+        // Log the setting change
+        if (s_auto_apply_resolution_change) {
+            LogInfo("Auto-apply resolution changes: ENABLED");
+        } else {
+            LogInfo("Auto-apply resolution changes: DISABLED");
+        }
+    }
+    
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("When enabled, automatically applies resolution changes immediately when a new resolution is selected.\nThis provides instant feedback without needing to click the apply button.");
+    }
+    
+    if (ImGui::Checkbox("Auto-apply refresh rate changes", &s_auto_apply_refresh_rate_change)) {
+        // Log the setting change
+        if (s_auto_apply_refresh_rate_change) {
+            LogInfo("Auto-apply refresh rate changes: ENABLED");
+        } else {
+            LogInfo("Auto-apply refresh rate changes: DISABLED");
+        }
+    }
+    
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("When enabled, automatically applies refresh rate changes immediately when a new refresh rate is selected.\nThis provides instant feedback without needing to click the apply button.");
+    }
+}
 
 // Handle the "Apply with DXGI API" button
 void HandleDXGIAPIApplyButton() {
     // DXGI API Button (Alternative Fractional Method)
-    ImGui::SameLine();
     ImGui::TextDisabled("(?)");
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Uses DXGI SetFullscreenState + ResizeTarget to set fractional refresh rates.\nThis method creates a temporary swap chain to apply the mode.");
     }
-    ImGui::SameLine();
     if (ImGui::Button("Apply with DXGI API")) {
         // Apply the changes using the DXGI API for fractional refresh rates
         std::thread([](){
+            // If Auto (Current) is selected, find the current monitor where the game is running
+            int actual_monitor_index = static_cast<int>(s_selected_monitor_index);
+            if (s_selected_monitor_index == 0) {
+                HWND hwnd = g_last_swapchain_hwnd.load();
+                if (hwnd) {
+                    HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                    if (current_monitor) {
+                        // Find which monitor index this corresponds to in the display cache
+                        for (int j = 0; j < static_cast<int>(renodx::display_cache::g_displayCache.GetDisplayCount()); j++) {
+                            const auto* display = renodx::display_cache::g_displayCache.GetDisplay(j);
+                            if (display && display->monitor_handle == current_monitor) {
+                                actual_monitor_index = j;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Regular monitor selected - adjust index because monitors start at index 1 now
+                actual_monitor_index = static_cast<int>(s_selected_monitor_index) - 1;
+            }
+            
             // Get the selected resolution from the cache
-            auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(static_cast<int>(s_selected_monitor_index));
+            auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(actual_monitor_index);
             if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
                 std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
                 int width, height;
@@ -226,13 +396,13 @@ void HandleDXGIAPIApplyButton() {
                 bool has_rational = false;
                 
                 // Use selected refresh rate from cache
-                auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+                auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(actual_monitor_index, static_cast<int>(s_selected_resolution_index));
                 if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
                     std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
                     
                     // Get rational refresh rate values from the cache
                     has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
-                        static_cast<int>(s_selected_monitor_index), 
+                        actual_monitor_index, 
                         static_cast<int>(s_selected_resolution_index),
                         static_cast<int>(s_selected_refresh_rate_index), 
                         refresh_rate);
@@ -249,7 +419,7 @@ void HandleDXGIAPIApplyButton() {
                     
                     // Try DXGI API for fractional refresh rates
                     if (renodx::resolution::ApplyDisplaySettingsDXGI(
-                        static_cast<int>(s_selected_monitor_index),
+                        actual_monitor_index,
                         width, height,
                         refresh_rate.numerator, refresh_rate.denominator)) {
                         
@@ -279,7 +449,7 @@ void HandleDXGIAPIApplyButton() {
                         }
                         
                         // Fallback to legacy API
-                        const auto* display = renodx::display_cache::g_displayCache.GetDisplay(static_cast<int>(s_selected_monitor_index));
+                        const auto* display = renodx::display_cache::g_displayCache.GetDisplay(actual_monitor_index);
                         if (display) {
                             HMONITOR hmon = display->monitor_handle;
                             

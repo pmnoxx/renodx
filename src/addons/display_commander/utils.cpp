@@ -7,7 +7,7 @@
 // External declarations needed by utility functions
 extern float s_windowed_width;
 extern float s_windowed_height;
-extern float s_resize_mode;
+extern float s_window_mode;
 extern float s_aspect_index;
 
 // New resolution system variables
@@ -18,6 +18,7 @@ extern float s_selected_refresh_rate_index;
 extern bool s_initial_auto_selection_done;
 
 extern std::vector<MonitorInfo> g_monitors;
+extern std::atomic<HWND> g_last_swapchain_hwnd;
 
 // Constant definitions
 const int WIDTH_OPTIONS[] = {0, 1280, 1366, 1600, 1920, 2560, 3440, 3840}; // 0 = current monitor width
@@ -36,7 +37,6 @@ const AspectRatio ASPECT_OPTIONS[] = {
 // Helper functions to get current monitor dimensions
 int GetCurrentMonitorWidth() {
     // Get the current monitor where the game window is located
-    extern std::atomic<HWND> g_last_swapchain_hwnd;
     HWND hwnd = g_last_swapchain_hwnd.load();
     if (hwnd == nullptr) {
         // Fallback to primary monitor
@@ -56,7 +56,6 @@ int GetCurrentMonitorWidth() {
 
 int GetCurrentMonitorHeight() {
     // Get the current monitor where the game window is located
-    extern std::atomic<HWND> g_last_swapchain_hwnd;
     HWND hwnd = g_last_swapchain_hwnd.load();
     if (hwnd == nullptr) {
         // Fallback to primary monitor
@@ -314,14 +313,22 @@ AspectRatio GetAspectByIndex(int index) {
 }
 
 void ComputeDesiredSize(int& out_w, int& out_h) {
+    if (s_window_mode >= 1.5f) {
+        // Mode 2: Borderless Fullscreen - use current monitor dimensions
+        out_w = GetCurrentMonitorWidth();
+        out_h = GetCurrentMonitorHeight();
+        return;
+    }
+    
     // Original logic for manual or aspect ratio mode
     const int want_w = static_cast<int>(s_windowed_width);
-    if (s_resize_mode < 0.5f) {
+    if (s_window_mode >= 0.5f && s_window_mode < 1.5f) {
+        // Mode 1: Borderless Windowed (Width/Height) - manual mode
         out_w = want_w;
         out_h = static_cast<int>(s_windowed_height);
         return;
     }
-    // Aspect mode
+    // Mode 0: Borderless Windowed (Aspect Ratio) - aspect mode
     int index = static_cast<int>(s_aspect_index);
     AspectRatio ar = GetAspectByIndex(index);
     // height = round(width * h / w)
@@ -340,13 +347,54 @@ std::vector<std::string> MakeMonitorLabels() {
     EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, 0);
     std::vector<std::string> labels;
     labels.reserve(g_monitors.size() + 1);
-    labels.emplace_back("Auto (Current)");
+    
+    // Get the device name, resolution, refresh rate, and primary status of the monitor where the game is currently running
+    std::string auto_label = "Auto (Current)";
+    HWND hwnd = g_last_swapchain_hwnd.load();
+    if (hwnd) {
+        HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        if (current_monitor) {
+            MONITORINFOEXW mi;
+            mi.cbSize = sizeof(mi);
+            if (GetMonitorInfoW(current_monitor, &mi)) {
+                std::string device_name(mi.szDevice, mi.szDevice + wcslen(mi.szDevice));
+                
+                // Get current resolution and refresh rate
+                DEVMODEW dm;
+                dm.dmSize = sizeof(dm);
+                if (EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
+                    int width = static_cast<int>(dm.dmPelsWidth);
+                    int height = static_cast<int>(dm.dmPelsHeight);
+                    int refresh_rate = static_cast<int>(dm.dmDisplayFrequency);
+                    
+                    // Check if it's primary monitor
+                    bool is_primary = (mi.dwFlags & MONITORINFOF_PRIMARY) != 0;
+                    std::string primary_text = is_primary ? " Primary" : "";
+                    
+                    auto_label = "Auto (Current) [" + device_name + "] " + 
+                                std::to_string(width) + "x" + std::to_string(height) + 
+                                " @ " + std::to_string(refresh_rate) + "Hz" + primary_text;
+                } else {
+                    // Fallback if we can't get display settings
+                    bool is_primary = (mi.dwFlags & MONITORINFOF_PRIMARY) != 0;
+                    std::string primary_text = is_primary ? " Primary" : "";
+                    auto_label = "Auto (Current) [" + device_name + "]" + primary_text;
+                }
+            }
+        }
+    }
+    labels.emplace_back(auto_label);
+    
     for (size_t i = 0; i < g_monitors.size(); ++i) {
         const auto& mi = g_monitors[i].info;
         const RECT& r = mi.rcMonitor;
         const bool primary = (mi.dwFlags & MONITORINFOF_PRIMARY) != 0;
+        
+        // Convert device name from wide string to regular string
+        std::string device_name(mi.szDevice, mi.szDevice + wcslen(mi.szDevice));
+        
         std::ostringstream oss;
-        oss << i + 1 << ": " << (primary ? "Primary " : "")
+        oss << "[" << device_name << "] " << (primary ? "Primary " : "")
             << (r.right - r.left) << "x" << (r.bottom - r.top);
         labels.emplace_back(oss.str());
     }

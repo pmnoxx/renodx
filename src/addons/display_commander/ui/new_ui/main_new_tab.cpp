@@ -11,7 +11,12 @@
 // Global variable declaration
 extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> renodx::dxgi::fps_limiter::g_customFpsLimiterManager;
 
-// External constants for width and height options (unused here)
+// External constants for width and height options
+extern const int WIDTH_OPTIONS[];
+extern const int HEIGHT_OPTIONS[];
+
+// External global variables
+extern float s_background_feature_enabled;
 
 namespace renodx::ui::new_ui {
 
@@ -20,6 +25,7 @@ void InitMainNewTab() {
     static bool settings_loaded_once = false;
     if (!settings_loaded_once) {
         g_main_new_tab_settings.LoadSettings();
+        s_window_mode = static_cast<float>(g_main_new_tab_settings.window_mode.GetValue());
         {
             int idx = g_main_new_tab_settings.window_width.GetValue();
             idx = (std::max)(idx, 0);
@@ -36,10 +42,9 @@ void InitMainNewTab() {
             s_windowed_height = (idx == 0) ? static_cast<float>(GetCurrentMonitorHeight())
                                            : static_cast<float>(HEIGHT_OPTIONS[idx]);
         }
-        s_resize_mode = static_cast<float>(g_main_new_tab_settings.resize_mode.GetValue());
         s_aspect_index = static_cast<float>(g_main_new_tab_settings.aspect_index.GetValue());
         s_target_monitor_index = static_cast<float>(g_main_new_tab_settings.target_monitor_index.GetValue());
-        s_remove_top_bar = g_main_new_tab_settings.remove_top_bar.GetValue() ? 1.0f : 0.0f;
+        s_background_feature_enabled = g_main_new_tab_settings.background_feature.GetValue() ? 1.0f : 0.0f;
         s_move_to_zero_if_out = static_cast<float>(g_main_new_tab_settings.alignment.GetValue());
         s_fps_limit = g_main_new_tab_settings.fps_limit.GetValue();
         s_fps_limit_background = g_main_new_tab_settings.fps_limit_background.GetValue();
@@ -87,58 +92,75 @@ void DrawMainNewTab() {
 void DrawDisplaySettings() {
     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "=== Display Settings ===");
     
-    // Window Width dropdown (with persistent setting)
-    if (ComboSettingWrapper(g_main_new_tab_settings.window_width, "Window Width")) {
-        int idx = g_main_new_tab_settings.window_width.GetValue();
-        idx = (std::max)(idx, 0);
-        int max_idx = 7;
-        idx = (std::min)(idx, max_idx);
-        s_windowed_width = (idx == 0) ? static_cast<float>(GetCurrentMonitorWidth())
-                                      : static_cast<float>(WIDTH_OPTIONS[idx]);
-        LogInfo("Window width changed");
+    // Window Mode dropdown (with persistent setting)
+    if (ComboSettingWrapper(g_main_new_tab_settings.window_mode, "Window Mode")) {
+        s_window_mode = static_cast<float>(g_main_new_tab_settings.window_mode.GetValue());
+        
+        // Apply the window changes based on the new mode
+        HWND hwnd = g_last_swapchain_hwnd.load();
+        if (hwnd != nullptr) {
+            ApplyWindowChange(hwnd, "window_mode_change");
+        }
+        
+        LogInfo("Window mode changed");
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Choose the window width. 'Current Display' uses the current monitor's width.");
+        ImGui::SetTooltip("Choose the window mode: Borderless Windowed with aspect ratio, Borderless Windowed with custom width/height, or Borderless Fullscreen.");
     }
     
-    // Window Height dropdown (disabled when in aspect ratio mode)
-    bool height_enabled = (s_resize_mode < 0.5f);
-    if (!height_enabled) {
-        ImGui::BeginDisabled();
-    }
-    if (ComboSettingWrapper(g_main_new_tab_settings.window_height, "Window Height")) {
-        int idx = g_main_new_tab_settings.window_height.GetValue();
-        idx = (std::max)(idx, 0);
-        int max_idx = 7;
-        idx = (std::min)(idx, max_idx);
-        s_windowed_height = (idx == 0) ? static_cast<float>(GetCurrentMonitorHeight())
-                                       : static_cast<float>(HEIGHT_OPTIONS[idx]);
-        LogInfo("Window height changed");
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Choose the window height. 'Current Display' uses the current monitor's height. Disabled when using Aspect Ratio mode.");
-    }
-    if (!height_enabled) {
-        ImGui::EndDisabled();
+    // Show mode-specific information
+    if (s_window_mode < 0.5f) {
+        ImGui::TextColored(ImVec4(0.8f, 1.0f, 0.8f, 1.0f), "Mode: Aspect Ratio - Set width below, height calculated automatically");
+    } else if (s_window_mode < 1.5f) {
+        ImGui::TextColored(ImVec4(0.8f, 1.0f, 0.8f, 1.0f), "Mode: Width/Height - Set custom window dimensions below");
+    } else {
+        ImGui::TextColored(ImVec4(0.8f, 1.0f, 0.8f, 1.0f), "Mode: Fullscreen - Window will fill entire monitor (no alignment needed)");
     }
     
-    // Resize Mode combo (persistent)
-    if (ComboSettingWrapper(g_main_new_tab_settings.resize_mode, "Resize Mode")) {
-        s_resize_mode = static_cast<float>(g_main_new_tab_settings.resize_mode.GetValue());
-        LogInfo("Resize mode changed");
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Choose between manual width/height or aspect ratio-based resizing.");
+    // Window Width dropdown (shown in both Aspect Ratio and Width/Height modes)
+    if (s_window_mode < 1.5f) {
+        if (ComboSettingWrapper(g_main_new_tab_settings.window_width, "Window Width")) {
+            int idx = g_main_new_tab_settings.window_width.GetValue();
+            idx = (std::max)(idx, 0);
+            int max_idx = 7;
+            idx = (std::min)(idx, max_idx);
+            s_windowed_width = (idx == 0) ? static_cast<float>(GetCurrentMonitorWidth())
+                                          : static_cast<float>(WIDTH_OPTIONS[idx]);
+            LogInfo("Window width changed");
+        }
+        if (ImGui::IsItemHovered()) {
+            if (s_window_mode < 0.5f) {
+                ImGui::SetTooltip("Choose the window width. Height will be calculated automatically based on the selected aspect ratio.");
+            } else {
+                ImGui::SetTooltip("Choose the window width. 'Current Display' uses the current monitor's width.");
+            }
+        }
     }
     
-    // Aspect Ratio dropdown (only visible when in Aspect mode)
-    if (s_resize_mode >= 0.5f) {
+    // Window Height dropdown (only shown in Width/Height mode)
+    if (s_window_mode >= 0.5f && s_window_mode < 1.5f) {
+        if (ComboSettingWrapper(g_main_new_tab_settings.window_height, "Window Height")) {
+            int idx = g_main_new_tab_settings.window_height.GetValue();
+            idx = (std::max)(idx, 0);
+            int max_idx = 7;
+            idx = (std::min)(idx, max_idx);
+            s_windowed_height = (idx == 0) ? static_cast<float>(GetCurrentMonitorHeight())
+                                           : static_cast<float>(HEIGHT_OPTIONS[idx]);
+            LogInfo("Window height changed");
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Choose the window height. 'Current Display' uses the current monitor's height.");
+        }
+    }
+    
+    // Aspect Ratio dropdown (only shown in Aspect Ratio mode)
+    if (s_window_mode < 0.5f) {
         if (ComboSettingWrapper(g_main_new_tab_settings.aspect_index, "Aspect Ratio")) {
             s_aspect_index = static_cast<float>(g_main_new_tab_settings.aspect_index.GetValue());
             LogInfo("Aspect ratio changed");
         }
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Choose the aspect ratio for window resizing. Only applies when Resize Mode is set to Aspect Ratio.");
+            ImGui::SetTooltip("Choose the aspect ratio for window resizing.");
         }
     }
     
@@ -159,22 +181,26 @@ void DrawDisplaySettings() {
         ImGui::SetTooltip("Choose which monitor to apply size/pos to. 'Auto' uses the current window monitor.");
     }
     
-    // Remove Top Bar checkbox
-    if (CheckboxSetting(g_main_new_tab_settings.remove_top_bar, "Remove Top Bar")) {
-        s_remove_top_bar = g_main_new_tab_settings.remove_top_bar.GetValue() ? 1.0f : 0.0f;
-        LogInfo("Remove top bar setting changed");
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Remove the window title bar for a borderless appearance.");
+    // Background Black Curtain checkbox (only shown in Borderless Windowed modes)
+    if (s_window_mode < 1.5f) {
+        if (CheckboxSetting(g_main_new_tab_settings.background_feature, "Background Black Curtain")) {
+            s_background_feature_enabled = g_main_new_tab_settings.background_feature.GetValue() ? 1.0f : 0.0f;
+            LogInfo("Background black curtain setting changed");
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Creates a black background behind the game window when it doesn't cover the full screen.");
+        }
     }
     
-    // Window Alignment dropdown
-    if (ComboSettingWrapper(g_main_new_tab_settings.alignment, "Alignment")) {
-        s_move_to_zero_if_out = static_cast<float>(g_main_new_tab_settings.alignment.GetValue());
-        LogInfo("Window alignment changed");
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Choose how to align the window when repositioning is needed. 1=Top Left, 2=Top Right, 3=Bottom Left, 4=Bottom Right, 5=Center.");
+    // Window Alignment dropdown (only shown in Borderless Windowed modes)
+    if (s_window_mode < 1.5f) {
+        if (ComboSettingWrapper(g_main_new_tab_settings.alignment, "Alignment")) {
+            s_move_to_zero_if_out = static_cast<float>(g_main_new_tab_settings.alignment.GetValue());
+            LogInfo("Window alignment changed");
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Choose how to align the window when repositioning is needed. 1=Top Left, 2=Top Right, 3=Bottom Left, 4=Bottom Right, 5=Center.");
+        }
     }
     
     // Apply Changes button
@@ -351,11 +377,11 @@ void DrawAudioSettings() {
 void DrawWindowControls() {
     ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "=== Window Controls ===");
     
-    // Window Control Buttons (Minimize and Restore side by side)
+    // Window Control Buttons (Minimize, Restore, and Maximize side by side)
     ImGui::BeginGroup();
     
     // Minimize Window Button
-    if (ImGui::Button("Minimize Window", ImVec2(ImGui::GetContentRegionAvail().x * 0.48f, 0))) {
+    if (ImGui::Button("Minimize Window")) {
         std::thread([](){
             HWND hwnd = g_last_swapchain_hwnd.load();
             if (hwnd == nullptr) hwnd = GetForegroundWindow();
@@ -381,7 +407,7 @@ void DrawWindowControls() {
     ImGui::SameLine();
     
     // Restore Window Button
-    if (ImGui::Button("Restore Window", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+    if (ImGui::Button("Restore Window")) {
         std::thread([](){
             HWND hwnd = g_last_swapchain_hwnd.load();
             if (hwnd == nullptr) hwnd = GetForegroundWindow();
@@ -402,6 +428,37 @@ void DrawWindowControls() {
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Restore the minimized game window.");
+    }
+    
+    ImGui::SameLine();
+    
+    // Maximize Window Button
+    if (ImGui::Button("Maximize Window")) {
+        std::thread([](){
+            HWND hwnd = g_last_swapchain_hwnd.load();
+            if (hwnd == nullptr) hwnd = GetForegroundWindow();
+            if (hwnd == nullptr) {
+                LogWarn("Maximize Window: no window handle available");
+                return;
+            }
+            LogDebug("Maximize Window button pressed (bg thread)");
+            
+            // Set window dimensions to current monitor size
+            s_windowed_width = static_cast<float>(GetCurrentMonitorWidth());
+            s_windowed_height = static_cast<float>(GetCurrentMonitorHeight());
+            
+            // Update the settings to reflect the change
+            g_main_new_tab_settings.window_width.SetValue(0); // 0 = Current Display
+            g_main_new_tab_settings.window_height.SetValue(0); // 0 = Current Display
+            
+            // Apply the window changes using the existing UI system
+            ApplyWindowChange(hwnd, "maximize_button");
+            
+            LogInfo("Window maximized to current monitor size");
+        }).detach();
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Maximize the window to fill the current monitor.");
     }
     
     ImGui::EndGroup();

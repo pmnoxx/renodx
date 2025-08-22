@@ -20,7 +20,7 @@ extern float s_auto_apply_enabled;
 extern float s_auto_apply_delay_sec;
 extern float s_windowed_width;
 extern float s_windowed_height;
-extern float s_resize_mode;
+extern float s_window_mode;
 extern float s_move_to_zero_if_out;
 
 extern float s_nvapi_fullscreen_prevention;

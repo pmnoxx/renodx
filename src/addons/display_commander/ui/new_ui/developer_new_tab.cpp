@@ -8,9 +8,6 @@
 #include <iomanip>
 #include <thread>
 
-// External declarations for missing variables
-extern float s_background_feature_enabled;
-
 namespace renodx::ui::new_ui {
 
 void InitDeveloperNewTab() {
@@ -141,12 +138,12 @@ void DrawDeveloperSettings() {
         ImGui::SetTooltip("Prevents windows from becoming always on top, even if they are moved or resized.");
     }
     
-    // Background Feature
-    if (CheckboxSetting(g_developerTabSettings.background_feature, "Background Feature")) {
-        s_background_feature_enabled = g_developerTabSettings.background_feature.GetValue() ? 1.0f : 0.0f;
+    // Remove Top Bar
+    if (CheckboxSetting(g_developerTabSettings.remove_top_bar, "Remove Top Bar")) {
+        s_remove_top_bar = g_developerTabSettings.remove_top_bar.GetValue() ? 1.0f : 0.0f;
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Creates a black background window behind the game when it doesn't cover the full screen.");
+        ImGui::SetTooltip("Remove the window title bar for a borderless appearance.");
     }
 }
 

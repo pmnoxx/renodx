@@ -35,9 +35,47 @@ std::vector<std::string> GetMonitorLabelsFromCache() {
     }
     
     size_t display_count = renodx::display_cache::g_displayCache.GetDisplayCount();
-    labels.reserve(display_count);
+    labels.reserve(display_count + 1); // +1 for Auto (Current) option
     
-        for (size_t i = 0; i < display_count; ++i) {
+    // Add Auto (Current) as the first option (index 0)
+    std::string auto_label = "Auto (Current)";
+    HWND hwnd = g_last_swapchain_hwnd.load();
+    if (hwnd) {
+        HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        if (current_monitor) {
+            MONITORINFOEXW mi;
+            mi.cbSize = sizeof(mi);
+            if (GetMonitorInfoW(current_monitor, &mi)) {
+                std::string device_name(mi.szDevice, mi.szDevice + wcslen(mi.szDevice));
+                
+                // Get current resolution and refresh rate
+                DEVMODEW dm;
+                dm.dmSize = sizeof(dm);
+                if (EnumDisplaySettingsW(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
+                    int width = static_cast<int>(dm.dmPelsWidth);
+                    int height = static_cast<int>(dm.dmPelsHeight);
+                    int refresh_rate = static_cast<int>(dm.dmDisplayFrequency);
+                    
+                    // Check if it's primary monitor
+                    bool is_primary = (mi.dwFlags & MONITORINFOF_PRIMARY) != 0;
+                    std::string primary_text = is_primary ? " Primary" : "";
+                    
+                    auto_label = "Auto (Current) [" + device_name + "] " + 
+                                std::to_string(width) + "x" + std::to_string(height) + 
+                                " @ " + std::to_string(refresh_rate) + "Hz" + primary_text;
+                } else {
+                    // Fallback if we can't get display settings
+                    bool is_primary = (mi.dwFlags & MONITORINFOF_PRIMARY) != 0;
+                    std::string primary_text = is_primary ? " Primary" : "";
+                    auto_label = "Auto (Current) [" + device_name + "]" + primary_text;
+                }
+            }
+        }
+    }
+    labels.push_back(auto_label);
+    
+    // Add the regular monitor options (starting from index 1)
+    for (size_t i = 0; i < display_count; ++i) {
             const auto* display = renodx::display_cache::g_displayCache.GetDisplay(i);
             if (display) {
                 std::ostringstream oss;
@@ -84,7 +122,8 @@ float GetMaxMonitorIndexFromCache() {
     }
     
     size_t display_count = renodx::display_cache::g_displayCache.GetDisplayCount();
-    return static_cast<float>((std::max)(0, static_cast<int>(display_count) - 1));
+    // +1 because we now have Auto (Current) as index 0, so monitors start at index 1
+    return static_cast<float>((std::max)(0, static_cast<int>(display_count)));
 }
 
 // Helper function to get current display info based on game position using the display cache
@@ -160,6 +199,12 @@ bool HandleMonitorSettingsUI() {
     
     // Handle refresh rate selection UI
     renodx::ui::monitor_settings::HandleRefreshRateSelection(static_cast<int>(s_selected_monitor_index), static_cast<int>(s_selected_resolution_index));
+
+    // Handle auto-restore resolution checkbox
+    renodx::ui::monitor_settings::HandleAutoRestoreResolutionCheckbox();
+
+    // Handle auto-apply resolution and refresh rate checkboxes
+    renodx::ui::monitor_settings::HandleAutoApplyCheckboxes();
 
     // Handle the DXGI API Apply Button
     renodx::ui::monitor_settings::HandleDXGIAPIApplyButton();

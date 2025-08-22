@@ -10,11 +10,11 @@
 // Window settings
 float s_windowed_width = 3440.f; // 21:9 ultrawide width
 float s_windowed_height = 1440.f; // 21:9 ultrawide height
+float s_window_mode = 0.f; // 0 = Borderless Windowed (Aspect Ratio), 1 = Borderless Windowed (Width/Height), 2 = Borderless Fullscreen
 float s_remove_top_bar = 1.f; // Suppress top bar/border messages enabled by default for borderless windows
 float s_suppress_move_resize_messages = 1.f; // Suppress move/resize messages by default
 
 float s_suppress_maximize = 1.f; // Suppress maximize messages by default
-float s_resize_mode = 0.f;
 float s_aspect_index = 4.f; // 21:9 ultrawide
 
 // Window alignment when repositioning is needed (0 = None, 1 = Top Left, 2 = Top Right, 3 = Bottom Left, 4 = Bottom Right, 5 = Center)
@@ -81,6 +81,13 @@ float s_selected_resolution_index = 0.f; // Default to first available resolutio
 float s_selected_refresh_rate_index = 0.f; // Default to first available refresh rate
 
 bool s_initial_auto_selection_done = false; // Track if we've done initial auto-selection
+
+// Auto-restore resolution on game close
+bool s_auto_restore_resolution_on_close = false; // Disabled by default
+
+// Auto-apply resolution and refresh rate changes
+bool s_auto_apply_resolution_change = false; // Disabled by default
+bool s_auto_apply_refresh_rate_change = false; // Disabled by default
 
 // Reflex settings
 float s_reflex_enabled = 1.f; // Enabled by default

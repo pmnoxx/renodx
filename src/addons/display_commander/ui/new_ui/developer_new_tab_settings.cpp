@@ -15,6 +15,7 @@ extern float s_nvapi_hdr_interval_sec;
 extern float s_nvapi_force_hdr10;
 extern float s_reflex_enabled;
 extern float s_reflex_debug_output;
+extern float s_remove_top_bar;
 
 namespace renodx::ui::new_ui {
 
@@ -25,7 +26,7 @@ DeveloperTabSettings::DeveloperTabSettings()
     , spoof_window_focus("SpoofWindowFocus", false, "DisplayCommanderNew")
     , continuous_monitoring("ContinuousMonitoring", true, "DisplayCommanderNew")
     , prevent_always_on_top("PreventAlwaysOnTop", true, "DisplayCommanderNew")
-    , background_feature("BackgroundFeature", false, "DisplayCommanderNew")
+    , remove_top_bar("RemoveTopBar", false, "DisplayCommanderNew")
     , fix_hdr10_colorspace("FixHDR10Colorspace", false, "DisplayCommanderNew")
     , nvapi_fullscreen_prevention("NvapiFullscreenPrevention", true, "DisplayCommanderNew")
     , nvapi_hdr_logging("NvapiHDRLogging", false, "DisplayCommanderNew")
@@ -42,7 +43,7 @@ void DeveloperTabSettings::LoadAll() {
     spoof_window_focus.Load();
     continuous_monitoring.Load();
     prevent_always_on_top.Load();
-    background_feature.Load();
+    remove_top_bar.Load();
     fix_hdr10_colorspace.Load();
     nvapi_fullscreen_prevention.Load();
     nvapi_hdr_logging.Load();
@@ -57,7 +58,7 @@ void DeveloperTabSettings::LoadAll() {
     s_spoof_window_focus = spoof_window_focus.GetValue() ? 1.0f : 0.0f;
     s_continuous_monitoring_enabled = continuous_monitoring.GetValue() ? 1.0f : 0.0f;
     s_prevent_always_on_top = prevent_always_on_top.GetValue() ? 1.0f : 0.0f;
-    s_background_feature_enabled = background_feature.GetValue() ? 1.0f : 0.0f;
+    s_remove_top_bar = remove_top_bar.GetValue() ? 1.0f : 0.0f;
     s_fix_hdr10_colorspace = fix_hdr10_colorspace.GetValue() ? 1.0f : 0.0f;
     s_nvapi_fullscreen_prevention = nvapi_fullscreen_prevention.GetValue() ? 1.0f : 0.0f;
     s_nvapi_hdr_logging = nvapi_hdr_logging.GetValue() ? 1.0f : 0.0f;
@@ -73,7 +74,7 @@ void DeveloperTabSettings::SaveAll() {
     spoof_window_focus.Save();
     continuous_monitoring.Save();
     prevent_always_on_top.Save();
-    background_feature.Save();
+    remove_top_bar.Save();
     fix_hdr10_colorspace.Save();
     nvapi_fullscreen_prevention.Save();
     nvapi_hdr_logging.Save();
@@ -90,7 +91,7 @@ std::vector<renodx::ui::new_ui::SettingBase*> DeveloperTabSettings::GetAllSettin
         &spoof_window_focus,
         &continuous_monitoring,
         &prevent_always_on_top,
-        &background_feature,
+        &remove_top_bar,
         &fix_hdr10_colorspace,
         &nvapi_fullscreen_prevention,
         &nvapi_hdr_logging,

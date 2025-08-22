@@ -18,12 +18,12 @@ public:
     std::vector<SettingBase*> GetAllSettings();
     
     // Display Settings
+    ComboSetting window_mode;
     ComboSetting window_width;
     ComboSetting window_height;
-    ComboSetting resize_mode;
     ComboSetting aspect_index;
     ComboSetting target_monitor_index;
-    BoolSetting remove_top_bar;
+    BoolSetting background_feature;
     ComboSetting alignment;
     
     // FPS Settings
