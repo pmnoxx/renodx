@@ -7,6 +7,8 @@
 #include <thread>
 #include <iomanip>
 #include <deps/imgui/imgui.h>
+// Track and restore original display settings
+#include "../../display_restore.hpp"
 
 // External declarations
 extern std::atomic<HWND> g_last_swapchain_hwnd;
@@ -384,6 +386,10 @@ void HandleDXGIAPIApplyButton() {
                 actual_monitor_index = static_cast<int>(s_selected_monitor_index) - 1;
             }
             
+            // Before applying any change, mark original mode and this device as changed
+            renodx::display_restore::MarkOriginalForDisplayIndex(actual_monitor_index);
+            renodx::display_restore::MarkDeviceChangedByDisplayIndex(actual_monitor_index);
+
             // Get the selected resolution from the cache
             auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(actual_monitor_index);
             if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {

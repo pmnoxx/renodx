@@ -9,10 +9,18 @@
 #include "dxgi/custom_fps_limiter_manager.hpp"
 #include "dxgi/dxgi_device_info.hpp"
 #include "nvapi/nvapi_fullscreen_prevention.hpp"
+// Restore display settings on exit if enabled
+#include "display_restore.hpp"
 
 // Forward declarations for ReShade event handlers
 void OnInitEffectRuntime(reshade::api::effect_runtime* runtime);
 bool OnReShadeOverlayOpen(reshade::api::effect_runtime* runtime, bool open, reshade::api::input_source source);
+namespace {
+// Destroy device handler to restore display if needed
+void OnDestroyDevice(reshade::api::device* /*device*/) {
+    renodx::display_restore::RestoreAllIfEnabled();
+}
+} // namespace
 
 // Forward declarations for frame lifecycle hooks
 void OnBeginRenderPass(reshade::api::command_list* cmd_list);
@@ -89,8 +97,12 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       reshade::register_event<reshade::addon_event::end_render_pass>(OnEndRenderPass);
       // Register overlay directly
       reshade::register_overlay("Display Commander", OnRegisterOverlayDisplayCommander);
+      // Register device destroy event for restore-on-exit
+      reshade::register_event<reshade::addon_event::destroy_device>(OnDestroyDevice);
       break;
     case DLL_PROCESS_DETACH:
+      // Safety: attempt restore on detach as well (idempotent)
+      renodx::display_restore::RestoreAllIfEnabled();
       
             // Clean up continuous monitoring if it's running
       StopContinuousMonitoring();
@@ -113,6 +125,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
           renodx::display_commander::events::OnSetFullscreenState);
       reshade::unregister_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
       reshade::unregister_event<reshade::addon_event::create_swapchain>(OnCreateSwapchainCapture);
+      reshade::unregister_event<reshade::addon_event::destroy_device>(OnDestroyDevice);
       reshade::unregister_addon(h_module);
       g_shutdown.store(true);
       break;
