@@ -130,8 +130,8 @@ void RunBackgroundAudioMonitor() {
     else if (s_mute_in_background >= 0.5f) {
       HWND hwnd = g_last_swapchain_hwnd.load();
       if (hwnd == nullptr) hwnd = GetForegroundWindow();
-      // Use spoofed focus state instead of actual focus state
-      want_mute = (hwnd != nullptr && !GetSpoofedWindowFocus(hwnd));
+      // Use actual focus state for background audio (not spoofed)
+      want_mute = (hwnd != nullptr && GetForegroundWindow() != hwnd);
     }
 
     const bool applied = g_muted_applied.load();

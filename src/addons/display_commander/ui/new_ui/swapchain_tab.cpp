@@ -108,7 +108,7 @@ void DrawSwapchainInfo() {
                             if (scd.BufferDesc.RefreshRate.Numerator > 0 && scd.BufferDesc.RefreshRate.Denominator > 0) {
                                 float refresh_rate = static_cast<float>(scd.BufferDesc.RefreshRate.Numerator) / 
                                                    static_cast<float>(scd.BufferDesc.RefreshRate.Denominator);
-                                ImGui::Text("  Refresh Rate: %.2f Hz", refresh_rate);
+                                ImGui::Text("  Refresh Rate: %.3f Hz", refresh_rate);
                             }
                         }
                         
@@ -242,9 +242,9 @@ void DrawAdapterInfo() {
                                             std::string refresh_str;
                                             for (size_t i = 0; i < sorted_rates.size(); ++i) {
                                                 if (i > 0) refresh_str += ", ";
-                                                // Format to 2 decimal places for cleaner display
+                                                // Format to 3 decimal places for cleaner display
                                                 char rate_buf[32];
-                                                snprintf(rate_buf, sizeof(rate_buf), "%.2f", sorted_rates[i]);
+                                                snprintf(rate_buf, sizeof(rate_buf), "%.3f", sorted_rates[i]);
                                                 refresh_str += rate_buf;
                                                 refresh_str += "hz";
                                             }

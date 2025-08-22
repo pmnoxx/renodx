@@ -94,15 +94,15 @@ void DrawDisplaySettings() {
     
     // Window Mode dropdown (with persistent setting)
     if (ComboSettingWrapper(g_main_new_tab_settings.window_mode, "Window Mode")) {
+        int old_mode = static_cast<int>(s_window_mode);
         s_window_mode = static_cast<float>(g_main_new_tab_settings.window_mode.GetValue());
         
-        // Apply the window changes based on the new mode
-        HWND hwnd = g_last_swapchain_hwnd.load();
-        if (hwnd != nullptr) {
-            ApplyWindowChange(hwnd, "window_mode_change");
-        }
+        // Don't apply changes immediately - let the normal window management system handle it
+        // This prevents crashes when changing modes during gameplay
         
-        LogInfo("Window mode changed");
+        std::ostringstream oss;
+        oss << "Window mode changed from " << old_mode << " to " << g_main_new_tab_settings.window_mode.GetValue();
+        LogInfo(oss.str().c_str());
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Choose the window mode: Borderless Windowed with aspect ratio, Borderless Windowed with custom width/height, or Borderless Fullscreen.");
@@ -357,7 +357,10 @@ void DrawAudioSettings() {
         ::g_muted_applied.store(false);
         // Also apply the current mute state immediately if manual mute is off
         if (s_audio_mute < 0.5f) {
-            bool want_mute = (mute_in_bg && GetForegroundWindow() != g_last_swapchain_hwnd.load());
+            HWND hwnd = g_last_swapchain_hwnd.load();
+            if (hwnd == nullptr) hwnd = GetForegroundWindow();
+            // Use actual focus state for background audio (not spoofed)
+            bool want_mute = (mute_in_bg && hwnd != nullptr && GetForegroundWindow() != hwnd);
             if (::SetMuteForCurrentProcess(want_mute)) {
                 ::g_muted_applied.store(want_mute);
                 std::ostringstream oss;

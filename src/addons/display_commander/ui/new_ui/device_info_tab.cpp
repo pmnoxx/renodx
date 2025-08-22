@@ -219,7 +219,7 @@ void DrawDxgiDeviceInfo() {
                             
                             if (output.refresh_rate.Denominator > 0) {
                                 float refresh = static_cast<float>(output.refresh_rate.Numerator) / static_cast<float>(output.refresh_rate.Denominator);
-                                ImGui::Text("Refresh Rate: %.2f Hz", refresh);
+                                ImGui::Text("Refresh Rate: %.3f Hz", refresh);
                             }
 
                             // HDR information
@@ -305,7 +305,7 @@ void DrawDxgiDeviceInfoDetailed() {
                                 
                                 if (output.refresh_rate.Denominator > 0) {
                                     float refresh = static_cast<float>(output.refresh_rate.Numerator) / static_cast<float>(output.refresh_rate.Denominator);
-                                    ImGui::Text("Refresh Rate: %.2f Hz", refresh);
+                                    ImGui::Text("Refresh Rate: %.3f Hz", refresh);
                                 }
                             }
 
