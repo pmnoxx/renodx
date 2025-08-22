@@ -1,7 +1,7 @@
 #include "settings_wrapper.hpp"
-#include "../../addon.hpp"
-#include <sstream>
 #include <algorithm>
+#include <cmath>
+#include "../../renodx/settings.hpp"
 
 // Windows defines min/max as macros, so we need to undefine them
 #ifdef min
@@ -125,6 +125,23 @@ bool SliderFloatSetting(FloatSetting& setting, const char* label, const char* fo
     if (changed) {
         setting.SetValue(value);
     }
+    // Show reset-to-default button if value differs from default
+    {
+        float current = setting.GetValue();
+        float def = setting.GetDefaultValue();
+        if (fabsf(current - def) > 1e-6f) {
+            ImGui::SameLine();
+            ImGui::PushID(&setting);
+            if (ImGui::SmallButton(reinterpret_cast<const char*>(ICON_FK_UNDO))) {
+                setting.SetValue(def);
+                changed = true;
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Reset to default (%.3f)", def);
+            }
+            ImGui::PopID();
+        }
+    }
     return changed;
 }
 
@@ -134,17 +151,48 @@ bool SliderIntSetting(IntSetting& setting, const char* label, const char* format
     if (changed) {
         setting.SetValue(value);
     }
+    // Show reset-to-default button if value differs from default
+    {
+        int current = setting.GetValue();
+        int def = setting.GetDefaultValue();
+        if (current != def) {
+            ImGui::SameLine();
+            ImGui::PushID(&setting);
+            if (ImGui::SmallButton(reinterpret_cast<const char*>(ICON_FK_UNDO))) {
+                setting.SetValue(def);
+                changed = true;
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Reset to default (%d)", def);
+            }
+            ImGui::PopID();
+        }
+    }
     return changed;
 }
 
 bool CheckboxSetting(BoolSetting& setting, const char* label) {
     bool value = setting.GetValue();
     bool changed = ImGui::Checkbox(label, &value);
-    std::stringstream ss;
-    ss << "XXX CheckboxSetting: " << label << ", value: " << value << ", changed: " << changed;
-    LogInfo(ss.str().c_str());
     if (changed) {
         setting.SetValue(value);
+    }
+    // Show reset-to-default button if value differs from default
+    {
+        bool current = setting.GetValue();
+        bool def = setting.GetDefaultValue();
+        if (current != def) {
+            ImGui::SameLine();
+            ImGui::PushID(&setting);
+            if (ImGui::SmallButton(reinterpret_cast<const char*>(ICON_FK_UNDO))) {
+                setting.SetValue(def);
+                changed = true;
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Reset to default (%s)", def ? "On" : "Off");
+            }
+            ImGui::PopID();
+        }
     }
     return changed;
 }
@@ -154,6 +202,25 @@ bool ComboSettingWrapper(ComboSetting& setting, const char* label) {
     bool changed = ImGui::Combo(label, &value, setting.GetLabels().data(), static_cast<int>(setting.GetLabels().size()));
     if (changed) {
         setting.SetValue(value);
+    }
+    // Show reset-to-default button if value differs from default
+    {
+        int current = setting.GetValue();
+        int def = setting.GetDefaultValue();
+        if (current != def) {
+            ImGui::SameLine();
+            ImGui::PushID(&setting);
+            if (ImGui::SmallButton(reinterpret_cast<const char*>(ICON_FK_UNDO))) {
+                setting.SetValue(def);
+                changed = true;
+            }
+            if (ImGui::IsItemHovered()) {
+                const auto &labels = setting.GetLabels();
+                const char* def_label = (def >= 0 && def < static_cast<int>(labels.size())) ? labels[def] : "Default";
+                ImGui::SetTooltip("Reset to default (%s)", def_label);
+            }
+            ImGui::PopID();
+        }
     }
     return changed;
 }
@@ -176,7 +243,7 @@ void SpacingSetting() {
 
 void LoadTabSettings(const std::vector<SettingBase*>& settings) {
     for (auto* setting : settings) {
-        if (setting) {
+        if (setting != nullptr) {
             setting->Load();
         }
     }
