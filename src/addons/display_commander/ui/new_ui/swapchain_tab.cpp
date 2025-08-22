@@ -6,6 +6,8 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <map>
+#include <cstdio>
 
 namespace renodx::ui::new_ui {
 
@@ -137,15 +139,39 @@ void DrawAdapterInfo() {
                                     ImGui::Separator();
                                     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Supported Resolutions (%zu):", output.supported_modes.size());
                                     
-                                    // Show first few resolutions
-                                    size_t max_show = (std::min)(output.supported_modes.size(), size_t(5));
-                                    for (size_t k = 0; k < max_show; ++k) {
-                                        const auto& mode = output.supported_modes[k];
-                                        ImGui::Text("  %ux%u", mode.Width, mode.Height);
+                                    // Group modes by resolution
+                                    std::map<std::pair<uint32_t, uint32_t>, std::vector<float>> resolution_groups;
+                                    for (const auto& mode : output.supported_modes) {
+                                        if (mode.RefreshRate.Denominator > 0) {
+                                            float refresh_rate = static_cast<float>(mode.RefreshRate.Numerator) / 
+                                                               static_cast<float>(mode.RefreshRate.Denominator);
+                                            resolution_groups[{mode.Width, mode.Height}].push_back(refresh_rate);
+                                        }
                                     }
                                     
-                                    if (output.supported_modes.size() > max_show) {
-                                        ImGui::Text("  ... and %zu more", output.supported_modes.size() - max_show);
+                                    // Display grouped resolutions
+                                    if (!resolution_groups.empty()) {
+                                        for (const auto& group : resolution_groups) {
+                                            const auto& resolution = group.first;
+                                            const auto& refresh_rates = group.second;
+                                            
+                                            // Sort refresh rates for better display
+                                            std::vector<float> sorted_rates = refresh_rates;
+                                            std::sort(sorted_rates.begin(), sorted_rates.end());
+                                            
+                                            std::string refresh_str;
+                                            for (size_t i = 0; i < sorted_rates.size(); ++i) {
+                                                if (i > 0) refresh_str += ", ";
+                                                // Format to 2 decimal places for cleaner display
+                                                char rate_buf[32];
+                                                snprintf(rate_buf, sizeof(rate_buf), "%.2f", sorted_rates[i]);
+                                                refresh_str += rate_buf;
+                                                refresh_str += "hz";
+                                            }
+                                            ImGui::Text("  %ux%u -> %s", resolution.first, resolution.second, refresh_str.c_str());
+                                        }
+                                    } else {
+                                        ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "  No valid refresh rate information available");
                                     }
                                 }
                                 
