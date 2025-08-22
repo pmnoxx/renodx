@@ -20,22 +20,6 @@ inline bool is_basic_tab(float ui_tab = 0) {
     // When Main tab is active, show all basic settings (old UI)
     return renodx::ui::new_ui::g_tab_manager.GetActiveTab() == 0;
 }
-inline bool is_developer_tab(float ui_tab = 0) { 
-    // Check if new UI Developer tab (index 1) is selected
-    return renodx::ui::new_ui::g_tab_manager.GetActiveTab() == 1;
-}
-inline bool is_device_tab(float ui_tab = 0) { 
-    // Check if new UI Device Info tab (index 2) is selected
-    return renodx::ui::new_ui::g_tab_manager.GetActiveTab() == 2;
-}
-inline bool is_window_info_tab(float ui_tab = 0) { 
-    // Check if new UI Window Info tab (index 3) is selected
-    return renodx::ui::new_ui::g_tab_manager.GetActiveTab() == 3;
-}
-inline bool is_swapchain_tab(float ui_tab = 0) { 
-    // Check if new UI Swapchain tab (index 4) is selected
-    return renodx::ui::new_ui::g_tab_manager.GetActiveTab() == 4;
-}
 
 
 // Forward declarations for settings sections
@@ -45,7 +29,6 @@ namespace renodx::ui {
     void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
     void AddAudioSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
     void AddWindowControls(std::vector<renodx::utils::settings2::Setting*>& settings);
-    void AddDeveloperSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
     void AddWindowPositionSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
     void AddHdrColorspaceSettings(std::vector<renodx::utils::settings2::Setting*>& settings);
     void AddNvapiSettings(std::vector<renodx::utils::settings2::Setting*>& settings);

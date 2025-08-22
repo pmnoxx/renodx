@@ -64,14 +64,10 @@ void InitializeNewUI() {
         ImGui::Text("Add your main UI elements here."); */
     });
     
-    g_tab_manager.AddTab("Developer", "developer", []() {
-        //renodx::ui::new_ui::DrawDeveloperTab();
-    });
-    
     g_tab_manager.AddTab("MainNew", "main_new", []() {
         renodx::ui::new_ui::DrawMainNewTab();
     });
-    g_tab_manager.AddTab("DeveloperNew", "developer_new", []() {
+    g_tab_manager.AddTab("Developer", "developer_new", []() {
         renodx::ui::new_ui::DrawDeveloperNewTab();
     });
     

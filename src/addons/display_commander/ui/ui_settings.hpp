@@ -32,9 +32,6 @@ extern float s_window_info_display;
 
 // Helper functions for tab visibility
 inline bool is_basic_tab(float ui_tab);
-inline bool is_developer_tab(float ui_tab);
-inline bool is_device_tab(float ui_tab);
-inline bool is_window_info_tab(float ui_tab);
 
 // Settings vector declaration
 extern std::vector<renodx::utils::settings2::Setting*> settings;
