@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <map>
 #include <cstdio>
+#include <dxgi1_6.h>
+#include <wrl/client.h>
 
 namespace renodx::ui::new_ui {
 
@@ -65,6 +67,70 @@ void DrawSwapchainInfo() {
                         desc.texture.format == reshade::api::format::r16g16b16a16_float ? "R16G16B16A16_FLOAT" :
                         "Other");
                     ImGui::Text("  Backbuffer Count: %d", swapchain->get_back_buffer_count());
+                    
+                    // Try to get DXGI swapchain description for swapchain properties
+                    auto* dxgi_swapchain = reinterpret_cast<IDXGISwapChain*>(swapchain->get_native());
+                    if (dxgi_swapchain != nullptr) {
+                        DXGI_SWAP_CHAIN_DESC scd{};
+                        if (SUCCEEDED(dxgi_swapchain->GetDesc(&scd))) {
+                            ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "DXGI Swapchain Properties:");
+                            
+                            // Show swap effect
+                            const char* swap_effect = "Unknown";
+                            switch (scd.SwapEffect) {
+                                case DXGI_SWAP_EFFECT_DISCARD: swap_effect = "Discard"; break;
+                                case DXGI_SWAP_EFFECT_SEQUENTIAL: swap_effect = "Sequential"; break;
+                                case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL: swap_effect = "Flip Sequential"; break;
+                                case DXGI_SWAP_EFFECT_FLIP_DISCARD: swap_effect = "Flip Discard"; break;
+                                default: swap_effect = "Other"; break;
+                            }
+                            ImGui::Text("  Swap Effect: %s", swap_effect);
+                            
+                            // Show buffer count and usage
+                            ImGui::Text("  Buffer Count: %u", scd.BufferCount);
+                            ImGui::Text("  Buffer Usage: 0x%08X", scd.BufferUsage);
+                            
+                            // Show format
+                            const char* format_str = "Unknown";
+                            switch (scd.BufferDesc.Format) {
+                                case DXGI_FORMAT_R8G8B8A8_UNORM: format_str = "R8G8B8A8_UNORM"; break;
+                                case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: format_str = "R8G8B8A8_UNORM_SRGB"; break;
+                                case DXGI_FORMAT_R10G10B10A2_UNORM: format_str = "R10G10B10A2_UNORM"; break;
+                                case DXGI_FORMAT_R16G16B16A16_FLOAT: format_str = "R16G16B16A16_FLOAT"; break;
+                                case DXGI_FORMAT_R11G11B10_FLOAT: format_str = "R11G11B10_FLOAT"; break;
+                                case DXGI_FORMAT_B8G8R8A8_UNORM: format_str = "B8G8R8A8_UNORM"; break;
+                                case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: format_str = "B8G8R8A8_UNORM_SRGB"; break;
+                                default: format_str = "Format_0x%08X"; break;
+                            }
+                            ImGui::Text("  Buffer Format: %s", format_str);
+                            
+                            // Show refresh rate if available
+                            if (scd.BufferDesc.RefreshRate.Numerator > 0 && scd.BufferDesc.RefreshRate.Denominator > 0) {
+                                float refresh_rate = static_cast<float>(scd.BufferDesc.RefreshRate.Numerator) / 
+                                                   static_cast<float>(scd.BufferDesc.RefreshRate.Denominator);
+                                ImGui::Text("  Refresh Rate: %.2f Hz", refresh_rate);
+                            }
+                        }
+                        
+                        // Try to get additional info from IDXGISwapChain1
+                        Microsoft::WRL::ComPtr<IDXGISwapChain1> swapchain1;
+                        if (SUCCEEDED(dxgi_swapchain->QueryInterface(IID_PPV_ARGS(&swapchain1)))) {
+                            DXGI_SWAP_CHAIN_DESC1 desc1{};
+                            if (SUCCEEDED(swapchain1->GetDesc1(&desc1))) {
+                                ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "Advanced Swapchain Properties:");
+                                ImGui::Text("  Alpha Mode: %u", desc1.AlphaMode);
+                                ImGui::Text("  Flags: 0x%08X", desc1.Flags);
+                                ImGui::Text("  Sample Count: %u", desc1.SampleDesc.Count);
+                                ImGui::Text("  Sample Quality: %u", desc1.SampleDesc.Quality);
+                            }
+                        }
+                    }
+                    
+                    // VSYNC and FPS Limit Information
+                    ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "Synchronization Info:");
+                    ImGui::Text("  Note: VSYNC status is determined by Present() calls");
+                    ImGui::Text("  Sync interval is not stored in swapchain description");
+                    ImGui::Text("  Check application behavior for actual VSYNC usage");
                 }
             }
 
@@ -82,6 +148,15 @@ void DrawSwapchainInfo() {
                 LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
                 ImGui::Text("  Fullscreen: %s", (style & WS_POPUP) ? "Yes" : "No");
                 ImGui::Text("  Borderless: %s", (style & WS_POPUP) && !(style & WS_CAPTION) ? "Yes" : "No");
+                
+                // Try to detect VSYNC through other means
+                ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "VSYNC Detection:");
+                bool is_fullscreen = (style & WS_POPUP) != 0;
+                ImGui::Text("  Fullscreen Mode: %s", is_fullscreen ? "Yes" : "No");
+                
+                if (is_fullscreen) {
+                    ImGui::Text("    -> VSYNC likely enabled in fullscreen mode");
+                }
             }
         } else {
             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "No active swapchain available");
