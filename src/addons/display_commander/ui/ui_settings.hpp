@@ -30,9 +30,6 @@ extern float s_mute_in_background;
 extern float s_fps_limit_background;
 extern float s_window_info_display;
 
-// Helper functions for tab visibility
-inline bool is_basic_tab(float ui_tab);
-
 // Settings vector declaration
 extern std::vector<renodx::utils::settings2::Setting*> settings;
 

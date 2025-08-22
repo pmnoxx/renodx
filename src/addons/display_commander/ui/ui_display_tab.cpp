@@ -175,35 +175,6 @@ void AddDisplayTabSettings(std::vector<renodx::utils::settings2::Setting*>& sett
         cache_initialized = true;
     }
 
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "MonitorSettingsCustom",
-        .binding = nullptr, // No direct binding, just for display
-        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
-        .default_value = 0.f,
-        .label = "Dynamic Monitor Settings",
-        .section = "Display",
-        .tooltip = "Interactive monitor, resolution, and refresh rate selection with real-time updates.",
-        .on_draw = HandleMonitorSettingsUI,
-        .is_visible = []() { return is_basic_tab(); } // Show in Simple and Display modes
-    });
-
-    // Current Display Info
-    settings.push_back(new renodx::utils::settings2::Setting{
-        .key = "CurrentDisplayInfo",
-        .binding = nullptr, // No direct binding, just for display
-        .value_type = renodx::utils::settings2::SettingValueType::CUSTOM,
-        .default_value = 0.f,
-        .label = "Current Display Info",
-        .section = "Display",
-        .tooltip = "Shows the current resolution and refresh rate of the display where the game is running, with closest supported mode if different.",
-        .on_draw = []() -> bool {
-            std::string display_info = GetCurrentDisplayInfoFromCache();
-            ImGui::TextUnformatted(display_info.c_str());
-            return false; // No value change
-        },
-        .is_visible = []() { return is_basic_tab(); } // Show in Simple and Display modes
-    });
-
 }
 
 } // namespace renodx::ui

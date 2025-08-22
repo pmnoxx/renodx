@@ -3,10 +3,10 @@
 #include "../../addon.hpp"
 #include "../../dxgi/custom_fps_limiter.hpp"
 #include "../../dxgi/custom_fps_limiter_manager.hpp"
-#include "../ui_display_tab.hpp"
 #include <sstream>
 #include <thread>
 #include <atomic>
+#include "../ui_display_tab.hpp"
 
 // Global variable declaration
 extern std::unique_ptr<renodx::dxgi::fps_limiter::CustomFpsLimiterManager> g_customFpsLimiterManager;
