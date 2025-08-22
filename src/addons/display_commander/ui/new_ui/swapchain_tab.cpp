@@ -128,9 +128,14 @@ void DrawSwapchainInfo() {
                     
                     // VSYNC and FPS Limit Information
                     ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "Synchronization Info:");
-                    ImGui::Text("  Note: VSYNC status is determined by Present() calls");
-                    ImGui::Text("  Sync interval is not stored in swapchain description");
-                    ImGui::Text("  Check application behavior for actual VSYNC usage");
+                    {
+                        uint32_t interval = ::GetSwapchainSyncInterval(swapchain);
+                        if (interval == UINT32_MAX) {
+                            ImGui::Text("  Sync Interval: Default (app-controlled)");
+                        } else {
+                            ImGui::Text("  Sync Interval: %u", interval);
+                        }
+                    }
                 }
             }
 

@@ -240,3 +240,14 @@ extern std::string g_hdr10_override_status;
 extern std::string g_hdr10_override_timestamp;
 
 // Note: GetIndependentFlipState is implemented in the .cpp file as it's complex
+
+// Swapchain sync interval accessors
+// Returns UINT32_MAX when using application's default, or <0-4> for explicit intervals, or UINT_MAX if unknown
+uint32_t GetSwapchainSyncInterval(reshade::api::swapchain* swapchain);
+
+// Event to capture sync interval from swapchain creation
+#if RESHADE_API_VERSION >= 17
+bool OnCreateSwapchainCapture(reshade::api::device_api api, reshade::api::swapchain_desc& desc, void* hwnd);
+#else
+bool OnCreateSwapchainCapture(reshade::api::swapchain_desc& desc, void* hwnd);
+#endif

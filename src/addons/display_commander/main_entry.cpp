@@ -54,6 +54,13 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       // Ensure UI system is initialized
       renodx::ui::new_ui::InitializeNewUISystem();
       
+      // Capture sync interval on swapchain creation for UI
+#if RESHADE_API_VERSION >= 17
+      reshade::register_event<reshade::addon_event::create_swapchain>(OnCreateSwapchainCapture);
+#else
+      reshade::register_event<reshade::addon_event::create_swapchain>(OnCreateSwapchainCapture);
+#endif
+
       reshade::register_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
       
       // Register ReShade effect runtime events for input blocking
@@ -105,6 +112,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       reshade::unregister_event<reshade::addon_event::set_fullscreen_state>(
           renodx::display_commander::events::OnSetFullscreenState);
       reshade::unregister_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
+      reshade::unregister_event<reshade::addon_event::create_swapchain>(OnCreateSwapchainCapture);
       reshade::unregister_addon(h_module);
       g_shutdown.store(true);
       break;

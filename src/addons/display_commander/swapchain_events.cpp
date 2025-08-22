@@ -9,6 +9,7 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <unordered_map>
 
 // Frame lifecycle hooks for custom FPS limiter
 void OnBeginRenderPass(reshade::api::command_list* cmd_list, uint32_t count, const reshade::api::render_pass_render_target_desc* rts, const reshade::api::render_pass_depth_stencil_desc* ds) {
@@ -37,6 +38,34 @@ void OnEndRenderPass(reshade::api::command_list* cmd_list) {
     }
 }
 
+// Track last requested sync interval per HWND detected at create_swapchain
+namespace {
+static std::mutex g_sync_mutex;
+static std::unordered_map<HWND, uint32_t> g_hwnd_to_syncinterval; // UINT32_MAX = default
+static std::unordered_map<reshade::api::swapchain*, uint32_t> g_swapchain_to_syncinterval;
+}
+
+// Expose for UI
+uint32_t GetSwapchainSyncInterval(reshade::api::swapchain* swapchain) {
+  if (swapchain == nullptr) return UINT32_MAX;
+  std::scoped_lock lk(g_sync_mutex);
+  auto it = g_swapchain_to_syncinterval.find(swapchain);
+  if (it != g_swapchain_to_syncinterval.end()) return it->second;
+  return UINT32_MAX;
+}
+
+// Capture sync interval during create_swapchain
+#if RESHADE_API_VERSION >= 17
+bool OnCreateSwapchainCapture(reshade::api::device_api /*api*/, reshade::api::swapchain_desc& desc, void* hwnd) {
+#else
+bool OnCreateSwapchainCapture(reshade::api::swapchain_desc& desc, void* hwnd) {
+#endif
+  if (hwnd == nullptr) return false;
+  std::scoped_lock lk(g_sync_mutex);
+  g_hwnd_to_syncinterval[static_cast<HWND>(hwnd)] = desc.sync_interval; // UINT32_MAX or 0..4
+  return false; // do not modify
+}
+
 void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
   // Update last known backbuffer size and colorspace
   auto* device = swapchain->get_device();
@@ -59,6 +88,14 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
   g_last_swapchain_hwnd.store(hwnd);
   g_last_swapchain_ptr.store(swapchain);
   if (hwnd == nullptr) return;
+  // Bind captured sync interval to swapchain instance
+  {
+    std::scoped_lock lk(g_sync_mutex);
+    auto it = g_hwnd_to_syncinterval.find(hwnd);
+    if (it != g_hwnd_to_syncinterval.end()) {
+      g_swapchain_to_syncinterval[swapchain] = it->second;
+    }
+  }
   // Update DXGI composition state if possible
   {
     DxgiBypassMode mode = GetIndependentFlipState(swapchain);
