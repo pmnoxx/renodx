@@ -407,9 +407,18 @@ bool DisplayCache::GetRationalRefreshRate(size_t display_index, size_t resolutio
     const auto* display = GetDisplay(display_index);
     if (!display) return false;
     
-    if (resolution_index >= display->resolutions.size()) return false;
+    // Map UI resolution index: 0 = Current Resolution, otherwise shift by one
+    size_t effective_index = resolution_index;
+    if (resolution_index == 0) {
+        auto idx = display->FindResolutionIndex(display->current_width, display->current_height);
+        if (!idx.has_value()) return false;
+        effective_index = idx.value();
+    } else {
+        if ((resolution_index - 1) >= display->resolutions.size()) return false;
+        effective_index = resolution_index - 1;
+    }
     
-    const auto& res = display->resolutions[resolution_index];
+    const auto& res = display->resolutions[effective_index];
     
     // Handle option 0: Max supported refresh rate
     if (refresh_rate_index == 0 && !res.refresh_rates.empty()) {

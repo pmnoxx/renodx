@@ -230,7 +230,10 @@ struct DisplayInfo {
     // Get resolution labels for UI
     std::vector<std::string> GetResolutionLabels() const {
         std::vector<std::string> labels;
-        labels.reserve(resolutions.size());
+        labels.reserve(resolutions.size() + 1);
+        
+        // Option 0: Current Resolution
+        labels.push_back("Current Resolution");
         
         for (const auto& res : resolutions) {
             labels.push_back(res.ToString());
@@ -241,9 +244,19 @@ struct DisplayInfo {
     
     // Get refresh rate labels for a specific resolution
     std::vector<std::string> GetRefreshRateLabels(size_t resolution_index) const {
-        if (resolution_index >= resolutions.size()) return {};
+        // Map UI index to underlying resolution index
+        size_t effective_index = resolution_index;
+        if (resolution_index == 0) {
+            auto idx = FindResolutionIndex(current_width, current_height);
+            if (!idx.has_value()) return {};
+            effective_index = idx.value();
+        } else {
+            // Shift down by one since 0 is "Current Resolution"
+            if ((resolution_index - 1) >= resolutions.size()) return {};
+            effective_index = resolution_index - 1;
+        }
         
-        const auto& res = resolutions[resolution_index];
+        const auto& res = resolutions[effective_index];
         std::vector<std::string> labels;
         labels.reserve(res.refresh_rates.size() + 1); // +1 for option 0
         

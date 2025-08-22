@@ -84,7 +84,7 @@ float s_selected_refresh_rate_index = 0.f; // Default to first available refresh
 bool s_initial_auto_selection_done = false; // Track if we've done initial auto-selection
 
 // Auto-restore resolution on game close
-bool s_auto_restore_resolution_on_close = true; // Disabled by default
+bool s_auto_restore_resolution_on_close = true; // Enabled by default
 
 // Auto-apply resolution and refresh rate changes
 bool s_auto_apply_resolution_change = false; // Disabled by default

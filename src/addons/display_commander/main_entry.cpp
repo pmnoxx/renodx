@@ -11,6 +11,7 @@
 #include "nvapi/nvapi_fullscreen_prevention.hpp"
 // Restore display settings on exit if enabled
 #include "display_restore.hpp"
+#include "process_exit_hooks.hpp"
 
 // Forward declarations for ReShade event handlers
 void OnInitEffectRuntime(reshade::api::effect_runtime* runtime);
@@ -18,6 +19,7 @@ bool OnReShadeOverlayOpen(reshade::api::effect_runtime* runtime, bool open, resh
 namespace {
 // Destroy device handler to restore display if needed
 void OnDestroyDevice(reshade::api::device* /*device*/) {
+  LogInfo("ReShade device destroyed - Attempting to restore display settings");
     renodx::display_restore::RestoreAllIfEnabled();
 }
 } // namespace
@@ -61,6 +63,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       if (!reshade::register_addon(h_module)) return FALSE;
       // Ensure UI system is initialized
       renodx::ui::new_ui::InitializeNewUISystem();
+      // Install process-exit safety hooks to restore display on abnormal exits
+      renodx::process_exit_hooks::Initialize();
       
       // Capture sync interval on swapchain creation for UI
 #if RESHADE_API_VERSION >= 17
@@ -103,6 +107,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
     case DLL_PROCESS_DETACH:
       // Safety: attempt restore on detach as well (idempotent)
       renodx::display_restore::RestoreAllIfEnabled();
+      // Uninstall process-exit hooks
+      renodx::process_exit_hooks::Shutdown();
       
             // Clean up continuous monitoring if it's running
       StopContinuousMonitoring();
@@ -125,6 +131,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
           renodx::display_commander::events::OnSetFullscreenState);
       reshade::unregister_event<reshade::addon_event::init_swapchain>(OnInitSwapchain);
       reshade::unregister_event<reshade::addon_event::create_swapchain>(OnCreateSwapchainCapture);
+      renodx::display_restore::RestoreAllIfEnabled(); // restore display settings on exit
       reshade::unregister_event<reshade::addon_event::destroy_device>(OnDestroyDevice);
       reshade::unregister_addon(h_module);
       g_shutdown.store(true);

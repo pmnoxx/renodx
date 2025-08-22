@@ -6,9 +6,13 @@
 #include <sstream>
 #include <thread>
 #include <iomanip>
+#include <atomic>
+#include <chrono>
+#include <algorithm>
 #include <deps/imgui/imgui.h>
 // Track and restore original display settings
 #include "../../display_restore.hpp"
+#include "../new_ui/settings_wrapper.hpp"
 
 // External declarations
 extern std::atomic<HWND> g_last_swapchain_hwnd;
@@ -22,6 +26,165 @@ extern bool s_auto_apply_refresh_rate_change;
 
 
 namespace renodx::ui::monitor_settings {
+
+// Persistent settings for monitor settings UI
+static renodx::ui::new_ui::BoolSetting g_setting_auto_apply_resolution("AutoApplyResolution", false);
+static renodx::ui::new_ui::BoolSetting g_setting_auto_apply_refresh("AutoApplyRefresh", false);
+static renodx::ui::new_ui::IntSetting g_setting_selected_resolution_index("SelectedResolutionIndex", 0, 0, 10000);
+static renodx::ui::new_ui::IntSetting g_setting_selected_refresh_index("SelectedRefreshIndex", 0, 0, 10000);
+
+static void EnsurePersistentSettingsLoadedOnce() {
+    static bool loaded = false;
+    if (loaded) return;
+    loaded = true;
+    g_setting_auto_apply_resolution.Load();
+    g_setting_auto_apply_refresh.Load();
+    g_setting_selected_resolution_index.Load();
+    g_setting_selected_refresh_index.Load();
+    s_auto_apply_resolution_change = g_setting_auto_apply_resolution.GetValue();
+    s_auto_apply_refresh_rate_change = g_setting_auto_apply_refresh.GetValue();
+    // Initialize selected indices from saved state
+    s_selected_resolution_index = static_cast<float>(g_setting_selected_resolution_index.GetValue());
+    s_selected_refresh_rate_index = static_cast<float>(g_setting_selected_refresh_index.GetValue());
+}
+
+// Auto-apply retry state
+static std::atomic<uint64_t> g_resolution_apply_task_id{0};
+static std::atomic<uint64_t> g_refresh_apply_task_id{0};
+static std::atomic<bool> g_resolution_auto_apply_failed{false};
+static std::atomic<bool> g_refresh_auto_apply_failed{false};
+
+// Helper: Apply current selection (DXGI first, then legacy) and return success
+static bool TryApplyCurrentSelectionOnce() {
+    // Determine monitor index
+    int actual_monitor_index = static_cast<int>(s_selected_monitor_index);
+    if (s_selected_monitor_index == 0) {
+        HWND hwnd = g_last_swapchain_hwnd.load();
+        if (hwnd) {
+            HMONITOR current_monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            if (current_monitor) {
+                for (int j = 0; j < static_cast<int>(renodx::display_cache::g_displayCache.GetDisplayCount()); j++) {
+                    const auto* display = renodx::display_cache::g_displayCache.GetDisplay(j);
+                    if (display && display->monitor_handle == current_monitor) {
+                        actual_monitor_index = j;
+                        break;
+                    }
+                }
+            }
+        }
+    } else {
+        actual_monitor_index = static_cast<int>(s_selected_monitor_index) - 1;
+    }
+
+    // Mark for restore and device changed
+    renodx::display_restore::MarkOriginalForDisplayIndex(actual_monitor_index);
+    renodx::display_restore::MarkDeviceChangedByDisplayIndex(actual_monitor_index);
+
+    // Get width/height
+    auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(actual_monitor_index);
+    if (s_selected_resolution_index < 0 || s_selected_resolution_index >= static_cast<int>(resolution_labels.size())) {
+        return false;
+    }
+    int width = 0;
+    int height = 0;
+    if (static_cast<int>(s_selected_resolution_index) == 0) {
+        // Option 0: Current Resolution
+        if (!renodx::display_cache::g_displayCache.GetCurrentResolution(actual_monitor_index, width, height)) {
+            return false;
+        }
+    } else {
+        std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+        if (sscanf_s(selected_resolution.c_str(), "%d x %d", &width, &height) != 2) {
+            return false;
+        }
+    }
+
+    // Get rational refresh
+    renodx::display_cache::RationalRefreshRate refresh_rate{};
+    bool has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
+        actual_monitor_index,
+        static_cast<int>(s_selected_resolution_index),
+        static_cast<int>(s_selected_refresh_rate_index),
+        refresh_rate);
+
+    if (!has_rational) {
+        return false;
+    }
+
+    // Try DXGI first
+    if (renodx::resolution::ApplyDisplaySettingsDXGI(
+            actual_monitor_index, width, height, refresh_rate.numerator, refresh_rate.denominator)) {
+        return true;
+    }
+
+    // Fallback: legacy ChangeDisplaySettingsExW
+    const auto* display = renodx::display_cache::g_displayCache.GetDisplay(actual_monitor_index);
+    if (!display) return false;
+    HMONITOR hmon = display->monitor_handle;
+    MONITORINFOEXW mi;
+    mi.cbSize = sizeof(mi);
+    if (!GetMonitorInfoW(hmon, &mi)) return false;
+
+    DEVMODEW dm;
+    ZeroMemory(&dm, sizeof(dm));
+    dm.dmSize = sizeof(dm);
+    dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+    dm.dmPelsWidth = width;
+    dm.dmPelsHeight = height;
+    dm.dmDisplayFrequency = static_cast<DWORD>(std::lround(refresh_rate.ToHz()));
+
+    LONG result = ChangeDisplaySettingsExW(mi.szDevice, &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+    return result == DISP_CHANGE_SUCCESSFUL;
+}
+
+static void StartResolutionAutoApplyWithBackoff() {
+    uint64_t task_id = g_resolution_apply_task_id.fetch_add(1) + 1;
+    g_resolution_auto_apply_failed.store(false);
+    std::thread([task_id]() {
+        const int delays_sec[5] = {1, 2, 4, 8, 16};
+        for (int i = 0; i < 5; ++i) {
+            // Cancellation check
+            if (g_resolution_apply_task_id.load() != task_id) return;
+            if (TryApplyCurrentSelectionOnce()) return;
+            // Wait before next attempt
+            int remaining_ms = delays_sec[i] * 1000;
+            while (remaining_ms > 0) {
+                if (g_resolution_apply_task_id.load() != task_id) return;
+                int step = (std::min)(remaining_ms, 100);
+                std::this_thread::sleep_for(std::chrono::milliseconds(step));
+                remaining_ms -= step;
+            }
+        }
+        // All attempts failed: disable and remember failure
+        g_resolution_auto_apply_failed.store(true);
+        s_auto_apply_resolution_change = false;
+        g_setting_auto_apply_resolution.SetValue(false);
+        g_setting_auto_apply_resolution.Save();
+    }).detach();
+}
+
+static void StartRefreshAutoApplyWithBackoff() {
+    uint64_t task_id = g_refresh_apply_task_id.fetch_add(1) + 1;
+    g_refresh_auto_apply_failed.store(false);
+    std::thread([task_id]() {
+        const int delays_sec[5] = {1, 2, 4, 8, 16};
+        for (int i = 0; i < 5; ++i) {
+            if (g_refresh_apply_task_id.load() != task_id) return;
+            if (TryApplyCurrentSelectionOnce()) return;
+            int remaining_ms = delays_sec[i] * 1000;
+            while (remaining_ms > 0) {
+                if (g_refresh_apply_task_id.load() != task_id) return;
+                int step = (std::min)(remaining_ms, 100);
+                std::this_thread::sleep_for(std::chrono::milliseconds(step));
+                remaining_ms -= step;
+            }
+        }
+        g_refresh_auto_apply_failed.store(true);
+        s_auto_apply_refresh_rate_change = false;
+        g_setting_auto_apply_refresh.SetValue(false);
+        g_setting_auto_apply_refresh.Save();
+    }).detach();
+}
 
 // Handle display cache refresh logic (every 60 frames)
 void HandleDisplayCacheRefresh() {
@@ -217,6 +380,7 @@ void HandleMonitorSelection(const std::vector<std::string>& monitor_labels) {
 
 // Handle resolution selection UI
 void HandleResolutionSelection(int selected_monitor_index) {
+    EnsurePersistentSettingsLoadedOnce();
     // If Auto (Current) is selected, find the current monitor where the game is running
     int actual_monitor_index = selected_monitor_index;
     if (selected_monitor_index == 0) {
@@ -241,6 +405,12 @@ void HandleResolutionSelection(int selected_monitor_index) {
     
     auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(actual_monitor_index);
     if (!resolution_labels.empty()) {
+        // Clamp saved index to available range
+        if (s_selected_resolution_index < 0 || s_selected_resolution_index >= static_cast<int>(resolution_labels.size())) {
+            s_selected_resolution_index = 0.0f;
+            g_setting_selected_resolution_index.SetValue(0);
+            g_setting_selected_resolution_index.Save();
+        }
         ImGui::BeginGroup();
         ImGui::PushID("resolution_combo");
         if (ImGui::BeginCombo("Resolution", resolution_labels[static_cast<int>(s_selected_resolution_index)].c_str())) {
@@ -249,6 +419,13 @@ void HandleResolutionSelection(int selected_monitor_index) {
                 if (ImGui::Selectable(resolution_labels[i].c_str(), is_selected)) {
                     s_selected_resolution_index = static_cast<float>(i);
                     s_selected_refresh_rate_index = 0.f; // Reset refresh rate when resolution changes
+                    g_setting_selected_resolution_index.SetValue(i);
+                    g_setting_selected_resolution_index.Save();
+                    g_setting_selected_refresh_index.SetValue(0);
+                    g_setting_selected_refresh_index.Save();
+                    if (s_auto_apply_resolution_change) {
+                        StartResolutionAutoApplyWithBackoff();
+                    }
                 }
                 if (is_selected) {
                     ImGui::SetItemDefaultFocus();
@@ -258,9 +435,21 @@ void HandleResolutionSelection(int selected_monitor_index) {
         }
         ImGui::PopID();
         ImGui::SameLine();
-        ImGui::Checkbox("Auto-apply##resolution", &s_auto_apply_resolution_change);
+        if (ImGui::Checkbox("Auto-apply##resolution", &s_auto_apply_resolution_change)) {
+            g_setting_auto_apply_resolution.SetValue(s_auto_apply_resolution_change);
+            g_setting_auto_apply_resolution.Save();
+            if (s_auto_apply_resolution_change) {
+                StartResolutionAutoApplyWithBackoff();
+            } else {
+                g_resolution_apply_task_id.fetch_add(1);
+            }
+        }
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Automatically apply when Resolution changes");
+        }
+        if (g_resolution_auto_apply_failed.load()) {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Auto-apply failed after retries");
         }
         ImGui::EndGroup();
     }
@@ -268,6 +457,7 @@ void HandleResolutionSelection(int selected_monitor_index) {
 
 // Handle refresh rate selection UI
 void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolution_index) {
+    EnsurePersistentSettingsLoadedOnce();
     if (s_selected_resolution_index >= 0) {
         // If Auto (Current) is selected, find the current monitor where the game is running
         int actual_monitor_index = selected_monitor_index;
@@ -295,6 +485,12 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
         if (s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
             auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(actual_monitor_index, selected_resolution_index);
             if (!refresh_rate_labels.empty()) {
+                // Clamp saved index to available range
+                if (s_selected_refresh_rate_index < 0 || s_selected_refresh_rate_index >= static_cast<int>(refresh_rate_labels.size())) {
+                    s_selected_refresh_rate_index = 0.0f;
+                    g_setting_selected_refresh_index.SetValue(0);
+                    g_setting_selected_refresh_index.Save();
+                }
                 ImGui::BeginGroup();
                 ImGui::PushID("refresh_rate_combo");
                 if (ImGui::BeginCombo("Refresh Rate", refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)].c_str())) {
@@ -302,6 +498,11 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
                         const bool is_selected = (i == static_cast<int>(s_selected_refresh_rate_index));
                         if (ImGui::Selectable(refresh_rate_labels[i].c_str(), is_selected)) {
                             s_selected_refresh_rate_index = static_cast<float>(i);
+                            g_setting_selected_refresh_index.SetValue(i);
+                            g_setting_selected_refresh_index.Save();
+                            if (s_auto_apply_refresh_rate_change) {
+                                StartRefreshAutoApplyWithBackoff();
+                            }
                         }
                         if (is_selected) {
                             ImGui::SetItemDefaultFocus();
@@ -311,9 +512,21 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
                 }
                 ImGui::PopID();
                 ImGui::SameLine();
-                ImGui::Checkbox("Auto-apply##refresh", &s_auto_apply_refresh_rate_change);
+                if (ImGui::Checkbox("Auto-apply##refresh", &s_auto_apply_refresh_rate_change)) {
+                    g_setting_auto_apply_refresh.SetValue(s_auto_apply_refresh_rate_change);
+                    g_setting_auto_apply_refresh.Save();
+                    if (s_auto_apply_refresh_rate_change) {
+                        StartRefreshAutoApplyWithBackoff();
+                    } else {
+                        g_refresh_apply_task_id.fetch_add(1);
+                    }
+                }
                 if (ImGui::IsItemHovered()) {
                     ImGui::SetTooltip("Automatically apply when Refresh Rate changes");
+                }
+                if (g_refresh_auto_apply_failed.load()) {
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Auto-apply failed after retries");
                 }
                 ImGui::EndGroup();
             }
@@ -411,9 +624,18 @@ void HandleDXGIAPIApplyButton() {
             // Get the selected resolution from the cache
             auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(actual_monitor_index);
             if (s_selected_resolution_index >= 0 && s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
-                std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
-                int width, height;
-                sscanf_s(selected_resolution.c_str(), "%d x %d", &width, &height);
+                int width = 0, height = 0;
+                if (static_cast<int>(s_selected_resolution_index) == 0) {
+                    // Current Resolution
+                    if (!renodx::display_cache::g_displayCache.GetCurrentResolution(actual_monitor_index, width, height)) {
+                        return;
+                    }
+                } else {
+                    std::string selected_resolution = resolution_labels[static_cast<int>(s_selected_resolution_index)];
+                    if (sscanf_s(selected_resolution.c_str(), "%d x %d", &width, &height) != 2) {
+                        return;
+                    }
+                }
                 
                 // Get the selected refresh rate from the cache
                 renodx::display_cache::RationalRefreshRate refresh_rate;

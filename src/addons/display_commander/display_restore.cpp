@@ -132,6 +132,7 @@ void RestoreAll() {
 }
 
 void RestoreAllIfEnabled() {
+    LogInfo("XXX Restoring all display settings");
 	if (!::s_auto_restore_resolution_on_close) return;
 	RestoreAll();
 }
