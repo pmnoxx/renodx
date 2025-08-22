@@ -114,21 +114,7 @@ void DrawDeveloperSettings() {
     
     ImGui::Spacing();
     
-    // Continuous Monitoring
-    if (CheckboxSetting(g_developerTabSettings.continuous_monitoring, "Continuous Monitoring")) {
-        s_continuous_monitoring_enabled = g_developerTabSettings.continuous_monitoring.GetValue() ? 1.0f : 0.0f;
-        
-        if (g_developerTabSettings.continuous_monitoring.GetValue()) {
-            extern void StartContinuousMonitoring();
-            ::StartContinuousMonitoring();
-        } else {
-            extern void StopContinuousMonitoring();
-            ::StopContinuousMonitoring();
-        }
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Continuously monitor and automatically fix window position, size, and style every second.");
-    }
+    // Continuous Monitoring moved to Main tab as 'Auto-apply'
     
     // Prevent Always On Top
     if (CheckboxSetting(g_developerTabSettings.prevent_always_on_top, "Prevent Always On Top")) {

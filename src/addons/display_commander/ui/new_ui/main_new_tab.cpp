@@ -1,5 +1,6 @@
 #include "main_new_tab.hpp"
 #include "main_new_tab_settings.hpp"
+#include "developer_new_tab_settings.hpp"
 #include "../../addon.hpp"
 #include "../../audio/audio_management.hpp"
 #include "../../dxgi/custom_fps_limiter.hpp"
@@ -25,6 +26,8 @@ void InitMainNewTab() {
 
     static bool settings_loaded_once = false;
     if (!settings_loaded_once) {
+        // Ensure developer settings (including continuous monitoring) are loaded so UI reflects saved state
+        g_developerTabSettings.LoadAll();
         g_main_new_tab_settings.LoadSettings();
         s_window_mode = static_cast<float>(g_main_new_tab_settings.window_mode.GetValue());
         {
@@ -105,6 +108,19 @@ void DrawDisplaySettings() {
         std::ostringstream oss;
         oss << "Window mode changed from " << old_mode << " to " << g_main_new_tab_settings.window_mode.GetValue();
         LogInfo(oss.str().c_str());
+    }
+    // Auto-apply (continuous monitoring) checkbox next to Window Mode
+    ImGui::SameLine();
+    if (CheckboxSetting(g_developerTabSettings.continuous_monitoring, "Auto-apply")) {
+        s_continuous_monitoring_enabled = g_developerTabSettings.continuous_monitoring.GetValue() ? 1.0f : 0.0f;
+        if (g_developerTabSettings.continuous_monitoring.GetValue()) {
+            ::StartContinuousMonitoring();
+        } else {
+            ::StopContinuousMonitoring();
+        }
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Auto-apply window mode changes and continuously keep window size/position in sync.");
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Choose the window mode: Borderless Windowed with aspect ratio, Borderless Windowed with custom width/height, or Borderless Fullscreen.");

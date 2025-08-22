@@ -258,9 +258,13 @@ struct DisplayInfo {
         
         const auto& res = resolutions[effective_index];
         std::vector<std::string> labels;
-        labels.reserve(res.refresh_rates.size() + 1); // +1 for option 0
-        
-        // Add option 0: "Max supported refresh rate"
+        // +2 for option 0 (Current) and option 1 (Max supported)
+        labels.reserve(res.refresh_rates.size() + 2);
+
+        // Add option 0: "Current Refresh Rate"
+        labels.push_back(std::string("Current Refresh Rate (") + current_refresh_rate.ToString() + ")");
+
+        // Add option 1: "Max supported refresh rate"
         if (!res.refresh_rates.empty()) {
             // Find the maximum refresh rate
             auto max_rate = std::max_element(res.refresh_rates.begin(), res.refresh_rates.end());
@@ -270,12 +274,12 @@ struct DisplayInfo {
                 labels.push_back("Max supported refresh rate");
             }
         }
-        
+
         // Add all available refresh rates
         for (const auto& rate : res.refresh_rates) {
             labels.push_back(rate.ToString());
         }
-        
+
         return labels;
     }
 };

@@ -240,22 +240,13 @@ void HandleAutoDetection() {
                             s_selected_resolution_index = static_cast<float>(closest_resolution_index.value());
                             
                             // Find closest refresh rate within this resolution
-                            auto closest_refresh_rate_index = display->FindClosestRefreshRateIndex(closest_resolution_index.value());
-                            if (closest_refresh_rate_index.has_value()) {
-                                s_selected_refresh_rate_index = static_cast<float>(closest_refresh_rate_index.value());
-                                
-                                // Debug: Log what we found
-                                std::ostringstream found_oss;
-                                found_oss << "Auto-detected: Resolution " << s_selected_resolution_index 
-                                          << " (closest to current " << display->GetCurrentResolutionString() 
-                                          << "), Refresh Rate " << s_selected_refresh_rate_index 
-                                          << " (closest to current " << display->GetCurrentRefreshRateString() << ")";
-                                LogInfo(found_oss.str().c_str());
-                            } else {
-                                // Fallback to first refresh rate if no match found
-                                s_selected_refresh_rate_index = 0.0f;
-                                LogWarn("No refresh rate match found, using first available");
-                            }
+                            // Default to Current Refresh Rate (index 0 in UI)
+                            s_selected_refresh_rate_index = 0.0f;
+                            std::ostringstream found_oss;
+                            found_oss << "Auto-detected: Resolution " << s_selected_resolution_index 
+                                      << " (closest to current " << display->GetCurrentResolutionString() 
+                                      << "), Refresh Rate 0 (Current: " << display->GetCurrentRefreshRateString() << ")";
+                            LogInfo(found_oss.str().c_str());
                         } else {
                             // Fallback to first resolution if no match found
                             s_selected_resolution_index = 0.0f;
@@ -309,21 +300,14 @@ void HandleMonitorSelection(const std::vector<std::string>& monitor_labels) {
                                     if (closest_resolution_index.has_value()) {
                                         s_selected_resolution_index = static_cast<float>(closest_resolution_index.value());
                                         
-                                        auto closest_refresh_rate_index = display->FindClosestRefreshRateIndex(closest_resolution_index.value());
-                                        if (closest_refresh_rate_index.has_value()) {
-                                            s_selected_refresh_rate_index = static_cast<float>(closest_refresh_rate_index.value());
-                                            
-                                            std::ostringstream auto_select_oss;
-                                            auto_select_oss << "Auto (Current) selected - using monitor " << j << ": Resolution " 
-                                                           << s_selected_resolution_index << " (closest to current " 
-                                                           << display->GetCurrentResolutionString() << "), Refresh Rate " 
-                                                           << s_selected_refresh_rate_index << " (closest to current " 
-                                                           << display->GetCurrentRefreshRateString() << ")";
-                                            LogInfo(auto_select_oss.str().c_str());
-                                        } else {
-                                            s_selected_refresh_rate_index = 0.0f;
-                                            LogWarn("No refresh rate match found for Auto (Current), using first available");
-                                        }
+                                        // Default to Current Refresh Rate (index 0 in UI)
+                                        s_selected_refresh_rate_index = 0.0f;
+                                        std::ostringstream auto_select_oss;
+                                        auto_select_oss << "Auto (Current) selected - using monitor " << j << ": Resolution " 
+                                                       << s_selected_resolution_index << " (closest to current " 
+                                                       << display->GetCurrentResolutionString() << "), Refresh Rate 0 (Current: " 
+                                                       << display->GetCurrentRefreshRateString() << ")";
+                                        LogInfo(auto_select_oss.str().c_str());
                                     } else {
                                         s_selected_resolution_index = 0.0f;
                                         s_selected_refresh_rate_index = 0.0f;
@@ -344,23 +328,14 @@ void HandleMonitorSelection(const std::vector<std::string>& monitor_labels) {
                             s_selected_resolution_index = static_cast<float>(closest_resolution_index.value());
                             
                             // Find closest refresh rate within this resolution
-                            auto closest_refresh_rate_index = display->FindClosestRefreshRateIndex(closest_resolution_index.value());
-                            if (closest_refresh_rate_index.has_value()) {
-                                s_selected_refresh_rate_index = static_cast<float>(closest_refresh_rate_index.value());
-                                
-                                // Debug: Log what we auto-selected
-                                std::ostringstream auto_select_oss;
-                                auto_select_oss << "Auto-selected for monitor " << (i - 1) << ": Resolution " 
-                                               << s_selected_resolution_index << " (closest to current " 
-                                               << display->GetCurrentResolutionString() << "), Refresh Rate " 
-                                               << s_selected_refresh_rate_index << " (closest to current " 
-                                               << display->GetCurrentRefreshRateString() << ")";
-                                LogInfo(auto_select_oss.str().c_str());
-                            } else {
-                                // Fallback to first refresh rate if no match found
-                                s_selected_refresh_rate_index = 0.0f;
-                                LogWarn("No refresh rate match found for auto-selection, using first available");
-                            }
+                            // Default to Current Refresh Rate (index 0 in UI)
+                            s_selected_refresh_rate_index = 0.0f;
+                            std::ostringstream auto_select_oss;
+                            auto_select_oss << "Auto-selected for monitor " << (i - 1) << ": Resolution " 
+                                           << s_selected_resolution_index << " (closest to current " 
+                                           << display->GetCurrentResolutionString() << "), Refresh Rate 0 (Current: " 
+                                           << display->GetCurrentRefreshRateString() << ")";
+                            LogInfo(auto_select_oss.str().c_str());
                         } else {
                             // Fallback to first resolution if no match found
                             s_selected_resolution_index = 0.0f;

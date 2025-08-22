@@ -420,9 +420,14 @@ bool DisplayCache::GetRationalRefreshRate(size_t display_index, size_t resolutio
     
     const auto& res = display->resolutions[effective_index];
     
-    // Handle option 0: Max supported refresh rate
-    if (refresh_rate_index == 0 && !res.refresh_rates.empty()) {
-        // Find the maximum refresh rate
+    // Handle option 0: Current refresh rate
+    if (refresh_rate_index == 0) {
+        refresh_rate = display->current_refresh_rate;
+        return true;
+    }
+
+    // Handle option 1: Max supported refresh rate
+    if (refresh_rate_index == 1 && !res.refresh_rates.empty()) {
         auto max_rate = std::max_element(res.refresh_rates.begin(), res.refresh_rates.end());
         if (max_rate != res.refresh_rates.end()) {
             refresh_rate = *max_rate;
@@ -430,9 +435,9 @@ bool DisplayCache::GetRationalRefreshRate(size_t display_index, size_t resolutio
         }
     }
     
-    // Handle regular refresh rate indices (1 and above)
-    if (refresh_rate_index > 0 && (refresh_rate_index - 1) < res.refresh_rates.size()) {
-        refresh_rate = res.refresh_rates[refresh_rate_index - 1];
+    // Handle regular refresh rate indices (2 and above)
+    if (refresh_rate_index >= 2 && (refresh_rate_index - 2) < res.refresh_rates.size()) {
+        refresh_rate = res.refresh_rates[refresh_rate_index - 2];
         return true;
     }
     
