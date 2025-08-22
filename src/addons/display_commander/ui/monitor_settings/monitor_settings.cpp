@@ -241,6 +241,8 @@ void HandleResolutionSelection(int selected_monitor_index) {
     
     auto resolution_labels = renodx::display_cache::g_displayCache.GetResolutionLabels(actual_monitor_index);
     if (!resolution_labels.empty()) {
+        ImGui::BeginGroup();
+        ImGui::PushID("resolution_combo");
         if (ImGui::BeginCombo("Resolution", resolution_labels[static_cast<int>(s_selected_resolution_index)].c_str())) {
             for (int i = 0; i < static_cast<int>(resolution_labels.size()); i++) {
                 const bool is_selected = (i == static_cast<int>(s_selected_resolution_index));
@@ -254,6 +256,13 @@ void HandleResolutionSelection(int selected_monitor_index) {
             }
             ImGui::EndCombo();
         }
+        ImGui::PopID();
+        ImGui::SameLine();
+        ImGui::Checkbox("Auto-apply##resolution", &s_auto_apply_resolution_change);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Automatically apply when Resolution changes");
+        }
+        ImGui::EndGroup();
     }
 }
 
@@ -286,6 +295,8 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
         if (s_selected_resolution_index < static_cast<int>(resolution_labels.size())) {
             auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(actual_monitor_index, selected_resolution_index);
             if (!refresh_rate_labels.empty()) {
+                ImGui::BeginGroup();
+                ImGui::PushID("refresh_rate_combo");
                 if (ImGui::BeginCombo("Refresh Rate", refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)].c_str())) {
                     for (int i = 0; i < static_cast<int>(refresh_rate_labels.size()); i++) {
                         const bool is_selected = (i == static_cast<int>(s_selected_refresh_rate_index));
@@ -298,6 +309,13 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
                     }
                     ImGui::EndCombo();
                 }
+                ImGui::PopID();
+                ImGui::SameLine();
+                ImGui::Checkbox("Auto-apply##refresh", &s_auto_apply_refresh_rate_change);
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Automatically apply when Refresh Rate changes");
+                }
+                ImGui::EndGroup();
             }
         }
     }

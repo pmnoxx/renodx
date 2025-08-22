@@ -203,8 +203,7 @@ bool HandleMonitorSettingsUI() {
     // Handle auto-restore resolution checkbox
     renodx::ui::monitor_settings::HandleAutoRestoreResolutionCheckbox();
 
-    // Handle auto-apply resolution and refresh rate checkboxes
-    renodx::ui::monitor_settings::HandleAutoApplyCheckboxes();
+    // Inline auto-apply checkboxes are now rendered next to their respective combos
 
     // Handle the DXGI API Apply Button
     renodx::ui::monitor_settings::HandleDXGIAPIApplyButton();
