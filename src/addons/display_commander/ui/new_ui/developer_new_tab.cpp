@@ -82,6 +82,20 @@ void DrawDeveloperSettings() {
         ImGui::SetTooltip("Spoof fullscreen state detection for applications that query fullscreen status. Useful for games that change behavior based on fullscreen state.");
     }
     
+    // Reset button for Fullscreen State (only show if not at default)
+    if (s_spoof_fullscreen_state != 0.0f) {
+        ImGui::SameLine();
+        if (ImGui::Button("Reset##DevFullscreen")) {
+            g_developerTabSettings.spoof_fullscreen_state.SetValue(false);
+            s_spoof_fullscreen_state = 0.0f;
+            extern void LogInfo(const char* message);
+            ::LogInfo("Fullscreen state spoofing reset to disabled");
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Reset to default (Disabled)");
+        }
+    }
+    
     // Spoof Window Focus
     const char* spoof_focus_labels[] = {"Disabled", "Spoof as Focused", "Spoof as Unfocused"};
     int spoof_focus_state = static_cast<int>(g_developerTabSettings.spoof_window_focus.GetValue());
@@ -104,6 +118,20 @@ void DrawDeveloperSettings() {
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Spoof window focus state for applications that query focus status. Useful for games that change behavior based on focus state.");
+    }
+    
+    // Reset button for Window Focus (only show if not at default)
+    if (s_spoof_window_focus != 0.0f) {
+        ImGui::SameLine();
+        if (ImGui::Button("Reset##DevFocus")) {
+            g_developerTabSettings.spoof_window_focus.SetValue(false);
+            s_spoof_window_focus = 0.0f;
+            extern void LogInfo(const char* message);
+            ::LogInfo("Window focus spoofing reset to disabled");
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Reset to default (Disabled)");
+        }
     }
     
     ImGui::Spacing();

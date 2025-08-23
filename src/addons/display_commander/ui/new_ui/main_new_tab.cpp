@@ -8,6 +8,7 @@
 #include <sstream>
 #include <thread>
 #include <atomic>
+#include <iomanip>
 #include "../ui_display_tab.hpp"
 
 // Global variable declaration
@@ -92,6 +93,8 @@ void DrawMainNewTab() {
     
     // Basic Reflex Settings Section
     DrawBasicReflexSettings();
+
+    DrawImportantInfo();
 }
 
 void DrawDisplaySettings() {
@@ -558,6 +561,64 @@ void DrawBasicReflexSettings() {
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Enable NVIDIA Reflex for reduced latency. This setting appears in the basic tab for easy access.");
+    }
+}
+
+void DrawImportantInfo() {
+    ImGui::Spacing();
+    ImGui::Separator();
+    
+    ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.8f, 1.0f), "=== Important Information ===");
+    
+    // PCL AV Latency Display
+    extern std::atomic<float> g_pcl_av_latency_ms;
+    float pcl_latency = ::g_pcl_av_latency_ms.load();
+    
+    std::ostringstream oss;
+    oss << "PCL AV Latency: " << std::fixed << std::setprecision(2) << pcl_latency << " ms";
+    ImGui::TextUnformatted(oss.str().c_str());
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "(30-frame avg)");
+    
+    // Reflex Status Display
+    extern std::atomic<bool> g_reflex_active;
+    bool is_active = ::g_reflex_active.load();
+    
+    oss.str("");
+    oss.clear();
+    if (is_active) {
+        oss << "Reflex Status: Active";
+        ImGui::TextColored(ImVec4(0.8f, 1.0f, 0.8f, 1.0f), "%s", oss.str().c_str());
+    } else {
+        oss << "Reflex Status: Inactive";
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "%s", oss.str().c_str());
+    }
+    
+    // Flip State Display (renamed from DXGI Composition)
+    extern float s_dxgi_composition_state;
+    const char* flip_state_str = "Unknown";
+    int flip_state_case = static_cast<int>(::s_dxgi_composition_state);
+    switch (flip_state_case) {
+        case 1: flip_state_str = "Composed Flip"; break;
+        case 2: flip_state_str = "MPO Independent Flip"; break;
+        case 3: flip_state_str = "Legacy Independent Flip"; break;
+        default: flip_state_str = "Unknown"; break;
+    }
+    
+    oss.str("");
+    oss.clear();
+    oss << "Flip State: " << flip_state_str;
+    
+    // Color code based on flip state
+    if (flip_state_case == 1) {
+        // Composed Flip - Red
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.8f, 1.0f), "%s", oss.str().c_str());
+    } else if (flip_state_case == 2 || flip_state_case == 3) {
+        // Independent Flip modes - Green
+        ImGui::TextColored(ImVec4(0.8f, 1.0f, 0.8f, 1.0f), "%s", oss.str().c_str());
+    } else {
+        // Unknown - Yellow
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.8f, 1.0f), "%s", oss.str().c_str());
     }
 }
 

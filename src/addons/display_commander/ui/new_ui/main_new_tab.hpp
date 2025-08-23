@@ -27,4 +27,7 @@ void DrawWindowControls();
 // Draw basic reflex settings section
 void DrawBasicReflexSettings();
 
+// Draw important information section (PCL AV Latency, Reflex Status, Flip State)
+void DrawImportantInfo();
+
 } // namespace renodx::ui::new_ui
