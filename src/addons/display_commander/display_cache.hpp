@@ -233,7 +233,7 @@ struct DisplayInfo {
         labels.reserve(resolutions.size() + 1);
         
         // Option 0: Current Resolution
-        labels.push_back("Current Resolution");
+        labels.push_back(std::string("Current Resolution (") + GetCurrentResolutionString() + ")");
         
         for (const auto& res : resolutions) {
             labels.push_back(res.ToString());

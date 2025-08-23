@@ -327,19 +327,29 @@ void DrawAudioSettings() {
     if (ImGui::SliderFloat("Audio Volume (%)", &volume, 0.0f, 100.0f, "%.0f%%")) {
         s_audio_volume_percent = volume;
         
-        // Apply volume change immediately
-        if (::SetVolumeForCurrentProcess(volume)) {
-            std::ostringstream oss;
-            oss << "Audio volume changed to " << static_cast<int>(volume) << "%";
-            LogInfo(oss.str().c_str());
-        } else {
-            std::ostringstream oss;
-            oss << "Failed to set audio volume to " << static_cast<int>(volume) << "%";
-            LogWarn(oss.str().c_str());
+        // Apply immediately only if Auto-apply is enabled
+        if (g_main_new_tab_settings.audio_volume_auto_apply.GetValue()) {
+            if (::SetVolumeForCurrentProcess(volume)) {
+                std::ostringstream oss;
+                oss << "Audio volume changed to " << static_cast<int>(volume) << "%";
+                LogInfo(oss.str().c_str());
+            } else {
+                std::ostringstream oss;
+                oss << "Failed to set audio volume to " << static_cast<int>(volume) << "%";
+                LogWarn(oss.str().c_str());
+            }
         }
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Master audio volume control (0-100%%)");
+    }
+    // Auto-apply checkbox next to Audio Volume
+    ImGui::SameLine();
+    if (CheckboxSetting(g_main_new_tab_settings.audio_volume_auto_apply, "Auto-apply##audio_volume")) {
+        // No immediate action required; stored for consistency with other UI
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Auto-apply volume changes when adjusting the slider.");
     }
     
     // Audio Mute checkbox

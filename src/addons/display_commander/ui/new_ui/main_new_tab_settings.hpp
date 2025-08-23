@@ -35,6 +35,7 @@ public:
     BoolSetting audio_mute;
     BoolSetting mute_in_background;
     BoolSetting mute_in_background_if_other_audio;
+    BoolSetting audio_volume_auto_apply;
     
     // Reflex Settings
     BoolSetting reflex_enabled;
