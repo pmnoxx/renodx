@@ -30,13 +30,7 @@ void DrawDeveloperNewTab() {
     ImGui::Spacing();
     ImGui::Separator();
     
-    // HDR and Colorspace Settings Section
-    DrawHdrColorspaceSettings();
-    
-    ImGui::Spacing();
-    ImGui::Separator();
-    
-    // NVAPI Settings Section
+    // NVAPI Settings Section (merged with HDR and Colorspace Settings)
     DrawNvapiSettings();
     
     ImGui::Spacing();
@@ -133,65 +127,61 @@ void DrawDeveloperSettings() {
     }
 }
 
-void DrawHdrColorspaceSettings() {
-    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "=== HDR and Colorspace Settings ===");
-    
-    // HDR10 Colorspace Fix
-    if (CheckboxSetting(g_developerTabSettings.fix_hdr10_colorspace, "Fix NVAPI HDR10 Colorspace for reshade addon")) {
-        s_fix_hdr10_colorspace = g_developerTabSettings.fix_hdr10_colorspace.GetValue() ? 1.0f : 0.0f;
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Automatically fix HDR10 colorspace when swapchain format is RGB10A2 and colorspace is currently sRGB. Only works when the game is using sRGB colorspace.");
-    }
-}
-
 void DrawNvapiSettings() {
-    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "=== NVAPI Settings ===");
-    
-    // NVAPI Fullscreen Prevention
-    if (CheckboxSetting(g_developerTabSettings.nvapi_fullscreen_prevention, "NVAPI Fullscreen Prevention")) {
-        s_nvapi_fullscreen_prevention = g_developerTabSettings.nvapi_fullscreen_prevention.GetValue() ? 1.0f : 0.0f;
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Use NVAPI to prevent fullscreen mode at the driver level.");
-    }
-    
-    // NVAPI HDR Logging
-    if (CheckboxSetting(g_developerTabSettings.nvapi_hdr_logging, "NVAPI HDR Logging")) {
-        s_nvapi_hdr_logging = g_developerTabSettings.nvapi_hdr_logging.GetValue() ? 1.0f : 0.0f;
-        
-        if (g_developerTabSettings.nvapi_hdr_logging.GetValue()) {
-            extern void RunBackgroundNvapiHdrMonitor();
-            std::thread(::RunBackgroundNvapiHdrMonitor).detach();
-        }
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Enable HDR monitor information logging via NVAPI.");
-    }
-    
-    // NVAPI HDR Interval
-    if (SliderFloatSetting(g_developerTabSettings.nvapi_hdr_interval_sec, "HDR Logging Interval (seconds)", "%.1f")) {
-        s_nvapi_hdr_interval_sec = g_developerTabSettings.nvapi_hdr_interval_sec.GetValue();
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Interval between HDR monitor information logging.");
-    }
-    
-    // NVAPI Force HDR10
-    if (CheckboxSetting(g_developerTabSettings.nvapi_force_hdr10, "Force HDR10")) {
-        s_nvapi_force_hdr10 = g_developerTabSettings.nvapi_force_hdr10.GetValue() ? 1.0f : 0.0f;
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Force HDR10 mode using NVAPI.");
-    }
-    
-    // NVAPI Debug Information Display
-    ImGui::Separator();
-    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "NVAPI Debug Information:");
-    
-    extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
-    
     if (::g_nvapiFullscreenPrevention.IsAvailable()) {
+        ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "=== NVAPI Settings ===");
+        
+        // HDR10 Colorspace Fix
+        if (CheckboxSetting(g_developerTabSettings.fix_hdr10_colorspace, "Fix NVAPI HDR10 Colorspace for reshade addon")) {
+            s_fix_hdr10_colorspace = g_developerTabSettings.fix_hdr10_colorspace.GetValue() ? 1.0f : 0.0f;
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Automatically fix HDR10 colorspace when swapchain format is RGB10A2 and colorspace is currently sRGB. Only works when the game is using sRGB colorspace.");
+        }
+        
+        // NVAPI Fullscreen Prevention
+        if (CheckboxSetting(g_developerTabSettings.nvapi_fullscreen_prevention, "NVAPI Fullscreen Prevention")) {
+            s_nvapi_fullscreen_prevention = g_developerTabSettings.nvapi_fullscreen_prevention.GetValue() ? 1.0f : 0.0f;
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Use NVAPI to prevent fullscreen mode at the driver level.");
+        }
+        
+        // NVAPI HDR Logging
+        if (CheckboxSetting(g_developerTabSettings.nvapi_hdr_logging, "NVAPI HDR Logging")) {
+            s_nvapi_hdr_logging = g_developerTabSettings.nvapi_hdr_logging.GetValue() ? 1.0f : 0.0f;
+            
+            if (g_developerTabSettings.nvapi_hdr_logging.GetValue()) {
+                extern void RunBackgroundNvapiHdrMonitor();
+                std::thread(::RunBackgroundNvapiHdrMonitor).detach();
+            }
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Enable HDR monitor information logging via NVAPI.");
+        }
+        
+        // NVAPI HDR Interval
+        if (SliderFloatSetting(g_developerTabSettings.nvapi_hdr_interval_sec, "HDR Logging Interval (seconds)", "%.1f")) {
+            s_nvapi_hdr_interval_sec = g_developerTabSettings.nvapi_hdr_interval_sec.GetValue();
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Interval between HDR monitor information logging.");
+        }
+        
+        // NVAPI Force HDR10
+        if (CheckboxSetting(g_developerTabSettings.nvapi_force_hdr10, "NVAPI Force HDR10")) {
+            s_nvapi_force_hdr10 = g_developerTabSettings.nvapi_force_hdr10.GetValue() ? 1.0f : 0.0f;
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Force HDR10 mode using NVAPI.");
+        }
+        
+        // NVAPI Debug Information Display
+        ImGui::Separator();
+        ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "NVAPI Debug Information:");
+        
+        extern NVAPIFullscreenPrevention g_nvapiFullscreenPrevention;
+    
         // Library loaded successfully
         ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "✓ NVAPI Library: Loaded");
         
@@ -291,7 +281,7 @@ void DrawReflexSettings() {
     // Reflex Low Latency Mode (disabled)
     ImGui::BeginDisabled();
     bool low_latency_mode = (s_reflex_low_latency_mode >= 0.5f);
-    ImGui::Checkbox("Reflex Low Latency Mode", &low_latency_mode);
+    ImGui::Checkbox("Reflex Low Latency Mode (disabled)", &low_latency_mode);
     ImGui::EndDisabled();
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Enable low latency mode for reduced input lag. (Currently disabled)");
@@ -300,7 +290,7 @@ void DrawReflexSettings() {
     // Reflex Low Latency Boost (disabled)
     ImGui::BeginDisabled();
     bool low_latency_boost = (s_reflex_low_latency_boost >= 0.5f);
-    ImGui::Checkbox("Reflex Low Latency Boost", &low_latency_boost);
+    ImGui::Checkbox("Reflex Low Latency Boost (disabled)", &low_latency_boost);
     ImGui::EndDisabled();
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Request maximum GPU clock frequency for lower latency in CPU-limited scenarios. (Currently disabled)");
@@ -309,7 +299,7 @@ void DrawReflexSettings() {
     // Reflex Use Markers (disabled)
     ImGui::BeginDisabled();
     bool use_markers = (s_reflex_use_markers >= 0.5f);
-    ImGui::Checkbox("Reflex Use Markers", &use_markers);
+    ImGui::Checkbox("Reflex Use Markers (disabled)", &use_markers);
     ImGui::EndDisabled();
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Allow latency markers to be used for runtime optimizations. (Currently disabled)");
