@@ -579,21 +579,8 @@ foreach(FILE ${ADDON_FILES})
   
   target_link_libraries(${ADDON} PRIVATE dbghelp)
   
-  # Add NVAPI library linking for display_commander addon
-  if(${ADDON} STREQUAL "display_commander")
-    # Use appropriate NVAPI library based on target platform
-    if(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32" OR CMAKE_EXE_LINKER_FLAGS MATCHES "/machine:X86")
-      # 32-bit build
-      target_link_libraries(${ADDON} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/SpecialK/depends/lib/nvapi/Win32/nvapi.lib)
-    else()
-      # 64-bit build
-      target_link_libraries(${ADDON} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/SpecialK/depends/lib/nvapi/x64/nvapi64.lib)
-    endif()
-    target_include_directories(${ADDON} SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/SpecialK/depends/include/nvapi)
-    
-    # Add SpecialK ImGui library
-    target_include_directories(${ADDON} SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/SpecialK/src/imgui)
-  endif()
+  # Remove SpecialK/NVAPI linkage for display_commander to avoid submodule dependency
+  # (Previously linked NVAPI and included SpecialK headers here.)
   
   #target_compile_definitions(${ADDON} PRIVATE _UNICODE)
   set_target_properties(${ADDON}
