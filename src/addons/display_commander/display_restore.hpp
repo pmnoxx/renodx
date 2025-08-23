@@ -30,6 +30,12 @@ void Clear();
 // Whether any changes were tracked
 bool HasAnyChanges();
 
+// Restore only a single display (by display cache index). Returns true on success.
+bool RestoreDisplayByIndex(int display_index);
+
+// Restore only a single display (by device name). Returns true on success.
+bool RestoreDisplayByDeviceName(const std::wstring &device_name);
+
 } // namespace renodx::display_restore
 
 

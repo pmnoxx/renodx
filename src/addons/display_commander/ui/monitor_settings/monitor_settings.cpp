@@ -55,7 +55,7 @@ static std::atomic<bool> g_resolution_auto_apply_failed{false};
 static std::atomic<bool> g_refresh_auto_apply_failed{false};
 
 // Helper: Apply current selection (DXGI first, then legacy) and return success
-static bool TryApplyCurrentSelectionOnce() {
+static bool TryApplyCurrentSelectionOnce(int &out_monitor_index, int &out_width, int &out_height, renodx::display_cache::RationalRefreshRate &out_refresh_rate) {
     // Determine monitor index
     int actual_monitor_index = static_cast<int>(s_selected_monitor_index);
     if (s_selected_monitor_index == 0) {
@@ -114,6 +114,10 @@ static bool TryApplyCurrentSelectionOnce() {
     // Try DXGI first
     if (renodx::resolution::ApplyDisplaySettingsDXGI(
             actual_monitor_index, width, height, refresh_rate.numerator, refresh_rate.denominator)) {
+        out_monitor_index = actual_monitor_index;
+        out_width = width;
+        out_height = height;
+        out_refresh_rate = refresh_rate;
         return true;
     }
 
@@ -134,8 +138,18 @@ static bool TryApplyCurrentSelectionOnce() {
     dm.dmDisplayFrequency = static_cast<DWORD>(std::lround(refresh_rate.ToHz()));
 
     LONG result = ChangeDisplaySettingsExW(mi.szDevice, &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
-    return result == DISP_CHANGE_SUCCESSFUL;
+    if (result == DISP_CHANGE_SUCCESSFUL) {
+        out_monitor_index = actual_monitor_index;
+        out_width = width;
+        out_height = height;
+        out_refresh_rate = refresh_rate;
+        return true;
+    }
+    return false;
 }
+
+// Forward declaration for confirmation countdown used below
+static void BeginConfirmationCountdown(int display_index, const std::string &label, int seconds);
 
 static void StartResolutionAutoApplyWithBackoff() {
     uint64_t task_id = g_resolution_apply_task_id.fetch_add(1) + 1;
@@ -145,7 +159,12 @@ static void StartResolutionAutoApplyWithBackoff() {
         for (int i = 0; i < 5; ++i) {
             // Cancellation check
             if (g_resolution_apply_task_id.load() != task_id) return;
-            if (TryApplyCurrentSelectionOnce()) return;
+            int mon = -1, w = 0, h = 0; renodx::display_cache::RationalRefreshRate rr{};
+            if (TryApplyCurrentSelectionOnce(mon, w, h, rr)) {
+                std::ostringstream label; label << w << "x" << h << " @ " << std::fixed << std::setprecision(3) << rr.ToHz() << "Hz";
+                BeginConfirmationCountdown(mon, label.str(), 15);
+                return;
+            }
             // Wait before next attempt
             int remaining_ms = delays_sec[i] * 1000;
             while (remaining_ms > 0) {
@@ -170,7 +189,12 @@ static void StartRefreshAutoApplyWithBackoff() {
         const int delays_sec[5] = {1, 2, 4, 8, 16};
         for (int i = 0; i < 5; ++i) {
             if (g_refresh_apply_task_id.load() != task_id) return;
-            if (TryApplyCurrentSelectionOnce()) return;
+            int mon = -1, w = 0, h = 0; renodx::display_cache::RationalRefreshRate rr{};
+            if (TryApplyCurrentSelectionOnce(mon, w, h, rr)) {
+                std::ostringstream label; label << w << "x" << h << " @ " << std::fixed << std::setprecision(3) << rr.ToHz() << "Hz";
+                BeginConfirmationCountdown(mon, label.str(), 15);
+                return;
+            }
             int remaining_ms = delays_sec[i] * 1000;
             while (remaining_ms > 0) {
                 if (g_refresh_apply_task_id.load() != task_id) return;
@@ -184,6 +208,64 @@ static void StartRefreshAutoApplyWithBackoff() {
         g_setting_auto_apply_refresh.SetValue(false);
         g_setting_auto_apply_refresh.Save();
     }).detach();
+}
+
+// Pending confirmation state
+static std::atomic<bool> g_has_pending_confirmation{false};
+static std::atomic<int> g_confirm_seconds_remaining{0};
+static std::atomic<uint64_t> g_confirm_session_id{0};
+static int g_last_applied_display_index = -1; // cache index used when applying
+static std::string g_last_applied_label;
+
+static void BeginConfirmationCountdown(int display_index, const std::string &label, int seconds = 15) {
+    g_last_applied_display_index = display_index;
+    g_last_applied_label = label;
+    g_confirm_seconds_remaining.store(seconds);
+    g_has_pending_confirmation.store(true);
+    uint64_t session_id = g_confirm_session_id.fetch_add(1) + 1;
+    std::thread([session_id]() {
+        while (g_has_pending_confirmation.load()) {
+            if (g_confirm_session_id.load() != session_id) return; // superseded
+            int remaining = g_confirm_seconds_remaining.load();
+            if (remaining <= 0) {
+                // Time up: auto-revert
+                renodx::display_restore::RestoreDisplayByIndex(g_last_applied_display_index);
+                g_has_pending_confirmation.store(false);
+                return;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            // decrement if still same session
+            if (g_confirm_session_id.load() != session_id) return;
+            g_confirm_seconds_remaining.store(remaining - 1);
+        }
+    }).detach();
+}
+
+// Render UI and actions for pending confirmation
+void HandlePendingConfirmationUI() {
+    if (!g_has_pending_confirmation.load()) return;
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    ImVec4 warnColor(1.0f, 0.85f, 0.2f, 1.0f);
+    ImGui::TextColored(warnColor, "Confirm new display mode (%s)", g_last_applied_label.c_str());
+    int remaining = g_confirm_seconds_remaining.load();
+    ImGui::SameLine();
+    ImGui::TextColored(warnColor, "(%ds)", remaining);
+
+    // Confirm and Cancel (Revert) buttons
+    if (ImGui::Button("Confirm")) {
+        // Keep the new mode; stop countdown
+        g_has_pending_confirmation.store(false);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Revert")) {
+        // Revert immediately
+        renodx::display_restore::RestoreDisplayByIndex(g_last_applied_display_index);
+        g_has_pending_confirmation.store(false);
+    }
 }
 
 // Handle display cache refresh logic (every 60 frames)
@@ -399,7 +481,10 @@ void HandleResolutionSelection(int selected_monitor_index) {
                     g_setting_selected_refresh_index.SetValue(0);
                     g_setting_selected_refresh_index.Save();
                     if (s_auto_apply_resolution_change) {
-                        StartResolutionAutoApplyWithBackoff();
+                        // Disable auto-apply if a confirmation is pending
+                        if (!g_has_pending_confirmation.load()) {
+                            StartResolutionAutoApplyWithBackoff();
+                        }
                     }
                 }
                 if (is_selected) {
@@ -414,7 +499,9 @@ void HandleResolutionSelection(int selected_monitor_index) {
             g_setting_auto_apply_resolution.SetValue(s_auto_apply_resolution_change);
             g_setting_auto_apply_resolution.Save();
             if (s_auto_apply_resolution_change) {
-                StartResolutionAutoApplyWithBackoff();
+                if (!g_has_pending_confirmation.load()) {
+                    StartResolutionAutoApplyWithBackoff();
+                }
             } else {
                 g_resolution_apply_task_id.fetch_add(1);
             }
@@ -476,7 +563,9 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
                             g_setting_selected_refresh_index.SetValue(i);
                             g_setting_selected_refresh_index.Save();
                             if (s_auto_apply_refresh_rate_change) {
-                                StartRefreshAutoApplyWithBackoff();
+                                if (!g_has_pending_confirmation.load()) {
+                                    StartRefreshAutoApplyWithBackoff();
+                                }
                             }
                         }
                         if (is_selected) {
@@ -491,7 +580,9 @@ void HandleRefreshRateSelection(int selected_monitor_index, int selected_resolut
                     g_setting_auto_apply_refresh.SetValue(s_auto_apply_refresh_rate_change);
                     g_setting_auto_apply_refresh.Save();
                     if (s_auto_apply_refresh_rate_change) {
-                        StartRefreshAutoApplyWithBackoff();
+                        if (!g_has_pending_confirmation.load()) {
+                            StartRefreshAutoApplyWithBackoff();
+                        }
                     } else {
                         g_refresh_apply_task_id.fetch_add(1);
                     }
@@ -567,7 +658,15 @@ void HandleDXGIAPIApplyButton() {
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Uses DXGI SetFullscreenState + ResizeTarget to set fractional refresh rates.\nThis method creates a temporary swap chain to apply the mode.");
     }
-    if (ImGui::Button("Apply with DXGI API")) {
+    bool pending = g_has_pending_confirmation.load();
+    if (pending) ImGui::BeginDisabled();
+    bool clicked = ImGui::Button("Apply with DXGI API");
+    if (pending) ImGui::EndDisabled();
+    if (clicked) {
+        if (g_has_pending_confirmation.load()) {
+            // Ignore clicks while confirmation is pending
+            return;
+        }
         // Apply the changes using the DXGI API for fractional refresh rates
         std::thread([](){
             // If Auto (Current) is selected, find the current monitor where the game is running
@@ -619,8 +718,6 @@ void HandleDXGIAPIApplyButton() {
                 // Use selected refresh rate from cache
                 auto refresh_rate_labels = renodx::display_cache::g_displayCache.GetRefreshRateLabels(actual_monitor_index, static_cast<int>(s_selected_resolution_index));
                 if (s_selected_refresh_rate_index >= 0 && s_selected_refresh_rate_index < static_cast<int>(refresh_rate_labels.size())) {
-                    std::string selected_refresh_rate = refresh_rate_labels[static_cast<int>(s_selected_refresh_rate_index)];
-                    
                     // Get rational refresh rate values from the cache
                     has_rational = renodx::display_cache::g_displayCache.GetRationalRefreshRate(
                         actual_monitor_index, 
@@ -639,11 +736,15 @@ void HandleDXGIAPIApplyButton() {
                     LogInfo(debug_oss.str().c_str());
                     
                     // Try DXGI API for fractional refresh rates
-                    if (renodx::resolution::ApplyDisplaySettingsDXGI(
+                    bool dxgi_ok = renodx::resolution::ApplyDisplaySettingsDXGI(
                         actual_monitor_index,
                         width, height,
-                        refresh_rate.numerator, refresh_rate.denominator)) {
-                        
+                        refresh_rate.numerator, refresh_rate.denominator);
+                    if (dxgi_ok) {
+                        // Start confirmation timer on success
+                        std::ostringstream label;
+                        label << width << "x" << height << " @ " << std::fixed << std::setprecision(3) << refresh_rate.ToHz() << "Hz";
+                        BeginConfirmationCountdown(actual_monitor_index, label.str(), 15);
                         std::ostringstream oss;
                         oss << "DXGI API SUCCESS: " << width << "x" << height 
                             << " @ " << std::fixed << std::setprecision(10) << refresh_rate.ToHz() << "Hz"
@@ -693,6 +794,9 @@ void HandleDXGIAPIApplyButton() {
                                 LONG result = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
                                 
                                 if (result == DISP_CHANGE_SUCCESSFUL) {
+                                    std::ostringstream label;
+                                    label << width << "x" << height << " @ " << std::fixed << std::setprecision(3) << refresh_rate.ToHz() << "Hz";
+                                    BeginConfirmationCountdown(actual_monitor_index, label.str(), 15);
                                     std::ostringstream oss;
                                     oss << "Legacy API fallback SUCCESS: " << width << "x" << height 
                                         << " @ " << std::fixed << std::setprecision(3) << refresh_rate.ToHz() << "Hz"

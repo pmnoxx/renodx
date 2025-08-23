@@ -208,6 +208,9 @@ bool HandleMonitorSettingsUI() {
     // Handle the DXGI API Apply Button
     renodx::ui::monitor_settings::HandleDXGIAPIApplyButton();
     
+    // While a resolution change is pending confirmation, show confirm/revert UI
+    renodx::ui::monitor_settings::HandlePendingConfirmationUI();
+    
     return false; // No value change
 }
 

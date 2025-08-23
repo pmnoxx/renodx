@@ -29,4 +29,7 @@ void HandleAutoApplyCheckboxes();
 // Handle the "Apply with DXGI API" button
 void HandleDXGIAPIApplyButton();
 
+// Handle the pending confirmation UI and countdown/revert logic
+void HandlePendingConfirmationUI();
+
 } // namespace renodx::ui::monitor_settings

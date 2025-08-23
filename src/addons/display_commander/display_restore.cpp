@@ -132,7 +132,6 @@ void RestoreAll() {
 }
 
 void RestoreAllIfEnabled() {
-    LogInfo("XXX Restoring all display settings");
 	if (!::s_auto_restore_resolution_on_close) return;
 	RestoreAll();
 }
@@ -146,6 +145,24 @@ void Clear() {
 bool HasAnyChanges() {
 	std::scoped_lock lock(s_mutex);
 	return !s_devices_changed.empty();
+}
+
+bool RestoreDisplayByDeviceName(const std::wstring &device_name) {
+	OriginalMode orig{};
+	{
+		std::scoped_lock lock(s_mutex);
+		auto it = s_device_to_original.find(device_name);
+		if (it == s_device_to_original.end()) return false;
+		orig = it->second;
+	}
+	return ApplyModeForDevice(device_name, orig);
+}
+
+bool RestoreDisplayByIndex(int display_index) {
+	if (display_index < 0) return false;
+	const auto *disp = renodx::display_cache::g_displayCache.GetDisplay(static_cast<size_t>(display_index));
+	if (disp == nullptr) return false;
+	return RestoreDisplayByDeviceName(disp->device_name);
 }
 
 } // namespace renodx::display_restore
