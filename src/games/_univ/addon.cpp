@@ -1,7 +1,7 @@
 /*
 - 0.04
 perceptual boost for displayoutput
-- 0.05 
+- 0.05
 fixed default of highlights restoration
 - 0.08
 add tooltip to post swapchain tone mapping
@@ -22,7 +22,7 @@ add custom.h for tone mapping
 - 0.16
 increase max nits for tone mapping
 - 0.17
-add dump lut shaders setting    
+add dump lut shaders setting
 - 0.18
 add version display on top
 - 0.19
@@ -48,13 +48,13 @@ fix dump shaders setting
  #define ImTextureID ImU64
 
  #define DEBUG_LEVEL_0
- 
+
    #include <deps/imgui/imgui.h>
   #include <include/reshade.hpp>
   #include <cstring>
-  
+
   #include <embed/shaders.h>
- 
+
  #include "../../mods/shader.hpp"
  #include "../../mods/swapchain.hpp"
 #include "../../utils/platform.hpp"
@@ -67,28 +67,28 @@ fix dump shaders setting
   #include <crc32_hash.hpp>
    #include "./shared.h"
   #include "custom_settings.cpp"
- 
- 
+
+
 namespace {
- 
+
     renodx::mods::shader::CustomShaders custom_shaders = {
-        CustomShaderEntry(0xC22C6A84),
-      // __ALL_CUSTOM_SHADERS
+      //  CustomShaderEntry(0xC22C6A84),
+       __ALL_CUSTOM_SHADERS
     };
-    
+
     ShaderInjectData shader_injection;
-    
+
          float g_dump_shaders = 0;
          float g_upgrade_copy_destinations = 0;
      float g_autodump_lutbuilders = 0;
      std::unordered_set<uint32_t> g_dumped_shaders = {};
-     
+
      float current_settings_mode = 0;
 
     // Check if shader data contains binary representation of the lutbuilder float
     static bool ConstainsFloat(const std::span<const uint8_t>& shader_data, float target_float) {
       const uint8_t* target_bytes = reinterpret_cast<const uint8_t*>(&target_float);
-      
+
       if (shader_data.size() >= 4) {
         for (size_t i = 0; i <= shader_data.size() - 4; ++i) {
           if (std::memcmp(&shader_data[i], target_bytes, 4) == 0) {
@@ -116,26 +116,26 @@ namespace {
     // Scan existing dumped shaders on application start for performance
     static void ScanExistingDumpedShaders() {
       auto dump_path = renodx::utils::path::GetOutputPath();
-      
+
       if (!std::filesystem::exists(dump_path)) return;
       dump_path /= renodx::utils::shader::dump::default_dump_folder;
       if (!std::filesystem::exists(dump_path)) return;
-      
+
       size_t shaders_found = 0;
-      
+
       for (const auto& entry : std::filesystem::directory_iterator(dump_path)) {
         if (!entry.is_regular_file()) continue;
         const auto& entry_path = entry.path();
-        
+
         // Check various possible extensions (.cso, .hlsl, etc.)
         const auto extension = entry_path.extension().string();
-        if (extension != ".cso" && extension != ".hlsl" && extension != ".ps_5_0" && 
+        if (extension != ".cso" && extension != ".hlsl" && extension != ".ps_5_0" &&
             extension != ".vs_5_0" && extension != ".cs_5_0" && extension != ".gs_5_0") continue;
-            
+
         const auto& basename = entry_path.stem().string();
         if (basename.length() < 10) continue;  // 0x + 8 hex chars minimum
         if (!basename.starts_with("0x")) continue;
-        
+
         // Extract the 8-character hex hash
         auto hash_string = basename.substr(2, 8);
         uint32_t shader_hash;
@@ -145,20 +145,20 @@ namespace {
           // Skip invalid hash files
           continue;
         }
-        
+
         if (g_dumped_shaders.insert(shader_hash).second) {
           shaders_found++;
         }
       }
-      
+
       if (shaders_found > 0) {
         std::stringstream s;
         s << "Loaded " << shaders_found << " existing dumped shader hashes for performance optimization";
         reshade::log::message(reshade::log::level::info, s.str().c_str());
       }
     }
- 
-    
+
+
  void OnInitPipeline(
      reshade::api::device* device,
      reshade::api::pipeline_layout layout,
@@ -174,61 +174,61 @@ namespace {
    // Extract and dump any new shaders from pipeline subobjects
    for (uint32_t i = 0; i < subobject_count; ++i) {
     const auto& subobject = subobjects[i];
-    
+
     // Check if this is a shader subobject
     if (subobject.type == reshade::api::pipeline_subobject_type::pixel_shader) {
-      
+
       if (subobject.data == nullptr) continue;
-      
+
       // Get shader data
       const auto* shader_desc = reinterpret_cast<const reshade::api::shader_desc*>(subobject.data);
-      
+
       if (shader_desc == nullptr || shader_desc->code_size == 0) continue;
-      
+
              // Calculate shader hash
        auto shader_hash = compute_crc32(
-           reinterpret_cast<const uint8_t*>(shader_desc->code), 
+           reinterpret_cast<const uint8_t*>(shader_desc->code),
            shader_desc->code_size);
-      
+
       // Skip if we've already dumped this shader
       if (g_dumped_shaders.contains(shader_hash)) continue;
-      
+
              // Skip if this is a custom shader we injected
      //  if (custom_shaders.contains(shader_hash)) continue;
-       
+
        g_dumped_shaders.emplace(shader_hash);
-       
+
                try {
           std::vector<uint8_t> shader_data(
               reinterpret_cast<const uint8_t*>(shader_desc->code),
               reinterpret_cast<const uint8_t*>(shader_desc->code) + shader_desc->code_size);
-          
+
           auto shader_version = renodx::utils::shader::compiler::directx::DecodeShaderVersion(shader_data);
           if (shader_version.GetMajor() == 0) {
             // No shader information found
             continue;
           }
-          
+
                      // Check if shader should be dumped and get prefix
            auto dump_prefix = DumpShaderPrefix(shader_data);
-           
+
            if (!dump_prefix.has_value()) continue;
-           
+
            std::string prefix = dump_prefix.value();
-           
+
           reshade::log::message(
               reshade::log::level::info,
               std::format("Dumping pipeline shader: 0x{:08x} ({})", shader_hash, prefix).c_str());
-           
+
            renodx::utils::path::default_output_folder = "renodx-dev";
            renodx::utils::shader::dump::default_dump_folder = "dump";
-          
+
           renodx::utils::shader::dump::DumpShader(
               shader_hash,
               shader_data,
               subobject.type,
               prefix);
-            
+
       } catch (...) {
         std::stringstream s;
         s << "utils::shader::dump(Failed to dump pipeline shader: ";
@@ -238,7 +238,7 @@ namespace {
       }
     }
   }
-  
+
              // Dump any pending shaders (ignoring custom shaders and already dumped shaders)
      renodx::utils::shader::dump::DumpAllPending(custom_shaders, g_dumped_shaders, DumpShaderPrefix);
 }
@@ -257,7 +257,7 @@ namespace {
          },
      };
  }
- 
+
  std::vector<renodx::utils::settings::Setting*> GenerateToneMappingSection() {
      return {
          new renodx::utils::settings::Setting{
@@ -425,7 +425,7 @@ namespace {
          },
      };
  }
- 
+
  std::vector<renodx::utils::settings::Setting*> GenerateColorGradingSection() {
      return {
          new renodx::utils::settings::Setting{
@@ -603,7 +603,7 @@ namespace {
          },
      };
  }
- 
+
  std::vector<renodx::utils::settings::Setting*> GenerateDisplayOutputSection() {
      return {
          new renodx::utils::settings::Setting{
@@ -723,7 +723,7 @@ namespace {
          },
      };
  }
- 
+
  std::vector<renodx::utils::settings::Setting*> GeneratePerceptualBoostSection() {
      return {
          new renodx::utils::settings::Setting{
@@ -937,8 +937,8 @@ namespace {
          },
      };
  }
- 
- 
+
+
    std::vector<renodx::utils::settings::Setting*> GenerateDebugSection() {
       return {
           new renodx::utils::settings::Setting{
@@ -979,7 +979,7 @@ namespace {
          },
      };
  }
- 
+
  std::vector<renodx::utils::settings::Setting*> GenerateHighlightSaturationRestorationSection() {
      return {
          new renodx::utils::settings::Setting{
@@ -1037,10 +1037,10 @@ namespace {
          },
      };
  }
- 
+
  // The global settings vector
  renodx::utils::settings::Settings settings;
- 
+
  void AddAdvancedSettings() {
    auto* swapchain_setting = new renodx::utils::settings::Setting{
        .key = "Upgrade_SwapChainCompatibility",
@@ -1067,7 +1067,7 @@ namespace {
        .section = "Display Output",
        .tooltip = "When enabled, forces resize buffer mode for swap chain handling",
        .labels = {"Off", "On"},
-       .on_change_value = [](float previous, float current) { 
+       .on_change_value = [](float previous, float current) {
            if (current == 1.f) {
                renodx::mods::swapchain::use_resize_buffer_on_demand = true;
                renodx::mods::swapchain::use_resize_buffer = true;
@@ -1077,7 +1077,7 @@ namespace {
        .is_visible = []() { return current_settings_mode >= 2; },
    });
  }
- 
+
  void OnPresetOff() {
    //   renodx::utils::settings::UpdateSetting("toneMapType", 0.f);
    //   renodx::utils::settings::UpdateSetting("toneMapPeakNits", 203.f);
@@ -1092,16 +1092,16 @@ namespace {
    //   renodx::utils::settings::UpdateSetting("colorGradeLUTStrength", 100.f);
    //   renodx::utils::settings::UpdateSetting("colorGradeLUTScaling", 0.f);
  }
- 
+
  const auto UPGRADE_TYPE_NONE = 0.f;
  const auto UPGRADE_TYPE_OUTPUT_SIZE = 1.f;
  const auto UPGRADE_TYPE_OUTPUT_RATIO = 2.f;
  const auto UPGRADE_TYPE_ANY = 3.f;
- 
+
  bool initialized = false;
  void InitializeSettings() {
      settings.clear();
-     
+
      // Add version display at the top
      settings.push_back(new renodx::utils::settings::Setting{
          .value_type = renodx::utils::settings::SettingValueType::TEXT,
@@ -1109,7 +1109,7 @@ namespace {
          .section = "About",
          .tooltip = std::string("RenoDX Universal Template Version ") + RENODX_VERSION,
      });
-     
+
      // Add each section's settings
      auto add_section = [](const std::vector<renodx::utils::settings::Setting*>& section) {
          settings.insert(settings.end(), section.begin(), section.end());
@@ -1135,20 +1135,20 @@ namespace {
          .is_visible = []() { return current_settings_mode >= 3; },
      });
  }
- 
+
  }  // namespace
- 
- 
- 
+
+
+
  extern "C" __declspec(dllexport) constexpr const char* NAME = "RenoDX";
  extern "C" __declspec(dllexport) constexpr const char* DESCRIPTION = "RenoDX (Generic)";
- 
+
  BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
-     
+
    switch (fdw_reason) {
      case DLL_PROCESS_ATTACH:
        if (!reshade::register_addon(h_module)) return FALSE;
- 
+
        if (!initialized) {
                    // Print exe name and title
           auto process_path = renodx::utils::platform::GetCurrentProcessPath();
@@ -1162,12 +1162,12 @@ namespace {
 
          InitializeSettings();
          hbr_custom_settings::AddCustomResourceUpgrades();
- 
+
          renodx::mods::shader::force_pipeline_cloning = true;
          renodx::mods::shader::expected_constant_buffer_space = 50;
          renodx::mods::shader::expected_constant_buffer_index = 13;
          renodx::mods::shader::allow_multiple_push_constants = true;
- 
+
          renodx::mods::swapchain::expected_constant_buffer_index = 13;
          renodx::mods::swapchain::expected_constant_buffer_space = 50;
 
@@ -1181,13 +1181,13 @@ namespace {
          renodx::utils::random::binds.push_back(&shader_injection.random_seed);
 
 
-         if (filename == "TheSwapper.exe") {        
+         if (filename == "TheSwapper.exe") {
             renodx::mods::swapchain::prevent_full_screen = false;
             renodx::mods::swapchain::force_screen_tearing = false;
             renodx::mods::swapchain::set_color_space = false;
             renodx::mods::swapchain::use_device_proxy = true;
          }
-         g_upgrade_copy_destinations = 1;    
+         g_upgrade_copy_destinations = 1;
 
          renodx::mods::swapchain::swap_chain_proxy_shaders = {
              {
@@ -1270,7 +1270,7 @@ namespace {
            renodx::mods::swapchain::force_borderless = (setting->GetValue() == 1.f);
            settings.push_back(setting);
          }
- 
+
          {
            auto* setting = new renodx::utils::settings::Setting{
                .key = "SwapChainPreventFullscreen",
@@ -1291,7 +1291,7 @@ namespace {
            renodx::mods::swapchain::prevent_full_screen = (setting->GetValue() == 1.f);
            settings.push_back(setting);
          }
- 
+
          {
            auto* setting = new renodx::utils::settings::Setting{
                .key = "SwapChainEncoding",
@@ -1317,7 +1317,7 @@ namespace {
            shader_injection.swap_chain_encoding_color_space = is_hdr10 ? 1.f : 0.f;
            settings.push_back(setting);
          }
- 
+
          for (const auto& [key, format_pair] : hbr_custom_settings::UPGRADE_TARGETS) {
            auto* setting = new renodx::utils::settings::Setting{
                .key = "Upgrade_" + key,
@@ -1336,7 +1336,7 @@ namespace {
            };
            renodx::utils::settings::LoadSetting(renodx::utils::settings::global_name, setting);
            settings.push_back(setting);
- 
+
            auto value = setting->GetValue();
            if (value > 0) {
              renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
@@ -1360,14 +1360,14 @@ namespace {
          }
                    {
            std::stringstream s;
-   
+
            s << "g_dump_shaders " << g_dump_shaders << ", g_autodump_lutbuilders " << g_autodump_lutbuilders;
            reshade::log::message(reshade::log::level::info, s.str().c_str());
           }
           if (g_dump_shaders != 0.f || g_autodump_lutbuilders != 0.f) {
             // Scan existing dumped shaders for performance optimization
             ScanExistingDumpedShaders();
-            
+
             renodx::utils::swapchain::Use(fdw_reason);
             renodx::utils::shader::Use(fdw_reason);
             renodx::utils::shader::use_shader_cache = true;
@@ -1375,7 +1375,7 @@ namespace {
             renodx::utils::resource::Use(fdw_reason);
           //  reshade::register_event<reshade::addon_event::init_pipeline>(OnInitPipelineTrackAddons);
             reshade::register_event<reshade::addon_event::init_pipeline>(OnInitPipeline);
-            
+
             if (g_dump_shaders != 0.f && g_autodump_lutbuilders != 0.f) {
               reshade::log::message(reshade::log::level::info, "Shader dumping and lutbuilder dumping enabled.");
             } else if (g_dump_shaders != 0.f) {
@@ -1384,7 +1384,7 @@ namespace {
               reshade::log::message(reshade::log::level::info, "Lutbuilder dumping enabled.");
             }
           }
-   
+
          initialized = true;
        }
        break;
@@ -1399,14 +1399,14 @@ namespace {
        reshade::unregister_addon(h_module);
        break;
    }
- 
+
    renodx::utils::settings::Use(fdw_reason, &settings, &OnPresetOff);
    renodx::mods::swapchain::Use(fdw_reason, &shader_injection);
    renodx::mods::shader::Use(fdw_reason, custom_shaders, &shader_injection);
- 
+
    return TRUE;
  }
- 
+
 
 
 
