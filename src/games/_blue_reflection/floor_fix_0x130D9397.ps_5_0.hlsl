@@ -1,0 +1,303 @@
+// ---- Created with 3Dmigoto v1.4.1 on Sat Jun 28 02:43:57 2025
+
+cbuffer _Globals : register(b0)
+{
+  float4 litDir[2] : packoffset(c0);
+  float4 litCol[2] : packoffset(c2);
+  float4 vEye : packoffset(c4);
+  float fOccAlbScl : packoffset(c5) = {1};
+  float emScl : packoffset(c5.y);
+  float4 vClstZPrm : packoffset(c6);
+  int nClstPtch[2] : packoffset(c7);
+  float2 vFadeDist : packoffset(c8.y);
+  row_major float4x4 mV2W : packoffset(c9);
+  row_major float4x4 mP2W : packoffset(c13);
+  float4 vAmbOccRat : packoffset(c17);
+}
+
+Texture2D<float4> sDepth : register(t4);
+Texture2D<float4> sGBuf0 : register(t5);
+Texture2D<float4> sGBuf1 : register(t6);
+Texture2D<float4> sGBuf2 : register(t7);
+Texture2D<float4> sGBuf3 : register(t8);
+Texture2D<float4> sGBuf5 : register(t9);
+Buffer<uint> tCllLightIndices : register(t16);
+Buffer<float4> tCllLightPositions : register(t17);
+Buffer<float3> tCllLightAttributes : register(t18);
+Buffer<uint> tCllLightExAttributes : register(t19);
+Buffer<float3> tCllSptLightAttributes : register(t20);
+Buffer<uint> tCllSptLightExAttributes : register(t21);
+
+
+// 3Dmigoto declarations
+#define cmp -
+
+
+void main(
+  float4 v0 : SV_Position0,
+  float4 v1 : TEXCOORD0,
+  out float4 o0 : SV_Target0)
+{
+  float4 r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,r16,r17,r18,r19,r20,r21,r22;
+  uint4 bitmask, uiDest;
+  float4 fDest;
+
+  r0.xy = (int2)v0.xy;
+  r0.zw = float2(0,0);
+  r1.x = sDepth.Load(r0.xyw).x;
+  r1.y = cmp(r1.x == 1.000000);
+  if (r1.y != 0) discard;
+  r1.yzw = sGBuf2.Load(r0.xyw).xyw;
+  r2.xyzw = sGBuf5.Load(r0.xyw).xyzw;
+  r1.yz = r1.yz * float2(2,2) + float2(-1,-1);
+  r3.xyz = float3(1,1,1) + -abs(r1.yzy);
+  r4.z = r3.x + -abs(r1.z);
+  r3.x = cmp(r4.z >= 0);
+  r5.xy = cmp(r1.yz >= float2(0,0));
+  r5.xy = r5.xy ? float2(1,1) : float2(-1,-1);
+  r3.yz = r5.xy * r3.yz;
+  r4.xy = r3.xx ? r1.yz : r3.yz;
+  r1.y = dot(r4.xyz, r4.xyz);
+  r1.y = rsqrt(r1.y);
+  r3.xyz = r4.xyz * r1.yyy;
+  r4.xyz = mV2W._m10_m11_m12 * r3.yyy;
+  r3.xyw = r3.xxx * mV2W._m00_m01_m02 + r4.xyz;
+  r3.xyz = r3.zzz * mV2W._m20_m21_m22 + r3.xyw;
+  r4.xyzw = mP2W._m10_m11_m12_m13 * v1.yyyy;
+  r4.xyzw = v1.xxxx * mP2W._m00_m01_m02_m03 + r4.xyzw;
+  r4.xyzw = r1.xxxx * mP2W._m20_m21_m22_m23 + r4.xyzw;
+  r4.xyzw = mP2W._m30_m31_m32_m33 + r4.xyzw;
+  r4.xyz = r4.xyz / r4.www;
+  r5.xyzw = sGBuf1.Load(r0.xyw).xyzw;
+  r1.y = r5.w * 255 + 0.5;
+  r1.y = (int)r1.y;
+  r6.xyzw = sGBuf0.Load(r0.xyw).xyzw;
+  r0.xyzw = sGBuf3.Load(r0.xyz).xyzw;
+  r1.y = (int)r1.y & 1;
+  r0.w = 32 * r0.w;
+  r0.xyzw = r1.yyyy ? r0.xyzw : float4(0,0,0,0);
+  r7.xyz = vEye.xyz + -r4.xyz;
+  r1.y = dot(r7.xyz, r7.xyz);
+  r1.y = rsqrt(r1.y);
+  r8.xyz = r7.xyz * r1.yyy;
+  r1.z = r1.w * 10 + 1;
+  r1.z = exp2(r1.z);
+  r9.xyz = float3(1,1,1) + -r5.xyz;
+  r10.xyz = r9.xyz * r6.xyz;
+  r1.w = r1.z * 0.125 + 0.25;
+  r3.w = saturate(dot(r3.xyz, r8.xyz));
+  r3.w = r3.w + r6.w;
+  r3.w = r3.w * r3.w + r6.w;
+  r3.w = saturate(-1 + r3.w);
+  r4.w = saturate(dot(r3.xyz, -litDir[0].xyz));
+  r11.xyz = litCol[0].xyz * r4.www;
+  r12.xyz = r7.xyz * r1.yyy + -litDir[0].xyz;
+  r4.w = dot(r12.xyz, r12.xyz);
+  r4.w = rsqrt(r4.w);
+  r12.xyz = r12.xyz * r4.www;
+  r4.w = saturate(dot(r8.xyz, r12.xyz));
+  r4.w = 1 + -r4.w;
+  r5.w = r4.w * r4.w;
+  r5.w = r5.w * r5.w;
+  r4.w = r5.w * r4.w;
+  r13.xyz = r9.xyz * r4.www + r5.xyz;
+  r4.w = saturate(dot(r3.xyz, r12.xyz));
+  r12.xyz = r13.xyz * r1.www;
+  r4.w = log2(r4.w);
+  r4.w = r4.w * r1.z;
+  r4.w = exp2(r4.w);
+  r12.xyz = r12.xyz * r4.www;
+  r12.xyz = r12.xyz * r11.xyz;
+  r12.xyz = r12.xyz * r3.www;
+  r13.xyz = fOccAlbScl * r6.xyz;
+  r6.xyz = -r6.xyz * fOccAlbScl + float3(1,1,1);
+  r14.xyz = r6.www * r6.xyz + r13.xyz;
+  r11.xyz = r14.xyz * r11.xyz;
+  r4.w = saturate(dot(r3.xyz, -litDir[1].xyz));
+  r15.xyz = litCol[1].xyz * r4.www;
+  r16.xyz = r7.xyz * r1.yyy + -litDir[1].xyz;
+  r4.w = dot(r16.xyz, r16.xyz);
+  r4.w = rsqrt(r4.w);
+  r16.xyz = r16.xyz * r4.www;
+  r4.w = saturate(dot(r8.xyz, r16.xyz));
+  r4.w = 1 + -r4.w;
+  r5.w = r4.w * r4.w;
+  r5.w = r5.w * r5.w;
+  r4.w = r5.w * r4.w;
+  r17.xyz = r9.xyz * r4.www + r5.xyz;
+  r4.w = saturate(dot(r3.xyz, r16.xyz));
+  r16.xyz = r17.xyz * r1.www;
+  r4.w = log2(r4.w);
+  r4.w = r4.w * r1.z;
+  r4.w = exp2(r4.w);
+  r16.xyz = r16.xyz * r4.www;
+  r16.xyz = r16.xyz * r15.xyz;
+  r16.xyz = r16.xyz * r3.www;
+  r12.xyz = r12.xyz * r2.www + r16.xyz;
+  r15.xyz = r15.xyz * r14.xyz;
+  r11.xyz = r11.xyz * r2.www + r15.xyz;
+  r1.x = r1.x * vClstZPrm.x + vClstZPrm.y;
+  r2.w = log2(r1.x);
+  r2.w = r2.w * vClstZPrm.z + vClstZPrm.w;
+  r2.w = max(0, r2.w);
+  r2.w = (uint)r2.w;
+  r4.w = cmp((uint)r2.w < 16);
+  if (r4.w != 0) {
+    r15.xy = float2(0.015625,0.015625) * v0.xy;
+    r15.xy = (uint2)r15.xy;
+    r4.w = nClstPtch[0] * (int)r15.y;
+    r2.w = mad(nClstPtch[1], (int)r2.w, (int)r4.w);
+    r2.w = (int)r2.w + (int)r15.x;
+    r1.x = -1 / r1.x;
+    r4.w = vFadeDist.x + -vFadeDist.y;
+    r1.x = -vFadeDist.y + r1.x;
+    r4.w = 1 / r4.w;
+    r1.x = saturate(r4.w * r1.x);
+    r4.w = r1.x * -2 + 3;
+    r1.x = r1.x * r1.x;
+    r1.x = r4.w * r1.x;
+    r4.w = (uint)r2.w << 2;
+    r4.w = tCllLightIndices.Load(r4.w).x;
+    bitmask.x = ((~(-1 << 30)) << 2) & 0xffffffff;  r15.x = (((uint)r2.w << 2) & bitmask.x) | ((uint)1 & ~bitmask.x);
+    bitmask.y = ((~(-1 << 30)) << 2) & 0xffffffff;  r15.y = (((uint)r2.w << 2) & bitmask.y) | ((uint)2 & ~bitmask.y);
+    bitmask.z = ((~(-1 << 30)) << 2) & 0xffffffff;  r15.z = (((uint)r2.w << 2) & bitmask.z) | ((uint)3 & ~bitmask.z);
+    r2.w = tCllLightIndices.Load(r15.x).x;
+    r2.w = (uint)r2.w << 16;
+    r2.w = (int)r2.w | (int)r4.w;
+    r4.w = tCllLightIndices.Load(r15.y).x;
+    r5.w = tCllLightIndices.Load(r15.z).x;
+    r15.x = 1;
+    r16.xyz = r11.xyz;
+    r17.xyz = r12.xyz;
+    r7.w = 0;
+    while (true) {
+      r8.w = cmp((uint)r7.w >= (uint)r4.w);
+      if (r8.w != 0) break;
+      r8.w = (int)r2.w + (int)r7.w;
+      r8.w = tCllLightIndices.Load(r8.w).x;
+      r18.xyzw = tCllLightPositions.Load(r8.w).xyzw;
+      r9.w = r18.w * r18.w;
+      r18.xyz = r18.xyz + -r4.xyz;
+      r15.z = dot(r18.xyz, r18.xyz);
+      r9.w = cmp(r15.z < r9.w);
+      if (r9.w != 0) {
+        r9.w = (uint)r8.w << 1;
+        r19.xyz = tCllLightAttributes.Load(r9.w).xyz;
+        bitmask.w = ((~(-1 << 31)) << 1) & 0xffffffff;  r9.w = (((uint)r8.w << 1) & bitmask.w) | ((uint)1 & ~bitmask.w);
+        r20.xyz = tCllLightAttributes.Load(r9.w).xyz;
+        r19.xyz = r19.xyz * r1.xxx;
+        r8.w = tCllLightExAttributes.Load(r8.w).x;
+        r9.w = rsqrt(r15.z);
+        r18.xyz = -r18.xyz * r9.www;
+        r8.w = cmp((int)r8.w == 2);
+        r10.w = r20.x * -r15.z;
+        r10.w = 1.44269502 * r10.w;
+        r10.w = exp2(r10.w);
+        r10.w = saturate(r20.y * r10.w);
+        r15.y = r15.z * r9.w;
+        r9.w = dot(r20.xyz, r15.xyz);
+        r9.w = 1 / r9.w;
+        r8.w = r8.w ? r10.w : r9.w;
+        r15.yzw = r8.www * r19.xyz;
+        r8.w = saturate(dot(r3.xyz, -r18.xyz));
+        r15.yzw = r15.yzw * r8.www;
+        r18.xyz = r7.xyz * r1.yyy + -r18.xyz;
+        r8.w = dot(r18.xyz, r18.xyz);
+        r8.w = rsqrt(r8.w);
+        r18.xyz = r18.xyz * r8.www;
+        r8.w = saturate(dot(r8.xyz, r18.xyz));
+        r8.w = 1 + -r8.w;
+        r9.w = r8.w * r8.w;
+        r9.w = r9.w * r9.w;
+        r8.w = r9.w * r8.w;
+        r19.xyz = r9.xyz * r8.www + r5.xyz;
+        r8.w = saturate(dot(r3.xyz, r18.xyz));
+        r18.xyz = r19.xyz * r1.www;
+        r8.w = log2(r8.w);
+        r8.w = r8.w * r1.z;
+        r8.w = exp2(r8.w);
+        r18.xyz = r18.xyz * r8.www;
+        r18.xyz = r18.xyz * r15.yzw;
+        r17.xyz = r18.xyz * r3.www + r17.xyz;
+        r16.xyz = r15.yzw * r14.xyz + r16.xyz;
+      }
+      r7.w = (int)r7.w + 1;
+    }
+    r2.w = (int)r2.w + (int)r4.w;
+    r15.x = 1;
+    r11.xyz = r16.xyz;
+    r12.xyz = r17.xyz;
+    r4.w = 0;
+    while (true) {
+      r7.w = cmp((uint)r4.w >= (uint)r5.w);
+      if (r7.w != 0) break;
+      r7.w = (int)r2.w + (int)r4.w;
+      r7.w = tCllLightIndices.Load(r7.w).x;
+      r8.w = 5 * (int)r7.w;
+      r18.xyz = tCllSptLightAttributes.Load(r8.w).xyz;
+      r8.w = mad(5, (int)r7.w, 4);
+      r19.xyz = tCllSptLightAttributes.Load(r8.w).xyz;
+      r18.xyz = r18.xyz + -r4.xyz;
+      r15.z = dot(r18.xyz, r18.xyz);
+      r8.w = cmp(r15.z < r19.x);
+      if (r8.w != 0) {
+        r20.xyz = mad(int3(5,5,5), (int3)r7.www, int3(1,2,3));
+        r21.xyz = tCllSptLightAttributes.Load(r20.x).xyz;
+        r20.xyw = tCllSptLightAttributes.Load(r20.y).xyz;
+        r22.xyz = tCllSptLightAttributes.Load(r20.z).xyz;
+        r20.xyz = r20.xyw * r1.xxx;
+        r7.w = tCllSptLightExAttributes.Load(r7.w).x;
+        r8.w = rsqrt(r15.z);
+        r18.xyz = -r18.xyz * r8.www;
+        r9.w = dot(-r18.xyz, r21.xyz);
+        r9.w = saturate(r9.w * r19.z + r19.y);
+        r7.w = cmp((int)r7.w == 2);
+        r10.w = r22.x * -r15.z;
+        r10.w = 1.44269502 * r10.w;
+        r10.w = exp2(r10.w);
+        r10.w = saturate(r22.y * r10.w);
+        r10.w = r10.w * r9.w;
+        r15.y = r15.z * r8.w;
+        r8.w = dot(r15.xyz, r22.xyz);
+        r8.w = r9.w / r8.w;
+        r7.w = r7.w ? r10.w : r8.w;
+        r15.yzw = r7.www * r20.xyz;
+        r7.w = saturate(dot(r3.xyz, -r18.xyz));
+        r15.yzw = r15.yzw * r7.www;
+        r18.xyz = r7.xyz * r1.yyy + -r18.xyz;
+        r7.w = dot(r18.xyz, r18.xyz);
+        r7.w = rsqrt(r7.w);
+        r18.xyz = r18.xyz * r7.www;
+        r7.w = saturate(dot(r8.xyz, r18.xyz));
+        r7.w = 1 + -r7.w;
+        r8.w = r7.w * r7.w;
+        r8.w = r8.w * r8.w;
+        r7.w = r8.w * r7.w;
+        r19.xyz = r9.xyz * r7.www + r5.xyz;
+        r7.w = saturate(dot(r3.xyz, r18.xyz));
+        r18.xyz = r19.xyz * r1.www;
+        r7.w = log2(r7.w);
+        r7.w = r7.w * r1.z;
+        r7.w = exp2(r7.w);
+        r18.xyz = r18.xyz * r7.www;
+        r18.xyz = r18.xyz * r15.yzw;
+        r12.xyz = r18.xyz * r3.www + r12.xyz;
+        r11.xyz = r15.yzw * r14.xyz + r11.xyz;
+      }
+      r4.w = (int)r4.w + 1;
+    }
+  }
+  r1.x = cmp(emScl >= 0);
+  r1.yzw = r0.xyz * r0.www + r11.xyz;
+  r1.xyz = r1.xxx ? r1.yzw : r11.xyz;
+  r1.w = r6.w * vAmbOccRat.x + vAmbOccRat.y;
+  r3.xyz = r1.www * r6.xyz + r13.xyz;
+  r1.xyz = r2.xyz * r3.xyz + r1.xyz;
+  r1.xyz = r1.xyz * r10.xyz;
+  r1.w = cmp(emScl < 0);
+  r0.xyz = r0.xyz * r0.www + r1.xyz;
+  r0.xyz = r1.www ? r0.xyz : r1.xyz;
+  o0.xyz = r0.xyz + r12.xyz;
+  o0.w = 1;
+  return;
+}
