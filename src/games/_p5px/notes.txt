@@ -1,0 +1,4 @@
+add comments, spliting into sections the long main function basedon functionality and similar examples of hlsl unity code. 
+
+
+Add comments. Spliting into sections the long main function based on functionality and similar examples of hlsl unity code. Give examples of input/output values.
