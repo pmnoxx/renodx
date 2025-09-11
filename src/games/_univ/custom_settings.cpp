@@ -77,7 +77,7 @@ static std::unordered_map<std::string, float> default_values = {
     {"PostSwapChainToneMapping", 0.f},
     {"Upgrade_SwapChainCompatibility", 1.f},
     {"DisableD3D9ResourceUpgrade", 1.f},
-    {"UseDeviceProxy", 0.f},    
+    {"UseDeviceProxy", 0.f},
     {"ConstantBufferOffset", 0},
     {"UpgradeLUTResources", 1.f},
     {"Upgrade_R8G8B8A8_UNORM", 2.f},
@@ -87,7 +87,7 @@ static std::unordered_map<std::string, float> default_values = {
     {"Upgrade_R8G8B8A8_SNORM", 2.f},
     {"Upgrade_R8G8B8A8_UNORM_SRGB", 2.f},
     {"Upgrade_B8G8R8A8_UNORM_SRGB", 2.f},
-    {"Upgrade_R10G10B10A2_TYPELESS", 2.f},  
+    {"Upgrade_R10G10B10A2_TYPELESS", 2.f},
     {"Upgrade_R10G10B10A2_UNORM", 2.f},
     {"Upgrade_B10G10R10A2_UNORM", 2.f},
     {"Upgrade_R11G11B10_FLOAT", 2.f},
@@ -127,7 +127,7 @@ inline int get_constant_buffer_offset() {
 void ApplyFilenameBasedOverrides(const std::string& filename) {
     if (filename == "Artisan TD.exe") {
         default_values["ToneMapType"] = 4.f; // DICE
-        default_values["SimulateRenderPass"] = 1.f; 
+        default_values["SimulateRenderPass"] = 1.f;
         default_values["PostSwapChainToneMapping"] = 1.f;
     }
     if (filename == "Ixion.exe") {
@@ -135,7 +135,7 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
     }
     if (filename == "No Creeps Were Harmed TD.exe") {
         default_values["ToneMapType"] = 4.f; // DICE
-        default_values["SimulateRenderPass"] = 1.f; 
+        default_values["SimulateRenderPass"] = 1.f;
         default_values["PostSwapChainToneMapping"] = 1.f;
     }
     if (filename == "Phantom Brigade.exe") {
@@ -147,7 +147,7 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["UseDeviceProxy"] = 1.f;
         default_values["ConstantBufferOffset"] = 50 * 4;
         default_values["ToneMapType"] = 4.f; // DICE
-        default_values["SimulateRenderPass"] = 1.f; 
+        default_values["SimulateRenderPass"] = 1.f;
         default_values["PostSwapChainToneMapping"] = 1.f;
     } else if (filename == "TheSwapper.exe") {
         default_values["UseDeviceProxy"] = 1.f;
@@ -161,6 +161,19 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["SwapChainDecoding"] = 3.f;
         // upside down
         default_values["IsUpsideDown"] = 1.f;
+    } else if (filename == "Darkest Dungeon II.exe") {
+        default_values["Upgrade_R8G8B8A8_TYPELESS"] = 2.f;
+        default_values["Upgrade_B8G8R8A8_TYPELESS"] = 0.f;
+        default_values["Upgrade_R8G8B8A8_UNORM"] = 0.f;
+        default_values["Upgrade_B8G8R8A8_UNORM"] = 0.f;
+        default_values["Upgrade_R8G8B8A8_SNORM"] = 0.f;
+        default_values["Upgrade_R8G8B8A8_UNORM_SRGB"] = 0.f;
+        default_values["Upgrade_B8G8R8A8_UNORM_SRGB"] = 0.f;
+        default_values["Upgrade_R10G10B10A2_TYPELESS"] = 0.f;
+        default_values["Upgrade_R10G10B10A2_UNORM"] = 2.f;
+        default_values["Upgrade_B10G10R10A2_UNORM"] = 2.f;
+        default_values["Upgrade_R11G11B10_FLOAT"] = 2.f;
+        default_values["Upgrade_R16G16B16A16_TYPELESS"] = 0.f;
     }
 }
 
@@ -222,8 +235,8 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
 
 inline void AddCustomResourceUpgrades() {
     if (get_default_value("UpgradeLUTResources", 0.f) != 0.f) {
-        // Skipping upgrade LUT resources   
-        // add log PMNOX: 
+        // Skipping upgrade LUT resources
+        // add log PMNOX:
         std::stringstream s;
         s << "Skipping upgrade LUT resources";
         reshade::log::message(reshade::log::level::info, s.str().c_str());
@@ -255,4 +268,4 @@ inline void AddCustomResourceUpgrades() {
     });
 }
 
-} // namespace hbr_custom_settings 
+} // namespace hbr_custom_settings
