@@ -40,6 +40,7 @@ void main(
   r0.y = cmp(0 < (int)r0.x);
   if (r0.y != 0) {
     r1.xyzw = sStage0.Sample(__smpsStage0_s, v2.xy).xyzw;
+    r1 = saturate(r1);
     r0.y = cmp(0 < ContrastValuesOfTexture[0]);
     r0.z = ContrastValuesOfTexture[0];
     r0.w = 0.00787401572 * r0.z;
@@ -58,6 +59,7 @@ void main(
     r0.xy = cmp(int2(1,2) < (int2)r0.xx);
     if (r0.x != 0) {
       r2.xyzw = sStage1.Sample(__smpsStage1_s, v2.wz).xyzw;
+      r2 = saturate(r2);
       r0.x = cmp(0 < ContrastValuesOfTexture[1]);
       r0.z = ContrastValuesOfTexture[1];
       r0.w = 0.00787401572 * r0.z;
@@ -126,6 +128,7 @@ void main(
     }
     if (r0.y != 0) {
       r0.xyzw = sStage2.Sample(__smpsStage2_s, v3.xy).xyzw;
+      r0 = saturate(r0);
       r2.x = cmp(0 < ContrastValuesOfTexture[2]);
       r2.y = ContrastValuesOfTexture[2];
       r2.z = 0.00787401572 * r2.y;
@@ -205,5 +208,6 @@ void main(
   r0.xyz = r1.xxx ? r1.yzw : r0.xyz;
   o0.xyzw = r0.xyzw;
   //o0.xyz *= UI_BRIGHTNESS / 203.f;
+  o0.xyzw = saturate(o0);
   return;
 }

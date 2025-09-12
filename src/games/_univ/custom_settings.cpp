@@ -174,6 +174,9 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["Upgrade_B10G10R10A2_UNORM"] = 2.f;
         default_values["Upgrade_R11G11B10_FLOAT"] = 2.f;
         default_values["Upgrade_R16G16B16A16_TYPELESS"] = 0.f;
+
+        default_values["GammaCorrection"] = 0.f;
+        default_values["SwapChainGammaCorrection"] = 0.f;
     }
 }
 
