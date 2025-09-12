@@ -41,15 +41,19 @@ void main(
   float4 fDest;
 
   r0.xyzw = t2.SampleBias(s2_s, v1.xy, cb0[19].x).xyzw;
+  r0 = saturate(r0);
   r1.x = cmp(r0.w < 0);
   if (r1.x != 0) discard;
   r1.xyzw = float4(-0.300000012,-0.150000006,-0.200000003,0) * cb0[125].xxxx;
   r1.xyzw = v1.xyxy * cb1[5].xyxy + r1.xyzw;
   r2.xyz = t0.SampleBias(s0_s, r1.xy, cb0[19].x).xyz;
+  r2 = saturate(r2);
   r1.xyz = t0.SampleBias(s0_s, r1.zw, cb0[19].x).xyz;
+  r1 = saturate(r1);
   r1.xyz = cb1[3].xyz * r1.xyz;
   r2.xyz = cb1[3].xyz * r2.xyz;
   r3.xyz = t1.SampleBias(s1_s, v1.xy, cb0[19].x).xyz;
+  r3 = saturate(r3);
   r1.xyz = r3.xyz * r1.xyz;
   r1.xyz = r3.xyz * r2.xyz + r1.xyz;
   r1.xyz = r1.xyz / cb1[5].zzz;
@@ -61,6 +65,6 @@ void main(
   r1.w = exp2(r1.w);
   o0.xyz = r1.www * r1.xyz + r0.xyz;
   o0.w = r0.w;
-  o0.w = saturate(o0.w);
+  o0 = saturate(o0);
   return;
 }
