@@ -234,7 +234,7 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
 };
 
 inline void AddCustomResourceUpgrades() {
-    if (get_default_value("UpgradeLUTResources", 0.f) != 0.f) {
+    if (get_default_value("UpgradeLUTResources", 0.f) == 0.f) {
         // Skipping upgrade LUT resources
         // add log PMNOX:
         std::stringstream s;
