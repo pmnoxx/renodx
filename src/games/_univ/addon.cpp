@@ -41,9 +41,11 @@ print exe name and title
 change defaults for Unity
 - 0.26
 fix dump shaders setting
+- 0.27
+add log resource creation setting
 */
 
- constexpr const char* RENODX_VERSION = "0.26";
+ constexpr const char* RENODX_VERSION = "0.27";
 
  #define ImTextureID ImU64
 
@@ -52,6 +54,10 @@ fix dump shaders setting
    #include <deps/imgui/imgui.h>
   #include <include/reshade.hpp>
   #include <cstring>
+  #include <set>
+  #include <map>
+  #include <mutex>
+  #include <algorithm>
 
   #include <embed/shaders.h>
 
@@ -80,13 +86,405 @@ namespace {
 
          float g_dump_shaders = 0;
          float g_upgrade_copy_destinations = 0;
-     float g_autodump_lutbuilders = 0;
-     std::unordered_set<uint32_t> g_dumped_shaders = {};
+    float g_autodump_lutbuilders = 0;
+    std::unordered_set<uint32_t> g_dumped_shaders = {};
 
-     float current_settings_mode = 0;
+    float current_settings_mode = 0;
+    float g_log_resource_creation = 0;
+
+    // Resolution and bit depth tracking
+    struct ResolutionBitDepthStats {
+        std::map<std::pair<int, int>, std::map<std::string, int>> before_upgrade; // (width, height) -> bit_depth -> count
+        std::map<std::pair<int, int>, std::map<std::string, int>> upgraded; // (width, height) -> bit_depth -> count
+        std::map<std::pair<int, int>, std::map<std::string, int>> after_upgrade; // (width, height) -> bit_depth -> count
+        std::mutex mutex;
+    } g_resolution_bitdepth_stats;
+
+    // Callback to track resource creation for resolution/bit depth statistics
+    void OnResourceCreated(renodx::utils::resource::ResourceInfo* resource_info) {
+        if (resource_info == nullptr) return;
+
+        const auto& desc = resource_info->desc;
+
+        // Only track 2D textures and surfaces
+        if (desc.type != reshade::api::resource_type::texture_2d &&
+            desc.type != reshade::api::resource_type::surface) {
+            return;
+        }
+
+        // Skip if no dimensions
+        if (desc.texture.width == 0 || desc.texture.height == 0) {
+            return;
+        }
+
+        // Create resolution pair for proper sorting
+        std::pair<int, int> resolution = {desc.texture.width, desc.texture.height};
+
+        // Determine format category based on upgrade targets
+        std::string bit_depth = "Unknown";
+        switch (desc.texture.format) {
+            // R8G8B8A8 formats
+            case reshade::api::format::r8g8b8a8_typeless:
+                bit_depth = "rgba8_t";
+                break;
+            case reshade::api::format::r8g8b8a8_unorm:
+                bit_depth = "rgba8_u";
+                break;
+            case reshade::api::format::r8g8b8a8_snorm:
+                bit_depth = "rgba8_s";
+                break;
+            case reshade::api::format::r8g8b8a8_unorm_srgb:
+                bit_depth = "rgba8_srgb";
+                break;
+
+            // B8G8R8A8 formats
+            case reshade::api::format::b8g8r8a8_typeless:
+                bit_depth = "bgra8_t";
+                break;
+            case reshade::api::format::b8g8r8a8_unorm:
+                bit_depth = "bgra8_u";
+                break;
+            case reshade::api::format::b8g8r8a8_unorm_srgb:
+                bit_depth = "bgra8_srgb";
+                break;
+
+            // 10/11-bit formats
+            case reshade::api::format::r10g10b10a2_typeless:
+                bit_depth = "rgb10a2_t";
+                break;
+            case reshade::api::format::r10g10b10a2_unorm:
+                bit_depth = "rgb10a2_u";
+                break;
+            case reshade::api::format::b10g10r10a2_unorm:
+                bit_depth = "bgr10a2_u";
+                break;
+            case reshade::api::format::r11g11b10_float:
+                bit_depth = "r11g11b10_f";
+                break;
+
+            // 16-bit formats
+            case reshade::api::format::r16g16b16a16_typeless:
+                bit_depth = "rgba16_t";
+                break;
+            case reshade::api::format::r16g16b16a16_unorm:
+            case reshade::api::format::r16g16b16a16_snorm:
+            case reshade::api::format::r16g16b16a16_uint:
+            case reshade::api::format::r16g16b16a16_sint:
+            case reshade::api::format::r16g16b16a16_float:
+                bit_depth = "rgba16_t";
+                break;
+
+            // Skip 32-bit formats as requested
+            default:
+                // Check if it's a 32-bit format and skip it
+                if (static_cast<int>(desc.texture.format) >= static_cast<int>(reshade::api::format::r32_float) &&
+                    static_cast<int>(desc.texture.format) <= static_cast<int>(reshade::api::format::r32g32b32a32_sint)) {
+                    return; // Skip 32-bit formats
+                }
+                break;
+        }
+
+        // Log resource creation if enabled
+        if (g_log_resource_creation != 0) {
+            // TODO: add (resource_info->upgraded)
+            std::string original_format = "Unknown(" + std::to_string(static_cast<int>(desc.texture.format)) + ")";
+            if (resource_info->upgraded) {
+                // Get the original format from the fallback description
+                const auto& original_desc = resource_info->fallback_desc;
+                switch (original_desc.texture.format) {
+                    // R8G8B8A8 formats
+                    case reshade::api::format::r8g8b8a8_typeless: original_format = "r8g8b8a8_typeless"; break;
+                    case reshade::api::format::r8g8b8a8_unorm: original_format = "r8g8b8a8_unorm"; break;
+                    case reshade::api::format::r8g8b8a8_snorm: original_format = "r8g8b8a8_snorm"; break;
+                    case reshade::api::format::r8g8b8a8_uint: original_format = "r8g8b8a8_uint"; break;
+                    case reshade::api::format::r8g8b8a8_sint: original_format = "r8g8b8a8_sint"; break;
+                    case reshade::api::format::r8g8b8a8_unorm_srgb: original_format = "r8g8b8a8_unorm_srgb"; break;
+
+                    // B8G8R8A8 formats
+                    case reshade::api::format::b8g8r8a8_typeless: original_format = "b8g8r8a8_typeless"; break;
+                    case reshade::api::format::b8g8r8a8_unorm: original_format = "b8g8r8a8_unorm"; break;
+                    case reshade::api::format::b8g8r8a8_unorm_srgb: original_format = "b8g8r8a8_unorm_srgb"; break;
+
+                    // B8G8R8X8 formats
+                    case reshade::api::format::b8g8r8x8_typeless: original_format = "b8g8r8x8_typeless"; break;
+                    case reshade::api::format::b8g8r8x8_unorm: original_format = "b8g8r8x8_unorm"; break;
+                    case reshade::api::format::b8g8r8x8_unorm_srgb: original_format = "b8g8r8x8_unorm_srgb"; break;
+
+                    // R8G8B8 formats
+                    case reshade::api::format::r8g8b8_unorm: original_format = "r8g8b8_unorm"; break;
+                    case reshade::api::format::r8g8b8_snorm: original_format = "r8g8b8_snorm"; break;
+                    case reshade::api::format::r8g8b8_uint: original_format = "r8g8b8_uint"; break;
+                    case reshade::api::format::r8g8b8_sint: original_format = "r8g8b8_sint"; break;
+
+                    // R8G8 formats
+                    case reshade::api::format::r8g8_unorm: original_format = "r8g8_unorm"; break;
+                    case reshade::api::format::r8g8_snorm: original_format = "r8g8_snorm"; break;
+                    case reshade::api::format::r8g8_uint: original_format = "r8g8_uint"; break;
+                    case reshade::api::format::r8g8_sint: original_format = "r8g8_sint"; break;
+
+                    // R8 formats
+                    case reshade::api::format::r8_unorm: original_format = "r8_unorm"; break;
+                    case reshade::api::format::r8_snorm: original_format = "r8_snorm"; break;
+                    case reshade::api::format::r8_uint: original_format = "r8_uint"; break;
+                    case reshade::api::format::r8_sint: original_format = "r8_sint"; break;
+
+                    // 10/11-bit formats
+                    case reshade::api::format::r10g10b10a2_typeless: original_format = "r10g10b10a2_typeless"; break;
+                    case reshade::api::format::r10g10b10a2_unorm: original_format = "r10g10b10a2_unorm"; break;
+                    case reshade::api::format::r10g10b10a2_uint: original_format = "r10g10b10a2_uint"; break;
+                    case reshade::api::format::b10g10r10a2_unorm: original_format = "b10g10r10a2_unorm"; break;
+                    case reshade::api::format::r11g11b10_float: original_format = "r11g11b10_float"; break;
+
+                    // 16-bit formats
+                    case reshade::api::format::r16_typeless: original_format = "r16_typeless"; break;
+                    case reshade::api::format::r16_unorm: original_format = "r16_unorm"; break;
+                    case reshade::api::format::r16_snorm: original_format = "r16_snorm"; break;
+                    case reshade::api::format::r16_uint: original_format = "r16_uint"; break;
+                    case reshade::api::format::r16_sint: original_format = "r16_sint"; break;
+                    case reshade::api::format::r16_float: original_format = "r16_float"; break;
+
+                    case reshade::api::format::r16g16_typeless: original_format = "r16g16_typeless"; break;
+                    case reshade::api::format::r16g16_unorm: original_format = "r16g16_unorm"; break;
+                    case reshade::api::format::r16g16_snorm: original_format = "r16g16_snorm"; break;
+                    case reshade::api::format::r16g16_uint: original_format = "r16g16_uint"; break;
+                    case reshade::api::format::r16g16_sint: original_format = "r16g16_sint"; break;
+                    case reshade::api::format::r16g16_float: original_format = "r16g16_float"; break;
+
+                    case reshade::api::format::r16g16b16_typeless: original_format = "r16g16b16_typeless"; break;
+                    case reshade::api::format::r16g16b16_unorm: original_format = "r16g16b16_unorm"; break;
+                    case reshade::api::format::r16g16b16_snorm: original_format = "r16g16b16_snorm"; break;
+                    case reshade::api::format::r16g16b16_uint: original_format = "r16g16b16_uint"; break;
+                    case reshade::api::format::r16g16b16_sint: original_format = "r16g16b16_sint"; break;
+                    case reshade::api::format::r16g16b16_float: original_format = "r16g16b16_float"; break;
+
+                    case reshade::api::format::r16g16b16a16_typeless: original_format = "r16g16b16a16_typeless"; break;
+                    case reshade::api::format::r16g16b16a16_unorm: original_format = "r16g16b16a16_unorm"; break;
+                    case reshade::api::format::r16g16b16a16_snorm: original_format = "r16g16b16a16_snorm"; break;
+                    case reshade::api::format::r16g16b16a16_uint: original_format = "r16g16b16a16_uint"; break;
+                    case reshade::api::format::r16g16b16a16_sint: original_format = "r16g16b16a16_sint"; break;
+                    case reshade::api::format::r16g16b16a16_float: original_format = "r16g16b16a16_float"; break;
+
+                    // Depth formats
+                    case reshade::api::format::d16_unorm: original_format = "d16_unorm"; break;
+                    case reshade::api::format::d24_unorm_s8_uint: original_format = "d24_unorm_s8_uint"; break;
+                    case reshade::api::format::d32_float: original_format = "d32_float"; break;
+                    case reshade::api::format::d32_float_s8_uint: original_format = "d32_float_s8_uint"; break;
+
+                    // Compressed formats
+                    case reshade::api::format::bc1_unorm: original_format = "bc1_unorm"; break;
+                    case reshade::api::format::bc1_unorm_srgb: original_format = "bc1_unorm_srgb"; break;
+                    case reshade::api::format::bc2_unorm: original_format = "bc2_unorm"; break;
+                    case reshade::api::format::bc2_unorm_srgb: original_format = "bc2_unorm_srgb"; break;
+                    case reshade::api::format::bc3_unorm: original_format = "bc3_unorm"; break;
+                    case reshade::api::format::bc3_unorm_srgb: original_format = "bc3_unorm_srgb"; break;
+                    case reshade::api::format::bc4_unorm: original_format = "bc4_unorm"; break;
+                    case reshade::api::format::bc4_snorm: original_format = "bc4_snorm"; break;
+                    case reshade::api::format::bc5_unorm: original_format = "bc5_unorm"; break;
+                    case reshade::api::format::bc5_snorm: original_format = "bc5_snorm"; break;
+                    case reshade::api::format::bc7_unorm: original_format = "bc7_unorm"; break;
+                    case reshade::api::format::bc7_unorm_srgb: original_format = "bc7_unorm_srgb"; break;
+
+                    default:
+                        original_format = "Unknown(" + std::to_string(static_cast<int>(original_desc.texture.format)) + ")";
+                        break;
+                }
+            }
+
+            std::string final_format = "Unknown";
+            switch (desc.texture.format) {
+                // R8G8B8A8 formats
+                case reshade::api::format::r8g8b8a8_typeless: final_format = "r8g8b8a8_typeless"; break;
+                case reshade::api::format::r8g8b8a8_unorm: final_format = "r8g8b8a8_unorm"; break;
+                case reshade::api::format::r8g8b8a8_snorm: final_format = "r8g8b8a8_snorm"; break;
+                case reshade::api::format::r8g8b8a8_uint: final_format = "r8g8b8a8_uint"; break;
+                case reshade::api::format::r8g8b8a8_sint: final_format = "r8g8b8a8_sint"; break;
+                case reshade::api::format::r8g8b8a8_unorm_srgb: final_format = "r8g8b8a8_unorm_srgb"; break;
+
+                // B8G8R8A8 formats
+                case reshade::api::format::b8g8r8a8_typeless: final_format = "b8g8r8a8_typeless"; break;
+                case reshade::api::format::b8g8r8a8_unorm: final_format = "b8g8r8a8_unorm"; break;
+                case reshade::api::format::b8g8r8a8_unorm_srgb: final_format = "b8g8r8a8_unorm_srgb"; break;
+
+                // B8G8R8X8 formats
+                case reshade::api::format::b8g8r8x8_typeless: final_format = "b8g8r8x8_typeless"; break;
+                case reshade::api::format::b8g8r8x8_unorm: final_format = "b8g8r8x8_unorm"; break;
+                case reshade::api::format::b8g8r8x8_unorm_srgb: final_format = "b8g8r8x8_unorm_srgb"; break;
+
+                // R8G8B8 formats
+                case reshade::api::format::r8g8b8_unorm: final_format = "r8g8b8_unorm"; break;
+                case reshade::api::format::r8g8b8_snorm: final_format = "r8g8b8_snorm"; break;
+                case reshade::api::format::r8g8b8_uint: final_format = "r8g8b8_uint"; break;
+                case reshade::api::format::r8g8b8_sint: final_format = "r8g8b8_sint"; break;
+
+                // R8G8 formats
+                case reshade::api::format::r8g8_unorm: final_format = "r8g8_unorm"; break;
+                case reshade::api::format::r8g8_snorm: final_format = "r8g8_snorm"; break;
+                case reshade::api::format::r8g8_uint: final_format = "r8g8_uint"; break;
+                case reshade::api::format::r8g8_sint: final_format = "r8g8_sint"; break;
+
+                // R8 formats
+                case reshade::api::format::r8_unorm: final_format = "r8_unorm"; break;
+                case reshade::api::format::r8_snorm: final_format = "r8_snorm"; break;
+                case reshade::api::format::r8_uint: final_format = "r8_uint"; break;
+                case reshade::api::format::r8_sint: final_format = "r8_sint"; break;
+
+                // 10/11-bit formats
+                case reshade::api::format::r10g10b10a2_typeless: final_format = "r10g10b10a2_typeless"; break;
+                case reshade::api::format::r10g10b10a2_unorm: final_format = "r10g10b10a2_unorm"; break;
+                case reshade::api::format::r10g10b10a2_uint: final_format = "r10g10b10a2_uint"; break;
+                case reshade::api::format::b10g10r10a2_unorm: final_format = "b10g10r10a2_unorm"; break;
+                case reshade::api::format::r11g11b10_float: final_format = "r11g11b10_float"; break;
+
+                // 16-bit formats
+                case reshade::api::format::r16_typeless: final_format = "r16_typeless"; break;
+                case reshade::api::format::r16_unorm: final_format = "r16_unorm"; break;
+                case reshade::api::format::r16_snorm: final_format = "r16_snorm"; break;
+                case reshade::api::format::r16_uint: final_format = "r16_uint"; break;
+                case reshade::api::format::r16_sint: final_format = "r16_sint"; break;
+                case reshade::api::format::r16_float: final_format = "r16_float"; break;
+
+                case reshade::api::format::r16g16_typeless: final_format = "r16g16_typeless"; break;
+                case reshade::api::format::r16g16_unorm: final_format = "r16g16_unorm"; break;
+                case reshade::api::format::r16g16_snorm: final_format = "r16g16_snorm"; break;
+                case reshade::api::format::r16g16_uint: final_format = "r16g16_uint"; break;
+                case reshade::api::format::r16g16_sint: final_format = "r16g16_sint"; break;
+                case reshade::api::format::r16g16_float: final_format = "r16g16_float"; break;
+
+                case reshade::api::format::r16g16b16_typeless: final_format = "r16g16b16_typeless"; break;
+                case reshade::api::format::r16g16b16_unorm: final_format = "r16g16b16_unorm"; break;
+                case reshade::api::format::r16g16b16_snorm: final_format = "r16g16b16_snorm"; break;
+                case reshade::api::format::r16g16b16_uint: final_format = "r16g16b16_uint"; break;
+                case reshade::api::format::r16g16b16_sint: final_format = "r16g16b16_sint"; break;
+                case reshade::api::format::r16g16b16_float: final_format = "r16g16b16_float"; break;
+
+                case reshade::api::format::r16g16b16a16_typeless: final_format = "r16g16b16a16_typeless"; break;
+                case reshade::api::format::r16g16b16a16_unorm: final_format = "r16g16b16a16_unorm"; break;
+                case reshade::api::format::r16g16b16a16_snorm: final_format = "r16g16b16a16_snorm"; break;
+                case reshade::api::format::r16g16b16a16_uint: final_format = "r16g16b16a16_uint"; break;
+                case reshade::api::format::r16g16b16a16_sint: final_format = "r16g16b16a16_sint"; break;
+                case reshade::api::format::r16g16b16a16_float: final_format = "r16g16b16a16_float"; break;
+
+                // Depth formats
+                case reshade::api::format::d16_unorm: final_format = "d16_unorm"; break;
+                case reshade::api::format::d24_unorm_s8_uint: final_format = "d24_unorm_s8_uint"; break;
+                case reshade::api::format::d32_float: final_format = "d32_float"; break;
+                case reshade::api::format::d32_float_s8_uint: final_format = "d32_float_s8_uint"; break;
+
+                // Compressed formats
+                case reshade::api::format::bc1_unorm: final_format = "bc1_unorm"; break;
+                case reshade::api::format::bc1_unorm_srgb: final_format = "bc1_unorm_srgb"; break;
+                case reshade::api::format::bc2_unorm: final_format = "bc2_unorm"; break;
+                case reshade::api::format::bc2_unorm_srgb: final_format = "bc2_unorm_srgb"; break;
+                case reshade::api::format::bc3_unorm: final_format = "bc3_unorm"; break;
+                case reshade::api::format::bc3_unorm_srgb: final_format = "bc3_unorm_srgb"; break;
+                case reshade::api::format::bc4_unorm: final_format = "bc4_unorm"; break;
+                case reshade::api::format::bc4_snorm: final_format = "bc4_snorm"; break;
+                case reshade::api::format::bc5_unorm: final_format = "bc5_unorm"; break;
+                case reshade::api::format::bc5_snorm: final_format = "bc5_snorm"; break;
+                case reshade::api::format::bc7_unorm: final_format = "bc7_unorm"; break;
+                case reshade::api::format::bc7_unorm_srgb: final_format = "bc7_unorm_srgb"; break;
+
+                default:
+                    final_format = "Unknown(" + std::to_string(static_cast<int>(desc.texture.format)) + ")";
+                    break;
+            }
+
+            std::string upgrade_status = resource_info->upgraded ? "YES" : "NO";
+            std::string log_message = "Resource: " + std::to_string(resolution.first) + "x" + std::to_string(resolution.second) +
+                                     " | Before: " + original_format +
+                                     " | After: " + final_format +
+                                     " | Upgraded: " + upgrade_status;
+            reshade::log::message(reshade::log::level::info, log_message.c_str());
+        }
+
+        // Update statistics
+        {
+            std::lock_guard<std::mutex> lock(g_resolution_bitdepth_stats.mutex);
+
+            // Always increment the "after upgrade" count (this represents the final state)
+            g_resolution_bitdepth_stats.after_upgrade[resolution][bit_depth]++;
+
+            // If this resource was upgraded, track the original format and upgrade counts
+            if (resource_info->upgraded) {
+                // Get the original format from the fallback description
+                const auto& original_desc = resource_info->fallback_desc;
+                std::string original_bit_depth = "Unknown";
+
+                // Determine original format category from the fallback format
+                switch (original_desc.texture.format) {
+                    // R8G8B8A8 formats
+                    case reshade::api::format::r8g8b8a8_typeless:
+                        original_bit_depth = "rgba8_t";
+                        break;
+                    case reshade::api::format::r8g8b8a8_unorm:
+                        original_bit_depth = "rgba8_u";
+                        break;
+                    case reshade::api::format::r8g8b8a8_snorm:
+                        original_bit_depth = "rgba8_s";
+                        break;
+                    case reshade::api::format::r8g8b8a8_unorm_srgb:
+                        original_bit_depth = "rgba8_srgb";
+                        break;
+
+                    // B8G8R8A8 formats
+                    case reshade::api::format::b8g8r8a8_typeless:
+                        original_bit_depth = "bgra8_t";
+                        break;
+                    case reshade::api::format::b8g8r8a8_unorm:
+                        original_bit_depth = "bgra8_u";
+                        break;
+                    case reshade::api::format::b8g8r8a8_unorm_srgb:
+                        original_bit_depth = "bgra8_srgb";
+                        break;
+
+                    // 10/11-bit formats
+                    case reshade::api::format::r10g10b10a2_typeless:
+                        original_bit_depth = "rgb10a2_t";
+                        break;
+                    case reshade::api::format::r10g10b10a2_unorm:
+                        original_bit_depth = "rgb10a2_u";
+                        break;
+                    case reshade::api::format::b10g10r10a2_unorm:
+                        original_bit_depth = "bgr10a2_u";
+                        break;
+                    case reshade::api::format::r11g11b10_float:
+                        original_bit_depth = "r11g11b10_f";
+                        break;
+
+                    // 16-bit formats
+                    case reshade::api::format::r16g16b16a16_typeless:
+                        original_bit_depth = "rgba16_t";
+                        break;
+                    case reshade::api::format::r16g16b16a16_unorm:
+                    case reshade::api::format::r16g16b16a16_snorm:
+                    case reshade::api::format::r16g16b16a16_uint:
+                    case reshade::api::format::r16g16b16a16_sint:
+                    case reshade::api::format::r16g16b16a16_float:
+                        original_bit_depth = "rgba16_t";
+                        break;
+
+                    // Skip 32-bit formats as requested
+                    default:
+                        // Check if it's a 32-bit format and skip it
+                        if (static_cast<int>(original_desc.texture.format) >= static_cast<int>(reshade::api::format::r32_float) &&
+                            static_cast<int>(original_desc.texture.format) <= static_cast<int>(reshade::api::format::r32g32b32a32_sint)) {
+                            return; // Skip 32-bit formats
+                        }
+                        break;
+                }
+
+                // Track the original format before upgrade
+                g_resolution_bitdepth_stats.before_upgrade[resolution][original_bit_depth]++;
+
+                // Track that this original format was upgraded
+                g_resolution_bitdepth_stats.upgraded[resolution][original_bit_depth]++;
+            }
+        }
+    }
+
 
     // Check if shader data contains binary representation of the lutbuilder float
-    static bool ConstainsFloat(const std::span<const uint8_t>& shader_data, float target_float) {
+    bool ConstainsFloat(const std::span<const uint8_t>& shader_data, float target_float) {
       const uint8_t* target_bytes = reinterpret_cast<const uint8_t*>(&target_float);
 
       if (shader_data.size() >= 4) {
@@ -99,7 +497,7 @@ namespace {
       return false;
     }
 
-    static std::optional<std::string> DumpShaderPrefix(const std::span<const uint8_t>& shader_data) {
+    std::optional<std::string> DumpShaderPrefix(const std::span<const uint8_t>& shader_data) {
         if ((g_dump_shaders != 0 || g_autodump_lutbuilders != 0) && ConstainsFloat(shader_data, 0.070841603f)) {
             return "lutbuilder_";
         }
@@ -114,7 +512,7 @@ namespace {
     }
 
     // Scan existing dumped shaders on application start for performance
-    static void ScanExistingDumpedShaders() {
+    void ScanExistingDumpedShaders() {
       auto dump_path = renodx::utils::path::GetOutputPath();
 
       if (!std::filesystem::exists(dump_path)) return;
@@ -240,7 +638,7 @@ namespace {
   }
 
              // Dump any pending shaders (ignoring custom shaders and already dumped shaders)
-    // renodx::utils::shader::dump::DumpAllPending(custom_shaders, g_dumped_shaders, DumpShaderPrefix);
+     renodx::utils::shader::dump::DumpAllPending();//custom_shaders, g_dumped_shaders, DumpShaderPrefix);
 }
  // Sectioned settings generator functions
  std::vector<renodx::utils::settings::Setting*> GenerateSettingsModeSection() {
@@ -977,6 +1375,145 @@ namespace {
              .format = "%.2f",
              .is_visible = []() { return current_settings_mode >= 3; },
          },
+         new renodx::utils::settings::Setting{
+             .key = "AutomaticShaderDumping",
+             .binding = &g_dump_shaders,
+             .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+             .default_value = 0.f,
+             .label = "Automatic Shader Dumping",
+             .section = "Debug",
+             .tooltip = "Automatically dump shaders into renodx-dump folder.",
+             .labels = {
+                 "Off",
+                 "On",
+             },
+             .is_global = true,
+             .is_visible = []() { return current_settings_mode >= 3; },
+         },
+         new renodx::utils::settings::Setting{
+             .key = "AutodumpLutbuilders",
+             .binding = &g_autodump_lutbuilders,
+             .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+             .default_value = 0.f,
+             .label = "Autodump Lutbuilders",
+             .section = "Debug",
+             .tooltip = "Automatically dump only lutbuilder shaders. Works independently of general shader dumping.",
+             .labels = {
+                 "Off",
+                 "On",
+             },
+             .is_global = true,
+             .is_visible = []() { return current_settings_mode >= 3; },
+         },
+         new renodx::utils::settings::Setting{
+             .key = "LogResourceCreation",
+             .binding = &g_log_resource_creation,
+             .default_value = 0.f,
+             .label = "Log Resource Creation",
+             .section = "Debug",
+             .tooltip = "Enable detailed logging of resource creation (resolution, before/after formats, upgrade status)",
+             .min = 0.f,
+             .max = 1.f,
+             .format = "%.0f",
+             .is_visible = []() { return current_settings_mode >= 3; },
+         },
+         new renodx::utils::settings::Setting{
+             .key = "ResolutionBitDepthTable",
+             .binding = nullptr,
+             .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
+             .default_value = 0.f,
+             .label = "Resolution & Bit Depth Statistics",
+             .section = "Debug",
+             .tooltip = "Shows statistics of created resources by resolution and bit depth",
+             .on_draw = []() {
+                 std::lock_guard<std::mutex> lock(g_resolution_bitdepth_stats.mutex);
+
+                 if (g_resolution_bitdepth_stats.after_upgrade.empty()) {
+                     ImGui::Text("No resources tracked yet.");
+                     return true;
+                 }
+
+                   // Column order based on upgrade targets (shorter names)
+                   std::vector<std::string> column_order = {
+                       "rgba8_t", "bgra8_t", "rgba8_u", "bgra8_u", "rgba8_s",
+                       "rgba8_srgb", "bgra8_srgb", "rgb10a2_t", "rgb10a2_u", "bgr10a2_u",
+                       "r11g11b10_f", "rgba16_t"
+                   };
+
+                 // Create sorted list of resolutions (sorted by width, then height - highest first)
+                 std::vector<std::pair<int, int>> sorted_resolutions;
+                 sorted_resolutions.reserve(g_resolution_bitdepth_stats.after_upgrade.size());
+                 for (const auto& [resolution, bit_depth_map] : g_resolution_bitdepth_stats.after_upgrade) {
+                     sorted_resolutions.emplace_back(resolution);
+                 }
+                 std::sort(sorted_resolutions.begin(), sorted_resolutions.end(), std::greater<std::pair<int, int>>());
+
+                   // Create table
+                   int column_count = static_cast<int>(column_order.size()) + 2; // +2 for resolution and aspect ratio
+                   if (ImGui::BeginTable("ResolutionBitDepthTable", column_count,
+                                        ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable)) {
+
+                       // Header row
+                       ImGui::TableSetupColumn("Resolution", ImGuiTableColumnFlags_WidthFixed, 120.0f);
+                       ImGui::TableSetupColumn("Aspect", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                       for (const auto& bit_depth : column_order) {
+                           ImGui::TableSetupColumn(bit_depth.c_str(), ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                       }
+                       ImGui::TableHeadersRow();
+
+                     // Data rows (now in sorted order)
+                     for (const auto& resolution : sorted_resolutions) {
+                         ImGui::TableNextRow();
+
+                         // Resolution column
+                         ImGui::TableSetColumnIndex(0);
+                         ImGui::Text("%dx%d", resolution.first, resolution.second);
+
+                         // Aspect ratio column
+                         ImGui::TableSetColumnIndex(1);
+                         float aspect_ratio = static_cast<float>(resolution.first) / static_cast<float>(resolution.second);
+                         ImGui::Text("%.2f", aspect_ratio);
+
+                         // Get the bit depth maps for this resolution
+                         auto after_it = g_resolution_bitdepth_stats.after_upgrade.find(resolution);
+                         auto before_it = g_resolution_bitdepth_stats.before_upgrade.find(resolution);
+                         auto upgraded_it = g_resolution_bitdepth_stats.upgraded.find(resolution);
+
+                         if (after_it != g_resolution_bitdepth_stats.after_upgrade.end()) {
+                             const auto& after_map = after_it->second;
+                             const auto& before_map = (before_it != g_resolution_bitdepth_stats.before_upgrade.end()) ? before_it->second : std::map<std::string, int>{};
+                             const auto& upgraded_map = (upgraded_it != g_resolution_bitdepth_stats.upgraded.end()) ? upgraded_it->second : std::map<std::string, int>{};
+
+                             // Bit depth columns (using fixed order) - show before/upgraded/after triplets
+                             int col_index = 2; // Start at 2 because we have Resolution (0) and Aspect (1) columns
+                             for (const auto& bit_depth : column_order) {
+                                 ImGui::TableSetColumnIndex(col_index);
+
+                                 auto after_bit_it = after_map.find(bit_depth);
+                                 auto before_bit_it = before_map.find(bit_depth);
+                                 auto upgraded_bit_it = upgraded_map.find(bit_depth);
+
+                                 int after_count = (after_bit_it != after_map.end()) ? after_bit_it->second : 0;
+                                 int before_count = (before_bit_it != before_map.end()) ? before_bit_it->second : 0;
+                                 int upgraded_count = (upgraded_bit_it != upgraded_map.end()) ? upgraded_bit_it->second : 0;
+
+                                 if (after_count > 0 || before_count > 0 || upgraded_count > 0) {
+                                     ImGui::Text("%d/%d/%d", before_count, upgraded_count, after_count);
+                                 } else {
+                                     ImGui::Text("-");
+                                 }
+                                 col_index++;
+                             }
+                         }
+                     }
+
+                     ImGui::EndTable();
+                 }
+
+                 return true;
+             },
+             .is_visible = []() { return current_settings_mode >= 3; }
+         },
      };
  }
 
@@ -1119,8 +1656,51 @@ namespace {
      add_section(GenerateColorGradingSection());
      add_section(GenerateDisplayOutputSection());
      add_section(GeneratePerceptualBoostSection());
-     add_section(GenerateDebugSection());
-     add_section(GenerateHighlightSaturationRestorationSection());
+    add_section(GenerateDebugSection());
+
+    // Load settings for moved Debug section settings
+    {
+        auto* setting = new renodx::utils::settings::Setting{
+            .key = "AutomaticShaderDumping",
+            .binding = &g_dump_shaders,
+            .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+            .default_value = 0.f,
+            .label = "Automatic Shader Dumping",
+            .section = "Debug",
+            .tooltip = "Automatically dump shaders into renodx-dump folder.",
+            .labels = {
+                "Off",
+                "On",
+            },
+            .is_global = true,
+            .is_visible = []() { return current_settings_mode >= 3; }
+        };
+        renodx::utils::settings::LoadSetting(renodx::utils::settings::global_name, setting);
+        settings.push_back(setting);
+        g_dump_shaders = setting->GetValue();
+    }
+    {
+        auto* setting = new renodx::utils::settings::Setting{
+            .key = "AutodumpLutbuilders",
+            .binding = &g_autodump_lutbuilders,
+            .value_type = renodx::utils::settings::SettingValueType::INTEGER,
+            .default_value = 0.f,
+            .label = "Autodump Lutbuilders",
+            .section = "Debug",
+            .tooltip = "Automatically dump only lutbuilder shaders. Works independently of general shader dumping.",
+            .labels = {
+                "Off",
+                "On",
+            },
+            .is_global = true,
+            .is_visible = []() { return current_settings_mode >= 3; }
+        };
+        renodx::utils::settings::LoadSetting(renodx::utils::settings::global_name, setting);
+        settings.push_back(setting);
+        g_autodump_lutbuilders = setting->GetValue();
+    }
+
+    add_section(GenerateHighlightSaturationRestorationSection());
      add_section(hbr_custom_settings::GenerateCustomGameSettingsSection(shader_injection, current_settings_mode)); // Use external function
      AddAdvancedSettings();
      settings.push_back(new renodx::utils::settings::Setting{
@@ -1180,6 +1760,9 @@ namespace {
          renodx::mods::swapchain::use_device_proxy = hbr_custom_settings::get_use_device_proxy();
          renodx::utils::random::binds.push_back(&shader_injection.random_seed);
 
+         // Register callback for resource creation and upgrade tracking
+         renodx::utils::resource::store->on_init_resource_info_callbacks.emplace_back(&OnResourceCreated);
+
 
          if (filename == "TheSwapper.exe") {
             renodx::mods::swapchain::prevent_full_screen = false;
@@ -1208,47 +1791,6 @@ namespace {
          // add settings to disable d3d9 resource upgrade
          if (hbr_custom_settings::get_disable_d3d9_resource_upgrade()) {
             renodx::mods::swapchain::ignored_device_apis = { reshade::api::device_api::d3d9 }; // needed to prevent crash
-         }
-         {
-
-           auto* setting = new renodx::utils::settings::Setting{
-              .key = "AutomaticShaderDumping",
-              .binding = &g_dump_shaders,
-              .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-              .default_value = 0.f,
-              .label = "Automatic Shader Dumping",
-              .section = "Debug",
-              .tooltip = "Automatically dump shaders into renodx-dump folder.",
-              .labels = {
-                  "Off",
-                  "On",
-              },
-              .is_global = true,
-              .is_visible = []() { return current_settings_mode >= 3; }
-             };
-             renodx::utils::settings::LoadSetting(renodx::utils::settings::global_name, setting);
-             settings.push_back(setting);
-             g_dump_shaders = setting->GetValue();
-          }
-          {
-            auto* setting = new renodx::utils::settings::Setting{
-              .key = "AutodumpLutbuilders",
-              .binding = &g_autodump_lutbuilders,
-              .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-              .default_value = 0.f,
-              .label = "Autodump Lutbuilders",
-              .section = "Debug",
-              .tooltip = "Automatically dump only lutbuilder shaders. Works independently of general shader dumping.",
-              .labels = {
-                  "Off",
-                  "On",
-              },
-              .is_global = true,
-              .is_visible = []() { return current_settings_mode >= 3; }
-             };
-             renodx::utils::settings::LoadSetting(renodx::utils::settings::global_name, setting);
-             settings.push_back(setting);
-             g_autodump_lutbuilders = setting->GetValue();
          }
          {
            auto* setting = new renodx::utils::settings::Setting{
