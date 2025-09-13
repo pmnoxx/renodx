@@ -164,14 +164,14 @@ namespace {
 
             // 16-bit formats
             case reshade::api::format::r16g16b16a16_typeless:
-                bit_depth = "rgba16_t";
+                bit_depth = "rgba16_tuf";
                 break;
             case reshade::api::format::r16g16b16a16_unorm:
             case reshade::api::format::r16g16b16a16_snorm:
             case reshade::api::format::r16g16b16a16_uint:
             case reshade::api::format::r16g16b16a16_sint:
             case reshade::api::format::r16g16b16a16_float:
-                bit_depth = "rgba16_t";
+                bit_depth = "rgba16_tuf";
                 break;
 
             // Skip 32-bit formats as requested
@@ -453,14 +453,12 @@ namespace {
 
                     // 16-bit formats
                     case reshade::api::format::r16g16b16a16_typeless:
-                        original_bit_depth = "rgba16_t";
-                        break;
                     case reshade::api::format::r16g16b16a16_unorm:
                     case reshade::api::format::r16g16b16a16_snorm:
                     case reshade::api::format::r16g16b16a16_uint:
                     case reshade::api::format::r16g16b16a16_sint:
                     case reshade::api::format::r16g16b16a16_float:
-                        original_bit_depth = "rgba16_t";
+                        original_bit_depth = "rgba16_tuf";
                         break;
 
                     // Skip 32-bit formats as requested
@@ -1437,7 +1435,7 @@ namespace {
                    std::vector<std::string> column_order = {
                        "rgba8_t", "bgra8_t", "rgba8_u", "bgra8_u", "rgba8_s",
                        "rgba8_srgb", "bgra8_srgb", "rgb10a2_t", "rgb10a2_u", "bgr10a2_u",
-                       "r11g11b10_f", "rgba16_t"
+                       "r11g11b10_f", "rgba16_tuf"
                    };
 
                  // Create sorted list of resolutions (sorted by width, then height - highest first)
