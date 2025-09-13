@@ -162,7 +162,7 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         // upside down
         default_values["IsUpsideDown"] = 1.f;
     } else if (filename == "Darkest Dungeon II.exe") {
-        default_values["Upgrade_R8G8B8A8_TYPELESS"] = 2.f;
+      /*  default_values["Upgrade_R8G8B8A8_TYPELESS"] = 2.f;
         default_values["Upgrade_B8G8R8A8_TYPELESS"] = 0.f;
         default_values["Upgrade_R8G8B8A8_UNORM"] = 0.f;
         default_values["Upgrade_B8G8R8A8_UNORM"] = 0.f;
@@ -173,10 +173,12 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["Upgrade_R10G10B10A2_UNORM"] = 2.f;
         default_values["Upgrade_B10G10R10A2_UNORM"] = 2.f;
         default_values["Upgrade_R11G11B10_FLOAT"] = 2.f;
-        default_values["Upgrade_R16G16B16A16_TYPELESS"] = 0.f;
+        default_values["Upgrade_R16G16B16A16_TYPELESS"] = 0.f;*/
 
         default_values["GammaCorrection"] = 0.f;
         default_values["SwapChainGammaCorrection"] = 0.f;
+        default_values["UpgradeLUTResources"] = 0.f;
+        default_values["upgrade_lut_1024_32"] = 0.f;
     }
 }
 
@@ -237,6 +239,18 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
 };
 
 inline void AddCustomResourceUpgrades() {
+
+    if (get_default_value("UpgradeLUTResources", 0.f) == 1.f
+    || get_default_value("upgrade_lut_1024_32", 0.f) == 1.f) {
+
+        renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+            .old_format = reshade::api::format::r8g8b8a8_unorm,
+            .new_format = reshade::api::format::r16g16b16a16_typeless,
+            .use_resource_view_cloning = false,
+            .dimensions = {.width=1024, .height=32},
+        });
+    }
+
     if (get_default_value("UpgradeLUTResources", 0.f) == 0.f) {
         // Skipping upgrade LUT resources
         // add log PMNOX:
@@ -245,12 +259,6 @@ inline void AddCustomResourceUpgrades() {
         reshade::log::message(reshade::log::level::info, s.str().c_str());
         return;
     }
-    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
-        .old_format = reshade::api::format::r8g8b8a8_unorm,
-        .new_format = reshade::api::format::r16g16b16a16_typeless,
-        .use_resource_view_cloning = false,
-        .dimensions = {.width=1024, .height=32},
-    });
     renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
         .old_format = reshade::api::format::r8g8b8a8_unorm,
         .new_format = reshade::api::format::r16g16b16a16_typeless,
