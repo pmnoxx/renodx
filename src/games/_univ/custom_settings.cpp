@@ -179,6 +179,12 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["SwapChainGammaCorrection"] = 0.f;
         default_values["UpgradeLUTResources"] = 0.f;
         default_values["upgrade_lut_1024_32"] = 0.f;
+    } else if (filename == "Total Warhammer 3.exe" || filename == "Warhammer3.exe") {
+        default_values["GammaCorrection"] = 0.f;
+
+        default_values["SwapChainDecoding"] = 2.f; // set swap chain decode to srgb
+        default_values["upgrade_lut_32_32_32"] = 1.f;
+
     }
 }
 
@@ -239,6 +245,22 @@ const std::unordered_map<std::string, std::pair<reshade::api::format, float>> UP
 };
 
 inline void AddCustomResourceUpgrades() {
+
+    if (get_default_value("upgrade_lut_32_32_32", 0.f) == 1.f) {
+        /*renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+            .old_format = reshade::api::format::b8g8r8x8_unorm,
+            .new_format = reshade::api::format::r16g16b16a16_typeless,
+            .use_resource_view_cloning = false,
+            .dimensions = {.width=32, .height=32, .depth=32},
+        });
+
+        renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+            .old_format = reshade::api::format::r8g8b8x8_unorm,
+            .new_format = reshade::api::format::r16g16b16a16_typeless,
+            .use_resource_view_cloning = false,
+            .dimensions = {.width=32, .height=32, .depth=32},
+        });*/
+    }
 
     if (get_default_value("UpgradeLUTResources", 0.f) == 1.f
     || get_default_value("upgrade_lut_1024_32", 0.f) == 1.f) {
