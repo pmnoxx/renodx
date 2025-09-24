@@ -180,11 +180,12 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["UpgradeLUTResources"] = 0.f;
         default_values["upgrade_lut_1024_32"] = 0.f;
     } else if (filename == "Total Warhammer 3.exe" || filename == "Warhammer3.exe") {
+        // needs TAA disabled, volumetric fog is broken
         default_values["GammaCorrection"] = 0.f;
+        default_values["SwapChainGammaCorrection"] = 0.f;
 
-        default_values["SwapChainDecoding"] = 2.f; // set swap chain decode to srgb
-        default_values["upgrade_lut_32_32_32"] = 1.f;
-
+        default_values["SwapChainDecoding"] = 3.f; // set swap chain decode to gamma 2.2
+        default_values["ColorGradeShadows"] = 62.f;
     }
 }
 
