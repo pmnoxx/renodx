@@ -220,7 +220,7 @@ void main(
   float3 untonemapped_sign = sign(untonemapped);
 
 
-  r3.xyz = pow(abs(r3.xyz), g_inv_gamma_output);
+  r3.xyz = pow(max(0.f, r3.xyz), g_inv_gamma_output);
 
 //  r3.xyz = log2(r3.xyz);
  // r3.xyz = g_inv_gamma_output * r3.xyz; // 0.454545454
