@@ -214,20 +214,13 @@ void main(
   }*/
 
  // r3.xyz = saturate(g_brightness * r1.xyz);
-  r3.xyz = (g_brightness * r1.xyz); // still in linear space
-
+  r3.xyz = max(0.f, g_brightness * r1.xyz); // still in linear space
   float3 untonemapped = r3.xyz;
-  float3 untonemapped_sign = sign(untonemapped);
+  if (RENODX_TONE_MAP_TYPE > 0.f) {
+    r3.xyz = RestoreHighlightSaturation(untonemapped.xyz);
+  }
 
-
-  r3.xyz = pow(max(0.f, r3.xyz), g_inv_gamma_output);
-
-//  r3.xyz = log2(r3.xyz);
- // r3.xyz = g_inv_gamma_output * r3.xyz; // 0.454545454
- // r3.xyz = exp2(r3.xyz);
-  // this is equivalent to pow(r3.xyz, 1.f / 2.2f)
-  // colorspace is gamma encoded
-
+  r3.xyz = pow(r3.xyz, g_inv_gamma_output); // color space is now gamma encoded
 
   r3.w = 1;
   r4.x = dot(r3.xyzw, colour_matrix._m00_m10_m20_m30);
@@ -280,11 +273,10 @@ void main(
 
   o0.xyzw = r1.xyzw;
   if (RENODX_TONE_MAP_TYPE > 0.f) {
-    o0.xyz = pow(o0.xyz, 1.0f / g_inv_gamma_output); // game decode
+    o0.xyz = pow(o0.xyz, 1.0f / g_inv_gamma_output); // gamma decode
     o0.xyz = ToneMapPassCustom(untonemapped.xyz, o0.xyz, RestoreHighlightSaturation(untonemapped.xyz));
-    o0.xyz = pow(o0.xyz, g_inv_gamma_output); // gama encode
-    o0.xyz = o0.xyz * untonemapped_sign;
+    o0.xyz = pow(o0.xyz, g_inv_gamma_output); // gamma encode
   }
-  o0.xyz = max(o0.xyz, 0.f); // remove nans
+  o0 = max(o0, 0.f); // remove nans
   return;
 }
