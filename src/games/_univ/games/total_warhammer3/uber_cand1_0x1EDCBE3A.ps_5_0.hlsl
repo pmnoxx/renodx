@@ -274,6 +274,14 @@ void main(
   o0.xyzw = r1.xyzw;
   if (RENODX_TONE_MAP_TYPE > 0.f) {
     o0.xyz = pow(o0.xyz, 1.0f / g_inv_gamma_output); // gamma decode
+
+    float old_y = renodx::color::y::from::BT709(RestoreHighlightSaturation(untonemapped.xyz));
+    float new_y = renodx::color::y::from::BT709(o0.xyz);
+
+    o0.xyz *= lerp(old_y, new_y, saturate(old_y)) / max(0.001, new_y);
+
+
+
     o0.xyz = ToneMapPassCustom(untonemapped.xyz, o0.xyz, RestoreHighlightSaturation(untonemapped.xyz));
     o0.xyz = pow(o0.xyz, g_inv_gamma_output); // gamma encode
   }
