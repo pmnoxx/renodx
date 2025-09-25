@@ -186,6 +186,18 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
 
         default_values["SwapChainDecoding"] = 3.f; // set swap chain decode to gamma 2.2
         default_values["ColorGradeShadows"] = 62.f;
+          default_values["Upgrade_R8G8B8A8_TYPELESS"] = 0.f;
+          default_values["Upgrade_B8G8R8A8_TYPELESS"] = 0.f;
+          default_values["Upgrade_R8G8B8A8_UNORM"] = 1.f;
+          default_values["Upgrade_B8G8R8A8_UNORM"] = 0.f;
+          default_values["Upgrade_R8G8B8A8_SNORM"] = 0.f;
+          default_values["Upgrade_R8G8B8A8_UNORM_SRGB"] = 0.f;
+          default_values["Upgrade_B8G8R8A8_UNORM_SRGB"] = 0.f;
+          default_values["Upgrade_R10G10B10A2_TYPELESS"] = 0.f;
+          default_values["Upgrade_R10G10B10A2_UNORM"] = 0.f;
+          default_values["Upgrade_B10G10R10A2_UNORM"] = 0.f;
+          default_values["Upgrade_R11G11B10_FLOAT"] = 0.f;
+          default_values["Upgrade_R16G16B16A16_TYPELESS"] = 0.f;
     }
 }
 
