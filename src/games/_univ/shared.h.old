@@ -37,59 +37,59 @@
 // Must be 32bit aligned
 // Should be 4x32
 struct ShaderInjectData {
-  float peak_white_nits;
-  float diffuse_white_nits;
-  float graphics_white_nits;
-  float color_grade_strength;
-  float tone_map_type;
-  float tone_map_exposure;
-  float tone_map_highlights;
-  float tone_map_shadows;
-  float tone_map_contrast;
-  float tone_map_saturation;
-  float tone_map_highlight_saturation;
-  float tone_map_blowout;
-  float tone_map_flare;
-  float tone_map_hue_correction;
-  float tone_map_hue_shift;
-  float tone_map_working_color_space;
-  float tone_map_clamp_color_space;
-  float tone_map_clamp_peak;
-  float tone_map_hue_processor;
-  float tone_map_per_channel;
-  float gamma_correction;
-  float intermediate_scaling;
-  float intermediate_encoding;
-  float intermediate_color_space;
-  float swap_chain_decoding;
-  float swap_chain_gamma_correction;
-  float reno_drt_white_clip;
-  //  float swap_chain_decoding_color_space;
-  float swap_chain_custom_color_space;
-  // float swap_chain_scaling_nits;
-  // float swap_chain_clamp_nits;
-  float swap_chain_clamp_color_space;
-  float swap_chain_encoding;
-  float swap_chain_encoding_color_space;
-  float perceptual_boost_method; // 0 = None, 1 = XY->PQ, TODO: add more methods
-  float perceptual_boost_param;
-  float perceptual_boost_color;
-  float perceptual_boost_strength;
-  float pixel_shader_decode_mode; // 0 = Off, 1 = Gamma 2.2, 2 = sRGB
+    float peak_white_nits;
+    float diffuse_white_nits;
+    float graphics_white_nits;
+    float color_grade_strength;
+    float tone_map_type;
+    float tone_map_exposure;
+    float tone_map_highlights;
+    float tone_map_shadows;
+    float tone_map_contrast;
+    float tone_map_saturation;
+    float tone_map_highlight_saturation;
+    float tone_map_blowout;
+    float tone_map_flare;
+    float tone_map_hue_correction;
+    float tone_map_hue_shift;
+    float tone_map_working_color_space;
+    float tone_map_clamp_color_space;
+    float tone_map_clamp_peak;
+    float tone_map_hue_processor;
+    float tone_map_per_channel;
+    float gamma_correction;
+    float intermediate_scaling;
+    float intermediate_encoding;
+    float intermediate_color_space;
+    float swap_chain_decoding;
+    float swap_chain_gamma_correction;
+    float reno_drt_white_clip;
+    //  float swap_chain_decoding_color_space;
+    float swap_chain_custom_color_space;
+    // float swap_chain_scaling_nits;
+    // float swap_chain_clamp_nits;
+    float swap_chain_clamp_color_space;
+    float swap_chain_encoding;
+    float swap_chain_encoding_color_space;
+    float perceptual_boost_method;  // 0 = None, 1 = XY->PQ, TODO: add more methods
+    float perceptual_boost_param;
+    float perceptual_boost_color;
+    float perceptual_boost_strength;
+    float pixel_shader_decode_mode;  // 0 = Off, 1 = Gamma 2.2, 2 = sRGB
 
-  float effect_split_x ;
-  float effect_split_mode ;
-  float effect_split_angle;
+    float effect_split_x;
+    float effect_split_mode;
+    float effect_split_angle;
 
-  float dice_shoulder; // DICE shoulder parameter for DICE tonemapper
-  
-  float custom_character_brightness; // Custom character brightness for UI slider
+    float dice_shoulder;  // DICE shoulder parameter for DICE tonemapper
 
-  float midGray;
+    float custom_character_brightness;  // Custom character brightness for UI slider
 
-  float displayMapType;
-  float displayMapPeak;
-  float displayMapShoulder;
+    float midGray;
+
+    float displayMapType;
+    float displayMapPeak;
+    float displayMapShoulder;
 };
 
 #ifndef __cplusplus
@@ -98,11 +98,11 @@ cbuffer shader_injection : register(b13, space50) {
 #elif (__SHADER_TARGET_MAJOR < 5) || ((__SHADER_TARGET_MAJOR == 5) && (__SHADER_TARGET_MINOR < 1))
 cbuffer shader_injection : register(b13) {
 #endif
-  ShaderInjectData shader_injection : packoffset(c0);
+    ShaderInjectData shader_injection : packoffset(c0);
 }
 
 // handle dice with 4.f
-#define RENODX_TONE_MAP_TYPE                 (shader_injection.tone_map_type <= 3.f? shader_injection.tone_map_type: 1.f)
+#define RENODX_TONE_MAP_TYPE                 (shader_injection.tone_map_type <= 3.f ? shader_injection.tone_map_type : 1.f)
 #define RENODX_PEAK_WHITE_NITS               shader_injection.peak_white_nits
 #define RENODX_DIFFUSE_WHITE_NITS            shader_injection.diffuse_white_nits
 #define RENODX_GRAPHICS_WHITE_NITS           shader_injection.graphics_white_nits
@@ -136,25 +136,24 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_SWAP_CHAIN_ENCODING             shader_injection.swap_chain_encoding
 #define RENODX_SWAP_CHAIN_ENCODING_COLOR_SPACE shader_injection.swap_chain_encoding_color_space
 #define RENODX_RENO_DRT_TONE_MAP_METHOD        renodx::tonemap::renodrt::config::tone_map_method::REINHARD
-#define RENODX_RENO_DRT_WHITE_CLIP               shader_injection.reno_drt_white_clip
+#define RENODX_RENO_DRT_WHITE_CLIP             shader_injection.reno_drt_white_clip
 #define RENODX_DICE_SHOULDER                   shader_injection.dice_shoulder
 
-#define RENODX_CUSTOM_CHARACTER_BRIGHTNESS      shader_injection.custom_character_brightness
-#define RENODX_PERCEPTUAL_BOOST_PARAM          shader_injection.perceptual_boost_param
-#define RENODX_PERCEPTUAL_BOOST_COLOR         shader_injection.perceptual_boost_color
-#define RENODX_PERCEPTUAL_BOOST_STRENGTH          shader_injection.perceptual_boost_strength
-#define RENODX_PERCEPTUAL_BOOST_METHOD           shader_injection.perceptual_boost_method
+#define RENODX_CUSTOM_CHARACTER_BRIGHTNESS   shader_injection.custom_character_brightness
+#define RENODX_PERCEPTUAL_BOOST_PARAM        shader_injection.perceptual_boost_param
+#define RENODX_PERCEPTUAL_BOOST_COLOR        shader_injection.perceptual_boost_color
+#define RENODX_PERCEPTUAL_BOOST_STRENGTH     shader_injection.perceptual_boost_strength
+#define RENODX_PERCEPTUAL_BOOST_METHOD       shader_injection.perceptual_boost_method
 #define RENODX_PERCEPTUAL_BOOST_METHOD_XY_PQ 1
 #define RENODX_PERCEPTUAL_BOOST_METHOD_ICTCP 2
 
-#define DISPLAY_MAP_TYPE                     shader_injection.displayMapType
-#define DISPLAY_MAP_PEAK                     shader_injection.displayMapPeak
-#define DISPLAY_MAP_SHOULDER                 shader_injection.displayMapShoulder
+#define DISPLAY_MAP_TYPE     shader_injection.displayMapType
+#define DISPLAY_MAP_PEAK     shader_injection.displayMapPeak
+#define DISPLAY_MAP_SHOULDER shader_injection.displayMapShoulder
 
-#define DEBUG_MIDGRAY                        shader_injection.midGray
+#define DEBUG_MIDGRAY shader_injection.midGray
 
 #include "../../shaders/renodx.hlsl"
-
 
 #endif
 
