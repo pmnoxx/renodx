@@ -1,4 +1,4 @@
-#include "./shared.h"
+#include "../shared.h"
 
 SamplerState BlitSampler_s : register(s0);
 Texture2D<float4> BlitTexture : register(t0);

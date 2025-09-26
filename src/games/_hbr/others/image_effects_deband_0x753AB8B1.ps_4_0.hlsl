@@ -1,4 +1,4 @@
-#include "./shared.h"
+#include "../shared.h"
 
 // ---- Created with 3Dmigoto v1.3.16 on Tue Sep 23 10:10:10 2025
 // Deband postprocess shader (quad/pixel shader).
