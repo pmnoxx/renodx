@@ -1255,6 +1255,8 @@ inline void OnPresent(
   }
 }
 
+static bool disable_buggy_code = false;  // fork flag; v2 handles copies differently
+
 template <typename T = float*>
 static void Use(DWORD fdw_reason, T* new_injections = nullptr) {
   if (fdw_reason == DLL_PROCESS_ATTACH) {

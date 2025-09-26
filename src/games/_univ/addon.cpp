@@ -1629,6 +1629,19 @@ const auto UPGRADE_TYPE_OUTPUT_SIZE = 1.f;
 const auto UPGRADE_TYPE_OUTPUT_RATIO = 2.f;
 const auto UPGRADE_TYPE_ANY = 3.f;
 
+
+inline bool OnCopyTextureRegionDummy(
+    reshade::api::command_list* cmd_list,
+    reshade::api::resource source,
+    uint32_t source_subresource,
+    const reshade::api::subresource_box* source_box,
+    reshade::api::resource dest,
+    uint32_t dest_subresource,
+    const reshade::api::subresource_box* dest_box,
+    reshade::api::filter_mode filter) {
+    return true;
+}
+
 bool initialized = false;
 void InitializeSettings() {
     settings.clear();
@@ -1718,14 +1731,14 @@ extern "C" __declspec(dllexport) constexpr const char* NAME = "RenoDX";
 extern "C" __declspec(dllexport) constexpr const char* DESCRIPTION = "RenoDX (Generic)";
 
 BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
+    auto process_path = renodx::utils::platform::GetCurrentProcessPath();
+    auto filename = process_path.filename().string();
     switch (fdw_reason) {
         case DLL_PROCESS_ATTACH:
             if (!reshade::register_addon(h_module)) return FALSE;
 
             if (!initialized) {
                 // Print exe name and title
-                auto process_path = renodx::utils::platform::GetCurrentProcessPath();
-                auto filename = process_path.filename().string();
                 auto product_name = renodx::utils::platform::GetProductName(process_path);
                 bool is_no_creeps_were_harmed = filename == "No Creeps Were Harmed TD.exe";
                 reshade::log::message(reshade::log::level::info,
@@ -1986,6 +1999,11 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
             //  reshade::unregister_event<reshade::addon_event::draw>(OnDrawForLUTDump);
             reshade::unregister_addon(h_module);
             break;
+    }
+
+
+    if (filename == "Warhammer3.exe") {
+        renodx::mods::swapchain::disable_buggy_code = true;
     }
 
     renodx::utils::settings::Use(fdw_reason, &settings, &OnPresetOff);
