@@ -57,11 +57,14 @@ Texture2D<float3> t_frame : register(t0);
 // 3Dmigoto declarations
 #define cmp -
 
-
 void main(
-  float4 v0 : SV_Position0,
-  out float4 o0 : SV_Target0)
+  float4 v0: SV_Position0,
+  out float4 o0: SV_Target0)
 {
+  if (true) {
+    discard;
+    return;
+  }
   float4 r0,r1,r2,r3;
   uint4 bitmask, uiDest;
   float4 fDest;
@@ -95,5 +98,6 @@ void main(
   //o0.xyz = saturate(g_sharpening_strength * r0.xyz + r3.xyz);
   o0.xyz = (g_sharpening_strength * r0.xyz + r3.xyz);
   o0.w = 1;
+
   return;
 }

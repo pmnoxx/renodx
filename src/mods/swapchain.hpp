@@ -3473,6 +3473,8 @@ inline void OnPresent(
   }
 }
 
+static bool disable_buggy_code = false;
+
 template <typename T = float*>
 static void Use(DWORD fdw_reason, T* new_injections = nullptr) {
   renodx::utils::resource::Use(fdw_reason);
@@ -3511,7 +3513,10 @@ static void Use(DWORD fdw_reason, T* new_injections = nullptr) {
 
       reshade::register_event<reshade::addon_event::resolve_texture_region>(OnResolveTextureRegion);
 
-      reshade::register_event<reshade::addon_event::copy_texture_region>(OnCopyTextureRegion);
+      if (!disable_buggy_code) {
+        reshade::register_event<reshade::addon_event::copy_texture_region>(OnCopyTextureRegion);
+      }
+
       reshade::register_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(OnBindRenderTargetsAndDepthStencil);
 
       if (use_resource_cloning) {
