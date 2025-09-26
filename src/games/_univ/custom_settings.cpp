@@ -196,6 +196,7 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["ColorGradeShadows"] = 62.f;
 
         ClearDefaultUpgrades();
+        default_values["Upgrade_R8G8B8A8_UNORM_SRGB"] = 2.f;
      //   default_values["Upgrade_R8G8B8A8_UNORM"] = 1.f;
         default_values["upgrade_copy_destinations"] = 1.f;
     }

@@ -43,9 +43,11 @@ change defaults for Unity
 fix dump shaders setting
 - 0.27
 add log resource creation setting
+- 0.28
+Totalwar Warhammer III support
 */
 
-constexpr const char* RENODX_VERSION = "0.27";
+constexpr const char* RENODX_VERSION = "0.28";
 
 #define ImTextureID ImU64
 
@@ -1645,13 +1647,27 @@ inline bool OnCopyTextureRegionDummy(
 bool initialized = false;
 void InitializeSettings() {
     settings.clear();
-
-    // Add version display at the top
     settings.push_back(new renodx::utils::settings::Setting{
-        .value_type = renodx::utils::settings::SettingValueType::TEXT,
+        .value_type = renodx::utils::settings::SettingValueType::CUSTOM,
         .label = std::string("Version: ") + RENODX_VERSION,
         .section = "About",
         .tooltip = std::string("RenoDX Universal Template Version ") + RENODX_VERSION,
+        .on_draw = []() {
+            ImGui::Text("Version: %s", RENODX_VERSION);
+            ImGui::Separator();
+            ImGui::Text("Support RenoDX development:");
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 120, 220, 255)); // blue
+            if (ImGui::Selectable("ko-fi.com/pmnox", false, ImGuiSelectableFlags_SpanAllColumns)) {
+                // Open link in browser (Windows only)
+                #ifdef _WIN32
+                ShellExecuteA(nullptr, "open", "https://ko-fi.com/pmnox", nullptr, nullptr, SW_SHOWNORMAL);
+                #endif
+            }
+            ImGui::PopStyleColor();
+            ImGui::SetItemTooltip("Click to open Ko-fi page in your browser");
+            return true;
+        },
     });
 
     // Add each section's settings
