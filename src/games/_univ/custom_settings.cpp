@@ -7,6 +7,8 @@
 #include "../../utils/settings.hpp"
 #include "./shared.h"
 
+
+
 namespace hbr_custom_settings {
 
 // Map of setting key to default value (made mutable for filename overrides)
@@ -116,6 +118,10 @@ inline bool get_upgrade_resource_view_cloning() { return get_default_value("Upgr
 
 inline int get_constant_buffer_offset() { return get_default_value("ConstantBufferOffset", 0); }
 
+
+inline bool get_upgrade_copy_destinations() { return get_default_value("upgrade_copy_destinations", 1.0f);}
+
+
 void ClearDefaultUpgrades() {
     default_values["Upgrade_R8G8B8A8_TYPELESS"] = 0.f;
     default_values["Upgrade_B8G8R8A8_TYPELESS"] = 0.f;
@@ -181,7 +187,7 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["SwapChainGammaCorrection"] = 0.f;
         default_values["UpgradeLUTResources"] = 0.f;
         default_values["upgrade_lut_1024_32"] = 0.f;
-    } else if (filename == "Total Warhammer 3.exe" || filename == "Warhammer3.exe") {
+    } else if (filename == "Warhammer3.exe") {
         // needs TAA disabled, volumetric fog is broken
         default_values["GammaCorrection"] = 0.f;
         default_values["SwapChainGammaCorrection"] = 0.f;
@@ -190,7 +196,8 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["ColorGradeShadows"] = 62.f;
 
         ClearDefaultUpgrades();
-        default_values["Upgrade_R8G8B8A8_UNORM"] = 1.f;
+     //   default_values["Upgrade_R8G8B8A8_UNORM"] = 1.f;
+        default_values["upgrade_copy_destinations"] = 1.f;
     }
 }
 
@@ -311,5 +318,4 @@ inline void AddCustomResourceUpgrades() {
         .dimensions = {.width = 256, .height = 16},
     });
 }
-
 }  // namespace hbr_custom_settings
