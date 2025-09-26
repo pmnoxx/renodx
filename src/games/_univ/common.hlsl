@@ -529,7 +529,6 @@ float3 ToneMapPassCustom(float3 untonemapped, float3 graded_sdr_color, float3 ne
     float3 color = ComputeUntonemappedGraded(untonemapped, graded_sdr_color, neutral_sdr_color);
 
     return ToneMapPassCustom(color);
-    ;
 }
 
 float3 ToneMapPassCustom(float3 untonemapped, float3 graded_sdr_color) {
