@@ -1821,6 +1821,10 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                         UpgradeRTVReplaceShader(0x6C71F0B5), // uber3
                         UpgradeRTVReplaceShader(0x450C7E5A), // uber4
                         UpgradeRTVReplaceShader(0xC2976820), // uber5
+                        UpgradeRTVReplaceShader(0x65A1E707), // uber6
+                        UpgradeRTVReplaceShader(0x262EEB5C), // uber7
+                        UpgradeRTVReplaceShader(0xA991AB1F), // uber8
+                        UpgradeRTVReplaceShader(0xC7F7285F), // uber9
                     };
                     auto value = UPGRADE_TYPE_ANY;
                     g_upgrade_copy_destinations = 1.f;
@@ -1892,6 +1896,55 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                             reshade::api::resource_usage::copy_dest
                     });
                     */
+                } else if (filename == "Against the Storm.exe") {
+                    custom_shaders = {
+                        // shaders not included
+                        UpgradeRTVShader(0x440EAE28), // Blit
+                        UpgradeRTVShader(0x30356900), // Antialiasing
+
+                        // lutbuilders
+                        UpgradeRTVReplaceShader(0xED457D04),
+
+                        // others
+                        UpgradeRTVReplaceShader(0x48AAC250),
+                        UpgradeRTVReplaceShader(0xC9D8FA56),
+
+                        // ubers
+                        UpgradeRTVReplaceShader(0x53F75ED5),
+                        UpgradeRTVReplaceShader(0xCF4215DF),
+                        UpgradeRTVReplaceShader(0x83BB5283),
+                        UpgradeRTVReplaceShader(0x1A7177D2),
+                    };
+                    auto value = UPGRADE_TYPE_ANY;
+                    g_upgrade_copy_destinations = 1.f;
+                    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+                        .old_format = reshade::api::format::r8g8b8a8_typeless,
+                        .new_format = reshade::api::format::r16g16b16a16_float,
+                        .ignore_size = (value == UPGRADE_TYPE_ANY),
+                        .use_resource_view_cloning = true,
+                        .use_resource_view_hot_swap = true,
+                        .aspect_ratio =
+                            static_cast<float>((value == UPGRADE_TYPE_OUTPUT_RATIO)
+                                                   ? renodx::mods::swapchain::SwapChainUpgradeTarget::BACK_BUFFER
+                                                   : renodx::mods::swapchain::SwapChainUpgradeTarget::ANY),
+                        .usage_include =
+                            reshade::api::resource_usage::render_target
+                            | (g_upgrade_copy_destinations == 0.f ? reshade::api::resource_usage::undefined
+                                                                  : reshade::api::resource_usage::copy_dest),
+                    });
+                    value = UPGRADE_TYPE_OUTPUT_RATIO;
+                    g_upgrade_copy_destinations = 1.f;
+                    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+                        .old_format = reshade::api::format::r8g8b8a8_typeless,
+                        .new_format = reshade::api::format::r16g16b16a16_float,
+                        .ignore_size = (value == UPGRADE_TYPE_ANY),
+                        .use_resource_view_cloning = true,
+                        .aspect_ratio =
+                            static_cast<float>((value == UPGRADE_TYPE_OUTPUT_RATIO)
+                                                   ? renodx::mods::swapchain::SwapChainUpgradeTarget::BACK_BUFFER
+                                                   : renodx::mods::swapchain::SwapChainUpgradeTarget::ANY),
+                        .usage_include =reshade::api::resource_usage::copy_dest,
+                    });
                 }
 
 

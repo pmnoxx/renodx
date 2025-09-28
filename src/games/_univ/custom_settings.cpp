@@ -82,7 +82,7 @@ static std::unordered_map<std::string, float> default_values = {
     {"DisableD3D9ResourceUpgrade", 1.f},
     {"UseDeviceProxy", 0.f},
     {"ConstantBufferOffset", 0},
-    {"UpgradeLUTResources", 1.f},
+    {"UpgradeLUTResources", 0.f},
     {"Upgrade_R8G8B8A8_UNORM", 2.f},
     {"Upgrade_B8G8R8A8_UNORM", 2.f},
     {"Upgrade_R8G8B8A8_TYPELESS", 2.f},
@@ -96,6 +96,8 @@ static std::unordered_map<std::string, float> default_values = {
     {"Upgrade_R11G11B10_FLOAT", 2.f},
     {"Upgrade_R16G16B16A16_TYPELESS", 0.f},
     {"IsUpsideDown", 0.f},
+    {"AutodumpLutbuilders", 0.f},
+    {"AutomaticShaderDumping", 0.f},
 };
 
 namespace {
@@ -139,6 +141,9 @@ void ClearDefaultUpgrades() {
 
 // Apply filename-based settings overrides
 void ApplyFilenameBasedOverrides(const std::string& filename) {
+    default_values["GammaCorrection"] = 0.f;
+    default_values["SwapChainGammaCorrection"] = 0.f;
+
     if (filename == "Artisan TD.exe") {
         default_values["ToneMapType"] = 4.f;  // DICE
         default_values["SimulateRenderPass"] = 1.f;
@@ -199,6 +204,13 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["Upgrade_R8G8B8A8_UNORM_SRGB"] = 2.f;
      //   default_values["Upgrade_R8G8B8A8_UNORM"] = 1.f;
         default_values["upgrade_copy_destinations"] = 1.f;
+    } else if (filename == "Against the Storm.exe") {
+        default_values["GammaCorrection"] = 0.f;
+        default_values["SwapChainGammaCorrection"] = 0.f;
+        ClearDefaultUpgrades();
+
+        default_values["AutodumpLutbuilders"] = 1.f;
+        default_values["AutomaticShaderDumping"] = 1.f;
     }
 }
 
