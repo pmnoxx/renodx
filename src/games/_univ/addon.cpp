@@ -47,9 +47,11 @@ add log resource creation setting
 Totalwar Warhammer III support
 - 0.29
 Added Darkest Dungeons II support
+- 0.30
+Added Against the Storm support
 */
 
-constexpr const char* RENODX_VERSION = "0.29";
+constexpr const char* RENODX_VERSION = "0.30";
 
 #define ImTextureID ImU64
 
