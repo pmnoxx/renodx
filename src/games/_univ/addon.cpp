@@ -1794,11 +1794,69 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                     renodx::mods::swapchain::force_screen_tearing = false;
                     renodx::mods::swapchain::set_color_space = false;
                     renodx::mods::swapchain::use_device_proxy = true;
+                } else if (filename == "Darkest Dungeon II.exe") {
+                    custom_shaders = {
+                        // shaders not included
+                        UpgradeRTVShader(0x4D57C441), // CameraMotionBlur
+                        UpgradeRTVShader(0x0EC60300), // Bloom
+                        UpgradeRTVShader(0xB4BAC5C6), // Bloom2
+
+
+                        // darkest_dungeons2/others
+                        UpgradeRTVReplaceShader(0x2805E1FA),
+                        UpgradeRTVReplaceShader(0xA8B1BA98),
+                        UpgradeRTVReplaceShader(0xD02B91C8),
+                        UpgradeRTVReplaceShader(0xD00B5B47),
+                        UpgradeRTVReplaceShader(0xD8341E94),
+
+                        // darkest_dungeons2/lutbuilders
+                        UpgradeRTVReplaceShader(0x20D6EA4D),// lutbuilder
+
+                        // darkest_dungeons2/ubers
+                        UpgradeRTVReplaceShader(0xC2976820), // uber1
+                        UpgradeRTVReplaceShader(0x721D4F40), // uber2
+                        UpgradeRTVReplaceShader(0x6C71F0B5), // uber3
+                        UpgradeRTVReplaceShader(0x450C7E5A), // uber4
+                        UpgradeRTVReplaceShader(0xC2976820), // uber5
+                    };
+                    auto value = UPGRADE_TYPE_ANY;
+                    g_upgrade_copy_destinations = 1.f;
+                    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+                        .old_format = reshade::api::format::r8g8b8a8_typeless,
+                        .new_format = reshade::api::format::r16g16b16a16_float,
+                        .ignore_size = (value == UPGRADE_TYPE_ANY),
+                        .use_resource_view_cloning = true,
+                        .use_resource_view_hot_swap = true,
+                        .aspect_ratio =
+                            static_cast<float>((value == UPGRADE_TYPE_OUTPUT_RATIO)
+                                                   ? renodx::mods::swapchain::SwapChainUpgradeTarget::BACK_BUFFER
+                                                   : renodx::mods::swapchain::SwapChainUpgradeTarget::ANY),
+                        .usage_include =
+                            reshade::api::resource_usage::render_target
+                            | (g_upgrade_copy_destinations == 0.f ? reshade::api::resource_usage::undefined
+                                                                  : reshade::api::resource_usage::copy_dest),
+                    });
+                    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+                        .old_format = reshade::api::format::r11g11b10_float,
+                        .new_format = reshade::api::format::r16g16b16a16_float,
+                        .ignore_size = (value == UPGRADE_TYPE_ANY),
+                        .use_resource_view_cloning = true,
+                        .use_resource_view_hot_swap = true,
+                        .aspect_ratio =
+                            static_cast<float>((value == UPGRADE_TYPE_OUTPUT_RATIO)
+                                                   ? renodx::mods::swapchain::SwapChainUpgradeTarget::BACK_BUFFER
+                                                   : renodx::mods::swapchain::SwapChainUpgradeTarget::ANY),
+                        .usage_include =
+                            reshade::api::resource_usage::render_target
+                            | (g_upgrade_copy_destinations == 0.f ? reshade::api::resource_usage::undefined
+                                                                  : reshade::api::resource_usage::copy_dest),
+                    });
                 } else if (filename == "Warhammer3.exe") {
                     custom_shaders = {
                         UpgradeRTVReplaceShader(0x1EDCBE3A),
                         CustomShaderEntry(0xFE8E2C85),
                     };
+
                     auto value = UPGRADE_TYPE_OUTPUT_SIZE;
                     g_upgrade_copy_destinations = 1.f;
                     renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
