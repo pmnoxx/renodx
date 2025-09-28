@@ -85,5 +85,25 @@ void main(
   o0.xyz = r1.www * r0.yzw + r1.xyz;
   r0.y = cmp(cb0[5].x == 1.000000);
   o0.w = r0.y ? r0.x : 1;
+
+  if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f || SCENE_TYPE_DISPLAY_OUTPUT > 0.f) {
+      o0.rgb = renodx::draw::DecodeColor(o0.rgb, RENODX_SWAP_CHAIN_DECODING);
+
+      o0.rgb = renodx::color::bt709::clamp::BT2020(o0.rgb);
+
+      if (SCENE_TYPE_DISPLAY_OUTPUT > 0.f) {
+          o0.rgb = ApplyReverseReinhard(o0.rgb, SCENE_TYPE_DISPLAY_OUTPUT);
+      }
+      if (RENODX_ENABLE_UI_TONEMAPPASS > 0.f) {
+          o0.rgb = ToneMapPassCustom(o0.rgb, 1.f);
+      }
+
+      o0.xyz *= RENODX_DIFFUSE_WHITE_NITS / RENODX_GRAPHICS_WHITE_NITS;
+
+      o0.rgb = renodx::draw::EncodeColor(o0.rgb, RENODX_SWAP_CHAIN_DECODING);
+  }
+
+  float4 finalColor = renodx::draw::SwapChainPass(o0);
+  o0 = finalColor;
   return;
 }

@@ -79,6 +79,121 @@ constexpr const char* RENODX_VERSION = "0.30";
 #include <map>
 #include <mutex>
 
+// Slot tracking for first 10 slots
+reshade::api::resource_view g_bound_slots[10] = {};
+// Track bound slots for first 10 slots
+inline void OnPushDescriptors(
+    reshade::api::command_list* cmd_list,
+    reshade::api::shader_stage stages,
+    reshade::api::pipeline_layout layout,
+    uint32_t layout_param,
+    const reshade::api::descriptor_table_update& update) {
+    if (update.count == 0u) return;
+
+    for (uint32_t i = 0; i < update.count; i++) {
+        // Track both SRVs and UAVs for the first 10 slots
+        if (update.type == reshade::api::descriptor_type::texture_shader_resource_view ||
+            update.type == reshade::api::descriptor_type::texture_unordered_access_view) {
+
+            uint32_t slot = update.binding + i;
+            if (slot < 10) {  // Only track first 10 slots
+                const reshade::api::resource_view* views = static_cast<const reshade::api::resource_view*>(update.descriptors);
+                g_bound_slots[slot] = views[i];
+            }
+        }
+    }
+}
+/*
+// Function version of UpgradeSRVReplaceShader
+inline std::pair<uint32_t, renodx::mods::shader::CustomShader> CreateUpgradeSRVReplaceShaderExperimental(uint32_t value, int slot) {
+    return {
+        value,
+        {
+            .crc32 = value,
+            .code = {}, // This will be set by the macro expansion
+            .on_draw = [slot](auto* cmd_list) {
+                // Get the SRV from slot `slot` (first shader resource view slot)
+                if (g_bound_slots[slot].handle != 0u) {
+                    bool changed = renodx::mods::swapchain::ActivateCloneHotSwap(cmd_list->get_device(), g_bound_slots[slot]);
+                    if (changed) {
+                        renodx::mods::swapchain::FlushDescriptors(cmd_list);
+                        renodx::mods::swapchain::RewriteRenderTargets(cmd_list, 1, &g_bound_slots[slot], {0});
+                        // Note: We might need to implement a RewriteShaderResourceViews function
+                        // similar to RewriteRenderTargets for SRVs
+                    }
+                }
+                return true;
+            },
+        }
+    };
+}
+
+// Function version of UpgradeRTVShader
+inline std::pair<uint32_t, renodx::mods::shader::CustomShader> CreateUpgradeRTVShaderExperimental(uint32_t value) {
+    return {
+        value,
+        {
+            .crc32 = value,
+            .on_draw = [](auto* cmd_list) {
+                auto rtvs = renodx::utils::swapchain::GetRenderTargets(cmd_list);
+                bool changed = false;
+                for (auto rtv : rtvs) {
+                    changed = renodx::mods::swapchain::ActivateCloneHotSwap(cmd_list->get_device(), rtv);
+                }
+                if (changed) {
+                    renodx::mods::swapchain::FlushDescriptors(cmd_list);
+                    renodx::mods::swapchain::RewriteRenderTargets(cmd_list, rtvs.size(), rtvs.data(), {0});
+                }
+                return true;
+            },
+        }
+    };
+}
+
+// Function version of UpgradeRTVReplaceShader for Ixion
+inline std::pair<uint32_t, renodx::mods::shader::CustomShader> CreateUpgradeRTVReplaceShaderExperimental(uint32_t value) {
+    return {
+        value,
+        {
+            .crc32 = value,
+            .code = {}, // This will be set by the macro expansion
+            .on_draw = [](auto* cmd_list) {
+                auto rtvs = renodx::utils::swapchain::GetRenderTargets(cmd_list);
+                bool changed = false;
+                for (auto rtv : rtvs) {
+                    changed = renodx::mods::swapchain::ActivateCloneHotSwap(cmd_list->get_device(), rtv);
+                }
+                if (changed) {
+                    renodx::mods::swapchain::FlushDescriptors(cmd_list);
+                    renodx::mods::swapchain::RewriteRenderTargets(cmd_list, rtvs.size(), rtvs.data(), {0});
+                }
+                return true;
+            },
+        }
+    };
+} */
+
+#define CreateUpgradeSRVReplaceShader(value, slot) \
+    {\
+        value, \
+        { \
+            .crc32 = value,\
+            .code = __##value, \
+            .on_draw = [](auto* cmd_list) {\
+                if (g_bound_slots[slot].handle != 0u) {\
+                    bool changed = renodx::mods::swapchain::ActivateCloneHotSwap(cmd_list->get_device(), g_bound_slots[slot]);\
+                    if (changed) {\
+                        renodx::mods::swapchain::FlushDescriptors(cmd_list);\
+                        renodx::mods::swapchain::RewriteRenderTargets(cmd_list, 1, &g_bound_slots[slot], {0});\
+                    }\
+                }\
+                return true;\
+            },\
+        },\
+    }
+
+
+
 #define UpgradeRTVShader(value)                                                                                 \
     {                                                                                                           \
         value,                                                                                                  \
@@ -1863,6 +1978,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                 } else if (filename == "Warhammer3.exe") {
                     custom_shaders = {
                         UpgradeRTVReplaceShader(0x1EDCBE3A),
+                      /// CreateUpgradeSRVReplaceShader(0xFE8E2C85, 0),
                         CustomShaderEntry(0xFE8E2C85),
                     };
 
@@ -2117,6 +2233,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                         reshade::log::message(reshade::log::level::info, "Lutbuilder dumping enabled.");
                     }
                 }
+                reshade::register_event<reshade::addon_event::push_descriptors>(OnPushDescriptors);
 
                 initialized = true;
             }
