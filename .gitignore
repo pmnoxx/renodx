@@ -55,4 +55,4 @@ __pycache__/
 .dotnet/
 .test/
 .venv-analysis/
-tmp/*
+tmp/*tmp
