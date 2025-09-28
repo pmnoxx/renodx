@@ -45,9 +45,11 @@ fix dump shaders setting
 add log resource creation setting
 - 0.28
 Totalwar Warhammer III support
+- 0.29
+Added Darkest Dungeons II support
 */
 
-constexpr const char* RENODX_VERSION = "0.28";
+constexpr const char* RENODX_VERSION = "0.29";
 
 #define ImTextureID ImU64
 
