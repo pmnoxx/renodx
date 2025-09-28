@@ -1809,7 +1809,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                         UpgradeRTVReplaceShader(0xA8B1BA98),
                         UpgradeRTVReplaceShader(0xD02B91C8),
                         UpgradeRTVReplaceShader(0xD00B5B47),
-                        UpgradeRTVReplaceShader(0xD8341E94),
+                        UpgradeRTVReplaceShader(0xD8341E94), //lut1
+                        UpgradeRTVReplaceShader(0x64031CB8), //lut2
 
                         // darkest_dungeons2/lutbuilders
                         UpgradeRTVReplaceShader(0x20D6EA4D),// lutbuilder

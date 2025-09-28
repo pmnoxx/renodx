@@ -53,9 +53,9 @@ void main(
   }
 
   if (RENODX_TONE_MAP_TYPE != 0.f) {
+    r0.xyz = UnityLookupARIDPQ(r0.xyzw, v1.xy, cb0[132], s0_s, t2);
+    r0.xyz = UnityLookupSDRsRGB(r0.xyz, v1.xy, cb0[133].w, t3);
     r0.xyz = debug_mode(r0.xyzw, v1.xy, 0.02f).xyz;
-    r0.xyz = UnityLookupARIDPQ(r0.xyzw, v1.xy, cb0[132], s0_s, t1);
-    r0.xyz = UnityLookupSDRsRGB(r0.xyz, v1.xy, cb0[133].w, t2);
   } else {
     r0.xyz = cb0[132].www * r0.zxy;
     r0.xyz = r0.xyz * float3(5.55555582,5.55555582,5.55555582) + float3(0.0479959995,0.0479959995,0.0479959995);
