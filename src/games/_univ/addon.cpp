@@ -1909,6 +1909,25 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                 renodx::utils::resource::store->on_init_resource_info_callbacks.emplace_back(&OnResourceCreated);
 
                 g_upgrade_copy_destinations = hbr_custom_settings::get_upgrade_copy_destinations();
+
+
+                renodx::mods::swapchain::swap_chain_proxy_shaders = {
+                    {
+                        reshade::api::device_api::d3d11,
+                        {
+                            .vertex_shader = __swap_chain_proxy_vertex_shader_dx11,
+                            .pixel_shader = __swap_chain_proxy_pixel_shader_dx11,
+                        },
+                    },
+                    {
+                        reshade::api::device_api::d3d12,
+                        {
+                            .vertex_shader = __swap_chain_proxy_vertex_shader_dx12,
+                            .pixel_shader = __swap_chain_proxy_pixel_shader_dx12,
+                        },
+                    },
+                };
+
                 if (filename == "TheSwapper.exe") {
                     renodx::mods::swapchain::prevent_full_screen = false;
                     renodx::mods::swapchain::force_screen_tearing = false;
@@ -2051,7 +2070,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                             | (g_upgrade_copy_destinations == 0.f ? reshade::api::resource_usage::undefined
                                                                   : reshade::api::resource_usage::copy_dest),
                     });
-                    value = UPGRADE_TYPE_OUTPUT_RATIO;
+                    value = UPGRADE_TYPE_ANY;
                     g_upgrade_copy_destinations = 1.f;
                     renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
                         .old_format = reshade::api::format::r8g8b8a8_typeless,
@@ -2064,25 +2083,26 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                                                    : renodx::mods::swapchain::SwapChainUpgradeTarget::ANY),
                         .usage_include =reshade::api::resource_usage::copy_dest,
                     });
+                } else if (filename == "Ixion.exe") {
+                    renodx::mods::swapchain::swap_chain_proxy_shaders.clear();
+                    custom_shaders = {
+                        // shaders not included
+                        UpgradeRTVShader(0x066C98CB),
+
+                        // Lutbuilders
+                        UpgradeRTVReplaceShader(0x6811A33B),  // lutbuilder3d - 3D LUT builder compute shader
+
+                        // others
+                        UpgradeRTVReplaceShader(0x91D61E3F),  // finalpost - final post-processing shader
+                        UpgradeRTVReplaceShader(0x0F01C9E1),  // blit - blit operation shader
+                        UpgradeRTVReplaceShader(0x54C575B8),  // bloom_p1 - bloom pass 1 compute shader
+                   //     CustomShaderEntry(0x57AA0427),  // cs1 - compute shader 1
+                    //    CustomShaderEntry(0xC3C09926),  // cs2 - compute shader 2
+                    //    CustomShaderEntry(0x78CC9692),  // trees - trees rendering pixel shader
+                     //   CustomShaderEntry(0xDACD56EB),  // trees2 - trees rendering variant 2 pixel shader
+                    };
                 }
 
-
-                renodx::mods::swapchain::swap_chain_proxy_shaders = {
-                    {
-                        reshade::api::device_api::d3d11,
-                        {
-                            .vertex_shader = __swap_chain_proxy_vertex_shader_dx11,
-                            .pixel_shader = __swap_chain_proxy_pixel_shader_dx11,
-                        },
-                    },
-                    {
-                        reshade::api::device_api::d3d12,
-                        {
-                            .vertex_shader = __swap_chain_proxy_vertex_shader_dx12,
-                            .pixel_shader = __swap_chain_proxy_pixel_shader_dx12,
-                        },
-                    },
-                };
                 // add settings to disable d3d9 resource upgrade
                 if (hbr_custom_settings::get_disable_d3d9_resource_upgrade()) {
                     renodx::mods::swapchain::ignored_device_apis = {
