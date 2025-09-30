@@ -148,16 +148,13 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["ToneMapType"] = 4.f;  // DICE
         default_values["SimulateRenderPass"] = 1.f;
         default_values["PostSwapChainToneMapping"] = 1.f;
-    }
-    if (filename == "Ixion.exe") {
+    } else if (filename == "Ixion.exe") {
         //    default_values["ToneMapType"] = 3.f; // ACES
-    }
-    if (filename == "No Creeps Were Harmed TD.exe") {
+    } else if (filename == "No Creeps Were Harmed TD.exe") {
         default_values["ToneMapType"] = 4.f;  // DICE
         default_values["SimulateRenderPass"] = 1.f;
         default_values["PostSwapChainToneMapping"] = 1.f;
-    }
-    if (filename == "Phantom Brigade.exe") {
+    } else if (filename == "Phantom Brigade.exe") {
         default_values["WhiteClip"] = 25.f;
         default_values["PerChannelBlowoutRestoration"] = 0.75f;
         //  default_values["ToneMapType"] = 2.f; // ACES
@@ -207,7 +204,7 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
     } else if (filename == "Against the Storm.exe") {
         default_values["GammaCorrection"] = 0.f;
         default_values["SwapChainGammaCorrection"] = 0.f;
-        ClearDefaultUpgrades();
+        //ClearDefaultUpgrades();
 
         default_values["AutodumpLutbuilders"] = 1.f;
         default_values["AutomaticShaderDumping"] = 1.f;
