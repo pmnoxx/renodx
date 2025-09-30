@@ -733,6 +733,7 @@ void OnInitPipeline(reshade::api::device* device, reshade::api::pipeline_layout 
         }
     }
 
+    // todo: replace with `There's draw, draw indirect, dispatch and drawindirector dispatch`
     // Dump any pending shaders (ignoring custom shaders and already dumped shaders)
     renodx::utils::shader::dump::DumpAllPending();  // custom_shaders, g_dumped_shaders, DumpShaderPrefix);
 }
