@@ -2101,6 +2101,24 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                     //    CustomShaderEntry(0x78CC9692),  // trees - trees rendering pixel shader
                      //   CustomShaderEntry(0xDACD56EB),  // trees2 - trees rendering variant 2 pixel shader
                     };
+
+                    auto value = UPGRADE_TYPE_ANY;
+                    g_upgrade_copy_destinations = 1.f;
+                    renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+                        .old_format = reshade::api::format::r8g8b8a8_typeless,
+                        .new_format = reshade::api::format::r16g16b16a16_float,
+                        .ignore_size = (value == UPGRADE_TYPE_ANY),
+                        .use_resource_view_cloning = true,
+                        .use_resource_view_hot_swap = true,
+                        .aspect_ratio =
+                            static_cast<float>((value == UPGRADE_TYPE_OUTPUT_RATIO)
+                                                   ? renodx::mods::swapchain::SwapChainUpgradeTarget::BACK_BUFFER
+                                                   : renodx::mods::swapchain::SwapChainUpgradeTarget::ANY),
+                        .usage_include =
+                            reshade::api::resource_usage::render_target
+                            | (g_upgrade_copy_destinations == 0.f ? reshade::api::resource_usage::undefined
+                                                                  : reshade::api::resource_usage::copy_dest),
+                    });
                 }
 
                 // add settings to disable d3d9 resource upgrade

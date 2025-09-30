@@ -148,7 +148,8 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
         default_values["ToneMapType"] = 4.f;  // DICE
         default_values["SimulateRenderPass"] = 1.f;
         default_values["PostSwapChainToneMapping"] = 1.f;
-    } else if (filename == "Ixion.exe") {
+    } else if (filename.find("Ixion.exe") != std::string::npos) {
+        ClearDefaultUpgrades();
         //    default_values["ToneMapType"] = 3.f; // ACES
     } else if (filename == "No Creeps Were Harmed TD.exe") {
         default_values["ToneMapType"] = 4.f;  // DICE
