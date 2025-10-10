@@ -5,7 +5,29 @@
       "name": "(msvc) Attach",
       "type": "cppvsdbg",
       "request": "attach",
-      "processId": "${command:pickProcess}"
+      "processId": "${command:pickProcess}",
+      "symbolSearchPath": "${workspaceFolder}/build/Release;${workspaceFolder}/build/Debug;${workspaceFolder}/build/RelWithDebInfo",
+      "justMyCode": false,
+      "enableStepFiltering": false
+    },
+    {
+      "name": "Debug with Exception Handling",
+      "type": "cppvsdbg",
+      "request": "attach",
+      "processId": "${command:pickProcess}",
+      "symbolSearchPath": "${workspaceFolder}/build/Release;${workspaceFolder}/build/Debug;${workspaceFolder}/build/RelWithDebInfo",
+      "justMyCode": false,
+      "enableStepFiltering": false,
+      "setupCommands": [
+        {
+          "description": "Enable all exceptions",
+          "text": "-gdb-set exception-verbose on"
+        },
+        {
+          "description": "Catch all exceptions",
+          "text": "catch throw"
+        }
+      ]
     },
     {
       "name": "Deploy Early Access",
@@ -16,8 +38,8 @@
       "args": [
         "--target", "${command:cmake.buildTargetName}",
         "--description", "\"${input:deployDescription}\""
-      ],
-    },
+      ]
+    }
   ],
   "inputs": [
     {
