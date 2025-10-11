@@ -179,23 +179,28 @@ void main(
   r1.xyz = g_hdr_rgb_texture.SampleLevel(g_hdr_rgb_texture_sampler_s, r0.xy, 0).xyz;
   r2.xyz = g_hdr_rgb_bloom_texture.SampleLevel(g_hdr_rgb_bloom_texture_sampler_s, r0.xy, 0).xyz;
   r1.xyz = r2.xyz + r1.xyz;
-  r0.z = g_auto_exposure_input_buffer[0].tone_mapper_brightness;
-  r0.z = g_use_auto_exposure ? r0.z : g_tone_mapping_brightness;
-  r0.w = dot(r1.xyz, float3(0.212599993,0.715200007,0.0722000003));
-  r1.w = cmp(r0.w == 0.000000);
-  r0.z = r0.z * r0.z;
-  r2.x = r0.z * r0.w;
-  r2.y = 1 / g_tone_mapping_burn;
-  r2.y = -0.999000013 + r2.y;
-  r2.y = r2.x / r2.y;
-  r2.y = 1 + r2.y;
-  r2.x = r2.x * r2.y;
-  r0.z = r0.z * r0.w + 1;
-  r0.z = r2.x / r0.z;
-  r1.xyz = r1.xyz * r0.zzz;
-  r2.xyz = r1.xyz / r0.www;
-  r2.w = 1;
-  r1.xyzw = r1.wwww ? float4(0,0,0,0) : r2.xyzw;
+
+  if (RENODX_TONE_MAP_TYPE == 0.f) {
+    r0.z = g_auto_exposure_input_buffer[0].tone_mapper_brightness;
+    r0.z = g_use_auto_exposure ? r0.z : g_tone_mapping_brightness;
+    r0.w = dot(r1.xyz, float3(0.212599993,0.715200007,0.0722000003));
+    r1.w = cmp(r0.w == 0.000000);
+    r0.z = r0.z * r0.z;
+    r2.x = r0.z * r0.w;
+    r2.y = 1 / g_tone_mapping_burn;
+    r2.y = -0.999000013 + r2.y;
+    r2.y = r2.x / r2.y;
+    r2.y = 1 + r2.y;
+    r2.x = r2.x * r2.y;
+    r0.z = r0.z * r0.w + 1;
+    r0.z = r2.x / r0.z;
+    r1.xyz = r1.xyz * r0.zzz;
+    r2.xyz = r1.xyz / r0.www;
+    r2.w = 1;
+    r1.xyzw = r1.wwww ? float4(0,0,0,0) : r2.xyzw;
+  }
+
+
   gbuffer_channel_4_texture.GetDimensions(0, uiDest.x, uiDest.y, uiDest.z);
   r0.zw = uiDest.xy;
   r2.xy = (uint2)r0.zw;
