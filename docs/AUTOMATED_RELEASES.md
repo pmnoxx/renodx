@@ -40,6 +40,70 @@ This repository includes automated GitHub Actions workflows that build and relea
 5. Choose architectures to build
 6. Click "Run workflow"
 
+### 3. Build All Tags (`build-all-tags.yml`)
+
+**Triggers:**
+- **Manual only**: Must be triggered manually from the GitHub Actions tab
+
+**What it does:**
+1. Scans all available upstream ReShade tags
+2. Optionally skips tags that already have releases
+3. Builds releases for multiple tags in parallel
+4. Perfect for backfilling missing releases
+
+**Usage:**
+1. Go to the "Actions" tab in GitHub
+2. Select "Build All Upstream Tags"
+3. Click "Run workflow"
+4. Configure options:
+   - **Max tags**: How many recent tags to build (default: 10)
+   - **Start from tag**: Build from a specific tag onwards (optional)
+   - **Architectures**: Choose which architectures to build
+   - **Skip existing**: Skip tags that already have releases (recommended)
+5. Click "Run workflow"
+
+### 4. Build Tag Range (`build-tag-range.yml`)
+
+**Triggers:**
+- **Manual only**: Must be triggered manually from the GitHub Actions tab
+
+**What it does:**
+1. Builds releases for a specific range of upstream tags
+2. Useful for building releases between two specific versions
+3. Builds all tags in the range in parallel
+
+**Usage:**
+1. Go to the "Actions" tab in GitHub
+2. Select "Build Tag Range"
+3. Click "Run workflow"
+4. Configure options:
+   - **Start tag**: First tag to build (e.g., `v6.0.0`)
+   - **End tag**: Last tag to build (e.g., `v6.5.1`) - leave empty for latest
+   - **Architectures**: Choose which architectures to build
+5. Click "Run workflow"
+
+## When to Use Each Workflow
+
+### Auto Release (`auto-release.yml`)
+- **Best for**: Continuous integration - automatically builds new releases
+- **When**: You want hands-off automation for new upstream releases
+- **Frequency**: Runs every 6 hours automatically
+
+### Manual Release (`manual-release.yml`)
+- **Best for**: Building a specific version quickly
+- **When**: You need to test a particular ReShade version or build on-demand
+- **Use case**: "I want to build v6.5.1 right now"
+
+### Build All Tags (`build-all-tags.yml`)
+- **Best for**: Backfilling missing releases or building many versions at once
+- **When**: You want to build releases for the last 10-20 upstream tags
+- **Use case**: "I want to build releases for all recent ReShade versions"
+
+### Build Tag Range (`build-tag-range.yml`)
+- **Best for**: Building a specific range of versions
+- **When**: You need releases between two specific versions
+- **Use case**: "I want to build all releases from v6.0.0 to v6.5.1"
+
 ## Built Addons
 
 The workflows build the following addon types:
