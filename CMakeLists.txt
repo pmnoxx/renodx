@@ -85,7 +85,6 @@ function(inspect_hlsl_imports FILE VARIABLE REQUESTING_FILE)
 endfunction()
 
 function(generate_resource_rc ADDON)
-
   string(TIMESTAMP VERSION_FALLBACK "0,%Y,%m%d,%H%M" UTC)
   string(REPLACE "," "." VERSION_STRING_FALLBACK "${VERSION_FALLBACK}")
 
