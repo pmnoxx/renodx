@@ -75,7 +75,6 @@ target_compile_definitions(mcp_bridge PRIVATE NOMINMAX)
 set_target_properties(mcp_bridge PROPERTIES OUTPUT_NAME "renodx-mcp-bridge")
 
 function(generate_resource_rc ADDON)
-
   string(TIMESTAMP VERSION_FALLBACK "0,%Y,%m%d,%H%M" UTC)
   string(REPLACE "," "." VERSION_STRING_FALLBACK "${VERSION_FALLBACK}")
 
