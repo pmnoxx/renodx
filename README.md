@@ -15,6 +15,7 @@ This is a fork of ReShade with custom mods. RenoDX, short for "Renovation Engine
 
 # Utilities
 
+* **renodx-_autohdr** (`.addon64` / `.addon32`) &ndash; Swapchain SDR-to-HDR upgrade addon
 * [renodx-devkit.addon64](https://clshortfuse.github.io/renodx/renodx-devkit.addon64) &ndash; Developer kit to help build addons
 * [Display Commander](https://github.com/pmnoxx/reshade-display-commander/tree/main) &ndash; Advanced ReShade addon for professional window management, display control, and NVIDIA Reflex integration
 

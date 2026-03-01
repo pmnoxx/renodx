@@ -52,7 +52,7 @@ elseif(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(SHADER_GLSLANG_NDEBUG_FLAG -DNDEBUG)
 endif()
 
-project(renodx VERSION 0.1.0 LANGUAGES CXX)
+project(renodx VERSION 0.1.1 LANGUAGES CXX)
 
 option(RENODX_BUILD_TESTS "Build D3D12 regression tests" OFF)
 if(RENODX_BUILD_TESTS)
