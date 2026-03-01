@@ -21,3 +21,7 @@
 [submodule "external/frozen"]
 	path = external/frozen
 	url = https://github.com/serge-sans-paille/frozen.git
+
+[submodule "external/sanitiz_metadata"]
+	path = external/sanitiz_metadata
+	url = https://github.com/Kaldaien/sanitize_metadata.git
