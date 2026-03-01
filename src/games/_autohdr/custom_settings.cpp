@@ -144,72 +144,7 @@ void ApplyFilenameBasedOverrides(const std::string& filename) {
     default_values["GammaCorrection"] = 0.f;
     default_values["SwapChainGammaCorrection"] = 0.f;
 
-    if (filename == "Artisan TD.exe") {
-        default_values["ToneMapType"] = 4.f;  // DICE
-        default_values["SimulateRenderPass"] = 1.f;
-        default_values["PostSwapChainToneMapping"] = 1.f;
-    } else if (filename.find("Ixion.exe") != std::string::npos) {
-        ClearDefaultUpgrades();
-        //    default_values["ToneMapType"] = 3.f; // ACES
-    } else if (filename == "No Creeps Were Harmed TD.exe") {
-        default_values["ToneMapType"] = 4.f;  // DICE
-        default_values["SimulateRenderPass"] = 1.f;
-        default_values["PostSwapChainToneMapping"] = 1.f;
-    } else if (filename == "Phantom Brigade.exe") {
-        default_values["WhiteClip"] = 25.f;
-        default_values["PerChannelBlowoutRestoration"] = 0.75f;
-        //  default_values["ToneMapType"] = 2.f; // ACES
-    } else if (filename == "This War of Mine.exe") {
-        default_values["DisableD3D9ResourceUpgrade"] = 0.f;
-        default_values["UseDeviceProxy"] = 1.f;
-        default_values["ConstantBufferOffset"] = 50 * 4;
-        default_values["ToneMapType"] = 4.f;  // DICE
-        default_values["SimulateRenderPass"] = 1.f;
-        default_values["PostSwapChainToneMapping"] = 1.f;
-    } else if (filename == "TheSwapper.exe") {
-        default_values["UseDeviceProxy"] = 1.f;
-        default_values["UpgradeLUTResources"] = 0.f;
-        default_values["PostSwapChainToneMapping"] = 1.f;
 
-        // gamam correction
-        default_values["GammaCorrection"] = 0.f;
-        default_values["SwapChainGammaCorrection"] = 0.f;
-        // decoding 2.2
-        default_values["SwapChainDecoding"] = 3.f;
-        // upside down
-        default_values["IsUpsideDown"] = 1.f;
-    } else if (filename == "Darkest Dungeon II.exe") {
-        /*
-          ClearDefaultUpgrades();
-          default_values["Upgrade_R8G8B8A8_TYPELESS"] = 2.f;
-          default_values["Upgrade_R10G10B10A2_UNORM"] = 2.f;
-          default_values["Upgrade_B10G10R10A2_UNORM"] = 2.f;
-          default_values["Upgrade_R11G11B10_FLOAT"] = 2.f;*/
-
-        default_values["GammaCorrection"] = 0.f;
-        default_values["SwapChainGammaCorrection"] = 0.f;
-        default_values["UpgradeLUTResources"] = 0.f;
-        default_values["upgrade_lut_1024_32"] = 0.f;
-    } else if (filename == "Warhammer3.exe") {
-        // needs TAA disabled, volumetric fog is broken
-        default_values["GammaCorrection"] = 0.f;
-        default_values["SwapChainGammaCorrection"] = 0.f;
-
-        default_values["SwapChainDecoding"] = 3.f;  // set swap chain decode to gamma 2.2
-        default_values["ColorGradeShadows"] = 62.f;
-
-        ClearDefaultUpgrades();
-        default_values["Upgrade_R8G8B8A8_UNORM_SRGB"] = 2.f;
-     //   default_values["Upgrade_R8G8B8A8_UNORM"] = 1.f;
-        default_values["upgrade_copy_destinations"] = 1.f;
-    } else if (filename == "Against the Storm.exe") {
-        default_values["GammaCorrection"] = 0.f;
-        default_values["SwapChainGammaCorrection"] = 0.f;
-        //ClearDefaultUpgrades();
-
-        default_values["AutodumpLutbuilders"] = 1.f;
-        default_values["AutomaticShaderDumping"] = 1.f;
-    }
 }
 
 std::vector<renodx::utils::settings::Setting*> GenerateCustomGameSettingsSection(ShaderInjectData& shader_injection,
