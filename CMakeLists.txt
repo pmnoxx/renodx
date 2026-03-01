@@ -27,7 +27,7 @@ find_program(SLANGC_BIN slangc.exe
   REQUIRED)
 message("SLANGC_BIN: " ${SLANGC_BIN})
 
-project(renodx VERSION 0.1.0 LANGUAGES CXX)
+project(renodx VERSION 0.1.1 LANGUAGES CXX)
 
 include(CTest)
 enable_testing()
