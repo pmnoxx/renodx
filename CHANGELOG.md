@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- GitHub Actions workflow **HDR Swapchain Upgrade for Display Commander**: builds only `_hdr_upgrade` and publishes to release tag `hdr-upgrade-display-commander` (for Display Commander to recommend/download/configure).
+
+### Changed
+
+- README: HDR section now points to the [HDR Swapchain Upgrade for Display Commander](/releases) release, explains `.addon64` (64-bit) vs `.addon32` (32-bit), and documents Display Commander integration.
+- Addon renamed `_autohdr` → `_hdr_upgrade`; `addons-univ-hdr` workflow updated accordingly.
+
 ## [0.1.1] - 2026-03-01
 
 ### Changed
