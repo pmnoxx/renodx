@@ -17,7 +17,7 @@ This is a fork of ReShade with custom mods. RenoDX, short for "Renovation Engine
 
 ## HDR Swapchain Upgrade (for Display Commander)
 
-**renodx-_hdr_upgrade** is a swapchain SDR-to-HDR upgrade addon. Pre-built binaries are published in the **[HDR Swapchain Upgrade for Display Commander](/releases)** release. [Display Commander](https://github.com/pmnoxx/reshade-display-commander/tree/main) can recommend, download, and configure this mod for SDR-to-HDR swapchain upgrade.
+**renodx-_hdr_upgrade** is a swapchain SDR-to-HDR upgrade addon. Pre-built binaries are published in the **[HDR Swapchain Upgrade for Display Commander](https://github.com/pmnoxx/renodx/releases/tag/addons-univ-hdr)** release. [Display Commander](https://github.com/pmnoxx/reshade-display-commander/tree/main) can recommend, download, and configure this mod for SDR-to-HDR swapchain upgrade.
 
 The release contains two addon files:
 
