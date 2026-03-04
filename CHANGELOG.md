@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- README: HDR section now points to the [HDR Swapchain Upgrade for Display Commander](/releases) release, explains `.addon64` (64-bit) vs `.addon32` (32-bit), and documents Display Commander integration.
+- README: HDR section now points to the [addons-univ-hdr](https://github.com/pmnoxx/renodx/releases/tag/addons-univ-hdr) release, explains `.addon64` (64-bit) vs `.addon32` (32-bit), and documents Display Commander integration.
 - Addon renamed `_autohdr` → `_hdr_upgrade`; `addons-univ-hdr` workflow updated accordingly.
 
 ## [0.1.1] - 2026-03-01
