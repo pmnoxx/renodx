@@ -1,14 +1,14 @@
-# Build and publish only the _univ and _hdr_upgrade (HDR upgrade) addons to a dedicated release.
-name: addons-univ-hdr
+# Build and publish only the _hdr_upgrade addon for Display Commander.
+# Display Commander can recommend / download / configure this mod for SDR-to-HDR swapchain upgrade.
+name: HDR Swapchain Upgrade for Display Commander
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 6 * * *'
+    - cron: '45 6 * * *'
   push:
     branches: [main]
     paths:
-      - 'src/games/_univ/**'
       - 'src/games/_hdr_upgrade/**'
       - 'src/mods/**'
       - 'src/utils/**'
@@ -50,8 +50,8 @@ jobs:
       - name: Configure CMake (x64)
         run: cmake --preset clang-x64
 
-      - name: Build _univ and _hdr_upgrade (x64)
-        run: cmake --build --preset clang-x64-release --target _univ _hdr_upgrade --verbose
+      - name: Build _hdr_upgrade (x64)
+        run: cmake --build --preset clang-x64-release --target _hdr_upgrade --verbose
 
       - name: Set up Clang (x86)
         uses: egor-tensin/setup-clang@v1
@@ -67,27 +67,23 @@ jobs:
       - name: Configure CMake (x86)
         run: cmake --preset clang-x86
 
-      - name: Build _univ and _hdr_upgrade (x86)
-        run: cmake --build --preset clang-x86-release --target _univ _hdr_upgrade --verbose
+      - name: Build _hdr_upgrade (x86)
+        run: cmake --build --preset clang-x86-release --target _hdr_upgrade --verbose
 
       - name: Prepare release folder
         run: md githubrelease
 
       - name: Copy addons (x64)
-        run: |
-          copy build\release\renodx-_univ.addon64 githubrelease\
-          copy build\release\renodx-_hdr_upgrade.addon64 githubrelease\
+        run: copy build\release\renodx-_hdr_upgrade.addon64 githubrelease\
 
       - name: Copy addons (x86)
-        run: |
-          copy build32\release\renodx-_univ.addon32 githubrelease\
-          copy build32\release\renodx-_hdr_upgrade.addon32 githubrelease\
+        run: copy build32\release\renodx-_hdr_upgrade.addon32 githubrelease\
 
-      - name: Create Release (addons-univ-hdr)
+      - name: Create Release (HDR Swapchain Upgrade for Display Commander)
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: addons-univ-hdr
-          title: RenoDX _univ & _hdr_upgrade (HDR upgrade addons)
+          automatic_release_tag: hdr-upgrade-display-commander
+          title: HDR Swapchain Upgrade for Display Commander
           files: githubrelease/*
           prerelease: false

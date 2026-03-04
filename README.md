@@ -15,7 +15,19 @@ This is a fork of ReShade with custom mods. RenoDX, short for "Renovation Engine
 
 # Utilities
 
-* **renodx-_autohdr** (`.addon64` / `.addon32`) &ndash; Swapchain SDR-to-HDR upgrade addon
+## HDR Swapchain Upgrade (for Display Commander)
+
+**renodx-_hdr_upgrade** is a swapchain SDR-to-HDR upgrade addon. Pre-built binaries are published in the **[HDR Swapchain Upgrade for Display Commander](/releases)** release. [Display Commander](https://github.com/pmnoxx/reshade-display-commander/tree/main) can recommend, download, and configure this mod for SDR-to-HDR swapchain upgrade.
+
+The release contains two addon files:
+
+| File | Use when |
+|------|----------|
+| **renodx-_hdr_upgrade.addon64** | The game or application is 64-bit (most modern games). |
+| **renodx-_hdr_upgrade.addon32** | The game or application is 32-bit. |
+
+Place the matching file (and [renodx-devkit](https://clshortfuse.github.io/renodx/renodx-devkit.addon64) for your architecture) into the game directory where ReShade is installed.
+
 * [renodx-devkit.addon64](https://clshortfuse.github.io/renodx/renodx-devkit.addon64) &ndash; Developer kit to help build addons
 * [Display Commander](https://github.com/pmnoxx/reshade-display-commander/tree/main) &ndash; Advanced ReShade addon for professional window management, display control, and NVIDIA Reflex integration
 
