@@ -1,1 +1,0 @@
-#define CUSTOM_GAME_SETTINGS
