@@ -73,7 +73,7 @@ constexpr const char* RENODX_VERSION = "0.30";
 
 #include <embed/shaders.h>
 #include <algorithm>
-#include <crc32_hash.hpp>
+#include "../../utils/hash.hpp"
 #include <cstring>
 #include <include/reshade.hpp>
 #include <map>
@@ -687,7 +687,7 @@ void OnInitPipeline(reshade::api::device* device, reshade::api::pipeline_layout 
 
             // Calculate shader hash
             auto shader_hash =
-                compute_crc32(reinterpret_cast<const uint8_t*>(shader_desc->code), shader_desc->code_size);
+                renodx::utils::hash::ComputeCRC32(reinterpret_cast<const uint8_t*>(shader_desc->code), shader_desc->code_size);
 
             // Skip if we've already dumped this shader
             if (g_dumped_shaders.contains(shader_hash)) continue;

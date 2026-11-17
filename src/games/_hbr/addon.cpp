@@ -57,7 +57,7 @@ constexpr const char* RENODX_VERSION = "0.23";
 #include "../../utils/shader_dump.hpp"
 #include "../../utils/swapchain.hpp"
   #include "../../utils/resource.hpp"
- #include <crc32_hash.hpp>
+ #include "../../utils/hash.hpp"
   #include "./shared.h"
  #include "custom_settings.cpp"
 
@@ -177,7 +177,7 @@ void OnInitPipeline(
      if (shader_desc == nullptr || shader_desc->code_size == 0) continue;
 
             // Calculate shader hash
-      auto shader_hash = compute_crc32(
+      auto shader_hash = renodx::utils::hash::ComputeCRC32(
           reinterpret_cast<const uint8_t*>(shader_desc->code),
           shader_desc->code_size);
 

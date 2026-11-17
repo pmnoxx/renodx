@@ -122,7 +122,7 @@ float3 ApplyReverseReinhard(float3 color, float scene_type = SCENE_TYPE_UNKNOWN)
         return color;
     } else if (RENODX_PERCEPTUAL_BOOST_MODE == 2.f) {
         // XY->PQ (inverse tonemapping)
-        float3 xyz = renodx::color::XYZ::from::BT709(color.xyz);
+        float3 xyz = renodx::color::xyz::from::BT709(color.xyz);
         float mid_point = RENODX_PERCEPTUAL_BOOST_XYPQ_MIDPOINT;
         float new_grey = mid_point;
         if (xyz.y > 0.0000001f) {

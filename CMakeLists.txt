@@ -784,6 +784,9 @@ set(SKIPPED_ADDON_TARGETS "")
 foreach(FILE ${ADDON_FILES})
   cmake_path(GET FILE PARENT_PATH ADDON_PATH)
   cmake_path(GET ADDON_PATH FILENAME ADDON) # treat as filename
+  if(RENODX_ADDON_FILTER AND NOT ADDON MATCHES "${RENODX_ADDON_FILTER}")
+    continue()
+  endif()
 
   set(ADDON_METADATA_PATH "${ADDON_PATH}/metadata.json")
   if(EXISTS "${ADDON_METADATA_PATH}")
