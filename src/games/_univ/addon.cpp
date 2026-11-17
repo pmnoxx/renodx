@@ -1906,7 +1906,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
                 renodx::utils::random::binds.push_back(&shader_injection.random_seed);
 
                 // Register callback for resource creation and upgrade tracking
-                renodx::utils::resource::store->on_init_resource_info_callbacks.emplace_back(&OnResourceCreated);
+                renodx::utils::resource::RegisterOnInitResourceInfoCallback(&OnResourceCreated);
 
                 g_upgrade_copy_destinations = hbr_custom_settings::get_upgrade_copy_destinations();
 
