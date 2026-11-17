@@ -48,7 +48,7 @@ jobs:
           arch: amd64
 
       - name: Configure CMake (x64)
-        run: cmake --preset clang-x64
+        run: cmake --preset clang-x64 "-DRENODX_ADDON_FILTER=^_(univ|hdr_upgrade)$"
 
       - name: Build _univ and _hdr_upgrade (x64)
         run: cmake --build --preset clang-x64-release --target _univ _hdr_upgrade --verbose
@@ -65,7 +65,7 @@ jobs:
           arch: amd64_x86
 
       - name: Configure CMake (x86)
-        run: cmake --preset clang-x86
+        run: cmake --preset clang-x86 "-DRENODX_ADDON_FILTER=^_(univ|hdr_upgrade)$"
 
       - name: Build _univ and _hdr_upgrade (x86)
         run: cmake --build --preset clang-x86-release --target _univ _hdr_upgrade --verbose
