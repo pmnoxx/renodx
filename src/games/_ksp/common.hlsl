@@ -120,7 +120,7 @@ float3 ApplyReverseReinhard(float3 color, float scene_type = SCENE_TYPE_UNKNOWN)
     return color;
   } else if (shader_injection.perceptual_boost_mode == 2.f) {
     // XY->PQ (inverse tonemapping)
-    float3 xyz = renodx::color::XYZ::from::BT709(color.xyz);
+    float3 xyz = renodx::color::xyz::from::BT709(color.xyz);
     float mid_point = shader_injection.perceptual_boost_xypq_midpoint;
     float new_grey = mid_point;
     if (xyz.y > 0.0000001f)
@@ -519,7 +519,7 @@ float3 renodx_ksp_apply_tonemap_and_boost(float3 linearColor, float2 uv)
     {
         if (RENODX_PERCEPTUAL_BOOST_METHOD == RENODX_PERCEPTUAL_BOOST_METHOD_XY_PQ && RENODX_PERCEPTUAL_BOOST_STRENGTH > 0.f) {
           // XY->PQ method
-          float3 xyz = renodx::color::XYZ::from::BT709(linearColor.xyz);
+          float3 xyz = renodx::color::xyz::from::BT709(linearColor.xyz);
           float new_grey = 0.18f;
           if (xyz.y > 0.0000001f)
           {
